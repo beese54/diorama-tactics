@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../util/rng';
-import { TERRAIN, type PaintStyle } from './terrain';
+import { SIDE_STYLES, TERRAIN, type PaintStyle, type SideStyle } from './terrain';
 import { TERRAIN_IDS, type TerrainId } from './types';
 
 export const TILE_PX = 16;
@@ -164,6 +164,41 @@ function seam(ctx: Ctx): void {
   ctx.fillRect(TILE_PX - 1, 0, 1, TILE_PX - 1);
 }
 
+/** Cliff-face colours per material: [base, dark, light, accent]. */
+const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
+  soil: ['#7a5a3a', '#6a4c31', '#836240', '#9a8a72'],
+  rock: ['#7c7466', '#655d51', '#8a8273', '#4b443b'],
+  sand: ['#c9b682', '#b9a571', '#d6c597', '#a8935f'],
+  redrock: ['#a86e48', '#8e5a3a', '#b98058', '#7a4a30'],
+};
+
+/** One 16x8 cliff-face cell: horizontal strata with speckle, cracks/pebbles as accents. */
+function paintSide(ctx: Ctx, rand: Rand, style: SideStyle): void {
+  const [base, dark, light, accent] = SIDE_PALETTES[style];
+  for (let y = 0; y < STEP_PX; y++) {
+    // Alternate strata bands; red rock gets bolder banding.
+    const band = style === 'redrock' ? (y < 3 ? light : y < 5 ? base : dark) : y % 4 === 3 ? dark : base;
+    for (let x = 0; x < TILE_PX; x++) {
+      const r = rand();
+      ctx.fillStyle = r < 0.2 ? dark : r < 0.35 ? light : band;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  for (let i = 0; i < 3; i++) {
+    ctx.fillStyle = accent;
+    ctx.fillRect(int(rand, TILE_PX), int(rand, STEP_PX), 1, style === 'rock' ? 2 : 1);
+  }
+}
+
+/** Grass/snow/etc. overhang along the top of a column's highest step. */
+function paintLip(ctx: Ctx, rand: Rand, palette: readonly string[]): void {
+  for (let x = 0; x < TILE_PX; x++) {
+    ctx.fillStyle = pick(palette.slice(0, 2), rand);
+    ctx.fillRect(x, 0, 1, 2);
+    if (rand() < 0.45) ctx.fillRect(x, 2, 1, 1);
+  }
+}
+
 export interface UvRect {
   u0: number;
   v0: number;
@@ -173,20 +208,32 @@ export interface UvRect {
 
 export interface TerrainAtlas {
   texture: THREE.CanvasTexture;
-  uv(terrain: TerrainId, variant: number): UvRect;
+  /** Tile top. */
+  top(terrain: TerrainId, variant: number): UvRect;
+  /** Highest cliff step of a column: material plus the terrain's overhanging lip. */
+  sideTop(terrain: TerrainId, variant: number): UvRect;
+  /** Any lower cliff step: bare material. */
+  sideLower(style: SideStyle, variant: number): UvRect;
 }
 
-/** One canvas holding every terrain top: rows = terrains, columns = variants. */
+/**
+ * One canvas holding every texture the map needs, so the map draws in one call.
+ * Columns = variants. Rows: terrain tops (16 px), then terrain top-step sides (8 px),
+ * then lower-step sides per material (8 px).
+ */
 export function buildTerrainAtlas(): TerrainAtlas {
+  const sideTopY = TERRAIN_IDS.length * TILE_PX;
+  const sideLowerY = sideTopY + TERRAIN_IDS.length * STEP_PX;
   const canvas = document.createElement('canvas');
   canvas.width = TILE_PX * VARIANTS;
-  canvas.height = TILE_PX * TERRAIN_IDS.length;
-  const atlasCtx = canvas.getContext('2d')!;
+  canvas.height = sideLowerY + SIDE_STYLES.length * STEP_PX;
+  const atlas = canvas.getContext('2d')!;
 
   const cell = document.createElement('canvas');
   cell.width = TILE_PX;
   cell.height = TILE_PX;
   const ctx = cell.getContext('2d')!;
+  const blit = (x: number, y: number, h: number) => atlas.drawImage(cell, 0, 0, TILE_PX, h, x, y, TILE_PX, h);
 
   TERRAIN_IDS.forEach((id, row) => {
     const def = TERRAIN[id];
@@ -194,48 +241,40 @@ export function buildTerrainAtlas(): TerrainAtlas {
       ctx.clearRect(0, 0, TILE_PX, TILE_PX);
       PAINTERS[def.style](ctx, mulberry32(row * 131 + v * 17 + 1), def.palette);
       seam(ctx);
-      atlasCtx.drawImage(cell, v * TILE_PX, row * TILE_PX);
+      blit(v * TILE_PX, row * TILE_PX, TILE_PX);
+
+      ctx.clearRect(0, 0, TILE_PX, TILE_PX);
+      const rand = mulberry32(row * 977 + v * 31 + 5);
+      paintSide(ctx, rand, def.side);
+      paintLip(ctx, rand, def.palette);
+      blit(v * TILE_PX, sideTopY + row * STEP_PX, STEP_PX);
     }
   });
 
-  const rowOf = new Map(TERRAIN_IDS.map((id, i) => [id, i]));
-  const du = 1 / VARIANTS;
-  const dv = 1 / TERRAIN_IDS.length;
+  SIDE_STYLES.forEach((style, row) => {
+    for (let v = 0; v < VARIANTS; v++) {
+      ctx.clearRect(0, 0, TILE_PX, TILE_PX);
+      paintSide(ctx, mulberry32(row * 613 + v * 7 + 3), style);
+      blit(v * TILE_PX, sideLowerY + row * STEP_PX, STEP_PX);
+    }
+  });
+
+  const W = canvas.width;
+  const H = canvas.height;
+  // CanvasTexture is flipped: canvas y = 0 is v = 1.
+  const rect = (x: number, y: number, h: number): UvRect => ({
+    u0: x / W,
+    u1: (x + TILE_PX) / W,
+    v0: 1 - (y + h) / H,
+    v1: 1 - y / H,
+  });
+  const terrainRow = new Map(TERRAIN_IDS.map((id, i) => [id, i]));
+  const sideRow = new Map(SIDE_STYLES.map((s, i) => [s, i]));
+
   return {
     texture: toTexture(canvas),
-    uv(terrain, variant) {
-      const row = rowOf.get(terrain)!;
-      // CanvasTexture is flipped: canvas row 0 is at the top of v.
-      return { u0: variant * du, u1: (variant + 1) * du, v0: 1 - (row + 1) * dv, v1: 1 - row * dv };
-    },
+    top: (terrain, v) => rect(v * TILE_PX, terrainRow.get(terrain)! * TILE_PX, TILE_PX),
+    sideTop: (terrain, v) => rect(v * TILE_PX, sideTopY + terrainRow.get(terrain)! * STEP_PX, STEP_PX),
+    sideLower: (style, v) => rect(v * TILE_PX, sideLowerY + sideRow.get(style)! * STEP_PX, STEP_PX),
   };
-}
-
-/** Earth strata for the diorama's cut-away edges, darkening with depth. */
-export function earthSide(steps: number, seed = 2): THREE.CanvasTexture {
-  const bands = [
-    ['#7a5a3a', '#6e5034', '#836240'],
-    ['#6a4c31', '#5f442c', '#735336'],
-    ['#5a4029', '#4f3824', '#634630'],
-    ['#4a3522', '#43301f', '#523a26'],
-    ['#3a2a1b', '#332517', '#41301f'],
-  ] as const;
-  const canvas = document.createElement('canvas');
-  canvas.width = TILE_PX;
-  canvas.height = STEP_PX * steps;
-  const ctx = canvas.getContext('2d')!;
-  const rand = mulberry32(seed);
-  for (let y = 0; y < canvas.height; y++) {
-    const band = bands[Math.min(bands.length - 1, Math.floor((y / canvas.height) * bands.length))];
-    for (let x = 0; x < TILE_PX; x++) {
-      ctx.fillStyle = pick(band, rand);
-      ctx.fillRect(x, y, 1, 1);
-    }
-  }
-  // Pebbles in the soil.
-  for (let i = 0; i < steps * 2; i++) {
-    ctx.fillStyle = '#8a7a66';
-    ctx.fillRect(int(rand, TILE_PX), int(rand, canvas.height), 1, 1);
-  }
-  return toTexture(canvas);
 }

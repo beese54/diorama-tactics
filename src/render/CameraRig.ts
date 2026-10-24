@@ -61,6 +61,21 @@ export class CameraRig {
     }
   }
 
+  /** Jump to an orbit pose (azimuth from +z toward +x), optionally re-centred on a ground point. */
+  setPose(azimuthDeg: number, polarDeg: number, zoom: number, target?: THREE.Vector3): void {
+    const distance = this.camera.position.distanceTo(this.controls.target);
+    if (target) this.controls.target.set(target.x, 0, target.z);
+    const offset = new THREE.Vector3().setFromSphericalCoords(
+      distance,
+      THREE.MathUtils.degToRad(polarDeg),
+      THREE.MathUtils.degToRad(azimuthDeg),
+    );
+    this.camera.position.copy(this.controls.target).add(offset);
+    this.camera.zoom = zoom;
+    this.camera.updateProjectionMatrix();
+    this.controls.update();
+  }
+
   update(): void {
     this.controls.update();
   }

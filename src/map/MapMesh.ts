@@ -1,54 +1,122 @@
 import * as THREE from 'three';
-import { buildTerrainAtlas, earthSide, VARIANTS } from './textures';
-import type { MapFile, Tile } from './types';
+import { TERRAIN } from './terrain';
+import { buildTerrainAtlas, VARIANTS, type UvRect } from './textures';
+import { tileAt, type MapFile, type Tile } from './types';
 
-/** Depth of the diorama base below the lowest tile, in height steps. */
+/** Depth of the diorama base below height 0, in steps. */
 const BASE_STEPS = 4;
-const STEP_HEIGHT = 0.5;
+export const STEP_HEIGHT = 0.5;
+
+type Vec3 = [number, number, number];
 
 /**
- * The whole map as one merged mesh (one draw call) using a terrain texture atlas,
- * standing on an earth-strata base like an FFT diorama.
+ * Cliff faces, one per neighbour direction. `a`/`b` are the face's top corners
+ * (relative to the tile's NW corner), left-to-right as seen from outside.
+ */
+const SIDES: { dx: number; dy: number; normal: Vec3; a: [number, number]; b: [number, number] }[] = [
+  { dx: 0, dy: -1, normal: [0, 0, -1], a: [1, 0], b: [0, 0] }, // north
+  { dx: 0, dy: 1, normal: [0, 0, 1], a: [0, 1], b: [1, 1] }, // south
+  { dx: 1, dy: 0, normal: [1, 0, 0], a: [1, 1], b: [1, 0] }, // east
+  { dx: -1, dy: 0, normal: [-1, 0, 0], a: [0, 0], b: [0, 1] }, // west
+];
+
+/** Darken cliff faces with depth below the column top, like soft ambient occlusion. */
+const shadeAt = (depth: number) => Math.max(0.45, 1 - depth * 0.16);
+
+/** Stable per-face texture variant so neighbouring cliff steps don't repeat. */
+function variantHash(x: number, y: number, step: number, side: number): number {
+  let h = Math.imul(x + 1, 73856093) ^ Math.imul(y + 1, 19349663) ^ Math.imul(step + 9, 83492791) ^ Math.imul(side + 1, 2654435761);
+  h ^= h >>> 13;
+  return (h >>> 0) % VARIANTS;
+}
+
+class GeometryBuilder {
+  readonly positions: number[] = [];
+  readonly normals: number[] = [];
+  readonly uvs: number[] = [];
+  readonly colors: number[] = [];
+  readonly indices: number[] = [];
+  /** Triangle index -> tile index, for picking. */
+  readonly triangleTile: number[] = [];
+
+  /** Corners in order top-left, top-right, bottom-right, bottom-left as seen from the front. */
+  quad(corners: [Vec3, Vec3, Vec3, Vec3], normal: Vec3, uv: UvRect, shade: [number, number], tile: number): void {
+    const base = this.positions.length / 3;
+    for (const c of corners) this.positions.push(...c);
+    for (let i = 0; i < 4; i++) this.normals.push(...normal);
+    this.uvs.push(uv.u0, uv.v1, uv.u1, uv.v1, uv.u1, uv.v0, uv.u0, uv.v0);
+    const [top, bottom] = shade;
+    this.colors.push(top, top, top, top, top, top, bottom, bottom, bottom, bottom, bottom, bottom);
+    this.indices.push(base, base + 3, base + 1, base + 1, base + 3, base + 2);
+    this.triangleTile.push(tile, tile);
+  }
+
+  build(): THREE.BufferGeometry {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.positions, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.normals, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.colors, 3));
+    g.setIndex(this.indices);
+    return g;
+  }
+}
+
+/**
+ * The whole map as one merged mesh (one draw call) of stepped columns, using a single
+ * texture atlas. Only cliff faces exposed to a lower neighbour (or the map edge) are built;
+ * edge columns run down into a diorama base below height 0.
  */
 export class MapMesh {
   readonly group = new THREE.Group();
-  private readonly tops: THREE.Mesh;
-  /** Triangle index -> tile index, for picking. */
+  private readonly mesh: THREE.Mesh;
   private readonly triangleTile: Uint32Array;
 
   constructor(private readonly map: MapFile) {
     const atlas = buildTerrainAtlas();
-    const count = map.tiles.length;
-    const positions = new Float32Array(count * 4 * 3);
-    const uvs = new Float32Array(count * 4 * 2);
-    const normals = new Float32Array(count * 4 * 3);
-    const indices = new Uint32Array(count * 6);
-    this.triangleTile = new Uint32Array(count * 2);
+    const b = new GeometryBuilder();
 
     map.tiles.forEach((tile, i) => {
       const [x0, z0] = this.tileOrigin(tile);
-      const y = tile.height * STEP_HEIGHT;
+      const topY = tile.height * STEP_HEIGHT;
+      const def = TERRAIN[tile.terrain];
       const variant = Math.min(VARIANTS - 1, Math.floor(tile.seedRand * VARIANTS));
-      const { u0, v0, u1, v1 } = atlas.uv(tile.terrain, variant);
 
-      // Corners: NW, NE, SE, SW (north = -z). Texture top edge faces north.
-      positions.set([x0, y, z0, x0 + 1, y, z0, x0 + 1, y, z0 + 1, x0, y, z0 + 1], i * 12);
-      uvs.set([u0, v1, u1, v1, u1, v0, u0, v0], i * 8);
-      normals.set([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], i * 12);
-      const v = i * 4;
-      indices.set([v, v + 3, v + 1, v + 1, v + 3, v + 2], i * 6);
-      this.triangleTile[i * 2] = i;
-      this.triangleTile[i * 2 + 1] = i;
+      b.quad(
+        [[x0, topY, z0], [x0 + 1, topY, z0], [x0 + 1, topY, z0 + 1], [x0, topY, z0 + 1]],
+        [0, 1, 0],
+        atlas.top(tile.terrain, variant),
+        [1, 1],
+        i,
+      );
+
+      SIDES.forEach((side, s) => {
+        const neighbour = tileAt(map, tile.x + side.dx, tile.y + side.dy);
+        const lowest = neighbour ? neighbour.height : -BASE_STEPS;
+        for (let step = tile.height - 1; step >= lowest; step--) {
+          const yTop = (step + 1) * STEP_HEIGHT;
+          const yBot = step * STEP_HEIGHT;
+          const v = variantHash(tile.x, tile.y, step, s);
+          // Below height 0 is the diorama's bedrock: plain earth whatever sits on top.
+          const uv = step === tile.height - 1
+            ? atlas.sideTop(tile.terrain, v)
+            : atlas.sideLower(step < 0 ? 'soil' : def.side, v);
+          const [ax, az] = [x0 + side.a[0], z0 + side.a[1]];
+          const [bx, bz] = [x0 + side.b[0], z0 + side.b[1]];
+          b.quad(
+            [[ax, yTop, az], [bx, yTop, bz], [bx, yBot, bz], [ax, yBot, az]],
+            side.normal,
+            uv,
+            [shadeAt(topY - yTop), shadeAt(topY - yBot)],
+            i,
+          );
+        }
+      });
     });
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-    geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-    this.tops = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ map: atlas.texture }));
-    this.group.add(this.tops);
-    this.group.add(this.createBase());
+    this.triangleTile = Uint32Array.from(b.triangleTile);
+    this.mesh = new THREE.Mesh(b.build(), new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true }));
+    this.group.add(this.mesh);
   }
 
   /** World-space north-west corner of a tile; the map is centred on the origin. */
@@ -61,31 +129,10 @@ export class MapMesh {
     return new THREE.Vector3(x0 + 0.5, tile.height * STEP_HEIGHT, z0 + 0.5);
   }
 
+  /** The first column the ray hits (top or cliff face), i.e. the one you can actually see. */
   pick(raycaster: THREE.Raycaster): Tile | null {
-    const hit = raycaster.intersectObject(this.tops, false)[0];
+    const hit = raycaster.intersectObject(this.mesh, false)[0];
     if (!hit || hit.faceIndex == null) return null;
     return this.map.tiles[this.triangleTile[hit.faceIndex]];
-  }
-
-  private createBase(): THREE.Mesh {
-    const { width, height } = this.map;
-    const depth = BASE_STEPS * STEP_HEIGHT;
-
-    const alongX = earthSide(BASE_STEPS, 2);
-    alongX.repeat.set(width, 1);
-    const alongZ = earthSide(BASE_STEPS, 3);
-    alongZ.repeat.set(height, 1);
-
-    const sideX = new THREE.MeshLambertMaterial({ map: alongZ });
-    const sideZ = new THREE.MeshLambertMaterial({ map: alongX });
-    const hidden = new THREE.MeshBasicMaterial({ visible: false });
-    const bottom = new THREE.MeshBasicMaterial({ color: 0x1a120c });
-
-    // BoxGeometry face order: +x, -x, +y, -y, +z, -z
-    const base = new THREE.Mesh(new THREE.BoxGeometry(width, depth, height), [
-      sideX, sideX, hidden, bottom, sideZ, sideZ,
-    ]);
-    base.position.y = -depth / 2;
-    return base;
   }
 }

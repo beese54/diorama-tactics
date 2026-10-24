@@ -1,10 +1,11 @@
 import { mulberry32 } from '../util/rng';
-import type { MapFile, TerrainId, Tile } from './types';
+import { tileAt, type MapFile, type TerrainId, type Tile } from './types';
 
 const SIZE = 32;
+const WATER: ReadonlySet<TerrainId> = new Set(['deep_water', 'shallow_water']);
 
 /**
- * Hand-placed flat layout for M1 so every terrain style can be inspected.
+ * Hand-placed layout for M1/M2 so every terrain style and height can be inspected.
  * Replaced by the seeded generator in M3.
  */
 export function createTestMap(seed = 1): MapFile {
@@ -13,56 +14,88 @@ export function createTestMap(seed = 1): MapFile {
 
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
-      tiles.push({
-        x,
-        y,
-        height: 0,
-        terrain: terrainFor(x, y),
-        moisture: 0.5,
-        water: null,
-        feature: null,
-        seedRand: rand(),
-      });
+      const [terrain, height] = place(x, y);
+      tiles.push({ x, y, height, terrain, moisture: 0.5, water: null, feature: null, seedRand: rand() });
     }
   }
-  return { version: 1, seed, width: SIZE, height: SIZE, tiles };
+  const map: MapFile = { version: 1, seed, width: SIZE, height: SIZE, tiles };
+  slopeBanks(map);
+  return map;
 }
 
-function terrainFor(x: number, y: number): TerrainId {
+/** Terrain and its natural height (0-8 steps) for one tile. */
+function place(x: number, y: number): [TerrainId, number] {
   const dist = (cx: number, cy: number) => Math.hypot(x - cx, y - cy);
 
-  // Winding river running north to south.
+  // Winding river running north to south; water sits at the lowest level.
   const riverOffset = Math.abs(x - (15 + 4 * Math.sin(y / 4.5)));
-  if (riverOffset < 1) return 'deep_water';
-  if (riverOffset < 2) return 'shallow_water';
+  if (riverOffset < 1) return ['deep_water', 0];
+  if (riverOffset < 2) return ['shallow_water', 0];
 
   const lake = dist(26, 6);
-  if (lake < 2.6) return 'deep_water';
-  if (lake < 3.6) return 'shallow_water';
-  if (lake < 4.8) return 'beach';
+  if (lake < 2.6) return ['deep_water', 0];
+  if (lake < 3.6) return ['shallow_water', 0];
+  if (lake < 4.8) return ['beach', 1];
 
+  // Mountain: hills climb through scree and rock to a snowy summit.
   const rocks = dist(26, 26);
-  if (rocks < 1.5) return 'peak_snow';
-  if (rocks < 3) return 'mountain';
-  if (rocks < 4.2) return 'scree';
-  if (rocks < 5.5) return 'hills';
+  if (rocks < 1.5) return ['peak_snow', 8];
+  if (rocks < 3) return ['mountain', rocks < 2.25 ? 7 : 6];
+  if (rocks < 4.2) return ['scree', rocks < 3.6 ? 5 : 4];
+  if (rocks < 5.5) return ['hills', 3];
 
+  // Swamp lies in a low, wet basin.
   const swamp = dist(6, 25);
-  if (swamp < 1.8) return 'bog';
-  if (swamp < 3.6) return 'swamp';
-  if (swamp < 5) return 'marsh';
+  if (swamp < 1.8) return ['bog', 1];
+  if (swamp < 3.6) return ['swamp', 1];
+  if (swamp < 5) return ['marsh', 1];
 
+  // Forest grows on a rise, densest and highest at its heart.
   const forest = dist(6, 7);
-  if (forest < 2.5) return 'pine_forest';
-  if (forest < 4) return 'forest';
-  if (forest < 5.5) return 'light_woods';
+  if (forest < 2.5) return ['pine_forest', 4];
+  if (forest < 4) return ['forest', 3];
+  if (forest < 5.5) return ['light_woods', 2];
 
-  if (y === 16) return 'road';
-  if (dist(22, 15) < 1.5) return 'ruins';
-  if (dist(9, 15) < 1.2) return 'crystal_field';
-  if (x >= 19 && x <= 23 && y >= 19 && y <= 22) return 'farmland';
-  if (dist(23, 11) < 2.5) return 'meadow';
-  if (x <= 2 && y >= 12 && y <= 19) return 'badlands';
-  if (x >= 29 && y >= 13 && y <= 19) return 'desert';
-  return 'plains';
+  if (y === 16) return ['road', 2];
+  if (dist(22, 15) < 1.5) return ['ruins', 3];
+  if (dist(9, 15) < 1.2) return ['crystal_field', 2];
+  if (x >= 19 && x <= 23 && y >= 19 && y <= 22) return ['farmland', 2];
+  if (dist(23, 11) < 2.5) return ['meadow', 2];
+  // Badlands mesas: flat-topped red rock stepping up toward the map edge.
+  if (x <= 2 && y >= 12 && y <= 19) return ['badlands', x === 0 ? 5 : x === 1 ? 4 : 3];
+  // Small dunes.
+  if (x >= 29 && y >= 13 && y <= 19) return ['desert', (x + y) % 3 === 0 ? 3 : 2];
+
+  // Gently rolling plains.
+  const roll = Math.sin(x * 0.45 + 1) * Math.cos(y * 0.38);
+  return ['plains', roll > 0.55 ? 3 : 2];
+}
+
+/**
+ * Land can be no higher than its distance (in tiles) from water, so banks slope
+ * down to rivers and lakes instead of ending in a wall.
+ */
+function slopeBanks(map: MapFile): void {
+  const dist = new Array<number>(map.tiles.length).fill(Infinity);
+  const queue: Tile[] = [];
+  for (const t of map.tiles) {
+    if (WATER.has(t.terrain)) {
+      dist[t.y * map.width + t.x] = 0;
+      queue.push(t);
+    }
+  }
+  for (let i = 0; i < queue.length; i++) {
+    const t = queue[i];
+    const d = dist[t.y * map.width + t.x] + 1;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const n = tileAt(map, t.x + dx, t.y + dy);
+      if (n && dist[n.y * map.width + n.x] > d) {
+        dist[n.y * map.width + n.x] = d;
+        queue.push(n);
+      }
+    }
+  }
+  map.tiles.forEach((t, i) => {
+    if (!WATER.has(t.terrain)) t.height = Math.min(t.height, dist[i]);
+  });
 }

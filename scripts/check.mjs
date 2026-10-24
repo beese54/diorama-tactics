@@ -46,10 +46,44 @@ for (const [x, y] of [[16, 16], [6, 7], [26, 26], [6, 25], [26, 6]]) {
     return { tile: h && [h.x, h.y, h.terrain], panel: document.querySelector('#tile-info .name')?.textContent, hidden: document.querySelector('#tile-info')?.hidden };
   });
   const expected = await page.evaluate((x, y) => window.__map.tile(x, y).terrain, x, y);
-  const ok = got.tile && got.tile[0] === x && got.tile[1] === y && got.tile[2] === expected && !got.hidden && !!got.panel;
-  check(`hover tile (${x},${y}) = ${expected}`, ok, JSON.stringify(got));
+  // The pick must be what you can see: the tile itself, or a taller column in front of it.
+  const target = await page.evaluate((x, y) => window.__map.tile(x, y), x, y);
+  const exact = got.tile && got.tile[0] === x && got.tile[1] === y && got.tile[2] === expected;
+  const occluder = got.tile && (await page.evaluate((x, y) => window.__map.tile(x, y).height, got.tile[0], got.tile[1])) > target.height;
+  const ok = (exact || occluder) && !got.hidden && !!got.panel;
+  check(`hover tile (${x},${y}) = ${expected}${exact ? '' : ' (occluded by taller tile)'}`, ok, JSON.stringify(got));
 }
 await shot('02-hover');
+
+// Height-aware picking: from three camera poses, aim at the top of a low tile behind
+// the mountain. The pick must be what you can see — that tile, or a taller column in front.
+const hoverAt = async (x, y) => {
+  const pos = await page.evaluate((x, y) => window.__map.tileScreenPos(x, y), x, y);
+  await page.mouse.move(pos.x, pos.y);
+  await new Promise((r) => setTimeout(r, 150));
+  return page.evaluate(() => {
+    const h = window.__map.hovered();
+    return h && { x: h.x, y: h.y, height: h.height, terrain: h.terrain };
+  });
+};
+const poses = [
+  { name: 'iso', az: 45, polar: 60, zoom: 1.5, target: [12, 12], expectOccluded: false },
+  { name: 'low behind peak', az: 45, polar: 75, zoom: 1.5, target: [22, 22], expectOccluded: true },
+  { name: 'top-down', az: 45, polar: 25, zoom: 1.5, target: [22, 22], expectOccluded: false },
+];
+for (const p of poses) {
+  await page.evaluate((p) => window.__map.setPose(p.az, p.polar, p.zoom, p.target[0], p.target[1]), p);
+  await new Promise((r) => setTimeout(r, 300));
+  const [tx, ty] = p.target;
+  const target = await page.evaluate((x, y) => window.__map.tile(x, y), tx, ty);
+  const got = await hoverAt(tx, ty);
+  const isTarget = got && got.x === tx && got.y === ty;
+  const ok = p.expectOccluded ? got && !isTarget && got.height > target.height : isTarget;
+  check(`pick from pose "${p.name}" at (${tx},${ty})`, !!ok, JSON.stringify({ target: target.terrain, got }));
+  if (p.expectOccluded) await shot('02b-occluded');
+}
+await page.evaluate(() => window.__map.setPose(45, 60, 1, 16, 16));
+await new Promise((r) => setTimeout(r, 300));
 
 // Orbit clamp: drag far up and down, polar angle must stay in [25, 75].
 const mid = { x: 960, y: 540 };

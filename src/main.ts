@@ -84,6 +84,10 @@ function main(): void {
           const rect = canvas.getBoundingClientRect();
           return { x: rect.left + ((p.x + 1) / 2) * rect.width, y: rect.top + ((1 - p.y) / 2) * rect.height };
         },
+        setPose(azimuthDeg: number, polarDeg: number, zoom: number, x?: number, y?: number) {
+          const t = x === undefined || y === undefined ? undefined : tileAt(map, x, y);
+          rig.setPose(azimuthDeg, polarDeg, zoom, t && mapMesh.tileCenter(t));
+        },
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
           zoom: rig.camera.zoom,

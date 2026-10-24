@@ -103,7 +103,7 @@ coast        → beach, cliffs, sea                    rivers       → run down
 ### 3c. Map roadmap (each step is small and visible on screen)
 - [x] **M0: Scaffold.** Vite + TS + three, pixel-perfect low-res render pipeline, empty scene with a crisp test tile.
 - [x] **M1: Flat grid.** A few terrain types with procedurally drawn pixel textures, tilted ortho camera, pan/zoom, tile cursor and info box (terrain name, move cost, defence).
-- [ ] **M2: Elevation.** Stepped tile columns with cliff-side textures, mouse picking that accounts for height, camera rotation in 90° steps so tall terrain doesn't hide tiles behind it.
+- [x] **M2: Elevation.** Stepped tile columns with cliff-side textures, mouse picking that accounts for height, camera rotation in 90° steps so tall terrain doesn't hide tiles behind it.
 - [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
@@ -149,3 +149,9 @@ _(filled in after each step)_
 - Test layout (`testMap.ts`) is hand-placed so every style can be seen. It gets replaced by the generator in M3.
 - Verified: 31 unit tests; `scripts/check.mjs` (puppeteer-core + installed Chrome) 13/13: 480×270 integer scale, hover on 5 known tiles matches panel + tile, polar/zoom/pan clamps, no console errors.
 - Notes: texels shimmer at zoom 0.5 (minification without mipmaps). Accepted for now; revisit in M9 if it bothers you.
+
+### M2 review (2026-10-24)
+- Done, after the user said M1 looked too flat: heights follow terrain type. Water 0; swamp/marsh/bog and beach 1; plains 2 with rolling 3s; light woods 2 → forest 3 → pine 4; ruins mound 3; badlands mesas 3–5; dunes 2–3; mountain hills 3 → scree 4–5 → rock 6–7 → snowy peak 8. Bank pass: land is never higher than its distance to water, so banks step down to the river.
+- Columns: only cliff faces exposed to a lower neighbour are built, one quad per step. The top step carries the terrain's lip (fixes the M0 repeated-grass-lip issue), lower steps use the material (soil/rock/sand/redrock), and anything below height 0 is earth bedrock. Vertex-colour depth shading on cliff faces. Still one mesh and one draw call; the base box was removed because edge columns run down to −4 steps.
+- Picking returns the first column the ray hits (top or cliff face), i.e. the visible one.
+- Verified: 34 unit tests (height rules, bank slope, mountain/forest ordering); check.mjs 16/16, including 3 camera poses (iso, low angle where the peak hides the target, top-down).
