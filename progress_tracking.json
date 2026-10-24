@@ -2,19 +2,99 @@
   "phase": "map-terrain",
   "updated": "2026-10-24",
   "tasks": [
-    { "id": "M0", "title": "Scaffold + pixel-perfect pipeline", "status": "done", "commit": "see git log" },
-    { "id": "M1", "title": "Flat 32x32 grid, textures, orbit camera, hover + info panel", "status": "done", "commit": "see git log" },
-    { "id": "M2", "title": "Stepped elevation columns + height-aware picking", "status": "done", "commit": "see git log" },
-    { "id": "M2b", "title": "Rounded lips and feet; one-step changes become seamless slopes", "status": "done", "commit": "see git log" },
-    { "id": "M2c", "title": "Wider varied rounding, banks to waterline, map-wide painted water", "status": "done", "commit": "see git log" },
-    { "id": "M2d", "title": "Map-wide blended ground, looping water, swaying flowers and tufts", "status": "done", "commit": "see git log" },
-    { "id": "M3", "title": "Seeded generator: elevation, moisture, biomes, JSON", "status": "pending", "commit": null },
-    { "id": "M4", "title": "Rivers, flowing water shader, lakes, coast, waterfalls", "status": "pending", "commit": null },
-    { "id": "M5", "title": "Forest / swamp / mountain decor", "status": "pending", "commit": null },
-    { "id": "M6", "title": "Settlements, roads, bridges, landmarks", "status": "pending", "commit": null },
-    { "id": "M7", "title": "Weather: rain, storm, snow, fog, wind", "status": "pending", "commit": null },
-    { "id": "M8", "title": "Day/night + ambience", "status": "pending", "commit": null },
-    { "id": "M9", "title": "Performance pass", "status": "pending", "commit": null }
+    {
+      "id": "M0",
+      "title": "Scaffold + pixel-perfect pipeline",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "M1",
+      "title": "Flat 32x32 grid, textures, orbit camera, hover + info panel",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "M2",
+      "title": "Stepped elevation columns + height-aware picking",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "M2b",
+      "title": "Rounded lips and feet; one-step changes become seamless slopes",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "M2c",
+      "title": "Wider varied rounding, banks to waterline, map-wide painted water",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "M2d",
+      "title": "Map-wide blended ground, looping water, swaying flowers and tufts",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "DOC1",
+      "title": "Visual history (evolution/), README with fan-project disclaimer, neutral project name, public GitHub repo",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "M3",
+      "title": "Seeded generator: elevation, moisture, biomes, JSON",
+      "status": "pending",
+      "commit": null
+    },
+    {
+      "id": "M4",
+      "title": "Rivers, flowing water shader, lakes, coast, waterfalls",
+      "status": "pending",
+      "commit": null
+    },
+    {
+      "id": "M5",
+      "title": "Forest / swamp / mountain decor",
+      "status": "pending",
+      "commit": null
+    },
+    {
+      "id": "M6",
+      "title": "Settlements, roads, bridges, landmarks",
+      "status": "pending",
+      "commit": null
+    },
+    {
+      "id": "M7",
+      "title": "Weather: rain, storm, snow, fog, wind",
+      "status": "pending",
+      "commit": null
+    },
+    {
+      "id": "M8",
+      "title": "Day/night + ambience",
+      "status": "pending",
+      "commit": null
+    },
+    {
+      "id": "M9",
+      "title": "Performance pass",
+      "status": "pending",
+      "commit": null
+    }
   ],
-  "backlog": ["sprite animator", "units", "cards & turns", "battle scene", "skill cut-ins", "unions", "enemy AI", "audio"]
+  "backlog": [
+    "sprite animator",
+    "units",
+    "cards & turns",
+    "battle scene",
+    "skill cut-ins",
+    "unions",
+    "enemy AI",
+    "audio"
+  ]
 }

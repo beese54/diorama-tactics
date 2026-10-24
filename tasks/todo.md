@@ -112,6 +112,7 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] MapMesh: tops sample the ground texture (own material group), sides keep the atlas; frame swap in `update()`
   - [x] `Flora.ts`: placement on grass pixels (clustered, meadow dense), billboard sprites with wind sway shader
   - [x] tests (ground blending, water loop, flora placement), check.mjs animation checks, GIF capture for review
+- [x] **DOC1: Visual history and public repo.** Rendered every milestone commit from the same camera views into `evolution/land/` (timeline GIF, before/after pairs, notes per version); placeholders for characters and battles; root README with a clear fan-project disclaimer; neutral project name "Diorama Tactics"; published as a public GitHub repo.
 - [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
