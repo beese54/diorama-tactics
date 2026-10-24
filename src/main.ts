@@ -1,14 +1,15 @@
 import * as THREE from 'three';
-import { BASE_HEIGHT, BASE_WIDTH, PixelPipeline } from './render/PixelPipeline';
-import { earthSide, grassTop } from './map/textures';
+import { PixelPipeline } from './render/PixelPipeline';
+import { CameraRig } from './render/CameraRig';
+import { MapMesh } from './map/MapMesh';
+import { Cursor } from './map/Cursor';
+import { createTestMap } from './map/testMap';
+import { tileAt, type Tile } from './map/types';
+import { TileInfo } from './ui/TileInfo';
 
-const STEP_HEIGHT = 0.5;
-/** Internal pixels per world unit for this test view. */
-const PIXELS_PER_UNIT = 48;
-
-function createPipeline(): PixelPipeline | null {
+function createPipeline(stage: HTMLElement): PixelPipeline | null {
   try {
-    return new PixelPipeline(document.body);
+    return new PixelPipeline(stage);
   } catch {
     const msg = document.createElement('p');
     msg.id = 'fallback';
@@ -18,65 +19,79 @@ function createPipeline(): PixelPipeline | null {
   }
 }
 
-/** One stepped column: grass top, earth strata repeated once per height step. */
-function createColumn(steps: number, top: THREE.Texture, side: THREE.Texture): THREE.Mesh {
-  const sideTex = side.clone();
-  sideTex.repeat.set(1, steps);
-  sideTex.needsUpdate = true;
-
-  const sideMat = new THREE.MeshLambertMaterial({ map: sideTex });
-  const topMat = new THREE.MeshLambertMaterial({ map: top });
-  const bottomMat = new THREE.MeshLambertMaterial({ color: 0x2a1e14 });
-
-  const height = steps * STEP_HEIGHT;
-  // BoxGeometry face order: +x, -x, +y, -y, +z, -z
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, height, 1), [
-    sideMat, sideMat, topMat, bottomMat, sideMat, sideMat,
-  ]);
-  mesh.position.y = height / 2;
-  return mesh;
-}
-
-function createIsoCamera(): THREE.OrthographicCamera {
-  const halfW = BASE_WIDTH / PIXELS_PER_UNIT / 2;
-  const halfH = BASE_HEIGHT / PIXELS_PER_UNIT / 2;
-  const camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.1, 100);
-
-  const azimuth = THREE.MathUtils.degToRad(45);
-  const elevation = THREE.MathUtils.degToRad(30);
-  const distance = 20;
-  camera.position.set(
-    distance * Math.cos(elevation) * Math.sin(azimuth),
-    distance * Math.sin(elevation),
-    distance * Math.cos(elevation) * Math.cos(azimuth),
-  );
-  camera.lookAt(0, 0.75, 0);
-  return camera;
-}
-
 function main(): void {
-  const pipeline = createPipeline();
+  const stage = document.getElementById('stage')!;
+  const pipeline = createPipeline(stage);
   if (!pipeline) return;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0b0d14);
-
   scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x3a2c20, 1.4));
   const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
   sun.position.set(-4, 10, 6);
   scene.add(sun);
 
-  // M0 test: three stepped columns (h1, h2, h3) to check crisp texels and strata tiling.
-  const top = grassTop();
-  const side = earthSide();
-  [1, 2, 3].forEach((steps, i) => {
-    const column = createColumn(steps, top, side);
-    column.position.x = i - 1;
-    scene.add(column);
+  const map = createTestMap();
+  const mapMesh = new MapMesh(map);
+  scene.add(mapMesh.group);
+
+  const cursor = new Cursor();
+  scene.add(cursor.group);
+
+  const canvas = pipeline.renderer.domElement;
+  const rig = new CameraRig(canvas, map.width / 2);
+  const tileInfo = new TileInfo(document.getElementById('ui')!);
+
+  const pointer = new THREE.Vector2();
+  let pointerInside = false;
+  canvas.addEventListener('pointermove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    pointer.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+    pointerInside = true;
+  });
+  canvas.addEventListener('pointerleave', () => (pointerInside = false));
+
+  const raycaster = new THREE.Raycaster();
+  let hovered: Tile | null = null;
+
+  const timer = new THREE.Timer();
+  pipeline.renderer.setAnimationLoop((time) => {
+    timer.update(time);
+    rig.update();
+
+    if (pointerInside) {
+      raycaster.setFromCamera(pointer, rig.camera);
+      hovered = mapMesh.pick(raycaster);
+    } else {
+      hovered = null;
+    }
+    cursor.setTarget(hovered ? mapMesh.tileCenter(hovered) : null);
+    cursor.update(timer.getElapsed());
+    tileInfo.show(hovered);
+
+    pipeline.render(scene, rig.camera);
   });
 
-  const camera = createIsoCamera();
-  pipeline.renderer.setAnimationLoop(() => pipeline.render(scene, camera));
+  if (import.meta.env.DEV) {
+    // Hooks for scripts/check.mjs (headless verification); stripped from production builds.
+    Object.assign(window, {
+      __map: {
+        tile: (x: number, y: number) => tileAt(map, x, y),
+        hovered: () => hovered,
+        tileScreenPos(x: number, y: number) {
+          const t = tileAt(map, x, y)!;
+          const p = mapMesh.tileCenter(t).project(rig.camera);
+          const rect = canvas.getBoundingClientRect();
+          return { x: rect.left + ((p.x + 1) / 2) * rect.width, y: rect.top + ((1 - p.y) / 2) * rect.height };
+        },
+        camera: () => ({
+          polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
+          zoom: rig.camera.zoom,
+          target: rig.controls.target.toArray(),
+        }),
+      },
+    });
+  }
 }
 
 main();

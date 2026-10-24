@@ -102,7 +102,7 @@ coast        → beach, cliffs, sea                    rivers       → run down
 
 ### 3c. Map roadmap (each step is small and visible on screen)
 - [x] **M0: Scaffold.** Vite + TS + three, pixel-perfect low-res render pipeline, empty scene with a crisp test tile.
-- [ ] **M1: Flat grid.** A few terrain types with procedurally drawn pixel textures, tilted ortho camera, pan/zoom, tile cursor and info box (terrain name, move cost, defence).
+- [x] **M1: Flat grid.** A few terrain types with procedurally drawn pixel textures, tilted ortho camera, pan/zoom, tile cursor and info box (terrain name, move cost, defence).
 - [ ] **M2: Elevation.** Stepped tile columns with cliff-side textures, mouse picking that accounts for height, camera rotation in 90° steps so tall terrain doesn't hide tiles behind it.
 - [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
@@ -143,3 +143,9 @@ _(filled in after each step)_
 - Done: Vite 8 + TS 5.9 + three 0.186; 480x270 drawing buffer with integer CSS upscale computed in device pixels (handles 125%/150% Windows scaling); procedural 16px grass/earth textures; three test columns h1-h3 at isometric 45°/30°.
 - Verified: 4/4 unit tests (scale fit), `npm run build` clean, headless Chrome screenshot at 1920x1080 shows scale 4 with hard texel edges, no console errors.
 - Known, deferred to M2: the side texture repeats the grass lip on every height step; only the top step should carry it (fix when columns are rebuilt as merged/instanced geometry).
+
+### M1 review (2026-10-24)
+- Done: all 22 terrain types have data (name, move cost, defence) plus a procedural 16px painter (4 variants each) in one texture atlas. The whole map is one merged mesh, so it draws in a single call. Earth-strata diorama base. FFT cursor (flashing outline and bobbing pointer). Free-orbit ortho camera (polar 25–75°, zoom 0.5–3, WASD and right-drag pan clamped to the map). FFT-blue info panel with Silkscreen font, scaled by `--px`.
+- Test layout (`testMap.ts`) is hand-placed so every style can be seen. It gets replaced by the generator in M3.
+- Verified: 31 unit tests; `scripts/check.mjs` (puppeteer-core + installed Chrome) 13/13: 480×270 integer scale, hover on 5 known tiles matches panel + tile, polar/zoom/pan clamps, no console errors.
+- Notes: texels shimmer at zoom 0.5 (minification without mipmaps). Accepted for now; revisit in M9 if it bothers you.

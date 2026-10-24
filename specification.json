@@ -71,7 +71,7 @@
       "moisture": "float 0..1",
       "water": "null | { kind: 'river'|'lake'|'sea'|'ford'|'waterfall', flow: [dx, dy] }",
       "feature": "null | FeatureId",
-      "seed_rand": "float 0..1 (per-tile variation for decor placement)"
+      "seedRand": "float 0..1 (per-tile variation: texture variant, decor placement)"
     },
     "TerrainId": [
       "plains", "meadow", "farmland", "road", "light_woods", "forest", "pine_forest",
