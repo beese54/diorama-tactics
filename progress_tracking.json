@@ -1,0 +1,17 @@
+{
+  "phase": "map-terrain",
+  "updated": "2026-10-24",
+  "tasks": [
+    { "id": "M0", "title": "Scaffold + pixel-perfect pipeline", "status": "done", "commit": "see git log" },
+    { "id": "M1", "title": "Flat 32x32 grid, textures, orbit camera, hover + info panel", "status": "pending", "commit": null },
+    { "id": "M2", "title": "Stepped elevation columns + height-aware picking", "status": "pending", "commit": null },
+    { "id": "M3", "title": "Seeded generator: elevation, moisture, biomes, JSON", "status": "pending", "commit": null },
+    { "id": "M4", "title": "Rivers, flowing water shader, lakes, coast, waterfalls", "status": "pending", "commit": null },
+    { "id": "M5", "title": "Forest / swamp / mountain decor", "status": "pending", "commit": null },
+    { "id": "M6", "title": "Settlements, roads, bridges, landmarks", "status": "pending", "commit": null },
+    { "id": "M7", "title": "Weather: rain, storm, snow, fog, wind", "status": "pending", "commit": null },
+    { "id": "M8", "title": "Day/night + ambience", "status": "pending", "commit": null },
+    { "id": "M9", "title": "Performance pass", "status": "pending", "commit": null }
+  ],
+  "backlog": ["sprite animator", "units", "cards & turns", "battle scene", "skill cut-ins", "unions", "enemy AI", "audio"]
+}

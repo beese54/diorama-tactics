@@ -1,0 +1,145 @@
+# Yggdra Union–style tactics game in three.js — Research & Plan
+
+Status: **RESEARCH DONE — waiting for answers to the open questions (bottom of file) before any code.**
+
+---
+
+## 1. Reference game (what we are recreating)
+
+*Yggdra Union* (Sting, GBA 2006; PSP remake *We'll Never Fight Alone*). Turn-based tactics on a grid, plus a real-time battle cut-scene that the player can influence.
+
+### Map layer
+- Grid battlefield with terrain (plains, forest, mountain, water, town, etc.); terrain gives defence ("Geo") bonuses and can be changed by some card skills.
+- Small pixel-art unit sprites standing on tiles; cursor driven.
+- **Turn flow:** player picks **one card** at the start of their turn → moves units → may start **one** attack (a Union battle) → ends turn → enemy does the same.
+- **Card:** `POW` (damage the loser takes), `MOV` (one movement pool shared by *all* your units this turn), `ACE` (weapon type the Union leader needs to use the card skill; "All" = anyone), and a **skill**. Each card can be used only once per battlefield.
+- **Union:** the attacker becomes the leader. Allies next to them join: **female leader = `+` shape, male leader = `x` shape**. Up to 5 units, so up to 5 sequential **clashes**. Enemies form Unions the same way.
+- **Morale** works as HP. Losing a clash costs Morale; winning costs nothing.
+- **Weapon triangle** (rock-paper-scissors between weapon types), plus unit-type matchups.
+- Unit stats: Morale, GEN (defence in charge/counter), ATK, TEC (offence in charge/counter, skill), LUK (crits/flash attacks).
+
+### Battle (clash) layer: the part you want to see
+Side view, attacker on one side and defender on the other. Each unit is a **squad: 1 "head" (the named character) + up to 7 soldiers** (large units like knights: 4 bigger sprites). Up to 80 soldiers can appear across a whole Union battle.
+
+A clash plays in three phases:
+1. **Charge** (attacker TEC vs defender GEN): the attacking squad runs in and strikes. A LUK crit can knock off the enemy head and put them in **Panic** (a few seconds of free damage).
+2. **Counterattack** (TEC vs GEN): the defender pushes back. Bow units, and units hit by bows, can't counter. A crit also cancels the counter.
+3. **Attack phase** (ATK vs ATK): the main melee, one soldier against another, with "Flash Attacks" from LUK. It ends when one side has no fighters left.
+
+During the clash:
+- **Stance toggle (real-time input):** **Aggressive** uses up the skill gauge for +2 effectiveness. **Passive** fills the gauge at −2. Neutral sits between them. The music tempo changes with the stance.
+- **Skill gauge** (player) / **Rage bar** (enemy). When the gauge is full and the card's conditions are met (ACE weapon, sometimes a specific character or time of day), the player can fire the **card skill**: a character cut-in plus a big effect.
+- **Combat-effectiveness icon** at the bottom of the screen (weapon/attribute/type advantage).
+- **Result:** the loser takes Morale damage based on the winner's card POW %, the surviving soldiers (8% per small, 16% per large), a Head-Alive bonus, crits, ATK − loser GEN, and finally the loser's Geo defence.
+
+---
+
+## 2. What has to be built in three.js
+
+| # | System | three.js / tech approach |
+|---|--------|--------------------------|
+| 1 | **Pixel-perfect render pipeline** | Render into a low-res `WebGLRenderTarget` (e.g. 480×270), then draw it full screen with `NearestFilter` at an integer scale. `antialias:false`, `image-rendering: pixelated`, snap sprite positions to whole pixels. Without this the pixels shimmer. |
+| 2 | **Cameras** | `OrthographicCamera` for both layers. Map: tilted down (~30–45°) over a 3D tile grid, so it is 2.5D. Battle: side-on, with parallax background layers. Camera tweens for shake, zoom-on-skill and pan. |
+| 3 | **Sprite sheet animator** | Billboard quads (`THREE.Sprite` or a camera-facing `PlaneGeometry`). Animation is done by changing `texture.offset/repeat` (UVs) per frame, with clips (idle, run, attack, hit, die, cast), per-frame timing and events ("hit lands on frame 3"). Core reusable piece. |
+| 4 | **Crowd rendering for squads** | Up to 16 soldiers on screen per clash. Plain sprites are fine for that, and `InstancedMesh` with a per-instance UV attribute is an option later if needed. Each soldier has a small state machine: run → engage target → swing → recoil/die. |
+| 5 | **Tile map** | Grid data → instanced box/plane tiles with a terrain texture atlas, height for mountains, an animated water shader. Highlight overlays for move range, attack range and Union shapes. |
+| 6 | **Map interaction** | Cursor (keyboard and mouse raycast onto the grid), unit select, BFS move range limited by the **shared MOV pool** plus terrain cost, path preview, move tween. |
+| 7 | **Game rules core (pure TS, no three.js)** | Units, stats, weapon triangle, terrain, cards, Union formation detection (`+`/`x`), clash resolution formulas, Morale damage, turn manager, enemy AI. Kept separate from rendering so it can be unit-tested. |
+| 8 | **Battle director** | Timeline/state machine that drives a clash: intro → charge → counter → melee → result → next clash in the Union. Reads input for the stance toggle and the skill trigger. |
+| 9 | **Skill cut-ins and VFX** | Portrait slide-in, screen flash, particle sprites (slash, fire, light), screen shake, hit-stop (a freeze of a few frames). Done with sprite-sheet effects and simple shaders. |
+| 10 | **UI / HUD** | Card selection hand, unit info panel, Morale bars, skill gauge, stance indicator, damage numbers. Recommendation: an HTML/CSS overlay with a pixel font (fast to build), with only the battle HUD drawn in-canvas. |
+| 11 | **Scene / state manager** | Title → Map ⇄ Battle transitions (pixel wipe or mosaic), all in one renderer. |
+| 12 | **Input** | GBA-style key map: arrows = D-pad, Z = A, X = B, A/S = L/R, Enter = Start. Mouse for the map. |
+| 13 | **Assets (the main non-code work)** | Pixel sprite sheets for units, soldiers, terrain, portraits and effects. **The original Yggdra sprites are copyrighted and can't be redistributed**, so we start with procedurally generated placeholders, then move to free packs (OpenGameArt / itch.io), or art you draw in Aseprite (JSON sheet export). |
+| 14 | **Audio** (later) | WebAudio, with stance-based tempo change like the original. |
+| 15 | **Tooling** | Vite + TypeScript + three, Vitest for the rules core, git for atomic commits. |
+
+---
+
+## 3. ACTIVE PHASE: the world map (terrain only)
+
+Focus decided 2026-10-24: build the terrain map first. Units, battles, unions and cards come later (section 4).
+
+### 3a. One fictional continent where the terrain follows the land
+Every tile comes from **elevation + moisture + water flow**, so the biomes join up naturally and don't look like random patches:
+
+```
+high + dry   → rocky peaks, scree, snowcaps          high + wet   → alpine pine forest, glacier
+mid  + dry   → hills, badlands, canyon               mid  + wet   → dense forest, waterfalls
+low  + dry   → plains, farmland, savanna/desert      low  + wet   → swamp, marsh, bog, lake
+coast        → beach, cliffs, sea                    rivers       → run downhill from peaks to lake/sea
+```
+
+### 3b. Terrain catalogue
+**Your asks:** mountains (with elevation), swamp, forest, rivers with flowing water, plains, rain.
+
+**Suggested additions that fit the same land:**
+| Group | Terrain / feature | Why it fits |
+|-------|-------------------|-------------|
+| Elevation | **Hills** (1–2 steps up), **cliffs** (sheer drops), **plateaus/mesas**, **canyon/ravine** cut by a river | Gives height variety between plains and peaks. In tactics games, high ground is the core of positioning. |
+| Elevation | **Snowcaps** above a height line, **scree/rock fields** below the peaks | Shows how high a peak is at a glance. |
+| Water | **Waterfalls** wherever a river drops a level, **rapids**, **lake**, **sea/coast** with foam, **shallow ford** (crossable) vs **deep water** | Rivers need somewhere to start and end. Fords and bridges create chokepoints. |
+| Water | **Delta / estuary** where the river meets the sea, splitting into channels | Natural place for the river to end. Leads into marsh. |
+| Wetland | **Swamp** (murky, dead trees), **marsh/reeds**, **bog** with low fog | Low and wet areas next to rivers and lakes. |
+| Woodland | **Light woods** vs **dense forest**, **pine forest** at altitude, an **ancient/giant-tree grove** (fantasy landmark) | Different kinds of forest at different heights. |
+| Open land | **Plains/grass**, **flower meadow**, **farmland/wheat fields**, **dirt roads** linking settlements | Roads and farms make the land look lived in. |
+| Dry land | **Badlands / desert** with dunes, an **oasis** | Contrast to the green and wet regions. |
+| Fantasy | **Ancient ruins**, **crystal field / ley-line glow**, **volcanic ridge with lava flow** (optional), **cursed wasteland** | Landmarks you can tie to the story and use as card skill terrain later. |
+| Built | **Villages**, **castle/fort**, **watchtower**, **stone and wooden bridges**, **walls/gates**, **harbour/docks** | Strategic points and shelter (gameplay later). |
+| Life | Swaying trees and grass tufts, birds, fireflies in the swamp at night, fish ripples, smoke from village chimneys | Small motion that makes the map feel alive. |
+
+**Weather and atmosphere (map-wide layers):**
+- **Rain:** falling streaks, splash ripples on water and ground, darker and cooler light, wet ground sheen.
+- **Thunderstorm:** rain plus lightning flashes and screen tint.
+- **Snow:** falling flakes, more snow on high ground.
+- **Fog/mist:** thick over the swamp, morning mist in valleys.
+- **Wind:** trees and grass sway harder, rain falls at an angle.
+- **Day/night cycle:** dawn, day, dusk, night lighting, lit windows and lanterns at night. The original game had time of day affecting card skills, so this pays off later.
+- **Cloud shadows** drifting across the land.
+- Optional: heat haze over the desert, falling leaves in the forest.
+
+**Gameplay hooks for later** (data only for now; each tile stores them): move cost per terrain, Geo/defence bonus, height advantage, and weather modifiers (e.g. rain floods fords, thick fog cuts sight range).
+
+### 3c. Map roadmap (each step is small and visible on screen)
+- [x] **M0: Scaffold.** Vite + TS + three, pixel-perfect low-res render pipeline, empty scene with a crisp test tile.
+- [ ] **M1: Flat grid.** A few terrain types with procedurally drawn pixel textures, tilted ortho camera, pan/zoom, tile cursor and info box (terrain name, move cost, defence).
+- [ ] **M2: Elevation.** Stepped tile columns with cliff-side textures, mouse picking that accounts for height, camera rotation in 90° steps so tall terrain doesn't hide tiles behind it.
+- [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
+- [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
+- [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
+- [ ] **M6: Settlements and roads.** Villages, castle, roads connecting them, bridges where roads cross rivers, ruins and landmarks.
+- [ ] **M7: Weather.** Rain first (particles, splashes, darker lighting), then storm, snow, fog, wind.
+- [ ] **M8: Day/night and ambience.** Light cycle, cloud shadows, swaying foliage, fireflies, chimney smoke.
+- [ ] **M9: Large-map performance.** Instancing/chunking and culling, holding 60 fps on the full map.
+
+---
+
+## 4. BACKLOG: later phases (parked)
+- [ ] Sprite sheet animator (shared by units and the battle scene)
+- [ ] Characters and units on the map: select, shared-MOV BFS range, move
+- [ ] Cards and turn flow: pick a card, MOV pool, one attack per turn
+- [ ] Battle scene v0: side view, 1 head + 7 soldiers per squad, charge, clash, fall (scripted)
+- [ ] Battle scene v1: charge, counter and melee phases from stats; stance toggle; skill gauge; result
+- [ ] Card skill cut-ins and VFX: portrait slide-in, flash, hit-stop, shake
+- [ ] Unions: `+`/`x` detection and highlight, chained clashes
+- [ ] Enemy AI, win/lose conditions
+- [ ] Polish: transitions, audio, real art pass
+
+Before M0: write `specification.json`, `definition_of_done.md` and `progress_tracking.json` (CLAUDE.md blueprint artifacts), scoped to the map phase, and get approval.
+
+---
+
+## 5. Decisions (map phase), 2026-10-24
+- Elevation: **stepped block columns** (integer height per tile, pixel-textured cliff sides)
+- Map size: **32×32 tiles**
+- Source: **seeded procedural generator**, saved as editable JSON
+- Camera: **free orbit** (orthographic, polar angle clamped, pixel pipeline kept)
+- [ASSUMED, not objected to] 480×270 internal resolution, Vite + TypeScript + three, Vitest, git init, procedural placeholder art, project stays in OneDrive
+
+## Review
+_(filled in after each step)_
+
+### M0 review (2026-10-24)
+- Done: Vite 8 + TS 5.9 + three 0.186; 480x270 drawing buffer with integer CSS upscale computed in device pixels (handles 125%/150% Windows scaling); procedural 16px grass/earth textures; three test columns h1-h3 at isometric 45°/30°.
+- Verified: 4/4 unit tests (scale fit), `npm run build` clean, headless Chrome screenshot at 1920x1080 shows scale 4 with hard texel edges, no console errors.
+- Known, deferred to M2: the side texture repeats the grass lip on every height step; only the top step should carry it (fix when columns are rebuilt as merged/instanced geometry).

@@ -1,0 +1,137 @@
+{
+  "project": "Yggdra-style tactics map (three.js)",
+  "phase": "map-terrain",
+  "version": "0.1.0-draft",
+  "scope": {
+    "in": [
+      "Pixel-perfect low-res render pipeline",
+      "32x32 stepped-elevation tile map",
+      "Seeded procedural continent generator (elevation, moisture, biomes, rivers)",
+      "Animated flowing water, waterfalls, coast",
+      "Terrain detail sprites (trees, reeds, rocks, dead trees, snow)",
+      "Settlements, roads, bridges, landmarks",
+      "Weather: rain, storm, snow, fog, wind",
+      "Day/night cycle and ambient life",
+      "Free-orbit orthographic camera, tile hover/select with info panel"
+    ],
+    "out_parked_in_backlog": [
+      "Units/characters", "Sprite animator for units", "Cards", "Turn flow",
+      "Battle scene", "Unions", "Enemy AI", "Audio"
+    ]
+  },
+  "stack": {
+    "runtime": "Browser (desktop Chrome/Edge/Firefox latest)",
+    "build": "vite@8.3.5",
+    "language": "TypeScript (strict)",
+    "render": "three@0.186.1",
+    "test": "vitest",
+    "node": ">=20 (dev machine: 24.11.1)",
+    "external_assets": "none - all textures drawn procedurally to canvas at startup [ASSUMED]"
+  },
+  "art_direction": {
+    "inspiration": "Final Fantasy Tactics (PS1) / Final Fantasy Tactics Advance (GBA) battle maps",
+    "cues": [
+      "Map is a floating diorama: a finite block of land over a dark gradient void, outer edges cut away to show layered earth/rock strata",
+      "Default view is classic isometric (azimuth 45 deg, elevation ~30 deg); free orbit still allowed",
+      "Stepped columns: textured pixel-art tile tops, darker strata/rock sides, light edge highlight on top rims",
+      "Muted, painterly earthy palette (desaturated greens, ochre, umber, slate) - not saturated",
+      "Water is semi-transparent: shallow tiles show the river bed, deep tiles darken",
+      "FFT-style cursor: flashing tile outline + floating pointer above the tile; info panel shows terrain name and height (e.g. 'Plains  h3')"
+    ]
+  },
+  "rendering": {
+    "internal_resolution": [480, 270],
+    "upscale": "largest integer scale that fits the window; letterbox remainder",
+    "texture_filter": "NearestFilter, no mipmaps",
+    "antialias": false,
+    "camera": {
+      "type": "OrthographicCamera",
+      "control": "free orbit around map centre target",
+      "rotate": "left-drag",
+      "pan": "right-drag or WASD",
+      "zoom": "wheel, ortho zoom clamped 0.5..3",
+      "polar_angle_deg": [25, 75],
+      "note": "Free orbit means pixels re-sample as the view turns; accepted trade-off of the free-orbit choice"
+    },
+    "lighting": "one directional sun + hemisphere ambient; parameters driven by time-of-day and weather"
+  },
+  "world": {
+    "units": "1 world unit = 1 tile width; 1 height step = 0.5 units",
+    "size": [32, 32],
+    "height_range": [0, 8],
+    "sea_level": 1,
+    "tile_texture_px": 16
+  },
+  "schemas": {
+    "Tile": {
+      "x": "int 0..31",
+      "y": "int 0..31",
+      "height": "int 0..8",
+      "terrain": "TerrainId",
+      "moisture": "float 0..1",
+      "water": "null | { kind: 'river'|'lake'|'sea'|'ford'|'waterfall', flow: [dx, dy] }",
+      "feature": "null | FeatureId",
+      "seed_rand": "float 0..1 (per-tile variation for decor placement)"
+    },
+    "TerrainId": [
+      "plains", "meadow", "farmland", "road", "light_woods", "forest", "pine_forest",
+      "hills", "mountain", "peak_snow", "scree", "cliff", "swamp", "marsh", "bog",
+      "beach", "shallow_water", "deep_water", "badlands", "desert", "ruins", "crystal_field"
+    ],
+    "FeatureId": [
+      "village", "castle", "watchtower", "bridge_stone", "bridge_wood", "ancient_tree", "oasis"
+    ],
+    "TerrainDef": {
+      "id": "TerrainId",
+      "name": "display string",
+      "moveCost": "int (99 = impassable) - data only this phase",
+      "defense": "int percent - data only this phase",
+      "palette": "array of hex colours used by the procedural texture painter"
+    },
+    "MapFile": {
+      "format": "json",
+      "fields": { "version": 1, "seed": "uint32", "width": 32, "height": 32, "tiles": "Tile[] row-major" }
+    }
+  },
+  "generator": {
+    "deterministic": "same seed => byte-identical MapFile JSON",
+    "steps": [
+      "elevation = fractal noise * continent falloff, quantised to 0..8",
+      "moisture = independent fractal noise + proximity-to-water bonus",
+      "biome = lookup(elevation band, moisture band)",
+      "rivers = from 2-4 high sources, follow steepest non-ascending neighbour until sea/lake; fill pits into lakes",
+      "waterfall where a river step drops >= 2 height levels",
+      "settlements on flat dry tiles near rivers; roads = A* between settlements; bridge where road crosses river"
+    ],
+    "controls": "R = new random seed; seed shown in HUD; ?seed=N URL param"
+  },
+  "weather": {
+    "states": ["clear", "rain", "storm", "snow", "fog"],
+    "wind": "float 0..1, affects rain angle and foliage sway",
+    "toggle": "number keys 1-5 [ASSUMED]"
+  },
+  "time_of_day": { "range": "0..24h", "speed": "adjustable, T to pause/advance [ASSUMED]" },
+  "ui": {
+    "tile_info_panel": "HTML overlay with pixel font: terrain name, height, move cost, defense, water/feature",
+    "hud": "seed, weather, time, fps (debug toggle F3)"
+  },
+  "error_behavior": {
+    "webgl_unavailable": "show static HTML message, no crash",
+    "bad_seed_param": "fall back to random seed and show it",
+    "generator_invariant_failure": "throw in dev; tests guard invariants"
+  },
+  "file_layout": {
+    "src/main.ts": "bootstrap",
+    "src/render/PixelPipeline.ts": "low-res target + integer upscale",
+    "src/render/CameraRig.ts": "free-orbit ortho camera",
+    "src/map/types.ts": "Tile/MapFile types",
+    "src/map/terrain.ts": "TerrainDef table",
+    "src/map/generator.ts": "pure, no three.js",
+    "src/map/MapMesh.ts": "builds instanced columns from MapFile",
+    "src/map/textures.ts": "procedural pixel texture painter",
+    "src/water/": "water shader + rivers/waterfalls",
+    "src/decor/": "billboard decor",
+    "src/weather/": "rain/snow/fog/storm",
+    "src/ui/": "tile info, HUD"
+  }
+}
