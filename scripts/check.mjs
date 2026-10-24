@@ -116,6 +116,19 @@ await page.keyboard.up('KeyD');
 const panned = await page.evaluate(() => window.__map.camera());
 check('pan clamps to map', Math.abs(panned.target[0]) <= 16.001 && Math.abs(panned.target[2]) <= 16.001, JSON.stringify(panned.target));
 
+// Animation: flowers exist, the water loop advances with time and wraps, and the picture moves.
+const floraCount = await page.evaluate(() => window.__map.floraCount());
+check('flowers and tufts placed', floraCount > 100, String(floraCount));
+const at = async (seconds) => {
+  await page.evaluate((s) => window.__map.setTime(s), seconds);
+  await new Promise((r) => setTimeout(r, 300));
+  return { frame: await page.evaluate(() => window.__map.waterFrame()), shot: await page.screenshot({ encoding: 'base64' }) };
+};
+const [t0, tHalf, tLoop] = [await at(0), await at(0.5), await at(2)];
+check('water frames advance and loop', t0.frame === 0 && tHalf.frame === 3 && tLoop.frame === 0, JSON.stringify([t0.frame, tHalf.frame, tLoop.frame]));
+check('scene moves over time', t0.shot !== tHalf.shot);
+await page.evaluate(() => window.__map.setTime(null));
+
 check('no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();

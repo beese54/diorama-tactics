@@ -23,7 +23,7 @@ export interface Tile {
   moisture: number;
   water: WaterInfo | null;
   feature: FeatureId | null;
-  /** Per-tile variation in [0, 1): texture variant now, decor placement later. */
+  /** Per-tile variation in [0, 1), free for decor placement. */
   seedRand: number;
 }
 

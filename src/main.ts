@@ -3,6 +3,8 @@ import { PixelPipeline } from './render/PixelPipeline';
 import { CameraRig } from './render/CameraRig';
 import { MapMesh } from './map/MapMesh';
 import { Cursor } from './map/Cursor';
+import { Flora, placeFlora } from './map/Flora';
+import { paintGround } from './map/ground';
 import { createTestMap } from './map/testMap';
 import { tileAt, type Tile } from './map/types';
 import { TileInfo } from './ui/TileInfo';
@@ -32,8 +34,11 @@ function main(): void {
   scene.add(sun);
 
   const map = createTestMap();
-  const mapMesh = new MapMesh(map);
+  const ground = paintGround(map);
+  const mapMesh = new MapMesh(map, ground);
   scene.add(mapMesh.group);
+  const flora = new Flora(placeFlora(map, ground), (tile, u, v) => mapMesh.surfacePoint(tile, u, v));
+  scene.add(flora.group);
 
   const cursor = new Cursor();
   scene.add(cursor.group);
@@ -56,9 +61,14 @@ function main(): void {
   let cursorTile: Tile | null = null;
 
   const timer = new THREE.Timer();
+  /** Fixed animation time in seconds, for headless captures; null = real time. */
+  let frozenTime: number | null = null;
   pipeline.renderer.setAnimationLoop((time) => {
     timer.update(time);
+    const elapsed = frozenTime ?? timer.getElapsed();
     rig.update();
+    mapMesh.update(elapsed);
+    flora.update(elapsed);
 
     if (pointerInside) {
       raycaster.setFromCamera(pointer, rig.camera);
@@ -70,7 +80,7 @@ function main(): void {
       const tile = (cursorTile = hovered);
       cursor.setTarget(tile && ((u, v) => mapMesh.surfacePoint(tile, u, v)));
     }
-    cursor.update(timer.getElapsed());
+    cursor.update(elapsed);
     tileInfo.show(hovered);
 
     pipeline.render(scene, rig.camera);
@@ -92,6 +102,9 @@ function main(): void {
           const t = x === undefined || y === undefined ? undefined : tileAt(map, x, y);
           rig.setPose(azimuthDeg, polarDeg, zoom, t && mapMesh.tileCenter(t));
         },
+        setTime: (seconds: number | null) => (frozenTime = seconds),
+        waterFrame: () => mapMesh.waterFrame,
+        floraCount: () => flora.count,
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
           zoom: rig.camera.zoom,

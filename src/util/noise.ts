@@ -1,5 +1,5 @@
 /** Hash of an integer lattice point to [0, 1). */
-function hash(seed: number, ix: number, iy: number): number {
+export function hash(seed: number, ix: number, iy: number): number {
   let h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(seed, 2246822519);
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   h ^= h >>> 16;

@@ -7,6 +7,7 @@
     { "id": "M2", "title": "Stepped elevation columns + height-aware picking", "status": "done", "commit": "see git log" },
     { "id": "M2b", "title": "Rounded lips and feet; one-step changes become seamless slopes", "status": "done", "commit": "see git log" },
     { "id": "M2c", "title": "Wider varied rounding, banks to waterline, map-wide painted water", "status": "done", "commit": "see git log" },
+    { "id": "M2d", "title": "Map-wide blended ground, looping water, swaying flowers and tufts", "status": "done", "commit": "see git log" },
     { "id": "M3", "title": "Seeded generator: elevation, moisture, biomes, JSON", "status": "pending", "commit": null },
     { "id": "M4", "title": "Rivers, flowing water shader, lakes, coast, waterfalls", "status": "pending", "commit": null },
     { "id": "M5", "title": "Forest / swamp / mountain decor", "status": "pending", "commit": null },

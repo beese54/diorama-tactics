@@ -106,6 +106,12 @@ coast        → beach, cliffs, sea                    rivers       → run down
 - [x] **M2: Elevation.** Stepped tile columns with cliff-side textures, mouse picking that accounts for height, camera rotation in 90° steps so tall terrain doesn't hide tiles behind it.
 - [x] **M2b: Rounded edges.** Column lips curve down and cliff feet curve up, so a one-step change is one smooth slope and taller cliffs get soft lips.
 - [x] **M2c: Natural shaping.** Wider rounding that varies across the map, banks sloping to the waterline, and water painted map-wide by distance to shore.
+- [x] **M2d: Living ground.** Every tile top painted map-wide per pixel (terrain borders wander and dither across tiles, light/dark patches from world noise, no per-tile seams); water loops through pre-painted frames; flowers and grass tufts sway in a travelling wind wave.
+  - [x] `ground.ts`: map-wide land painter (warped terrain borders, noise patches, details masked to their terrain) + water frames → RGBA frames
+  - [x] `water.ts`: depth once, then looping frames (contour drift on a circle, twinkling glints)
+  - [x] MapMesh: tops sample the ground texture (own material group), sides keep the atlas; frame swap in `update()`
+  - [x] `Flora.ts`: placement on grass pixels (clustered, meadow dense), billboard sprites with wind sway shader
+  - [x] tests (ground blending, water loop, flora placement), check.mjs animation checks, GIF capture for review
 - [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
@@ -174,3 +180,12 @@ _(filled in after each step)_
 - Water: `water.ts` paints all water as one map-sized image in the atlas. Colour comes from per-pixel distance to the nearest land, plus noise wobble, a 6-shade ramp with Bayer dithering, and depth-tinted ripples and sparkles. Contours now cross tile borders, and most water tiles hold several shades (unit-tested).
 - Verified: 51 unit tests; check.mjs 16/16; build clean.
 - Note for M3/M4: the generator must also use diagonal-aware bank distance. The flowing-water shader in M4 should keep this depth map as its base colour.
+
+### M2d review (2026-10-24): living ground
+- Requested: "each grid doesn't have to follow a specific colour; make grass and rocks blend seamlessly like the river"; "make some elements move in a loop: water moving, small flowers swaying like when the wind blows".
+- `ground.ts` paints every tile top into one 512×512 image. A pixel's terrain is looked up at a noise-warped position (up to 0.3 tiles, plus per-pixel jitter), so terrain borders fray and interlock across tiles. Tile centres always keep their own terrain, water keeps its exact shoreline, and land blends only across one-step height changes. Shades come from world-space noise patches plus speckle and dither, not per-tile variants. Details (tufts, stones, tree clumps, cracks) are masked to their own terrain. The per-tile seam lines are gone.
+- Water: `water.ts` computes shore distance once and paints 12 frames. The contour noise drifts around a circle and glints twinkle in and out on their own phases, so the loop (2 s at 6 fps) has no jump. MapMesh swaps the ground texture's data per frame; land pixels are identical in every frame.
+- Flora: about 1,000 flower (5 species, in drifts) and grass-tuft sprites, only on pixels painted as grass, dense in the meadow. They are upright billboards; a vertex shader leans them with a wind wave travelling across the field, slower gusts and a small per-plant flutter. All periods divide 4 s. One draw call.
+- Mesh is now two draw calls: tops (ground texture) and sides (cliff atlas) as material groups. Picking is unchanged.
+- Fixed a pre-existing M2b defect: flat tiles were single quads, so their edges had T-junctions against rounded neighbours, which rendered as background-coloured pinholes (about 15 per view). Flat tops are now fans with matching edge vertices: 0 pinholes.
+- Verified: 62 unit tests; check.mjs 19/19 (new: flora placed, water frames advance and loop, scene moves); build clean; `scripts/gif.mjs` records a looping GIF for review.

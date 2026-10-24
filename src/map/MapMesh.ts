@@ -1,13 +1,19 @@
 import * as THREE from 'three';
 import { TERRAIN } from './terrain';
-import { buildTerrainAtlas, VARIANTS, type TerrainAtlas, type UvRect } from './textures';
+import { buildTerrainAtlas, TILE_PX, VARIANTS, type TerrainAtlas, type UvRect } from './textures';
 import { tileAt, type MapFile, type Tile } from './types';
 import { isFlat, isWater, RIM_DROP, SAMPLES, STEP_HEIGHT, surfaceAt } from './surface';
+import type { GroundImage } from './ground';
+import { WATER_FPS } from './water';
 
 /** Depth of the diorama base below height 0, in steps. */
 const BASE_STEPS = 4;
 
 type Vec2 = [number, number];
+/** Material groups of the merged mesh: tile tops sample the ground image, cliff faces the atlas. */
+const TOP_LAYER = 0;
+const SIDE_LAYER = 1;
+type Layer = typeof TOP_LAYER | typeof SIDE_LAYER;
 type Vec3 = [number, number, number];
 
 /**
@@ -29,6 +35,17 @@ const FOOT_SHADE = 0.3;
 const NORMAL_EPS = 1 / 64;
 const EPS = 1e-6;
 
+/** A tile's outline through every edge sample, clockwise from the north-west corner (as seen from above). */
+const FLAT_RIM: Vec2[] = (() => {
+  const back = [...SAMPLES].reverse();
+  return [
+    ...SAMPLES.map((s): Vec2 => [s, 0]),
+    ...SAMPLES.slice(1).map((s): Vec2 => [1, s]),
+    ...back.slice(1).map((s): Vec2 => [s, 1]),
+    ...back.slice(1, -1).map((s): Vec2 => [0, s]),
+  ];
+})();
+
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 
@@ -44,9 +61,9 @@ class GeometryBuilder {
   readonly normals: number[] = [];
   readonly uvs: number[] = [];
   readonly colors: number[] = [];
-  readonly indices: number[] = [];
-  /** Triangle index -> tile index, for picking. */
-  readonly triangleTile: number[] = [];
+  /** Per layer: triangle indices, and the tile each triangle belongs to (for picking). */
+  private readonly indices: number[][] = [[], []];
+  private readonly tiles: number[][] = [[], []];
 
   vertex(p: Vec3, n: Vec3, uv: Vec2, shade: number): number {
     this.positions.push(...p);
@@ -56,16 +73,21 @@ class GeometryBuilder {
     return this.positions.length / 3 - 1;
   }
 
-  tri(a: number, b: number, c: number, tile: number): void {
-    this.indices.push(a, b, c);
-    this.triangleTile.push(tile);
+  tri(a: number, b: number, c: number, tile: number, layer: Layer): void {
+    this.indices[layer].push(a, b, c);
+    this.tiles[layer].push(tile);
   }
 
   /** Corners in order top-left, top-right, bottom-right, bottom-left as seen from the front. */
-  quad(corners: [Vec3, Vec3, Vec3, Vec3], normal: Vec3, uvs: [Vec2, Vec2, Vec2, Vec2], shades: [number, number, number, number], tile: number): void {
+  quad(corners: [Vec3, Vec3, Vec3, Vec3], normal: Vec3, uvs: [Vec2, Vec2, Vec2, Vec2], shades: [number, number, number, number], tile: number, layer: Layer): void {
     const [a, b, c, d] = corners.map((p, k) => this.vertex(p, normal, uvs[k], shades[k]));
-    this.tri(a, d, b, tile);
-    this.tri(b, d, c, tile);
+    this.tri(a, d, b, tile, layer);
+    this.tri(b, d, c, tile, layer);
+  }
+
+  /** Triangle index (layers in order, as in the built index buffer) -> tile index. */
+  triangleTile(): Uint32Array {
+    return Uint32Array.from(this.tiles.flat());
   }
 
   build(): THREE.BufferGeometry {
@@ -74,32 +96,77 @@ class GeometryBuilder {
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.normals, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.colors, 3));
-    g.setIndex(this.indices);
+    g.setIndex(this.indices.flat());
+    let start = 0;
+    this.indices.forEach((layer, material) => {
+      g.addGroup(start, layer.length, material);
+      start += layer.length;
+    });
     return g;
   }
 }
 
 /**
- * The whole map as one merged mesh (one draw call) of stepped columns with rounded
- * edges (see surface.ts), using a single texture atlas. Cliff faces fill the gap
+ * The whole map as one merged mesh of stepped columns with rounded edges (see surface.ts),
+ * in two draw calls: tile tops sample the map-wide ground image (see ground.ts), whose water
+ * animates by swapping frames; cliff faces use the side atlas. Cliff faces fill the gap
  * between a column's edge and its lower neighbour's (or the diorama base at the map edge).
  */
 export class MapMesh {
   readonly group = new THREE.Group();
   private readonly mesh: THREE.Mesh;
   private readonly triangleTile: Uint32Array;
+  private readonly groundTexture: THREE.DataTexture;
+  private frame = 0;
 
-  constructor(private readonly map: MapFile) {
-    const atlas = buildTerrainAtlas(map);
+  constructor(
+    private readonly map: MapFile,
+    private readonly ground: GroundImage,
+  ) {
+    const atlas = buildTerrainAtlas();
     const b = new GeometryBuilder();
     map.tiles.forEach((tile, i) => {
-      const variant = Math.min(VARIANTS - 1, Math.floor(tile.seedRand * VARIANTS));
-      this.buildTop(b, tile, i, isWater(tile) ? atlas.water(tile.x, tile.y) : atlas.top(tile.terrain, variant));
+      this.buildTop(b, tile, i, this.groundRect(tile));
       this.buildSides(b, tile, i, atlas);
     });
-    this.triangleTile = Uint32Array.from(b.triangleTile);
-    this.mesh = new THREE.Mesh(b.build(), new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true }));
+    this.triangleTile = b.triangleTile();
+
+    this.groundTexture = new THREE.DataTexture(ground.frames[0], ground.width, ground.height);
+    this.groundTexture.colorSpace = THREE.SRGBColorSpace;
+    this.groundTexture.needsUpdate = true;
+    this.mesh = new THREE.Mesh(b.build(), [
+      new THREE.MeshLambertMaterial({ map: this.groundTexture, vertexColors: true }),
+      new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true }),
+    ]);
     this.group.add(this.mesh);
+  }
+
+  /** Advances the water loop to the frame for `elapsed` seconds. */
+  update(elapsed: number): void {
+    const frame = Math.floor(elapsed * WATER_FPS) % this.ground.frames.length;
+    if (frame === this.frame) return;
+    this.frame = frame;
+    this.groundTexture.image.data = this.ground.frames[frame];
+    this.groundTexture.needsUpdate = true;
+  }
+
+  /** Index of the water frame on screen (for headless checks). */
+  get waterFrame(): number {
+    return this.frame;
+  }
+
+  /**
+   * A tile's window onto the ground image. The image's rows run north to south and data
+   * textures aren't flipped, so v grows southward: v1 is the tile's north edge.
+   */
+  private groundRect(tile: Tile): UvRect {
+    const { width: W, height: H } = this.ground;
+    return {
+      u0: (tile.x * TILE_PX) / W,
+      u1: ((tile.x + 1) * TILE_PX) / W,
+      v0: ((tile.y + 1) * TILE_PX) / H,
+      v1: (tile.y * TILE_PX) / H,
+    };
   }
 
   private buildTop(b: GeometryBuilder, tile: Tile, index: number, uv: UvRect): void {
@@ -108,13 +175,12 @@ export class MapMesh {
     const uvAt = (u: number, v: number): Vec2 => [lerp(uv.u0, uv.u1, u), lerp(uv.v1, uv.v0, v)];
 
     if (isFlat(this.map, tile)) {
-      b.quad(
-        [[x0, topY, z0], [x0 + 1, topY, z0], [x0 + 1, topY, z0 + 1], [x0, topY, z0 + 1]],
-        [0, 1, 0],
-        [uvAt(0, 0), uvAt(1, 0), uvAt(1, 1), uvAt(0, 1)],
-        [1, 1, 1, 1],
-        index,
-      );
+      // A fan whose rim has a vertex at every edge sample, matching rounded neighbours' edges
+      // exactly: a plain quad would leave T-junctions there, which rasterise as pinholes.
+      const flat = ([u, v]: Vec2) => b.vertex([x0 + u, topY, z0 + v], [0, 1, 0], uvAt(u, v), 1);
+      const centre = flat([0.5, 0.5]);
+      const rim = FLAT_RIM.map(flat);
+      rim.forEach((p, k) => b.tri(centre, rim[(k + 1) % rim.length], p, index, TOP_LAYER));
       return;
     }
 
@@ -134,8 +200,8 @@ export class MapMesh {
     for (let j = 0; j < n - 1; j++) {
       for (let i = 0; i < n - 1; i++) {
         const tl = first + j * n + i;
-        b.tri(tl, tl + n, tl + 1, index);
-        b.tri(tl + 1, tl + n, tl + n + 1, index);
+        b.tri(tl, tl + n, tl + 1, index, TOP_LAYER);
+        b.tri(tl + 1, tl + n, tl + n + 1, index, TOP_LAYER);
       }
     }
   }
@@ -185,6 +251,7 @@ export class MapMesh {
             [uvAt(L.t, lt), uvAt(R.t, rt), uvAt(R.t, rb), uvAt(L.t, lb)],
             [shadeAt(topY - lt), shadeAt(topY - rt), shadeAt(topY - rb), shadeAt(topY - lb)],
             index,
+            SIDE_LAYER,
           );
         }
       }
