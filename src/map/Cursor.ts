@@ -17,7 +17,13 @@ function canvasTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2
 /** Down-pointing arrow, 7x6 px, drawn row by row ('#' = fill, 'o' = outline). */
 const ARROW = ['ooooooo', 'o#####o', 'oo###oo', ' oo#oo ', '  ooo  ', '   o   '];
 
-/** FFT-style tile cursor: a flashing outline on the tile and a bobbing pointer above it. */
+/** Outline grid resolution; fine enough to follow a tile's rounded lips. */
+const DRAPE_SEGMENTS = 16;
+
+/** World-space point on a tile's surface at local (u, v) in [0, 1]. */
+export type SurfaceFn = (u: number, v: number) => THREE.Vector3;
+
+/** FFT-style tile cursor: a flashing outline draped over the tile and a bobbing pointer above it. */
 export class Cursor {
   readonly group = new THREE.Group();
   private readonly outline: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
@@ -31,12 +37,13 @@ export class Cursor {
       ctx.lineWidth = 1;
       ctx.strokeRect(0.5, 0.5, TILE_PX - 1, TILE_PX - 1);
     });
+    // Positions are rewritten in setTarget; only the grid's uvs and indices matter here.
     this.outline = new THREE.Mesh(
-      new THREE.PlaneGeometry(1, 1),
-      new THREE.MeshBasicMaterial({ map: outlineTex, transparent: true, depthWrite: false }),
+      new THREE.PlaneGeometry(1, 1, DRAPE_SEGMENTS, DRAPE_SEGMENTS),
+      new THREE.MeshBasicMaterial({
+        map: outlineTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4,
+      }),
     );
-    this.outline.rotation.x = -Math.PI / 2;
-    this.outline.position.y = 0.01;
 
     const arrowTex = canvasTexture(ARROW[0].length, ARROW.length, (ctx) => {
       ARROW.forEach((row, y) => {
@@ -55,10 +62,22 @@ export class Cursor {
     this.group.visible = false;
   }
 
-  /** Place on a tile centre (world space) or hide with null. */
-  setTarget(center: THREE.Vector3 | null): void {
-    this.group.visible = center !== null;
-    if (center) this.group.position.copy(center);
+  /** Drape over a tile's surface, or hide with null. */
+  setTarget(surface: SurfaceFn | null): void {
+    this.group.visible = surface !== null;
+    if (!surface) return;
+    const center = surface(0.5, 0.5);
+    this.group.position.copy(center);
+    const geometry = this.outline.geometry;
+    const pos = geometry.attributes.position;
+    const uv = geometry.attributes.uv;
+    for (let i = 0; i < pos.count; i++) {
+      // PlaneGeometry uv (0,0) is bottom-left; map it so the texture keeps its orientation on the tile.
+      const p = surface(uv.getX(i), 1 - uv.getY(i)).sub(center);
+      pos.setXYZ(i, p.x, p.y + 0.01, p.z);
+    }
+    pos.needsUpdate = true;
+    geometry.computeBoundingSphere();
   }
 
   update(timeSeconds: number): void {

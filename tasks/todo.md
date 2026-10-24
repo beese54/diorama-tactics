@@ -104,6 +104,7 @@ coast        → beach, cliffs, sea                    rivers       → run down
 - [x] **M0: Scaffold.** Vite + TS + three, pixel-perfect low-res render pipeline, empty scene with a crisp test tile.
 - [x] **M1: Flat grid.** A few terrain types with procedurally drawn pixel textures, tilted ortho camera, pan/zoom, tile cursor and info box (terrain name, move cost, defence).
 - [x] **M2: Elevation.** Stepped tile columns with cliff-side textures, mouse picking that accounts for height, camera rotation in 90° steps so tall terrain doesn't hide tiles behind it.
+- [x] **M2b: Rounded edges.** Column lips curve down and cliff feet curve up, so a one-step change is one smooth slope and taller cliffs get soft lips.
 - [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
@@ -155,3 +156,12 @@ _(filled in after each step)_
 - Columns: only cliff faces exposed to a lower neighbour are built, one quad per step. The top step carries the terrain's lip (fixes the M0 repeated-grass-lip issue), lower steps use the material (soil/rock/sand/redrock), and anything below height 0 is earth bedrock. Vertex-colour depth shading on cliff faces. Still one mesh and one draw call; the base box was removed because edge columns run down to −4 steps.
 - Picking returns the first column the ray hits (top or cliff face), i.e. the visible one.
 - Verified: 34 unit tests (height rules, bank slope, mountain/forest ordering); check.mjs 16/16, including 3 camera poses (iso, low angle where the peak hides the target, top-down).
+
+### M2b review (2026-10-24): rounded edges
+- Requested: "edges of the terrain for each elevated grid look very sharp; make them smoother and rounded to a seamless transition".
+- `surface.ts`: one height function per tile, built from distance to lower and higher neighbours (3×3). Lips drop 0.25 and feet rise 0.25 over a 0.25-tile rim with a sine profile. A one-step change between land tiles therefore becomes one C1-smooth S-slope with no face. Taller cliffs keep a vertical face between a soft lip and a shaded foot. Convex corners round in plan, water stays flat, and the map edge counts as a drop.
+- The function depends only on position and the surrounding heights, so equal-height neighbours agree exactly along shared edges (no cracks). Unit tests check this over the test map and a stairs/pits grid.
+- MapMesh: tiles touching a height change get a 9×9 grid at texel-spaced rim samples, with smooth finite-difference normals. Flat tiles keep one quad. Side faces fill whatever gap lies between two neighbouring edges, textured in step cells counted down from the lip.
+- The cursor outline drapes over the rounded surface.
+- Verified: 45 unit tests; check.mjs 16/16. Tunables: RIM_WIDTH / RIM_DROP / FOOT_RISE in surface.ts.
+- Known look: staircase-shaped banks (diagonal river) read as a row of soft pillows, because every step corner is rounded.

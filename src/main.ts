@@ -53,6 +53,7 @@ function main(): void {
 
   const raycaster = new THREE.Raycaster();
   let hovered: Tile | null = null;
+  let cursorTile: Tile | null = null;
 
   const timer = new THREE.Timer();
   pipeline.renderer.setAnimationLoop((time) => {
@@ -65,7 +66,10 @@ function main(): void {
     } else {
       hovered = null;
     }
-    cursor.setTarget(hovered ? mapMesh.tileCenter(hovered) : null);
+    if (hovered !== cursorTile) {
+      const tile = (cursorTile = hovered);
+      cursor.setTarget(tile && ((u, v) => mapMesh.surfacePoint(tile, u, v)));
+    }
     cursor.update(timer.getElapsed());
     tileInfo.show(hovered);
 
