@@ -72,8 +72,9 @@ function place(x: number, y: number): [TerrainId, number] {
 }
 
 /**
- * Land can be no higher than its distance (in tiles) from water, so banks slope
- * down to rivers and lakes instead of ending in a wall.
+ * Land can be no higher than its distance (in tiles, diagonals included) from water, so banks
+ * slope down to rivers and lakes instead of ending in a wall. Counting diagonals keeps a
+ * staircase-shaped bank one connected strip, so no column drops two steps at a single corner.
  */
 function slopeBanks(map: MapFile): void {
   const dist = new Array<number>(map.tiles.length).fill(Infinity);
@@ -87,7 +88,7 @@ function slopeBanks(map: MapFile): void {
   for (let i = 0; i < queue.length; i++) {
     const t = queue[i];
     const d = dist[t.y * map.width + t.x] + 1;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
       const n = tileAt(map, t.x + dx, t.y + dy);
       if (n && dist[n.y * map.width + n.x] > d) {
         dist[n.y * map.width + n.x] = d;

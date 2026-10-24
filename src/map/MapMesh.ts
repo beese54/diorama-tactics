@@ -90,11 +90,11 @@ export class MapMesh {
   private readonly triangleTile: Uint32Array;
 
   constructor(private readonly map: MapFile) {
-    const atlas = buildTerrainAtlas();
+    const atlas = buildTerrainAtlas(map);
     const b = new GeometryBuilder();
     map.tiles.forEach((tile, i) => {
       const variant = Math.min(VARIANTS - 1, Math.floor(tile.seedRand * VARIANTS));
-      this.buildTop(b, tile, i, atlas.top(tile.terrain, variant));
+      this.buildTop(b, tile, i, isWater(tile) ? atlas.water(tile.x, tile.y) : atlas.top(tile.terrain, variant));
       this.buildSides(b, tile, i, atlas);
     });
     this.triangleTile = Uint32Array.from(b.triangleTile);

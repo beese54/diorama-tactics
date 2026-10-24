@@ -105,6 +105,7 @@ coast        → beach, cliffs, sea                    rivers       → run down
 - [x] **M1: Flat grid.** A few terrain types with procedurally drawn pixel textures, tilted ortho camera, pan/zoom, tile cursor and info box (terrain name, move cost, defence).
 - [x] **M2: Elevation.** Stepped tile columns with cliff-side textures, mouse picking that accounts for height, camera rotation in 90° steps so tall terrain doesn't hide tiles behind it.
 - [x] **M2b: Rounded edges.** Column lips curve down and cliff feet curve up, so a one-step change is one smooth slope and taller cliffs get soft lips.
+- [x] **M2c: Natural shaping.** Wider rounding that varies across the map, banks sloping to the waterline, and water painted map-wide by distance to shore.
 - [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
@@ -165,3 +166,11 @@ _(filled in after each step)_
 - The cursor outline drapes over the rounded surface.
 - Verified: 45 unit tests; check.mjs 16/16. Tunables: RIM_WIDTH / RIM_DROP / FOOT_RISE in surface.ts.
 - Known look: staircase-shaped banks (diagonal river) read as a row of soft pillows, because every step corner is rounded.
+
+### M2c review (2026-10-24): wider, varied rounding and natural water
+- Requested: "make the rounding wider, tune the edges"; "river shades don't have to be one light and one dark per tile; tiles can have several colours so contours look natural"; "rounding doesn't have to be uniform; add variation like the real world".
+- Rounding: the width now varies 0.22–0.46 tiles, and the lip/foot balance shifts ±40% (lip + foot always equal one step, so one-step slopes stay seamless). Both come from smooth world-space value noise (`util/noise.ts`). That keeps equal-height neighbours crack-free: they sample the same point.
+- Banks: land curves a full step down to lower water (BANK_DROP), so riverbanks meet the waterline with no soil face. The test map's bank distance now counts diagonals, so a staircase bank is one connected strip. This removed the dark creases, which came from h2 tiles touching water at a single corner.
+- Water: `water.ts` paints all water as one map-sized image in the atlas. Colour comes from per-pixel distance to the nearest land, plus noise wobble, a 6-shade ramp with Bayer dithering, and depth-tinted ripples and sparkles. Contours now cross tile borders, and most water tiles hold several shades (unit-tested).
+- Verified: 51 unit tests; check.mjs 16/16; build clean.
+- Note for M3/M4: the generator must also use diagonal-aware bank distance. The flowing-water shader in M4 should keep this depth map as its base colour.

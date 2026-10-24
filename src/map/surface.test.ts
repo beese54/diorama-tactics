@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createTestMap } from './testMap';
-import { FOOT_RISE, isFlat, isWater, RIM_DROP, RIM_WIDTH, SAMPLES, STEP_HEIGHT, surfaceAt } from './surface';
+import { BALANCE_SHIFT, isFlat, isWater, RIM_DROP, RIM_WIDTH_MAX, RIM_WIDTH_MIN, SAMPLES, shapeAt, STEP_HEIGHT, surfaceAt } from './surface';
 import { tileAt, type MapFile, type Tile } from './types';
 
 /** A small map from a height grid (rows = y), all plains unless listed as water. */
@@ -50,10 +50,12 @@ describe('rounded surface', () => {
   });
 
   it('curves a lip down over a drop and eases back to flat within the rim width', () => {
-    expect(surfaceAt(plateau, rim, 0, 0.5).offset).toBeCloseTo(-RIM_DROP);
-    expect(surfaceAt(plateau, rim, RIM_WIDTH, 0.5).offset).toBe(0);
+    const lip = -surfaceAt(plateau, rim, 0, 0.5).offset;
+    expect(lip).toBeGreaterThanOrEqual(RIM_DROP * (1 - BALANCE_SHIFT) - 1e-9);
+    expect(lip).toBeLessThanOrEqual(RIM_DROP * (1 + BALANCE_SHIFT) + 1e-9);
+    expect(surfaceAt(plateau, rim, RIM_WIDTH_MAX, 0.5).offset).toBe(0);
     let prev = -Infinity;
-    for (let u = 0; u <= RIM_WIDTH; u += 1 / 64) {
+    for (let u = 0; u <= RIM_WIDTH_MAX; u += 1 / 64) {
       const o = surfaceAt(plateau, rim, u, 0.5).offset;
       expect(o).toBeGreaterThanOrEqual(prev);
       prev = o;
@@ -62,9 +64,9 @@ describe('rounded surface', () => {
 
   it('curves the ground up into the foot of a rise', () => {
     const s = surfaceAt(plateau, foot, 1, 0.5);
-    expect(s.offset).toBeCloseTo(FOOT_RISE);
+    expect(s.offset).toBeCloseTo(shapeAt(plateau.seed, foot.x + 1, foot.y + 0.5).footRise);
     expect(s.foot).toBeCloseTo(1);
-    expect(surfaceAt(plateau, foot, 1 - RIM_WIDTH, 0.5).offset).toBe(0);
+    expect(surfaceAt(plateau, foot, 1 - RIM_WIDTH_MAX, 0.5).offset).toBe(0);
   });
 
   it('rounds a convex plateau corner more than a mitre would', () => {
@@ -99,6 +101,27 @@ describe('rounded surface', () => {
       if (e.t.height > e.nb.height) expect(e.a).toBeGreaterThanOrEqual(e.b - 1e-9);
       if (e.nb.height > e.t.height) expect(e.b).toBeGreaterThanOrEqual(e.a - 1e-9);
     }
+  });
+
+  it('slopes a bank right down to the waterline of lower water', () => {
+    const map = gridMap([[0, 1, 1], [0, 1, 1], [0, 1, 1]], [[0, 0], [0, 1], [0, 2]]);
+    const bank = tileAt(map, 1, 1)!;
+    for (const s of SAMPLES) expect(y(map, bank, 0, s)).toBeCloseTo(0, 9);
+    expect(surfaceAt(map, bank, RIM_WIDTH_MAX, 0.5).offset).toBe(0);
+  });
+
+  it('varies the rounding smoothly across the map, within bounds', () => {
+    const widths = new Set<number>();
+    for (let x = 0; x < 32; x += 0.25) {
+      const a = shapeAt(7, x, 3.3);
+      const b = shapeAt(7, x + 0.01, 3.3);
+      expect(a.width).toBeGreaterThanOrEqual(RIM_WIDTH_MIN);
+      expect(a.width).toBeLessThan(RIM_WIDTH_MAX);
+      expect(a.lipDrop + a.footRise).toBeCloseTo(STEP_HEIGHT, 12);
+      expect(Math.abs(a.width - b.width)).toBeLessThan(0.02); // smooth, never a per-tile jump
+      widths.add(Math.round(a.width * 20));
+    }
+    expect(widths.size).toBeGreaterThanOrEqual(3); // genuinely varied
   });
 
   it('turns a one-step change between land tiles into one seamless slope', () => {

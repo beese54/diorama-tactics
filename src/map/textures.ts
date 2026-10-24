@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../util/rng';
 import { SIDE_STYLES, TERRAIN, type PaintStyle, type SideStyle } from './terrain';
-import { TERRAIN_IDS, type TerrainId } from './types';
+import { TERRAIN_IDS, type MapFile, type TerrainId } from './types';
+import { paintWater, WATER_PALETTE } from './water';
 
 export const TILE_PX = 16;
 /** One height step is half a tile tall, so its side face is 8 px. */
@@ -214,19 +215,23 @@ export interface TerrainAtlas {
   sideTop(terrain: TerrainId, variant: number): UvRect;
   /** Any lower cliff step: bare material. */
   sideLower(style: SideStyle, variant: number): UvRect;
+  /** Top of the water tile at map (x, y): its window onto the map-wide painted water. */
+  water(x: number, y: number): UvRect;
 }
 
 /**
  * One canvas holding every texture the map needs, so the map draws in one call.
  * Columns = variants. Rows: terrain tops (16 px), then terrain top-step sides (8 px),
- * then lower-step sides per material (8 px).
+ * then lower-step sides per material (8 px), then the map's water painted as one image
+ * (see water.ts) so its shades flow across tile boundaries.
  */
-export function buildTerrainAtlas(): TerrainAtlas {
+export function buildTerrainAtlas(map: MapFile): TerrainAtlas {
   const sideTopY = TERRAIN_IDS.length * TILE_PX;
   const sideLowerY = sideTopY + TERRAIN_IDS.length * STEP_PX;
+  const waterY = sideLowerY + SIDE_STYLES.length * STEP_PX;
   const canvas = document.createElement('canvas');
-  canvas.width = TILE_PX * VARIANTS;
-  canvas.height = sideLowerY + SIDE_STYLES.length * STEP_PX;
+  canvas.width = Math.max(TILE_PX * VARIANTS, map.width * TILE_PX);
+  canvas.height = waterY + map.height * TILE_PX;
   const atlas = canvas.getContext('2d')!;
 
   const cell = document.createElement('canvas');
@@ -259,6 +264,15 @@ export function buildTerrainAtlas(): TerrainAtlas {
     }
   });
 
+  const water = paintWater(map, TILE_PX);
+  const image = atlas.createImageData(water.width, water.height);
+  const rgb = WATER_PALETTE.map((hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)));
+  water.index.forEach((c, i) => {
+    if (c < 0) return;
+    image.data.set([...rgb[c], 255], i * 4);
+  });
+  atlas.putImageData(image, 0, waterY);
+
   const W = canvas.width;
   const H = canvas.height;
   // CanvasTexture is flipped: canvas y = 0 is v = 1.
@@ -276,5 +290,6 @@ export function buildTerrainAtlas(): TerrainAtlas {
     top: (terrain, v) => rect(v * TILE_PX, terrainRow.get(terrain)! * TILE_PX, TILE_PX),
     sideTop: (terrain, v) => rect(v * TILE_PX, sideTopY + terrainRow.get(terrain)! * STEP_PX, STEP_PX),
     sideLower: (style, v) => rect(v * TILE_PX, sideLowerY + sideRow.get(style)! * STEP_PX, STEP_PX),
+    water: (x, y) => rect(x * TILE_PX, waterY + y * TILE_PX, TILE_PX),
   };
 }
