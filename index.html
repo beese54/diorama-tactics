@@ -58,6 +58,42 @@
       #tile-info .stats {
         color: #ffe27a;
       }
+      #hud {
+        position: absolute;
+        left: calc(var(--px) * 8);
+        top: calc(var(--px) * 8);
+        max-width: calc(var(--px) * 200);
+        padding: calc(var(--px) * 4) calc(var(--px) * 6);
+        background: linear-gradient(#34488a, #18224d);
+        border: var(--px) solid #c9d4f0;
+        border-radius: calc(var(--px) * 2);
+        box-shadow: 0 0 0 var(--px) #0a0f24;
+      }
+      #hud .buttons {
+        display: flex;
+        gap: calc(var(--px) * 4);
+        margin-top: calc(var(--px) * 3);
+      }
+      #hud button {
+        pointer-events: auto;
+        cursor: pointer;
+        font: inherit;
+        color: #ffe27a;
+        text-shadow: inherit;
+        padding: 0 calc(var(--px) * 3);
+        background: #22306a;
+        border: var(--px) solid #8fa0d8;
+        border-radius: calc(var(--px) * 1);
+      }
+      #hud button:hover,
+      #hud button:focus-visible {
+        background: #3a4f9a;
+        outline: none;
+      }
+      #hud .notice {
+        margin-top: calc(var(--px) * 3);
+        color: #ffb8a8;
+      }
       #fallback {
         color: #c8c2b0;
         font: 16px monospace;

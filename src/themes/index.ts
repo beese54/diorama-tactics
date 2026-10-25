@@ -6,12 +6,18 @@ import { meadow } from './meadow';
 import { plaza } from './plaza';
 import type { Theme } from './types';
 import { volcano } from './volcano';
+import { randomSeed, seedFromUrl, worldTheme } from './world';
 
 /** Every map theme, in menu order. The first is the default. */
 export const THEMES: readonly Theme[] = [meadow, alpine, courtyard, plaza, market, jungle, volcano];
 
-/** The theme named by `?map=<id>`, or the default. */
+/**
+ * The theme named by `?map=<id>`, or the default. `?map=world` (or just `?seed=N`) grows a
+ * map from the seed; a missing or malformed seed gets a random one.
+ */
 export function themeFromUrl(search: string): Theme {
-  const id = new URLSearchParams(search).get('map');
+  const params = new URLSearchParams(search);
+  const id = params.get('map');
+  if (id === 'world' || (id === null && params.has('seed'))) return worldTheme(seedFromUrl(search) ?? randomSeed());
   return THEMES.find((t) => t.id === id) ?? THEMES[0];
 }

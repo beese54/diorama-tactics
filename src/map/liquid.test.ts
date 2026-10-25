@@ -19,7 +19,10 @@ describe('map-wide water painting', () => {
   });
 
   it('is deterministic', () => {
-    expect(paintLiquid(map, PX, 'water').frames).toEqual(img.frames);
+    // A plain loop: toEqual on 12 large frames takes seconds.
+    const again = paintLiquid(map, PX, 'water').frames;
+    expect(again).toHaveLength(img.frames.length);
+    again.forEach((frame, k) => expect(frame.length === img.frames[k].length && frame.every((v, i) => v === img.frames[k][i])).toBe(true));
   });
 
   it('moves a little every frame, and the loop closes without a jump', () => {

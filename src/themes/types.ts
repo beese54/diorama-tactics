@@ -28,6 +28,8 @@ export interface Theme {
   focus: [number, number];
   /** Starting zoom, so the whole board (tallest columns included) fits on screen. */
   zoom: number;
+  /** Generated themes only: the seed their map grows from. */
+  seed?: number;
 }
 
 /** Scenery is painted this wide: a full turn of the camera slides the whole strip past. */

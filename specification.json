@@ -103,7 +103,7 @@
       "waterfall where a river step drops >= 2 height levels",
       "settlements on flat dry tiles near rivers; roads = A* between settlements; bridge where road crosses river"
     ],
-    "controls": "R = new random seed; seed shown in HUD; ?seed=N URL param"
+    "controls": "R or the New map button = new random seed (written to the URL); seed shown in HUD; ?seed=N URL param; E or Save downloads the map JSON (S is taken by WASD panning); Load button or dropping a file opens a saved map, validated by parseMap"
   },
   "weather": {
     "states": ["clear", "rain", "storm", "snow", "fog"],

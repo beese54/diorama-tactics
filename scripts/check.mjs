@@ -2,7 +2,7 @@
 // Usage: node scripts/check.mjs [outDir] [url]
 // Writes screenshots to outDir and exits non-zero if any check fails.
 import puppeteer from 'puppeteer-core';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const outDir = process.argv[2] ?? 'shots';
@@ -143,6 +143,45 @@ for (const id of await page.evaluate(() => window.__map.themes())) {
   await shot(`05-theme-${id}`);
   check(`theme ${id} loads with props and motion`, info.theme === id && info.props > 5 && a.shot !== b.shot && errors.length === 0, JSON.stringify({ ...info, errors }));
 }
+
+// Generated maps: the seed shows and reproduces, R grows a new one without leaking GPU
+// memory, and maps save to JSON and load back (hook, file picker), refusing bad files.
+errors.length = 0;
+await page.goto(`${url}?map=world&seed=1234`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map);
+const tilesNow = () => page.evaluate(() => JSON.stringify(JSON.parse(window.__map.exportJson()).tiles));
+const first = await tilesNow();
+check('world shows its seed', (await page.evaluate(() => window.__map.seed())) === 1234 && (await page.evaluate(() => window.__map.hudText())).includes('#1234'));
+await shot('06-world-1234');
+const memory = await page.evaluate(() => window.__map.gpuMemory());
+for (let i = 0; i < 4; i++) {
+  await page.keyboard.press('KeyR');
+  await new Promise((r) => setTimeout(r, 300));
+}
+const regrown = await page.evaluate(() => ({ seed: window.__map.seed(), search: location.search, memory: window.__map.gpuMemory() }));
+check('R grows a new map and puts its seed in the URL', regrown.seed !== 1234 && regrown.search === `?map=world&seed=${regrown.seed}` && (await tilesNow()) !== first, JSON.stringify(regrown));
+check('regrowing frees the old map', regrown.memory.geometries <= memory.geometries && regrown.memory.textures <= memory.textures, JSON.stringify({ before: memory, after: regrown.memory }));
+await page.click('#hud button');
+await new Promise((r) => setTimeout(r, 300));
+check('New map button grows another', (await page.evaluate(() => window.__map.seed())) !== regrown.seed);
+await page.goto(`${url}?map=world&seed=1234`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map);
+check('the same seed gives the same map', (await tilesNow()) === first);
+
+const saved = JSON.parse(await page.evaluate(() => window.__map.exportJson()));
+Object.assign(saved.tiles[0], { terrain: 'peak_snow', height: 8 });
+const loadError = await page.evaluate((text) => window.__map.loadJson(text), JSON.stringify(saved));
+const loaded = await page.evaluate(() => window.__map.tile(0, 0));
+check('an edited JSON map loads', loadError === null && loaded.terrain === 'peak_snow' && loaded.height === 8, JSON.stringify({ loadError, loaded }));
+const badError = await page.evaluate(() => window.__map.loadJson('{"version":1}'));
+check('a bad file is refused and the map kept', typeof badError === 'string' && (await page.evaluate(() => window.__map.tile(0, 0).terrain)) === 'peak_snow', String(badError));
+const file = join(outDir, 'map-file.json');
+writeFileSync(file, await page.evaluate(() => window.__map.exportJson()).then((t) => t.replace('"peak_snow"', '"forest"')));
+const picker = await page.$('#hud input[type=file]');
+await picker.uploadFile(file);
+await page.waitForFunction(() => window.__map.tile(0, 0).terrain === 'forest', { timeout: 3000 }).catch(() => {});
+check('Load picks a saved file', (await page.evaluate(() => window.__map.tile(0, 0).terrain)) === 'forest' && (await page.evaluate(() => window.__map.hudText())).includes('Loaded'));
+check('world: no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.ok ? '' : `  -> ${r.detail}`}`);

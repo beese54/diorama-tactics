@@ -1,15 +1,23 @@
 import * as THREE from 'three';
 import { PixelPipeline } from './render/PixelPipeline';
 import { CameraRig } from './render/CameraRig';
+import { disposeTree } from './render/dispose';
 import { MapMesh } from './map/MapMesh';
 import { Cursor } from './map/Cursor';
 import { Flora, placeFlora } from './map/Flora';
+import { generateMap } from './map/generator';
 import { paintGround } from './map/ground';
+import { parseMap, serializeMap } from './map/mapFile';
 import { PropLayer } from './map/PropLayer';
-import { tileAt, type Tile } from './map/types';
+import { tileAt, type MapFile, type Tile } from './map/types';
 import { Backdrop } from './render/Backdrop';
 import { THEMES, themeFromUrl } from './themes';
+import { randomSeed } from './themes/world';
+import { Hud } from './ui/Hud';
 import { TileInfo } from './ui/TileInfo';
+
+/** Map files larger than this are refused unread; a full 64×64 map is well under it. */
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
 function createPipeline(stage: HTMLElement): PixelPipeline | null {
   try {
@@ -21,6 +29,14 @@ function createPipeline(stage: HTMLElement): PixelPipeline | null {
     document.body.appendChild(msg);
     return null;
   }
+}
+
+/** Everything drawn for one map; rebuilt whole when the map changes. */
+interface Board {
+  map: MapFile;
+  mesh: MapMesh;
+  flora: Flora;
+  props: PropLayer;
 }
 
 function main(): void {
@@ -41,23 +57,84 @@ function main(): void {
   const backdrop = new Backdrop(theme.backdrop());
   scene.add(backdrop.mesh);
 
-  const map = theme.map();
-  const ground = paintGround(map);
-  const mapMesh = new MapMesh(map, ground);
-  scene.add(mapMesh.group);
-  const surfacePoint = (tile: Tile, u: number, v: number) => mapMesh.surfacePoint(tile, u, v);
-  const flora = new Flora(placeFlora(map, ground), surfacePoint);
-  scene.add(flora.group);
-  const props = new PropLayer(map, surfacePoint, { lights: light.propLights });
-  scene.add(props.group);
+  const buildBoard = (map: MapFile): Board => {
+    const ground = paintGround(map);
+    const mesh = new MapMesh(map, ground);
+    const surfacePoint = (tile: Tile, u: number, v: number) => mesh.surfacePoint(tile, u, v);
+    const flora = new Flora(placeFlora(map, ground), surfacePoint);
+    const props = new PropLayer(map, surfacePoint, { lights: light.propLights });
+    scene.add(mesh.group, flora.group, props.group);
+    return { map, mesh, flora, props };
+  };
+  let board = buildBoard(theme.map());
 
   const cursor = new Cursor();
   scene.add(cursor.group);
 
   const canvas = pipeline.renderer.domElement;
-  const rig = new CameraRig(canvas, map.width / 2);
+  const rig = new CameraRig(canvas, board.map.width / 2);
   rig.setPose(45, 60, theme.zoom);
-  const tileInfo = new TileInfo(document.getElementById('ui')!);
+  const ui = document.getElementById('ui')!;
+  const tileInfo = new TileInfo(ui);
+
+  let hovered: Tile | null = null;
+  let cursorTile: Tile | null = null;
+
+  /** Swaps in a new map: the old board's meshes and textures are freed, and the cursor lets go of its tiles. */
+  const showMap = (map: MapFile) => {
+    for (const { group } of [board.mesh, board.flora, board.props]) {
+      scene.remove(group);
+      disposeTree(group);
+    }
+    board = buildBoard(map);
+    rig.panLimit = Math.max(map.width, map.height) / 2;
+    hovered = cursorTile = null;
+    cursor.setTarget(null);
+    hud.setTitle(theme.name, theme.seed === undefined ? undefined : map.seed);
+  };
+
+  const newMap = (seed = randomSeed()) => {
+    history.replaceState(null, '', `?map=world&seed=${seed}`);
+    showMap(generateMap(seed));
+  };
+  const save = () => {
+    const url = URL.createObjectURL(new Blob([serializeMap(board.map)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${theme.id}-${board.map.seed}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  /** Loads map text; returns null on success, or what's wrong with it. */
+  const loadText = (text: string): string | null => {
+    try {
+      showMap(parseMap(text));
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+  };
+  const load = async (file: File) => {
+    if (file.size > MAX_FILE_BYTES) return hud.say('That file is too large to be a map.');
+    const error = loadText(await file.text());
+    hud.say(error ? `Couldn't load ${file.name}. ${error}` : `Loaded ${file.name}.`);
+  };
+
+  const generated = theme.seed !== undefined;
+  const hud = new Hud(ui, { newMap: generated ? () => newMap() : undefined, save, load });
+  hud.setTitle(theme.name, theme.seed);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'KeyR' && generated) newMap();
+    if (e.code === 'KeyE') save();
+  });
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files[0];
+    if (file) void load(file);
+  });
 
   const pointer = new THREE.Vector2();
   let pointerInside = false;
@@ -69,9 +146,6 @@ function main(): void {
   canvas.addEventListener('pointerleave', () => (pointerInside = false));
 
   const raycaster = new THREE.Raycaster();
-  let hovered: Tile | null = null;
-  let cursorTile: Tile | null = null;
-
   const timer = new THREE.Timer();
   /** Fixed animation time in seconds, for headless captures; null = real time. */
   let frozenTime: number | null = null;
@@ -80,19 +154,20 @@ function main(): void {
     const elapsed = frozenTime ?? timer.getElapsed();
     rig.update();
     backdrop.update(elapsed, rig.controls.getAzimuthalAngle(), rig.controls.getPolarAngle());
-    mapMesh.update(elapsed);
-    flora.update(elapsed);
-    props.update(elapsed);
+    board.mesh.update(elapsed);
+    board.flora.update(elapsed);
+    board.props.update(elapsed);
 
     if (pointerInside) {
       raycaster.setFromCamera(pointer, rig.camera);
-      hovered = mapMesh.pick(raycaster);
+      hovered = board.mesh.pick(raycaster);
     } else {
       hovered = null;
     }
     if (hovered !== cursorTile) {
       const tile = (cursorTile = hovered);
-      cursor.setTarget(tile && ((u, v) => mapMesh.surfacePoint(tile, u, v)));
+      const { mesh } = board;
+      cursor.setTarget(tile && ((u, v) => mesh.surfacePoint(tile, u, v)));
     }
     cursor.update(elapsed);
     tileInfo.show(hovered);
@@ -104,24 +179,30 @@ function main(): void {
     // Hooks for scripts/check.mjs (headless verification); stripped from production builds.
     Object.assign(window, {
       __map: {
-        tile: (x: number, y: number) => tileAt(map, x, y),
+        tile: (x: number, y: number) => tileAt(board.map, x, y),
         hovered: () => hovered,
         tileScreenPos(x: number, y: number) {
-          const t = tileAt(map, x, y)!;
-          const p = mapMesh.tileCenter(t).project(rig.camera);
+          const t = tileAt(board.map, x, y)!;
+          const p = board.mesh.tileCenter(t).project(rig.camera);
           const rect = canvas.getBoundingClientRect();
           return { x: rect.left + ((p.x + 1) / 2) * rect.width, y: rect.top + ((1 - p.y) / 2) * rect.height };
         },
         setPose(azimuthDeg: number, polarDeg: number, zoom: number, x?: number, y?: number) {
-          const t = x === undefined || y === undefined ? undefined : tileAt(map, x, y);
-          rig.setPose(azimuthDeg, polarDeg, zoom, t && mapMesh.tileCenter(t));
+          const t = x === undefined || y === undefined ? undefined : tileAt(board.map, x, y);
+          rig.setPose(azimuthDeg, polarDeg, zoom, t && board.mesh.tileCenter(t));
         },
         setTime: (seconds: number | null) => (frozenTime = seconds),
-        waterFrame: () => mapMesh.waterFrame,
-        floraCount: () => flora.count,
-        propCount: () => props.count,
-        theme: () => ({ id: theme.id, focus: theme.focus, width: map.width, zoom: theme.zoom }),
+        waterFrame: () => board.mesh.waterFrame,
+        floraCount: () => board.flora.count,
+        propCount: () => board.props.count,
+        theme: () => ({ id: theme.id, focus: theme.focus, width: board.map.width, zoom: theme.zoom }),
         themes: () => THEMES.map((t) => t.id),
+        seed: () => board.map.seed,
+        newMap: (seed?: number) => newMap(seed),
+        exportJson: () => serializeMap(board.map),
+        loadJson: loadText,
+        hudText: () => document.getElementById('hud')?.textContent ?? '',
+        gpuMemory: () => ({ ...pipeline.renderer.info.memory }),
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
           zoom: rig.camera.zoom,

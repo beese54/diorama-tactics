@@ -17,7 +17,8 @@ export class CameraRig {
   readonly camera: THREE.OrthographicCamera;
   readonly controls: OrbitControls;
 
-  constructor(domElement: HTMLElement, private readonly panLimit: number) {
+  /** `panLimit`: how far the orbit centre may stray from the middle, in world units (half the board). */
+  constructor(domElement: HTMLElement, public panLimit: number) {
     const halfW = BASE_WIDTH / PIXELS_PER_UNIT / 2;
     const halfH = BASE_HEIGHT / PIXELS_PER_UNIT / 2;
     this.camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.1, 400);

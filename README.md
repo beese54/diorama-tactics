@@ -31,8 +31,8 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M2b | Rounded edges, seamless one-step slopes | done |
 | M2c | Naturally varied rounding, painted water | done |
 | M2d | Blended ground across tiles, looping water, swaying flowers | done |
-| M2e | Theme kits and six showcase maps (one per category) | done, in review |
-| M3 | Seeded world generator | next |
+| M2e | Theme kits and six showcase maps (one per category) | done |
+| M3 | Seeded world generator, maps saved and loaded as JSON | done, in review |
 | M4–M9 | Rivers and waterfalls, decor, settlements, weather, day and night, performance | planned |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
@@ -58,6 +58,12 @@ npm run build    # type-check and production build
 - `market`: Night Market Alley
 - `jungle`: Jungle Temple
 - `volcano`: Volcanic Caldera
+
+**Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. Each seed makes an inland valley, an island or a coast. The box in the top-left corner has buttons:
+
+- **New map** (or `R`) grows another map and puts its seed in the URL.
+- **Save** (or `E`) downloads the map as JSON, one tile per line, so you can edit it by hand.
+- **Load** (or drop a file on the page) opens a saved map. A bad file is refused with a note saying what is wrong.
 
 Without it, the original map (`meadow`) loads.
 

@@ -22,6 +22,8 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 await page.goto(url, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
+// Map art only: the menu box would cover the board's corner.
+await page.evaluate(() => document.getElementById('hud')?.setAttribute('hidden', ''));
 await page.evaluate((p) => window.__map.setPose(+p[0], +p[1], +p[2], +p[3], +p[4]), [az, polar, zoom, x, y]);
 await new Promise((r) => setTimeout(r, 800));
 

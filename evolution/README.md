@@ -4,7 +4,7 @@ This folder shows how the game's look has improved over time, one version after 
 
 | Folder | What it covers | Status |
 |---|---|---|
-| [land/](#land) | The world map terrain | M0 to M2e done |
+| [land/](#land) | The world map terrain | M0 to M3 done |
 | [characters/](characters/README.md) | Unit sprites and animation | not started |
 | [battles/](battles/README.md) | Battle scenes | not started |
 
@@ -127,6 +127,28 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Never show a proposal below the quality already reached.
   - Render a few options in the real engine rather than many cheap mock-ups.
   - Keep tall things on the back edges and neon off the tiles, so the board stays readable in every theme.
+
+### M3: World generator
+![Twelve generated seeds](land/m3-world-generator/twelve-seeds.png)
+
+| Valley (seed 7) | Island (seed 5) | Coast (seed 10) |
+|---|---|---|
+| ![](land/m3-world-generator/whole-valley-7.png) | ![](land/m3-world-generator/whole-island-5.png) | ![](land/m3-world-generator/whole-coast-10.png) |
+
+![Seed 7 in motion](land/m3-world-generator/loop-7.gif)
+
+- **What changed:**
+  - Any seed grows a new 32×32 map, shaped as an inland valley, an island or a coast. The same seed always gives the same map.
+  - Elevation is warped noise, ranked so every map has lowland, hills and ridges. Tall ground leans toward the back of the opening view, so it doesn't hide the board.
+  - Land cover comes from height and moisture. Moisture is higher near water and shifts with each seed's climate.
+  - Clean-up keeps the board readable and playable. One-tile specks merge into their surroundings, and lone pillars are eased. Cut-off ground is joined by a ford or a pass, so every open tile can be reached.
+  - Maps save as JSON with one tile per line, ready to edit by hand, and load back with checks. **New map**, **Save** and **Load** buttons sit in a box in the top-left corner (`R`, `E`, or drop a file).
+
+  ![The menu box](land/m3-world-generator/menu.png)
+- **Decisions:** *"Mix by seed"* for the board's shape. *"Terrain only"* until M5 brings cover props, following the sparse cover rule from the jungle.
+- **Learned:**
+  - Ranking the noise turns every threshold into a share of the board, so no seed comes out all water or all mountain.
+  - Clean-up passes matter as much as the noise does. A generator's rough edges (specks, pillars, cut-off pockets) are what make a map look machine-made or unplayable.
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)

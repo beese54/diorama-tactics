@@ -26,6 +26,19 @@ function reachable(map: MapFile): Set<Tile> {
 }
 
 describe('themes', () => {
+  it('grow a generated map from ?seed=N, or a random seed when it is missing or malformed', () => {
+    const world = themeFromUrl('?seed=42');
+    expect(world).toMatchObject({ id: 'world', seed: 42 });
+    expect(world.map().seed).toBe(42);
+    expect(themeFromUrl('?map=world&seed=42').map()).toEqual(world.map());
+    for (const search of ['?map=world', '?seed=abc', '?seed=-1', '?seed=99999999999']) {
+      const { id, seed } = themeFromUrl(search);
+      expect(id).toBe('world');
+      expect(Number.isInteger(seed) && seed! > 0).toBe(true);
+    }
+    expect(themeFromUrl('?map=plaza&seed=42').id).toBe('plaza');
+  });
+
   it('have unique ids, and the URL picks one (falling back to the first)', () => {
     expect(new Set(THEMES.map((t) => t.id)).size).toBe(THEMES.length);
     expect(themeFromUrl('?map=volcano').id).toBe('volcano');

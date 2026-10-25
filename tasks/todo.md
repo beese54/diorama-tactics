@@ -122,7 +122,19 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] Six 20×20 showcase maps
   - [x] Tests: built surfaces are flat and crack-free, lava loops and only lava glows, every theme map is valid and fully connected for walking units, props sit on legal tiles; check.mjs loads every theme without errors
   - [x] Stills and GIFs per showcase sent for review; add to evolution/
-- [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
+- [x] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON. Decisions (2026-10-25): the shape varies by seed (valley, island, coast); terrain only, tall props wait for M5.
+  - [x] L0 `map/generator.ts` (pure, no three.js): `generateMap(seed, size = 32)` → MapFile
+    - elevation: warped fractal noise plus a ridge term, ranked per map so every seed spans lowland to peak
+    - water: the lowest share becomes lakes (deep in the middle, shallows at the rim), never more than about 20% of the board
+    - moisture: its own noise plus a bonus near water; stored on each tile
+    - biomes: elevation band × moisture band → the 18 natural terrains of the original map (no roads, ruins, farms or built ground; those come in M6)
+    - heights 0–8 from elevation, with the M2 terrain offsets (woods rise, swamps sit low); then `slopeToLiquids` for banks
+    - clean-up: merge one-tile specks into their neighbours so regions read as clear shapes; carve a ford or pass wherever open ground would be cut off, so every walkable tile is reachable
+  - [x] L1 `map/mapFile.ts`: `serializeMap` / `parseMap` with validation (version, size ≤ 64, known terrain ids, heights 0–8); rejects bad files with a reason
+  - [x] L2 `themes/world.ts`: "Wild Lands" theme on `?map=world&seed=N` (`?seed=N` alone implies it), meadow lighting and scenery; meadow stays the default page
+  - [x] L3 rebuild in place: main.ts loads a new map without a page reload (old meshes disposed); HUD shows the seed with **New map** (or `R`) and **Save JSON** (or `S`) buttons, and dropping a .json file on the page loads it
+  - [x] L4 tests: same seed gives identical JSON; different seeds differ; over 50 seeds every one of the 18 terrains appears, every walkable tile is reachable, ≥ 65% of tiles are walkable, banks slope, no one-tile specks; JSON round trip and bad-file rejection. check.mjs: world loads, R changes the map, the same seed reproduces it, Save gives valid JSON
+  - [x] Review: stills of 6 seeds plus a 12-seed contact sheet and one loop GIF sent; `evolution/land/m3-world-generator/`
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
 - [ ] **M6: Settlements and roads.** Villages, castle, roads connecting them, bridges where roads cross rivers, ruins and landmarks.
@@ -216,3 +228,22 @@ _(filled in after each step)_
   - Jungle: trees placed by hand in cover pockets with open lanes. A new test checks that over 80% of open tiles on every showcase are free of props.
   - Animation: sprites now support animation frames (`SpriteField` shifts the UV per frame). Animated: brazier and altar flames, lantern candles, the vent, and fountain droplets and ripples. Firelit point lights flicker on periods that divide 4 s, and clouds drift at 2 px/s.
   - Verified: 115 unit tests; check.mjs 25/25.
+
+### M3 review (2026-10-25): world generator
+- Requested: "lets continue with M3". The shape varies by seed (valley, island or coast), and maps have terrain only (tall props wait for M5).
+- `map/generator.ts` (pure): `generateMap(seed)` gives a 32×32 MapFile.
+  - **Seed traits:** each seed picks a shape, a water share, a relief (tallest land 5–7), whether it has snowy peaks, and a drier or wetter climate.
+  - **Elevation:** warped fractal noise with ridge crests, bent into the shape and leaning up toward the far corner of the opening view, so tall ground stands behind the board. It is ranked, so the shares hold on every seed.
+  - **Water:** the lowest share floods. Lakes under 4 tiles dry out. Water two tiles from shore is deep, and water touching the edge is sea.
+  - **Land:** heights 1–8. Lone pillars and pits are eased to one step, then `slopeToLiquids` slopes the banks. Moisture comes from noise, nearness to water and the climate. Cover is picked from height and moisture across the 18 natural terrains.
+  - **Clean-up:** one-tile specks merge into their surroundings. Cut-off areas are joined to the main area by opening the shortest route: deep water becomes a ford, a peak becomes a pass.
+- `map/mapFile.ts`: `serializeMap` writes one tile per line. `parseMap` checks everything (version, size up to 64, ids, ranges, row order) and throws a message naming the tile and field. Unknown fields are dropped.
+- `themes/world.ts`: the Wild Lands theme on `?map=world` / `?seed=N`, with meadow light and scenery. Meadow stays the default.
+- main.ts rebuilds the board in place: the old meshes and textures are freed (`render/dispose.ts`) and the camera's pan limit follows the board. `ui/Hud.ts` shows the name and seed, with New map (`R`), Save (`E`, since `S` pans) and Load buttons, plus drag and drop. Capture scripts hide the box.
+- Fixed along the way:
+  - dried-out puddles got NaN heights, which showed as holes;
+  - a pre-existing slow test (water determinism compared 12 frames element by element and timed out) now compares in a loop, so it runs in 0.4 s.
+- Verified:
+  - 386 unit tests. New ones over 50 seeds: deterministic, valid, every natural terrain and shape used, ≥ 65% walkable and all of it reachable, banks sloped, no specks, no pillars, islands ringed by sea, tall ground at the back. Also JSON round trip, hand edits, and 11 kinds of bad file.
+  - check.mjs passes 34/34. New: the seed shows and reproduces; R and the button grow new maps without GPU memory growing; edited JSON loads; a bad file is refused and the map kept; the Load picker works.
+  - Build is clean.
