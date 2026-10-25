@@ -1,0 +1,18 @@
+{
+  "about": "Every visual stage of the land, oldest first: milestones, review rounds and fixes. scripts/timeline.mjs turns this into timeline.gif. Add a stage with every visual commit; never overwrite a stage's picture.",
+  "stages": [
+    { "id": "m0", "date": "2026-10-24", "commit": "782ad4f", "image": "m0-scaffold/overview.png", "title": "M0 · Scaffold", "note": "A pixel-perfect 480x270 pipeline and three test blocks." },
+    { "id": "m1", "date": "2026-10-24", "commit": "a30ad65", "image": "m1-flat-grid/overview.png", "title": "M1 · Flat grid", "note": "A 32x32 terrain grid, orbit camera, tile cursor and info panel." },
+    { "id": "m2", "date": "2026-10-24", "commit": "51cd2be", "image": "m2-elevation/overview.png", "title": "M2 · Elevation", "note": "\"It looks too flat\": stepped heights by terrain, cliff faces." },
+    { "id": "m2b", "date": "2026-10-24", "commit": "5b2c4b8", "image": "m2b-rounded-edges/overview.png", "title": "M2b · Rounded edges", "note": "Lips and feet curve, so one-step changes become smooth slopes." },
+    { "id": "m2c", "date": "2026-10-24", "commit": "dc4bbbc", "image": "m2c-natural-shapes-painted-water/overview.png", "title": "M2c · Natural shapes", "note": "Varied rounding, banks to the waterline, water painted across tiles." },
+    { "id": "m2d", "date": "2026-10-24", "commit": "7b720b4", "image": "m2d-blended-ground-and-motion/overview.png", "title": "M2d · Blended ground", "note": "Ground blends across tiles; water loops; flowers sway." },
+    { "id": "m2e", "date": "2026-10-25", "commit": "7bac0b7", "image": "m2e-theme-showcases/six-themes.png", "title": "M2e · Six themes", "note": "Alpine, courtyard, plaza, night market, jungle and volcano." },
+    { "id": "m2e-r1", "date": "2026-10-25", "commit": "0674b49", "image": "m2e-theme-showcases/jungle/overview.png", "title": "M2e round 1 · Sparse jungle", "note": "\"Too many trees hinder the movement\": cover pockets, open lanes." },
+    { "id": "m3", "date": "2026-10-25", "commit": "21d4e44", "image": "m3-world-generator/twelve-seeds.png", "title": "M3 · World generator", "note": "Any seed grows a valley, island or coast; save and load as JSON." },
+    { "id": "m3-r1", "date": "2026-10-25", "commit": "25767df", "image": "m3-world-generator/r1-map-picker/picker.png", "title": "M3 round 1 · Map picker", "note": "A drop-down in the menu box switches between every map." },
+    { "id": "m4", "date": "2026-10-25", "commit": "d2f8ac5", "image": "m4-water/four-seeds.png", "title": "M4 · Rivers and waterfalls", "note": "Rivers step down in waterfalls, bridges cross them, surf on the coast." },
+    { "id": "m5", "date": "2026-10-25", "commit": "48e8318", "image": "m5-cover/four-seeds.png", "title": "M5 · Trees, rocks, swamps", "note": "Sparse clumps of cover with open lanes; reeds and murky swamp water." },
+    { "id": "m5-r1", "date": "2026-10-25", "commit": "c281d8e", "image": "m5-cover/r1-snowline/seed-9-before-after.png", "title": "M5 round 1 · Snowline", "note": "\"Some trees have snow… not a snow environment\": snow only near snow." }
+  ]
+}

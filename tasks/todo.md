@@ -163,6 +163,18 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] L4 tests: deterministic; each prop only on the terrain it belongs to; 80% of open tiles prop-free; everything reachable; nothing on water, bridges, bridge ends or river banks; fewer tall props on the front rows; reeds only by water or in wet ground. check.mjs: props on a generated map, no errors
   - [x] Review: whole-board sheet of four seeds, close-ups of forest, swamp and mountain, a GIF of trees swaying; `evolution/land/m5-cover/`
 - [ ] **M6: Settlements and roads.** Villages, castle, roads connecting them, bridges where roads cross rivers, ruins and landmarks.
+  - Before M6 (user request, 2026-10-25: "document how our progress looks at every stage in the github commit… how everything is slowly and iteratively improved"):
+    - [x] `evolution/land/stages.json`: every visual stage in order, including review rounds and fixes, with its commit, date, one standard image and a one-line note. Backfill M0 to M5 r1.
+    - [x] `scripts/timeline.mjs`: rebuilds `evolution/land/timeline.gif` from stages.json, one captioned frame per stage
+    - [x] Never overwrite a shipped picture: review rounds go in `<milestone>/r<N>-<topic>/` with a before/after comparison. Restore M5's originals from 48e8318 and move the snowline fix into `m5-cover/r1-snowline/`.
+    - [x] Every visual commit message gets a "Progress" section: the stage, what now looks different, and the pictures added
+  - Decisions (2026-10-25): settlements mix by seed (a village, a small castle, or ruins only); house rooftops are walkable (FFT style); roads link settlements to each other and to the board edges, crossing rivers at bridges.
+  - Plan (2026-10-25, generated maps only):
+    - [ ] L0 `map/settlements.ts` (pure): sites on flat, dry, reachable ground near water and away from the front rows; a village (houses, fields, a well), plus a landmark on high ground (ruins or a watchtower), or a castle, per the decisions below
+    - [ ] L1 roads: shortest gentle routes (A*, slopes cost more) between settlements and out to the board's edges; road tiles are fast (MOV 1); a road meets a river at an existing bridge or gets a new one
+    - [ ] L2 art: house blocks with roofs and walls in the built style, fields, a well, a watchtower, ruined walls; sprites at the jungle's quality
+    - [ ] L3 tests: deterministic; settlements on flat dry ground, never on water or cliffs; every settlement linked by road; roads walkable and continuous, crossing rivers only at bridges; everything still reachable; cover cleared off roads and settlements
+    - [ ] Review: four-seed sheet, village and landmark close-ups, a timeline frame; `evolution/land/m6-settlements/`
 - [ ] **M7: Weather.** Rain first (particles, splashes, darker lighting), then storm, snow, fog, wind.
 - [ ] **M8: Day/night and ambience.** Light cycle, cloud shadows, swaying foliage, fireflies, chimney smoke.
 - [ ] **M9: Large-map performance.** Instancing/chunking and culling, holding 60 fps on the full map.

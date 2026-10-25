@@ -10,6 +10,12 @@ This folder shows how the game's look has improved over time, one version after 
 
 **How the pictures are made.** Every version is rendered from its own git commit, using the same camera views each time, so the pictures can be compared side by side. The script is `scripts/snapshot.mjs`. Animated versions also get a GIF from `scripts/gif.mjs`.
 
+**Every stage is kept, not only the milestones.** Review rounds and fixes are stages too:
+- [land/stages.json](land/stages.json) lists every stage in order, with its commit, date, picture and the feedback behind it.
+- `scripts/timeline.mjs` turns that list into the timeline GIF below.
+- A shipped picture is never overwritten. A review round goes in its milestone's `r<N>-<topic>/` folder, with a before/after picture from `scripts/compare.mjs`.
+- Each visual commit's message has a **Progress** section that names the stage, what now looks different, and the pictures added. `git log` reads as a running diary.
+
 Each version records three things: what changed, the feedback that caused the change, and what I learned. The rules I took from each correction are in [tasks/lessons.md](../tasks/lessons.md).
 
 ---
@@ -145,6 +151,9 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Maps save as JSON with one tile per line, ready to edit by hand, and load back with checks. **New map**, **Save** and **Load** buttons sit in a box in the top-left corner (`R`, `E`, or drop a file).
 
   ![The menu box](land/m3-world-generator/menu.png)
+- **Round 1:** *"Is there any way for me to see other categories like the volcano, the cyberpunk…?"* A map picker in the menu box now switches between every map.
+
+  ![Map picker](land/m3-world-generator/r1-map-picker/picker.png)
 - **Decisions:** *"Mix by seed"* for the board's shape. *"Terrain only"* until M5 brings cover props, following the sparse cover rule from the jungle.
 - **Learned:**
   - Ranking the noise turns every threshold into a share of the board, so no seed comes out all water or all mountain.
@@ -199,7 +208,10 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
 - **Learned:**
   - Capping cover by share of the land, and letting the strongest spots win, keeps every seed readable however the noise falls.
   - A tint that dithers over a wide band reads as grain. A short, sharp fade looks like a colour change in the water.
-  - *"Some trees have snow… it is not a snow environment."* Snow on trees has to follow snow on the map, not height alone. Snowy pines now grow only near a snowfield or peak.
+  - Snow on trees has to follow snow on the map, not height alone.
+- **Round 1 (snowline):** *"Some trees have snow… it is not a snow environment."* Pine forest at height 5 or more got snow even on maps with no snowfield or peak. Now pines carry snow only within two tiles of snow. The after pictures are in `m5-cover/r1-snowline/`.
+
+  ![Seed 9 before and after](land/m5-cover/r1-snowline/seed-9-before-after.png)
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
@@ -219,3 +231,11 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
    ```
 
 4. Add a section above with what changed, the feedback behind it, and what was learned.
+5. Add the stage to [land/stages.json](land/stages.json) and run `node scripts/timeline.mjs`.
+6. For a review round or fix, keep the old pictures. Put the new ones in `<milestone>/r<N>-<topic>/`, with a comparison:
+
+   ```
+   node scripts/compare.mjs <dir>/before-after.png before.png after.png "Before: …" "After: …"
+   ```
+
+7. In the commit message, add a **Progress** section: the stage id, what now looks different, and the pictures added.
