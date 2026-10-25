@@ -149,7 +149,19 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] L5 themed maps: Meadow's river and the Market canal get flow directions; Market's planks become real bridges
   - [x] L6 tests: rivers only run downhill, every river ends in water or at the edge, waterfalls only at drops, flow points to the next river tile, all walkable tiles reachable over bridges and fords, water loops seamlessly, JSON round trip. check.mjs: river pixels move along the flow, the waterfall animates, a bridge tile can be picked
   - [x] Review: a four-seed sheet, close-ups and four GIFs; `evolution/land/m4-water/`
-- [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
+- [x] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
+  - Decisions (2026-10-25): sparse pockets of cover (about 1 in 8 land tiles); trees and rocks are walkable cover with a defence bonus, never blocking.
+  - Plan (2026-10-25). Generated maps only; the six themed maps are hand-built and stay as approved. Follows the jungle lesson: cover in pockets with open lanes, low decor for the feel.
+  - [x] L0 `map/cover.ts` (pure): tall cover for generated maps, stored as tile props (saved in the JSON)
+    - woods: broadleaf trees on light woods and forest, pines on pine forest, snowy pines high up; in clumps from smooth noise, thick at a clump's heart and thinning at its edge
+    - rocks: boulders on hills, scree, mountain and badlands, few and far between; drowned dead trees in swamps and bogs
+    - kept clear: water, bridges and the tiles at each end of a bridge, river banks (so rivers stay visible), and the front rows of the board are thinner
+    - lanes: at least 80% of open tiles stay free of props, and every open tile stays reachable
+  - [x] L1 low decor (not cover, on the flora layer): reeds along still water and in marsh, swamp and bog; undergrowth in woods; pebbles on scree
+  - [x] L2 new sprites at the same quality as the jungle: a drowned dead tree, reeds, a second broadleaf tree shape, a mossy boulder variant
+  - [x] L3 swamp tint: water beside marsh, swamp and bog turns murkier and greener
+  - [x] L4 tests: deterministic; each prop only on the terrain it belongs to; 80% of open tiles prop-free; everything reachable; nothing on water, bridges, bridge ends or river banks; fewer tall props on the front rows; reeds only by water or in wet ground. check.mjs: props on a generated map, no errors
+  - [x] Review: whole-board sheet of four seeds, close-ups of forest, swamp and mountain, a GIF of trees swaying; `evolution/land/m5-cover/`
 - [ ] **M6: Settlements and roads.** Villages, castle, roads connecting them, bridges where roads cross rivers, ruins and landmarks.
 - [ ] **M7: Weather.** Rain first (particles, splashes, darker lighting), then storm, snow, fog, wind.
 - [ ] **M8: Day/night and ambience.** Light cycle, cloud shadows, swaying foliage, fireflies, chimney smoke.
@@ -280,3 +292,17 @@ _(filled in after each step)_
   - water: sparkles travel downstream in either direction; the loop closes; foam at the foot of a fall and not its top; surf on the sea and not on lakes; the falling pattern slides and wraps.
   - check.mjs passes 38/38. New: hovering a bridge picks it and names it (world and market); waterfalls exist. The memory check now compares the same seed before and after, since maps differ in bridge count.
 - Note for M5: rivers sit in shallow gorges and can hide behind tall banks from some angles. Keep reeds and trees low near the water.
+
+### M5 review (2026-10-25): trees, rocks and swamps
+- Requested: "lets continue now". Decisions: sparse pockets of cover; trees and rocks are walkable cover with a defence bonus.
+- `map/cover.ts` (pure, run last in `generateMap`): each natural ground has a cover kind and a density. Trees grow in clumps (stretched value noise, squared), rocks and snags are scattered. Exclusions: water, bridges and their neighbours, river banks. The 3 front rows are thinned to 35%. A cap of 12.5% of the land keeps the strongest spots. Pine forest at height 5+ gets snowy pines half the time.
+- New props: `broadleaf` (oak, poplar, birch) and `snag` (drowned dead tree). New ids were added so the themed maps' variant picks are unchanged. `Gfx.clear` makes gaps in the birch's crown.
+- `Flora.ts`: with `wild` (generated maps only), a second random stream adds reeds (wetland, or within 0.3 tiles of a water edge, never on sand), still pebbles (rocky ground) and bushes (light woods). The flowers stay exactly as before.
+- `liquid.ts`: murk. Water within 0.6 tiles of marsh, swamp or bog uses a murky green ramp, dithering out by 1.1 tiles. Lakes and rivers only: a first version tinted the sea along marshy coasts and lost the surf line.
+- `tileStats` adds the cover's defence and name; the tile panel shows the cover on its own line.
+- Tests: 701 pass. New:
+  - over 50 seeds: cover only on its own ground; at most 12.5% of the land, over 80% of open tiles clear; nothing on or beside water, bridges or river banks; never blocking; all five kinds appear and every map has at least 15; front rows under 60% of the density elsewhere; trees clump;
+  - wild decor adds to the flowers without changing them; reeds, pebbles and bushes only where they belong;
+  - murk beside a bog; none on the sea.
+  - check.mjs passes 39/39. New: a generated map has cover, and hovering a tree names it in the panel.
+

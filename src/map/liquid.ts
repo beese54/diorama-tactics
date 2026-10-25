@@ -65,6 +65,11 @@ const FOAM = ['#f4faf8', '#c8e4ea'];
 const FALL_FOAM_PX = 6;
 const SURF_MIN = 0.04;
 const SURF_MAX = 0.16;
+/** Water beside marsh, swamp and bog: a murky green ramp (shore to deep). Fully murky within MURK_FULL tiles, clear from MURK_REACH. */
+const MURK = ['#7a8c66', '#667c5a', '#587050', '#4c6448', '#425840', '#3a4e3a'];
+const MURK_FULL = 0.6;
+const MURK_REACH = 1.1;
+const WETLAND: readonly string[] = ['marsh', 'swamp', 'bog'];
 
 export interface LiquidImage {
   /** Pixels per side of the whole map (tiles × tilePx). */
@@ -88,6 +93,7 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
   const palette = [...look.ramp, ...new Set(look.glint)];
   const crustIndex = look.crust ? palette.push(look.crust.color) - 1 : -1;
   const foamIndex = style === 'water' ? palette.push(...FOAM) - FOAM.length : -1;
+  const murkIndex = style === 'water' ? palette.push(...MURK) - MURK.length : -1;
   const glintIndex = (level: number) => palette.indexOf(look.glint[level]);
   const width = map.width * tilePx;
   const height = map.height * tilePx;
@@ -99,6 +105,7 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
   const flow = flowField(map, tilePx, ours);
   const flowAt = (gx: number, gy: number) => [flow[2 * (gy * width + gx)], flow[2 * (gy * width + gx) + 1]];
   const foam = style === 'water' ? foamField(map, tilePx) : null;
+  const murk = style === 'water' ? murkField(map, tilePx, ours) : null;
 
   const rand = mulberry32(map.seed ^ 0x9a17);
   const glints = map.tiles.filter((t) => ours(t.x, t.y)).flatMap((tile) =>
@@ -143,6 +150,8 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
         const level = Math.max(0, d + wobble * Math.min(1, d / look.band)) / look.band;
         const dither = BAYER4[(gy % 4) * 4 + (gx % 4)];
         index[gy * width + gx] = Math.min(ramp - 1, Math.max(0, Math.floor(level + (dither - 0.5) * DITHER)));
+        // Beside a swamp the same depth reads murky, dithering back to clear water further out.
+        if (murk && murk[gy * width + gx] > dither) index[gy * width + gx] += murkIndex;
         if (look.crust && d > look.band) {
           const plate = valueNoise(map.seed ^ 0x2f71, x / 0.9 - cy * 1.5, y / 0.9 + cx * 1.5);
           if (plate + (dither - 0.5) * 0.06 > look.crust.threshold) index[gy * width + gx] = crustIndex;
@@ -285,4 +294,35 @@ function foamField(map: MapFile, tilePx: number): { fall: Float32Array; sea: Uin
     }
   }
   return { fall, sea };
+}
+
+/**
+ * Per pixel, 0..1: how murky water is from nearby marsh, swamp and bog (1 up to MURK_FULL
+ * tiles out, 0 from MURK_REACH). Lakes and rivers only: the open sea keeps its clean surf.
+ */
+function murkField(map: MapFile, tilePx: number, ours: (x: number, y: number) => boolean): Float32Array {
+  const width = map.width * tilePx;
+  const field = new Float32Array(width * map.height * tilePx);
+  const reach = Math.ceil(MURK_REACH);
+  for (const tile of map.tiles) {
+    if (!ours(tile.x, tile.y) || tile.water?.kind === 'sea') continue;
+    const swamps: [number, number][] = [];
+    for (let dy = -reach; dy <= reach; dy++) {
+      for (let dx = -reach; dx <= reach; dx++) {
+        const t = tileAt(map, tile.x + dx, tile.y + dy);
+        if (t && WETLAND.includes(t.terrain)) swamps.push([t.x, t.y]);
+      }
+    }
+    if (swamps.length === 0) continue;
+    for (let py = 0; py < tilePx; py++) {
+      for (let px = 0; px < tilePx; px++) {
+        const x = tile.x + (px + 0.5) / tilePx;
+        const y = tile.y + (py + 0.5) / tilePx;
+        let d = MURK_REACH;
+        for (const [sx, sy] of swamps) d = Math.min(d, Math.hypot(Math.max(sx - x, 0, x - sx - 1), Math.max(sy - y, 0, y - sy - 1)));
+        field[(tile.y * tilePx + py) * width + tile.x * tilePx + px] = Math.min(1, Math.max(0, (MURK_REACH - d) / (MURK_REACH - MURK_FULL)));
+      }
+    }
+  }
+  return field;
 }

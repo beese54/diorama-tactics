@@ -61,7 +61,8 @@ function main(): void {
     const ground = paintGround(map);
     const mesh = new MapMesh(map, ground);
     const surfacePoint = (tile: Tile, u: number, v: number) => mesh.surfacePoint(tile, u, v);
-    const flora = new Flora(placeFlora(map, ground), surfacePoint);
+    // Generated maps get wild decor (reeds, pebbles, bushes); the themed maps stay as designed.
+    const flora = new Flora(placeFlora(map, ground, theme.seed !== undefined), surfacePoint);
     const props = new PropLayer(map, surfacePoint, { lights: light.propLights });
     scene.add(mesh.group, flora.group, props.group);
     return { map, mesh, flora, props };

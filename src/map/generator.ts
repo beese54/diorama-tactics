@@ -1,6 +1,7 @@
 import { valueNoise } from '../util/noise';
 import { mulberry32 } from '../util/rng';
 import { slopeToLiquids } from './build';
+import { placeCover } from './cover';
 import { carveRivers, placeBridges } from './rivers';
 import { IMPASSABLE, TERRAIN } from './terrain';
 import { tileAt, type MapFile, type TerrainId, type Tile } from './types';
@@ -234,7 +235,8 @@ function mergeSpecks(map: MapFile): void {
  * the lowest share flooded into lakes or sea; moisture from its own noise and nearness to
  * water; land cover by height and moisture. Banks slope down to the water, one-tile specks
  * merge into their surroundings, and every walkable tile can be reached. One or two rivers
- * run down from the hills (see rivers.ts). Deterministic.
+ * run down from the hills (see rivers.ts), and woods, rocks and swamps get sparse cover
+ * (see cover.ts). Deterministic.
  */
 export function generateMap(seed: number, size = WORLD_SIZE): MapFile {
   const traits = worldTraits(seed);
@@ -292,5 +294,6 @@ export function generateMap(seed: number, size = WORLD_SIZE): MapFile {
   mergeSpecks(map);
   connect(map);
   placeBridges(map, rivers);
+  placeCover(map);
   return map;
 }

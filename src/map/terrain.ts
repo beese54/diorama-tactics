@@ -1,3 +1,4 @@
+import { PROPS } from './props';
 import type { TerrainId, Tile } from './types';
 
 /** How the ground painter draws a tile top (see ground.ts). */
@@ -96,10 +97,14 @@ export const BRIDGES: Record<BridgeId, { name: string; moveCost: number; defense
 
 export const bridgeOf = (tile: Tile): BridgeId | null => (tile.feature === 'bridge_wood' || tile.feature === 'bridge_stone' ? tile.feature : null);
 
-/** What a unit standing on the tile gets: a bridge's deck, or the ground (or water) itself. */
-export function tileStats(tile: Tile): { name: string; height: number; moveCost: number; defense: number } {
+/**
+ * What a unit standing on the tile gets: a bridge's deck, or the ground (or water) itself,
+ * plus the defence of any cover standing there (a tree, a rock).
+ */
+export function tileStats(tile: Tile): { name: string; height: number; moveCost: number; defense: number; cover: string | null } {
   const bridge = bridgeOf(tile);
-  if (bridge) return { ...BRIDGES[bridge], height: tile.height + 1 };
+  if (bridge) return { ...BRIDGES[bridge], height: tile.height + 1, cover: null };
   const { name, moveCost, defense } = TERRAIN[tile.terrain];
-  return { name, height: tile.height, moveCost, defense };
+  const prop = tile.prop ? PROPS[tile.prop] : null;
+  return { name, height: tile.height, moveCost, defense: defense + (prop?.defense ?? 0), cover: prop?.name ?? null };
 }

@@ -215,6 +215,17 @@ const falls = await page.evaluate(() => {
   return n;
 });
 check('world: rivers fall over drops as waterfalls', falls > 0, String(falls));
+// Cover (M5): trees and rocks stand on generated maps, and the tile panel names them.
+const cover = await page.evaluate(() => {
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if (window.__map.tile(x, y).prop === 'broadleaf') return { x, y, count: window.__map.propCount() };
+  return null;
+});
+await page.evaluate((c) => window.__map.setPose(45, 60, 2.5, c.x, c.y), cover);
+await new Promise((r) => setTimeout(r, 300));
+const onTree = await hoverAt(cover.x, cover.y);
+const treePanel = await page.evaluate(() => document.querySelector('#tile-info')?.textContent ?? '');
+check('world: trees and rocks stand on the map, and the panel names the cover', cover.count >= 15 && onTree?.x === cover.x && onTree?.y === cover.y && treePanel.includes('Broadleaf Tree'), JSON.stringify({ cover, onTree, treePanel }));
+await page.mouse.move(0, 0);
 await bridgeCheck('market', 'Wooden Bridge');
 check('world: no console errors', errors.length === 0, errors.join(' | '));
 

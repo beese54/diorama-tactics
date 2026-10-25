@@ -30,6 +30,10 @@ class Gfx {
     this.color[y * this.w + x] = c;
     this.glow[y * this.w + x] = glows;
   }
+  /** Makes a pixel transparent again (a gap in foliage). */
+  clear(x: number, y: number): void {
+    if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.color[y * this.w + x] = null;
+  }
   get(x: number, y: number): string | null {
     return x < 0 || y < 0 || x >= this.w || y >= this.h ? null : this.color[y * this.w + x];
   }
@@ -554,6 +558,57 @@ const ART: Record<PropId, SpriteArt> = {
         for (let y = 6; y < 6 + len; y++) g.set(x0 + (y % 4 === 0 ? 1 : 0), y, (y - frame + 8) % 4 === 0 ? '#ffd060' : y < 9 ? '#ffb347' : '#ff7a2a', true);
       }
       g.outline(0.7);
+    },
+  },
+  broadleaf: {
+    w: 21, h: 30,
+    paint(g, v, rand) {
+      const bark = v === 2 ? ['#8c8678', '#d8d2c2', '#f0ebde'] : [WOOD[0], WOOD[1], WOOD[2]];
+      if (v === 0) {
+        // A spreading oak: a stout trunk forking under a broad, lumpy crown.
+        const leaves = ['#2a4a24', '#3a6230', '#4f7c3a', '#6a9848'];
+        g.rect(9, 18, 3, 12, bark[1]);
+        g.rect(9, 18, 1, 12, bark[2]);
+        g.line(11, 21, 15, 16, bark[1]);
+        g.line(9, 20, 5, 16, bark[0]);
+        for (const [cx, cy, rx, ry] of [[10.5, 11, 9.5, 6.5], [4.5, 14, 4.5, 3.5], [16.5, 14, 4.5, 3.5], [8, 6, 5.5, 4.5], [14, 7, 5, 4]]) g.ball(cx, cy, rx, ry, leaves);
+      } else if (v === 1) {
+        // A poplar: a tall, narrow column of leaves.
+        const leaves = ['#284a2a', '#365e34', '#4a7840', '#62904c'];
+        g.rect(10, 22, 2, 8, bark[1]);
+        g.rect(10, 22, 1, 8, bark[2]);
+        for (const [cx, cy, rx, ry] of [[10.5, 17, 5, 6], [10.5, 10, 4.5, 6.5], [10.5, 4, 3, 4]]) g.ball(cx, cy, rx, ry, leaves);
+      } else {
+        // A birch: a pale, black-marked trunk under a light, airy crown.
+        const leaves = ['#3c5e28', '#507a32', '#6a9440', '#88b056'];
+        g.rect(9, 16, 2, 14, bark[2]);
+        g.rect(10, 16, 1, 14, bark[1]);
+        // Short dark scars at uneven heights, never a regular stripe.
+        for (const y of [19, 23, 24, 28]) g.set(y % 2 ? 9 : 10, y, '#3a3630');
+        g.line(10, 19, 14, 15, bark[1]);
+        for (const [cx, cy, rx, ry] of [[10, 12, 8, 6], [4.5, 16, 4, 3.5], [15.5, 15, 4.5, 3.5], [10.5, 6, 5.5, 4.5]]) g.ball(cx, cy, rx, ry, leaves);
+        // Gaps in the crown, so it reads lighter than an oak.
+        for (let i = 0; i < 6; i++) g.clear(4 + Math.floor(rand() * 13), 6 + Math.floor(rand() * 10));
+      }
+      g.outline();
+    },
+  },
+  snag: {
+    w: 13, h: 22,
+    paint(g, v) {
+      // A drowned tree: grey, barkless, its top snapped off, with moss creeping up from the water.
+      const wood = ['#3a3630', '#5a5246', '#7a7262'];
+      const top = v ? 8 : 3;
+      g.rect(5, top, 3, 22 - top, wood[1]);
+      g.rect(5, top, 1, 22 - top, wood[2]);
+      g.rect(7, top, 1, 22 - top, wood[0]);
+      g.set(6, top - 1, wood[1]);
+      g.set(5, top - 1, wood[2]);
+      g.line(5, 12, 1, v ? 9 : 6, wood[1]);
+      g.line(7, v ? 12 : 9, 11, v ? 8 : 4, wood[1]);
+      g.line(9, v ? 10 : 6, 10, v ? 7 : 2, wood[0]);
+      for (const [x, y] of [[5, 21], [6, 21], [7, 21], [5, 20], [7, 19], [5, 18], [6, 17]]) g.set(x, y, y > 19 ? '#4e6a30' : '#6a8a3e');
+      g.outline(0.6);
     },
   },
 };

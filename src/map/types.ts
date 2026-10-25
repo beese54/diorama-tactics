@@ -20,6 +20,7 @@ export const PROP_IDS = [
   'stall', 'lantern_post', 'lantern_gate', 'vending',
   'jungle_tree', 'fern', 'altar', 'pillar',
   'basalt_spire', 'dead_tree', 'ember_rock', 'vent',
+  'broadleaf', 'snag',
 ] as const;
 export type PropId = (typeof PROP_IDS)[number];
 

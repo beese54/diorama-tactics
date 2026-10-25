@@ -4,7 +4,8 @@ import { mulberry32 } from '../util/rng';
 import type { GroundImage } from './ground';
 import { TERRAIN } from './terrain';
 import { TILE_PX } from './textures';
-import { TERRAIN_IDS, type MapFile, type Tile } from './types';
+import { isLiquid } from './surface';
+import { TERRAIN_IDS, tileAt, type MapFile, type Tile } from './types';
 import { SpriteField } from '../render/SpriteField';
 
 /** Sprite cells, 5×6 px, standing on their bottom row. `.` is transparent. */
@@ -25,12 +26,34 @@ const FLOWERS: readonly [string, string][] = [
   ['#d0704e', '#f2e6a0'], // poppy
 ];
 const GREENS: Record<string, string> = { s: '#4f6b38', l: '#5d7d48', g: '#5c7a3e', L: '#8aa35c' };
+/** Wild decor on generated maps: reeds with brown heads, pebbles, and low bushes. */
+const REEDS = [
+  ['.h...', '.r.h.', '.r.r.', 'R.rr.', '.rRr.', '.rrr.'],
+  ['...h.', '.h.r.', '.r.rR', '.rR.r', 'rr.r.', '.rrr.'],
+];
+const PEBBLES = [
+  ['.....', '.....', '.....', '.....', '.pq..', 'pqqq.'],
+  ['.....', '.....', '.....', '..p..', '.pq.p', '.qq.q'],
+];
+const BUSH = ['.....', '.....', '.LgL.', 'LgggL', 'gdgdg', '.ggg.'];
+const WILD: Record<string, string> = {
+  r: '#6f8a46', R: '#93ab5c', h: '#6a4528', p: '#9d978c', q: '#6c675e', g: '#3f6a2e', L: '#5d8a3c', d: '#2f5226',
+};
 
-/** Sprite index layout: blooms per species, then buds per species, then tufts. */
+/** Sprite index layout: blooms per species, buds per species, tufts, then the wild decor. */
 const BLOOMS_AT = 0;
 const BUDS_AT = FLOWERS.length;
 const TUFTS_AT = 2 * FLOWERS.length;
-const SPRITE_COUNT = TUFTS_AT + TUFTS.length;
+const REEDS_AT = TUFTS_AT + TUFTS.length;
+const PEBBLES_AT = REEDS_AT + REEDS.length;
+const BUSH_AT = PEBBLES_AT + PEBBLES.length;
+const SPRITE_COUNT = BUSH_AT + 1;
+
+/** Ground that grows reeds, and ground that sheds pebbles. */
+const WETLAND = new Set(['marsh', 'swamp', 'bog']);
+const ROCKY = new Set(['scree', 'mountain', 'badlands', 'hills']);
+/** How far from the water's edge reeds grow on a bank, in tiles. */
+const REED_REACH = 0.3;
 
 /** Places tried per grass tile; how many become plants depends on the terrain and the clustering noise. */
 const CANDIDATES = 6;
@@ -46,17 +69,25 @@ export interface Plant {
   sprite: number;
   /** Per-plant flutter phase in [0, 1). */
   phase: number;
+  /** Pebbles don't sway. */
+  still?: boolean;
 }
 
 const grassy = (style: string) => style === 'grass' || style === 'flowers';
+/** What a plant is, from its sprite. */
+export function plantKind(p: Plant): 'flower' | 'tuft' | 'reed' | 'pebble' | 'bush' {
+  return p.sprite < TUFTS_AT ? 'flower' : p.sprite < REEDS_AT ? 'tuft' : p.sprite < PEBBLES_AT ? 'reed' : p.sprite < BUSH_AT ? 'pebble' : 'bush';
+}
+
 const stretch = (n: number) => Math.min(1, Math.max(0, (n - 0.5) * 1.8 + 0.5));
 
 /**
  * Where flowers and grass tufts grow: only on pixels actually painted as grass (so never on
  * a rock or forest patch that frays into a grass tile), dense in meadows and in scattered
- * clumps on plains and hills. Species cluster in drifts, as wildflowers do. Deterministic.
+ * clumps on plains and hills. Species cluster in drifts, as wildflowers do. With `wild`
+ * (generated maps), reeds, pebbles and bushes too (see placeWildDecor). Deterministic.
  */
-export function placeFlora(map: MapFile, ground: GroundImage): Plant[] {
+export function placeFlora(map: MapFile, ground: GroundImage, wild = false): Plant[] {
   const rand = mulberry32(map.seed ^ 0x5eed);
   const plants: Plant[] = [];
   for (const tile of map.tiles) {
@@ -85,6 +116,39 @@ export function placeFlora(map: MapFile, ground: GroundImage): Plant[] {
       plants.push({ tile, u, v, sprite, phase });
     }
   }
+  return wild ? plants.concat(placeWildDecor(map, ground)) : plants;
+}
+
+/**
+ * Low decor that is never cover: reeds in marsh, swamp and bog and along the water's edge
+ * (never on sand), pebbles on rocky ground, and bushes in light woods. Each only on pixels
+ * painted as its own tile's ground. Its own random stream, so the flowers stay as they were.
+ */
+function placeWildDecor(map: MapFile, ground: GroundImage): Plant[] {
+  const rand = mulberry32(map.seed ^ 0xdec0);
+  const plants: Plant[] = [];
+  for (const tile of map.tiles) {
+    const def = TERRAIN[tile.terrain];
+    if (isLiquid(tile)) continue;
+    // Edges of this tile that meet water, as (dx, dy).
+    const shores = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => { const n = tileAt(map, tile.x + dx, tile.y + dy); return !!n && isLiquid(n) && TERRAIN[n.terrain].style === 'water'; });
+    for (let i = 0; i < 6; i++) {
+      const [u, v, roll, pick, phase] = [0.06 + 0.88 * rand(), 0.06 + 0.88 * rand(), rand(), rand(), rand()];
+      const x = tile.x + u;
+      const y = tile.y + v;
+      if (TERRAIN_IDS[ground.material[Math.floor(y * TILE_PX) * ground.width + Math.floor(x * TILE_PX)]] !== tile.terrain) continue;
+      const cluster = stretch(valueNoise(map.seed ^ 0x2ee0, x / 1.8, y / 1.8));
+      const edge = Math.min(...shores.map(([dx, dy]) => (dx > 0 ? 1 - u : dx < 0 ? u : dy > 0 ? 1 - v : v)));
+      let sprite = -1;
+      if (WETLAND.has(tile.terrain) && roll < 0.5 * cluster) sprite = REEDS_AT;
+      else if (shores.length && def.style !== 'sand' && edge < REED_REACH && roll < 0.7) sprite = REEDS_AT;
+      else if (ROCKY.has(tile.terrain) && roll < 0.12 * cluster) sprite = PEBBLES_AT;
+      else if (tile.terrain === 'light_woods' && roll < 0.25 * cluster) sprite = BUSH_AT;
+      if (sprite < 0) continue;
+      const variant = sprite === BUSH_AT ? 0 : pick < 0.5 ? 0 : 1;
+      plants.push({ tile, u, v, sprite: sprite + variant, phase, still: sprite === PEBBLES_AT });
+    }
+  }
   return plants;
 }
 
@@ -106,6 +170,9 @@ function spriteSheet(): THREE.CanvasTexture {
     draw(BUDS_AT + i, BUD, { ...GREENS, P: petal });
   });
   TUFTS.forEach((rows, i) => draw(TUFTS_AT + i, rows, GREENS));
+  REEDS.forEach((rows, i) => draw(REEDS_AT + i, rows, WILD));
+  PEBBLES.forEach((rows, i) => draw(PEBBLES_AT + i, rows, WILD));
+  draw(BUSH_AT, BUSH, WILD);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.magFilter = THREE.NearestFilter;
@@ -115,7 +182,7 @@ function spriteSheet(): THREE.CanvasTexture {
   return tex;
 }
 
-/** Flowers and grass tufts on the map, swaying in the wind. One draw call. */
+/** Flowers, grass tufts and wild decor on the map, swaying in the wind. One draw call. */
 export class Flora {
   readonly group = new THREE.Group();
   readonly count: number;
@@ -124,7 +191,7 @@ export class Flora {
   constructor(plants: Plant[], surfacePoint: (tile: Tile, u: number, v: number) => THREE.Vector3) {
     const rect = (sprite: number) => ({ u0: sprite / SPRITE_COUNT, u1: (sprite + 1) / SPRITE_COUNT, v0: 0, v1: 1, w: SPRITE_W, h: SPRITE_H });
     this.field = new SpriteField(
-      plants.map((p) => ({ root: surfacePoint(p.tile, p.u, p.v), rect: rect(p.sprite), sway: SWAY, phase: p.phase })),
+      plants.map((p) => ({ root: surfacePoint(p.tile, p.u, p.v), rect: rect(p.sprite), sway: p.still ? 0 : SWAY, phase: p.phase })),
       spriteSheet(),
     );
     this.count = this.field.count;
