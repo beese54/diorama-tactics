@@ -99,8 +99,9 @@
       "elevation = fractal noise * continent falloff, quantised to 0..8",
       "moisture = independent fractal noise + proximity-to-water bonus",
       "biome = lookup(elevation band, moisture band)",
-      "rivers = from 2-4 high sources, follow steepest non-ascending neighbour until sea/lake; fill pits into lakes",
-      "waterfall where a river step drops >= 2 height levels",
+      "rivers = 1-2 springs on high ground (heights 3-6) following a priority-flood drainage to a lake, the sea or a front edge; each river tile one step below every bank and no higher than upstream; all shallow (wadeable)",
+      "waterfall wherever a river drops a level, and where a river leaves the board",
+      "bridges: 1 per river (2 on rivers >= 16 tiles), >= 5 apart, on straight level stretches; bridge_wood at heights 0-1, bridge_stone higher; walked at height + 1 with move cost 1",
       "settlements on flat dry tiles near rivers; roads = A* between settlements; bridge where road crosses river"
     ],
     "controls": "the HUD map picker switches to any theme or Wild Lands (reloads with ?map=<id>); R or the New map button = new random seed (written to the URL); seed shown in HUD; ?seed=N URL param; E or Save downloads the map JSON (S is taken by WASD panning); Load button or dropping a file opens a saved map, validated by parseMap"

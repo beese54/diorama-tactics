@@ -1,6 +1,7 @@
 import { valueNoise } from '../util/noise';
 import { mulberry32 } from '../util/rng';
 import { slopeToLiquids } from './build';
+import { carveRivers, placeBridges } from './rivers';
 import { IMPASSABLE, TERRAIN } from './terrain';
 import { tileAt, type MapFile, type TerrainId, type Tile } from './types';
 
@@ -41,6 +42,8 @@ export interface WorldTraits {
   climate: number;
   /** Which side the sea lies on (coast only), in radians. */
   seaward: number;
+  /** How many rivers run down from the hills (1-2). */
+  rivers: number;
 }
 
 export function worldTraits(seed: number): WorldTraits {
@@ -49,7 +52,9 @@ export function worldTraits(seed: number): WorldTraits {
   const water = { valley: 0.08 + rand() * 0.06, island: 0.3 + rand() * 0.06, coast: 0.22 + rand() * 0.08 }[shape];
   const relief = 5 + Math.floor(rand() * 3);
   const peaks = relief === 7 && rand() < 0.75 ? 0.015 + rand() * 0.02 : 0;
-  return { shape, water, relief, peaks, climate: (rand() - 0.5) * 0.3, seaward: rand() * 2 * Math.PI };
+  const climate = (rand() - 0.5) * 0.3;
+  const seaward = rand() * 2 * Math.PI;
+  return { shape, water, relief, peaks, climate, seaward, rivers: rand() < 0.4 ? 2 : 1 };
 }
 
 /** Fractal value noise in [0, 1). */
@@ -228,7 +233,8 @@ function mergeSpecks(map: MapFile): void {
  * A seeded natural map: warped noise for elevation, shaped as a valley, island or coast;
  * the lowest share flooded into lakes or sea; moisture from its own noise and nearness to
  * water; land cover by height and moisture. Banks slope down to the water, one-tile specks
- * merge into their surroundings, and every walkable tile can be reached. Deterministic.
+ * merge into their surroundings, and every walkable tile can be reached. One or two rivers
+ * run down from the hills (see rivers.ts). Deterministic.
  */
 export function generateMap(seed: number, size = WORLD_SIZE): MapFile {
   const traits = worldTraits(seed);
@@ -268,19 +274,23 @@ export function generateMap(seed: number, size = WORLD_SIZE): MapFile {
     return { x, y, height: height[i], terrain, moisture: 0, water, feature: null, seedRand: rand() };
   });
   const map: MapFile = { version: 1, seed, width: size, height: size, tiles };
+  const rivers = carveRivers(map, elevation, traits.rivers);
   slopeToLiquids(map);
 
-  const waterDistance = distanceTo(size, (i) => wet[i]);
+  const waterDistance = distanceTo(size, (i) => tiles[i].water !== null);
   const moistureNoise = ranks(Array.from({ length: n }, (_, i) => fbm(seed + 5, xy(i)[0] / 9, xy(i)[1] / 9, 3)));
   for (const [i, tile] of tiles.entries()) {
     const damp = Math.max(0, 1 - waterDistance[i] / DAMP_REACH);
     const m = Math.min(1, Math.max(0, 0.1 + 0.7 * moistureNoise[i] + 0.25 * damp + traits.climate));
     tile.moisture = Math.round(m * 1000) / 1000;
     if (tile.water) continue;
-    const shore = tile.height === 1 && EDGES.some(([dx, dy]) => tileAt(map, tile.x + dx, tile.y + dy)?.water);
+    // Beaches and reed beds line lakes and the sea; river banks keep the cover of their height.
+    const still = (t: Tile | undefined) => t?.water?.kind === 'lake' || t?.water?.kind === 'sea';
+    const shore = tile.height === 1 && EDGES.some(([dx, dy]) => still(tileAt(map, tile.x + dx, tile.y + dy)));
     tile.terrain = biome(tile.height, m, shore);
   }
   mergeSpecks(map);
   connect(map);
+  placeBridges(map, rivers);
   return map;
 }

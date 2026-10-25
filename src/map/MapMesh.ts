@@ -1,19 +1,22 @@
 import * as THREE from 'three';
-import { TERRAIN } from './terrain';
+import { bridgeOf, TERRAIN } from './terrain';
+import { buildBridges } from './bridges';
 import { buildTerrainAtlas, TILE_PX, VARIANTS, type TerrainAtlas, type UvRect } from './textures';
 import { tileAt, type MapFile, type Tile } from './types';
 import { isBuilt, isFlat, isLiquid, RIM_DROP, SAMPLES, STEP_HEIGHT, surfaceAt } from './surface';
 import type { GroundImage } from './ground';
 import { LIQUID_FPS } from './liquid';
+import { FALL_PATTERN_PX, paintWaterfall, type WaterfallImage } from './waterfall';
 
 /** Depth of the diorama base below height 0, in steps. */
 const BASE_STEPS = 4;
 
 type Vec2 = [number, number];
-/** Material groups of the merged mesh: tile tops sample the ground image, cliff faces the atlas. */
+/** Material groups of the merged mesh: tile tops sample the ground image, cliff faces the atlas, falling water its own loop. */
 const TOP_LAYER = 0;
 const SIDE_LAYER = 1;
-type Layer = typeof TOP_LAYER | typeof SIDE_LAYER;
+const FALL_LAYER = 2;
+type Layer = typeof TOP_LAYER | typeof SIDE_LAYER | typeof FALL_LAYER;
 type Vec3 = [number, number, number];
 
 /**
@@ -62,8 +65,8 @@ class GeometryBuilder {
   readonly uvs: number[] = [];
   readonly colors: number[] = [];
   /** Per layer: triangle indices, and the tile each triangle belongs to (for picking). */
-  private readonly indices: number[][] = [[], []];
-  private readonly tiles: number[][] = [[], []];
+  private readonly indices: number[][] = [[], [], []];
+  private readonly tiles: number[][] = [[], [], []];
 
   vertex(p: Vec3, n: Vec3, uv: Vec2, shade: number): number {
     this.positions.push(...p);
@@ -108,16 +111,20 @@ class GeometryBuilder {
 
 /**
  * The whole map as one merged mesh of stepped columns with rounded edges (see surface.ts),
- * in two draw calls: tile tops sample the map-wide ground image (see ground.ts), whose water
- * animates by swapping frames; cliff faces use the side atlas. Cliff faces fill the gap
- * between a column's edge and its lower neighbour's (or the diorama base at the map edge).
+ * in three draw calls: tile tops sample the map-wide ground image (see ground.ts), whose water
+ * animates by swapping frames; cliff faces use the side atlas; and where a river pours over
+ * a drop, the face is falling water (see waterfall.ts). Cliff faces fill the gap between a
+ * column's edge and its lower neighbour's (or the diorama base at the map edge).
  */
 export class MapMesh {
   readonly group = new THREE.Group();
   private readonly mesh: THREE.Mesh;
+  private readonly bridges: THREE.Group;
   private readonly triangleTile: Uint32Array;
   private readonly groundTexture: THREE.DataTexture;
   private readonly glowTexture: THREE.DataTexture | null;
+  private readonly fall: WaterfallImage = paintWaterfall();
+  private readonly fallTexture: THREE.DataTexture;
   private frame = 0;
 
   constructor(
@@ -132,21 +139,25 @@ export class MapMesh {
     });
     this.triangleTile = b.triangleTile();
 
-    const dataTexture = (data: Uint8Array) => {
-      const tex = new THREE.DataTexture(data, ground.width, ground.height);
+    const dataTexture = (data: Uint8Array, width = ground.width, height = ground.height) => {
+      const tex = new THREE.DataTexture(data, width, height);
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.needsUpdate = true;
       return tex;
     };
     this.groundTexture = dataTexture(ground.frames[0]);
     this.glowTexture = ground.glow && dataTexture(ground.glow[0]);
+    this.fallTexture = dataTexture(this.fall.frames[0], this.fall.width, this.fall.height);
+    this.fallTexture.wrapS = this.fallTexture.wrapT = THREE.RepeatWrapping;
     // Emissive maps make lava, lit windows and neon glow whatever the lighting.
     const glowing = (glow: THREE.Texture | null) => (glow ? { emissiveMap: glow, emissive: 0xffffff } : {});
     this.mesh = new THREE.Mesh(b.build(), [
       new THREE.MeshLambertMaterial({ map: this.groundTexture, vertexColors: true, ...glowing(this.glowTexture) }),
       new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true, ...glowing(atlas.glow) }),
+      new THREE.MeshLambertMaterial({ map: this.fallTexture, vertexColors: true }),
     ]);
-    this.group.add(this.mesh);
+    this.bridges = buildBridges(map, (tile) => this.tileOrigin(tile));
+    this.group.add(this.mesh, this.bridges);
   }
 
   /** Advances the liquid loop to the frame for `elapsed` seconds. */
@@ -160,6 +171,8 @@ export class MapMesh {
       this.glowTexture.image.data = this.ground.glow[frame];
       this.glowTexture.needsUpdate = true;
     }
+    this.fallTexture.image.data = this.fall.frames[frame];
+    this.fallTexture.needsUpdate = true;
   }
 
   /** Index of the liquid frame on screen (for headless checks). */
@@ -232,6 +245,8 @@ export class MapMesh {
     SIDES.forEach((side, s) => {
       const nb = tileAt(this.map, tile.x + side.dx, tile.y + side.dy);
       if (nb && nb.height > tile.height) return;
+      // Water pouring onto lower water, or a river spilling off the board's edge.
+      const falls = !!tile.water && (nb ? !!nb.water && nb.height < tile.height : tile.water.kind === 'waterfall' && tile.water.flow[0] === side.dx && tile.water.flow[1] === side.dy);
       const edgePoint = (t: number) => {
         const u = lerp(side.a[0], side.b[0], t);
         const v = lerp(side.a[1], side.b[1], t);
@@ -253,6 +268,13 @@ export class MapMesh {
           const cLo = cHi - STEP_HEIGHT;
           const [lt, lb, rt, rb] = [within(cHi, L), within(cLo, L), within(cHi, R), within(cLo, R)];
           if (lt - lb < EPS && rt - rb < EPS) continue;
+          if (falls) {
+            // World-anchored, so the pattern runs unbroken down a fall of any height.
+            const fallUv = (t: number, y: number): Vec2 => [t, (y * TILE_PX) / FALL_PATTERN_PX];
+            b.quad([[L.x, lt, L.z], [R.x, rt, R.z], [R.x, rb, R.z], [L.x, lb, L.z]], side.normal,
+              [fallUv(L.t, lt), fallUv(R.t, rt), fallUv(R.t, rb), fallUv(L.t, lb)], [1, 1, 1, 1], index, FALL_LAYER);
+            continue;
+          }
           const step = tile.height - 1 - j;
           const variant = variantHash(tile.x, tile.y, step, s);
           // Below height 0 is the diorama's bedrock: plain earth whatever sits on top.
@@ -285,16 +307,18 @@ export class MapMesh {
     return this.surfacePoint(tile, 0.5, 0.5);
   }
 
-  /** World-space point on a tile's rounded surface at local (u, v) in [0, 1]. */
+  /** World-space point on a tile's rounded surface at local (u, v) in [0, 1]; on a bridge, its deck. */
   surfacePoint(tile: Tile, u: number, v: number): THREE.Vector3 {
     const [x0, z0] = this.tileOrigin(tile);
+    if (bridgeOf(tile)) return new THREE.Vector3(x0 + u, (tile.height + 1) * STEP_HEIGHT + 1 / TILE_PX, z0 + v);
     return new THREE.Vector3(x0 + u, tile.height * STEP_HEIGHT + surfaceAt(this.map, tile, u, v).offset, z0 + v);
   }
 
-  /** The first column the ray hits (top or cliff face), i.e. the one you can actually see. */
+  /** The first column or bridge the ray hits (top or side), i.e. the one you can actually see. */
   pick(raycaster: THREE.Raycaster): Tile | null {
-    const hit = raycaster.intersectObject(this.mesh, false)[0];
-    if (!hit || hit.faceIndex == null) return null;
-    return this.map.tiles[this.triangleTile[hit.faceIndex]];
+    const hit = raycaster.intersectObjects([this.mesh, ...this.bridges.children], false)[0];
+    if (!hit) return null;
+    if (hit.object !== this.mesh) return this.map.tiles[hit.object.userData.tile as number];
+    return hit.faceIndex == null ? null : this.map.tiles[this.triangleTile[hit.faceIndex]];
   }
 }

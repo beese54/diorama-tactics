@@ -22,10 +22,10 @@ const PROPS: Record<string, PropId> = {
 function place(x: number, y: number): Cell {
   const prop = PROPS[`${x},${y}`];
   if (x <= 1 || y <= 1) return { terrain: 'neon_building', height: ROOFLINE[x <= 1 ? y : x] };
-  // A canal across the front of the board, crossed by two plank bridges.
+  // A canal running along the front of the board, crossed by two plank bridges.
   if (y === 16 || y === 17) {
-    if (x === 6 || x === 7 || x === 13 || x === 14) return { terrain: 'boardwalk', height: 1 };
-    return { terrain: y === 16 ? 'shallow_water' : 'deep_water', height: 0 };
+    const bridge = x === 6 || x === 7 || x === 13 || x === 14;
+    return { terrain: y === 16 ? 'shallow_water' : 'deep_water', height: 0, water: { kind: 'river', flow: [1, 0] }, feature: bridge ? 'bridge_wood' : undefined };
   }
   // A raised wooden stage around the lantern gate: high ground in the middle of the market.
   if (x >= 8 && x <= 12 && y >= 8 && y <= 12) return { terrain: 'boardwalk', height: 2, prop };

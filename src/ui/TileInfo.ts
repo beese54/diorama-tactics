@@ -1,7 +1,7 @@
-import { IMPASSABLE, TERRAIN } from '../map/terrain';
+import { IMPASSABLE, tileStats } from '../map/terrain';
 import type { Tile } from '../map/types';
 
-/** FFT-style info box in the bottom-left corner: terrain name, height, move cost, defence. */
+/** FFT-style info box in the bottom-left corner: terrain (or bridge) name, height, move cost, defence. */
 export class TileInfo {
   private readonly el: HTMLElement;
   private readonly name: HTMLElement;
@@ -26,12 +26,12 @@ export class TileInfo {
     this.el.hidden = tile === null;
     if (!tile) return;
 
-    const def = TERRAIN[tile.terrain];
-    this.name.textContent = def.name;
+    const stats = tileStats(tile);
+    this.name.textContent = stats.name;
     // The pixel font's 0 looks like O, so spell out the label rather than "h0".
-    this.height.textContent = `HT ${tile.height}`;
-    const move = def.moveCost === IMPASSABLE ? '--' : String(def.moveCost);
-    const sign = def.defense > 0 ? '+' : '';
-    this.stats.textContent = `MOV ${move}  DEF ${sign}${def.defense}%`;
+    this.height.textContent = `HT ${stats.height}`;
+    const move = stats.moveCost === IMPASSABLE ? '--' : String(stats.moveCost);
+    const sign = stats.defense > 0 ? '+' : '';
+    this.stats.textContent = `MOV ${move}  DEF ${sign}${stats.defense}%`;
   }
 }

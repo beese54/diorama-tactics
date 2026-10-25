@@ -160,7 +160,11 @@ for (let i = 0; i < 4; i++) {
 }
 const regrown = await page.evaluate(() => ({ seed: window.__map.seed(), search: location.search, memory: window.__map.gpuMemory() }));
 check('R grows a new map and puts its seed in the URL', regrown.seed !== 1234 && regrown.search === `?map=world&seed=${regrown.seed}` && (await tilesNow()) !== first, JSON.stringify(regrown));
-check('regrowing frees the old map', regrown.memory.geometries <= memory.geometries && regrown.memory.textures <= memory.textures, JSON.stringify({ before: memory, after: regrown.memory }));
+// Maps differ in how many bridges they draw, so compare like with like: back on the first seed, nothing piled up.
+await page.evaluate(() => window.__map.newMap(1234));
+await new Promise((r) => setTimeout(r, 300));
+const returned = await page.evaluate(() => window.__map.gpuMemory());
+check('regrowing frees the old map', returned.geometries <= memory.geometries && returned.textures <= memory.textures, JSON.stringify({ before: memory, after: returned }));
 await page.click('#hud button');
 await new Promise((r) => setTimeout(r, 300));
 check('New map button grows another', (await page.evaluate(() => window.__map.seed())) !== regrown.seed);
@@ -187,6 +191,31 @@ await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.s
 await page.waitForFunction(() => window.__map);
 const picked = await page.evaluate(() => ({ theme: window.__map.theme().id, shown: document.querySelector('#hud select').value }));
 check('the map picker offers every map and switches to one', selected === 'world' && offered.includes('world') && offered.length === 8 && picked.theme === 'volcano' && picked.shown === 'volcano', JSON.stringify({ offered, selected, picked }));
+// Rivers (M4): bridges can be picked and stand a step above the water; waterfalls exist.
+const bridgeCheck = async (where, wanted) => {
+  await page.goto(`${url}?map=${where}`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => window.__map);
+  await page.evaluate(() => (document.getElementById('hud').hidden = true));
+  const bridge = await page.evaluate(() => {
+    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if (window.__map.tile(x, y)?.feature?.startsWith('bridge')) return window.__map.tile(x, y);
+    return null;
+  });
+  await page.evaluate((b) => window.__map.setPose(45, 60, 2.5, b.x, b.y), bridge);
+  await new Promise((r) => setTimeout(r, 300));
+  const got = await hoverAt(bridge.x, bridge.y);
+  const panel = await page.evaluate(() => document.querySelector('#tile-info')?.textContent ?? '');
+  check(`${where}: hovering a bridge picks it and names it`, got?.x === bridge.x && got?.y === bridge.y && panel.includes(wanted) && panel.includes(`HT ${bridge.height + 1}`), JSON.stringify({ bridge, got, panel }));
+  await page.mouse.move(0, 0);
+};
+await bridgeCheck('world&seed=7', 'Bridge');
+await shot('07-world-bridge');
+const falls = await page.evaluate(() => {
+  let n = 0;
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if (window.__map.tile(x, y).water?.kind === 'waterfall') n++;
+  return n;
+});
+check('world: rivers fall over drops as waterfalls', falls > 0, String(falls));
+await bridgeCheck('market', 'Wooden Bridge');
 check('world: no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();

@@ -1,6 +1,6 @@
 import { mulberry32 } from '../util/rng';
 import { slopeToLiquids } from './build';
-import type { MapFile, TerrainId, Tile } from './types';
+import type { MapFile, TerrainId, Tile, WaterInfo } from './types';
 
 const SIZE = 32;
 
@@ -15,7 +15,7 @@ export function createTestMap(seed = 1): MapFile {
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {
       const [terrain, height] = place(x, y);
-      tiles.push({ x, y, height, terrain, moisture: 0.5, water: null, feature: null, seedRand: rand() });
+      tiles.push({ x, y, height, terrain, moisture: 0.5, water: waterAt(x, y, terrain), feature: null, seedRand: rand() });
     }
   }
   const map: MapFile = { version: 1, seed, width: SIZE, height: SIZE, tiles };
@@ -23,12 +23,24 @@ export function createTestMap(seed = 1): MapFile {
   return map;
 }
 
+/** River centreline: x at a given y. The river runs south, toward the front of the opening view. */
+const riverX = (y: number) => 15 + 4 * Math.sin(y / 4.5);
+
+/** The river runs along its winding centreline; the lake is still. */
+function waterAt(x: number, y: number, terrain: TerrainId): WaterInfo | null {
+  if (terrain !== 'deep_water' && terrain !== 'shallow_water') return null;
+  if (Math.abs(x - riverX(y)) >= 2) return { kind: 'lake', flow: [0, 0] };
+  const dx = (4 / 4.5) * Math.cos(y / 4.5);
+  const length = Math.hypot(dx, 1);
+  return { kind: 'river', flow: [Math.round((dx / length) * 100) / 100, Math.round(100 / length) / 100] };
+}
+
 /** Terrain and its natural height (0-8 steps) for one tile. */
 function place(x: number, y: number): [TerrainId, number] {
   const dist = (cx: number, cy: number) => Math.hypot(x - cx, y - cy);
 
   // Winding river running north to south; water sits at the lowest level.
-  const riverOffset = Math.abs(x - (15 + 4 * Math.sin(y / 4.5)));
+  const riverOffset = Math.abs(x - riverX(y));
   if (riverOffset < 1) return ['deep_water', 0];
   if (riverOffset < 2) return ['shallow_water', 0];
 

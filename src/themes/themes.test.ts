@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { PROPS } from '../map/props';
 import { isBuilt, isLiquid } from '../map/surface';
-import { IMPASSABLE, TERRAIN } from '../map/terrain';
+import { IMPASSABLE, TERRAIN, tileStats } from '../map/terrain';
 import { PROP_IDS, TERRAIN_IDS, tileAt, type MapFile, type Tile } from '../map/types';
 import { THEMES, themeFromUrl } from './index';
 
 const showcases = THEMES.filter((t) => t.id !== 'meadow');
-const walkable = (t: Tile) => TERRAIN[t.terrain].moveCost < IMPASSABLE && !(t.prop && PROPS[t.prop].blocks);
+const walkable = (t: Tile) => tileStats(t).moveCost < IMPASSABLE && !(t.prop && PROPS[t.prop].blocks);
 
 /** Walkable tiles reachable from the first walkable one, moving between edge neighbours. */
 function reachable(map: MapFile): Set<Tile> {

@@ -4,7 +4,7 @@ This folder shows how the game's look has improved over time, one version after 
 
 | Folder | What it covers | Status |
 |---|---|---|
-| [land/](#land) | The world map terrain | M0 to M3 done |
+| [land/](#land) | The world map terrain | M0 to M4 done |
 | [characters/](characters/README.md) | Unit sprites and animation | not started |
 | [battles/](battles/README.md) | Battle scenes | not started |
 
@@ -149,6 +149,34 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
 - **Learned:**
   - Ranking the noise turns every threshold into a share of the board, so no seed comes out all water or all mountain.
   - Clean-up passes matter as much as the noise does. A generator's rough edges (specks, pillars, cut-off pockets) are what make a map look machine-made or unplayable.
+
+### M4: Rivers, waterfalls and bridges
+![Four generated seeds with rivers](land/m4-water/four-seeds.png)
+
+| A cascade (seed 7) | Off the board's edge (seed 14) |
+|---|---|
+| ![](land/m4-water/cascade-7.png) | ![](land/m4-water/edge-fall-14.png) |
+| ![](land/m4-water/falls-7.gif) | ![](land/m4-water/edge-fall-14.gif) |
+
+| Wooden bridge (seed 7) | Stone bridge (seed 39) |
+|---|---|
+| ![](land/m4-water/bridge-wood-7.png) | ![](land/m4-water/bridge-stone-39.png) |
+
+| Surf on the coast (seed 9) | Meadow's river | Market canal |
+|---|---|---|
+| ![](land/m4-water/surf-9.gif) | ![](land/m4-water/river-meadow.gif) | ![](land/m4-water/canal-market.png) |
+
+- **What changed:**
+  - Every generated map gets one or two rivers. Each starts at a spring in the hills and follows the land down to a lake, the sea or the front edge of the board, where it pours over the side.
+  - A river sits one step below its banks and only ever drops along its course. Each drop is a waterfall: a falling sheet on the cliff face with white foam where it lands.
+  - River water runs: ripples and sparkles travel downstream, following the bends. Sea shores get a line of surf that washes in and out.
+  - Bridges cross each river (two on long ones): wooden plank bridges on posts in the lowlands, stone arches in the hills. A unit on a bridge stands at deck height and moves at full speed.
+  - Meadow Vale's river now flows, and the Night Market's plank walkways became real bridges over a running canal.
+- **Decisions:** rivers are wadeable everywhere, so they slow units but never block them; one or two per map; they step down with waterfalls; the themed maps get flowing water too.
+- **Learned:**
+  - Draining the land from its outlets upward (lowest first) gives every spring a downhill route, so rivers never get stuck in a hollow.
+  - Banks stand one step above the *highest* water they touch, so falls run between rocky sides instead of spilling over their banks.
+  - A seamless flowing loop needs two copies of the pattern, half a loop apart, each fading out before it jumps back.
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)

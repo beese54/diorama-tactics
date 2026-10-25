@@ -56,12 +56,21 @@ const DITHER = 0.7;
 const GLINTS = 3;
 const GLINT_LIFE = 0.4;
 const GLINT_DRIFT = 2;
+/** How far a river's ripples travel in one loop, in tiles; and how far, in px, a glint rides the current before it fades. */
+const FLOW_RUN = 2;
+const FLOW_GLINT_LIFE = 0.6;
+const FLOW_GLINT_DRIFT = 7;
+/** Foam: two whites, how far below a waterfall it churns (px), and how far up the beach the sea's surf washes (tiles). */
+const FOAM = ['#f4faf8', '#c8e4ea'];
+const FALL_FOAM_PX = 6;
+const SURF_MIN = 0.04;
+const SURF_MAX = 0.16;
 
 export interface LiquidImage {
   /** Pixels per side of the whole map (tiles × tilePx). */
   width: number;
   height: number;
-  /** Colours the frames index into: the ramp, then the glints, then the crust. */
+  /** Colours the frames index into: the ramp, then the glints, then the crust or foam. */
   palette: string[];
   /** One image per animation frame. Per pixel: index into `palette`, or -1 where this liquid isn't. */
   frames: Int8Array[];
@@ -78,6 +87,7 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
   const ramp = look.ramp.length;
   const palette = [...look.ramp, ...new Set(look.glint)];
   const crustIndex = look.crust ? palette.push(look.crust.color) - 1 : -1;
+  const foamIndex = style === 'water' ? palette.push(...FOAM) - FOAM.length : -1;
   const glintIndex = (level: number) => palette.indexOf(look.glint[level]);
   const width = map.width * tilePx;
   const height = map.height * tilePx;
@@ -86,6 +96,9 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
     return !!t && TERRAIN[t.terrain].style === style;
   };
   const depth = shoreDistance(map, tilePx, ours);
+  const flow = flowField(map, tilePx, ours);
+  const flowAt = (gx: number, gy: number) => [flow[2 * (gy * width + gx)], flow[2 * (gy * width + gx) + 1]];
+  const foam = style === 'water' ? foamField(map, tilePx) : null;
 
   const rand = mulberry32(map.seed ^ 0x9a17);
   const glints = map.tiles.filter((t) => ours(t.x, t.y)).flatMap((tile) =>
@@ -99,7 +112,9 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
   );
 
   const frames = Array.from({ length: LIQUID_FRAMES }, (_, f) => {
-    const angle = (2 * Math.PI * f) / LIQUID_FRAMES;
+    /** How far through the loop this frame is, 0..1. */
+    const loop = f / LIQUID_FRAMES;
+    const angle = 2 * Math.PI * loop;
     const [cx, cy] = [look.drift * Math.cos(angle), look.drift * Math.sin(angle)];
     const index = new Int8Array(width * height).fill(-1);
     for (let gy = 0; gy < height; gy++) {
@@ -108,9 +123,22 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
         if (d < 0) continue;
         const x = (gx + 0.5) / tilePx;
         const y = (gy + 0.5) / tilePx;
-        const wobble =
+        const still =
           look.wobble * (2 * valueNoise(map.seed ^ 0x3e11, x / look.wobbleScale + cx, y / look.wobbleScale + cy) - 1) +
           RIPPLE * (2 * valueNoise(map.seed ^ 0x6b2d, x / RIPPLE_SCALE - cy, y / RIPPLE_SCALE - cx) - 1);
+        const [fx, fy] = flowAt(gx, gy);
+        const speed = Math.min(1, Math.hypot(fx, fy));
+        // Running water: the ripples ride the current. Two copies of the pattern half a loop
+        // apart each slide downstream and fade out before they jump back, so the loop is seamless.
+        const ride = (phase: number) => {
+          const sx = x - fx * phase * FLOW_RUN;
+          const sy = y - fy * phase * FLOW_RUN;
+          return look.wobble * (2 * valueNoise(map.seed ^ 0x3e11, sx / look.wobbleScale, sy / look.wobbleScale) - 1) +
+            RIPPLE * (2 * valueNoise(map.seed ^ 0x6b2d, sx / RIPPLE_SCALE, sy / RIPPLE_SCALE) - 1);
+        };
+        const weight = 1 - Math.abs(1 - 2 * loop);
+        const running = speed > 0 ? weight * ride(loop) + (1 - weight) * ride((loop + 0.5) % 1) : 0;
+        const wobble = (1 - speed) * still + speed * running;
         // Wobble fades out at the shoreline so the edge band always hugs the land.
         const level = Math.max(0, d + wobble * Math.min(1, d / look.band)) / look.band;
         const dither = BAYER4[(gy % 4) * 4 + (gx % 4)];
@@ -119,19 +147,41 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
           const plate = valueNoise(map.seed ^ 0x2f71, x / 0.9 - cy * 1.5, y / 0.9 + cx * 1.5);
           if (plate + (dither - 0.5) * 0.06 > look.crust.threshold) index[gy * width + gx] = crustIndex;
         }
+        if (foam) {
+          // Churn below a waterfall, thinning with distance; on the sea, surf that washes in and out.
+          const below = foam.fall[gy * width + gx];
+          const churn = hash(map.seed, gx, gy, f);
+          if (below >= 0 && churn > below / FALL_FOAM_PX) {
+            index[gy * width + gx] = foamIndex + (churn > 0.7 ? 0 : 1);
+          } else if (foam.sea[gy * width + gx]) {
+            const wash = 0.5 + 0.5 * Math.sin(2 * Math.PI * (loop + valueNoise(map.seed ^ 0x5f0a, x / 2, y / 2)));
+            const reach = SURF_MIN + (SURF_MAX - SURF_MIN) * wash;
+            if (d < reach - (dither - 0.5) * 0.04) index[gy * width + gx] = foamIndex + (d < reach * 0.5 ? 0 : 1);
+          }
+        }
       }
     }
 
-    // Glints: short horizontal ripples and single sparkles, tinted for the band they sit on.
-    const t = f / LIQUID_FRAMES;
+    // Glints: short ripples and single sparkles, tinted for the band they sit on.
     for (const g of glints) {
-      const age = (t - g.phase + 1) % 1;
-      if (age >= GLINT_LIFE) continue;
-      const gx = g.gx + Math.floor((age / GLINT_LIFE) * (GLINT_DRIFT + 1));
-      const level = index[g.gy * width + gx];
-      if (gx >= width || level < 0 || level >= ramp) continue; // off the liquid, on crust, or already a glint
-      for (let k = 0; k < g.length && gx + k < width; k++) {
-        if (index[g.gy * width + gx + k] >= 0) index[g.gy * width + gx + k] = glintIndex(level);
+      const [fx, fy] = flowAt(g.gx, g.gy);
+      const runs = Math.hypot(fx, fy) > 0.5;
+      const life = runs ? FLOW_GLINT_LIFE : GLINT_LIFE;
+      const age = (loop - g.phase + 1) % 1;
+      if (age >= life) continue;
+      // Still water: a ripple drifting sideways. Running water: a streak carried downstream, lying along the current.
+      const [dx, dy] = runs ? [fx, fy] : [1, 0];
+      const along = runs ? (age / life) * FLOW_GLINT_DRIFT : Math.floor((age / life) * (GLINT_DRIFT + 1));
+      const gx = Math.floor(g.gx + dx * along);
+      const gy = Math.floor(g.gy + dy * along);
+      if (gx < 0 || gy < 0 || gx >= width || gy >= height) continue;
+      const level = index[gy * width + gx];
+      if (level < 0 || level >= ramp) continue; // off the liquid, on crust or foam, or already a glint
+      for (let k = 0; k < g.length; k++) {
+        const px = Math.round(gx + dx * k);
+        const py = Math.round(gy + dy * k);
+        const i = py * width + px;
+        if (px >= 0 && py >= 0 && px < width && py < height && index[i] >= 0 && index[i] < ramp) index[i] = glintIndex(level);
       }
     }
     return index;
@@ -165,4 +215,74 @@ function shoreDistance(map: MapFile, tilePx: number, ours: (x: number, y: number
     }
   }
   return depth;
+}
+
+/** A repeatable 0..1 value per pixel and frame, for foam that churns rather than slides. */
+function hash(seed: number, x: number, y: number, f: number): number {
+  let h = Math.imul(x + 1, 0x27d4eb2d) ^ Math.imul(y + 1, 0x165667b1) ^ Math.imul(f + 1, 0x9e3779b1) ^ seed;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+  h ^= h >>> 13;
+  return (h >>> 0) / 0x100000000;
+}
+
+/**
+ * Per pixel: the current's direction (x, y pairs), blended between the flows of the four
+ * nearest tiles of this liquid, so a river turns its bends instead of switching direction
+ * at tile borders. Still water, and liquid without a water record, is 0.
+ */
+function flowField(map: MapFile, tilePx: number, ours: (x: number, y: number) => boolean): Float32Array {
+  const width = map.width * tilePx;
+  const height = map.height * tilePx;
+  const field = new Float32Array(width * height * 2);
+  for (let gy = 0; gy < height; gy++) {
+    for (let gx = 0; gx < width; gx++) {
+      if (!ours(Math.floor(gx / tilePx), Math.floor(gy / tilePx))) continue;
+      const x = (gx + 0.5) / tilePx - 0.5;
+      const y = (gy + 0.5) / tilePx - 0.5;
+      const x0 = Math.floor(x);
+      const y0 = Math.floor(y);
+      let sx = 0;
+      let sy = 0;
+      let weights = 0;
+      for (const [tx, ty] of [[x0, y0], [x0 + 1, y0], [x0, y0 + 1], [x0 + 1, y0 + 1]]) {
+        const t = tileAt(map, tx, ty);
+        if (!t || !ours(tx, ty)) continue;
+        const w = (1 - Math.abs(x - tx)) * (1 - Math.abs(y - ty));
+        sx += w * (t.water?.flow[0] ?? 0);
+        sy += w * (t.water?.flow[1] ?? 0);
+        weights += w;
+      }
+      if (weights > 0) field.set([sx / weights, sy / weights], 2 * (gy * width + gx));
+    }
+  }
+  return field;
+}
+
+/**
+ * Where water foams. `fall`: per pixel within FALL_FOAM_PX of an edge that a waterfall
+ * pours over, how far from that edge it lies (px); -1 elsewhere. `sea`: 1 on open-sea
+ * pixels, where surf washes the shore.
+ */
+function foamField(map: MapFile, tilePx: number): { fall: Float32Array; sea: Uint8Array } {
+  const width = map.width * tilePx;
+  const fall = new Float32Array(width * map.height * tilePx).fill(-1);
+  const sea = new Uint8Array(width * map.height * tilePx);
+  for (const tile of map.tiles) {
+    if (!tile.water) continue;
+    const from = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => {
+      const n = tileAt(map, tile.x + dx, tile.y + dy);
+      return !!n?.water && n.height > tile.height;
+    });
+    for (let py = 0; py < tilePx; py++) {
+      for (let px = 0; px < tilePx; px++) {
+        const i = (tile.y * tilePx + py) * width + tile.x * tilePx + px;
+        if (tile.water.kind === 'sea') sea[i] = 1;
+        for (const [dx, dy] of from) {
+          const d = dx > 0 ? tilePx - 1 - px : dx < 0 ? px : dy > 0 ? tilePx - 1 - py : py;
+          if (d < FALL_FOAM_PX) fall[i] = fall[i] < 0 ? d : Math.min(fall[i], d);
+        }
+      }
+    }
+  }
+  return { fall, sea };
 }

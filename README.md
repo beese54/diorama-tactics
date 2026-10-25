@@ -32,8 +32,9 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M2c | Naturally varied rounding, painted water | done |
 | M2d | Blended ground across tiles, looping water, swaying flowers | done |
 | M2e | Theme kits and six showcase maps (one per category) | done |
-| M3 | Seeded world generator, maps saved and loaded as JSON | done, in review |
-| M4–M9 | Rivers and waterfalls, decor, settlements, weather, day and night, performance | planned |
+| M3 | Seeded world generator, maps saved and loaded as JSON | done |
+| M4 | Rivers with waterfalls and bridges, flowing water, sea surf | done, in review |
+| M5–M9 | Trees and rocks, settlements, weather, day and night, performance | planned |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
 
@@ -59,7 +60,7 @@ npm run build    # type-check and production build
 - `jungle`: Jungle Temple
 - `volcano`: Volcanic Caldera
 
-**Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. Each seed makes an inland valley, an island or a coast. The box in the top-left corner has buttons:
+**Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. Each seed makes an inland valley, an island or a coast, with one or two rivers that step down the hills in waterfalls and are crossed by wooden or stone bridges. The box in the top-left corner has buttons:
 
 - **Map picker** (the drop-down in the box) switches to any of the themed maps or to Wild Lands.
 - **New map** (or `R`) grows another map and puts its seed in the URL.

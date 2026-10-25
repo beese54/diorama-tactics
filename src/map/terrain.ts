@@ -1,4 +1,4 @@
-import type { TerrainId } from './types';
+import type { TerrainId, Tile } from './types';
 
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
@@ -85,3 +85,21 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   boardwalk:        built({ name: 'Boardwalk',      moveCost: 1, defense: 5,  style: 'planks',      side: 'timber',    palette: ['#8a6a48', '#7a5c3e', '#4a3726', '#9e7c56'] }),
   temple_stone:     built({ name: 'Temple Steps',   moveCost: 1, defense: 10, style: 'blocks',      side: 'temple',    palette: ['#a49e80', '#969073', '#6b664f', '#b8b292', '#6f8a4a'] }),
 };
+
+export type BridgeId = 'bridge_wood' | 'bridge_stone';
+
+/** Bridges carry units over water at the height of its banks, one step above the water. Data only during the map phase. */
+export const BRIDGES: Record<BridgeId, { name: string; moveCost: number; defense: number }> = {
+  bridge_wood: { name: 'Wooden Bridge', moveCost: 1, defense: 0 },
+  bridge_stone: { name: 'Stone Bridge', moveCost: 1, defense: 5 },
+};
+
+export const bridgeOf = (tile: Tile): BridgeId | null => (tile.feature === 'bridge_wood' || tile.feature === 'bridge_stone' ? tile.feature : null);
+
+/** What a unit standing on the tile gets: a bridge's deck, or the ground (or water) itself. */
+export function tileStats(tile: Tile): { name: string; height: number; moveCost: number; defense: number } {
+  const bridge = bridgeOf(tile);
+  if (bridge) return { ...BRIDGES[bridge], height: tile.height + 1 };
+  const { name, moveCost, defense } = TERRAIN[tile.terrain];
+  return { name, height: tile.height, moveCost, defense };
+}

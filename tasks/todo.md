@@ -135,7 +135,20 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] L3 rebuild in place: main.ts loads a new map without a page reload (old meshes disposed); HUD shows the seed with **New map** (or `R`) and **Save JSON** (or `S`) buttons, and dropping a .json file on the page loads it
   - [x] L4 tests: same seed gives identical JSON; different seeds differ; over 50 seeds every one of the 18 terrains appears, every walkable tile is reachable, ≥ 65% of tiles are walkable, banks slope, no one-tile specks; JSON round trip and bad-file rejection. check.mjs: world loads, R changes the map, the same seed reproduces it, Save gives valid JSON
   - [x] Review: stills of 6 seeds plus a 12-seed contact sheet and one loop GIF sent; `evolution/land/m3-world-generator/`
-- [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
+- [x] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
+  - Decisions (2026-10-25): rivers are wadeable everywhere (shallow, slow to cross; bridges are the quick way over); 1–2 rivers per map by seed; rivers step down terraces with waterfalls; the themed maps get flowing water too.
+  - Plan (2026-10-25, approved). The file format already has river/waterfall water kinds, a flow vector and bridge features, so saves stay version 1.
+  - [x] L0 `map/rivers.ts` (pure): rivers for generated maps
+    - sources on high ground (count by seed), traced downhill along the steepest descent with a little noise, ending in a lake, the sea or the front edge; rivers that meet merge
+    - carved one step below their banks; the course only ever drops, and each drop is a waterfall tile; narrow in the hills, two tiles wide in the lowlands
+    - every river tile gets a flow direction (toward the next tile); banks become damper, so marsh and reeds can follow the river
+  - [x] L1 crossings: rivers are shallow everywhere, so units can always wade across slowly; each river gets one or two bridges (wood in the lowlands, stone in the hills) as the quick way over, walked at deck height. Every walkable tile stays reachable
+  - [x] L2 flowing water (ground image, same 12-frame loop): river ripples and glints slide along the flow direction and loop seamlessly; lakes keep their gentle drift; the sea gets a foam line that washes in and out along the shore
+  - [x] L3 waterfalls: an animated falling sheet on the cliff face where a river drops, with white foam where it lands
+  - [x] L4 bridges: plank or stone decks with rails, spanning the river at bank height with water visible flowing beneath; the tile panel says "Bridge"
+  - [x] L5 themed maps: Meadow's river and the Market canal get flow directions; Market's planks become real bridges
+  - [x] L6 tests: rivers only run downhill, every river ends in water or at the edge, waterfalls only at drops, flow points to the next river tile, all walkable tiles reachable over bridges and fords, water loops seamlessly, JSON round trip. check.mjs: river pixels move along the flow, the waterfall animates, a bridge tile can be picked
+  - [x] Review: a four-seed sheet, close-ups and four GIFs; `evolution/land/m4-water/`
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
 - [ ] **M6: Settlements and roads.** Villages, castle, roads connecting them, bridges where roads cross rivers, ruins and landmarks.
 - [ ] **M7: Weather.** Rain first (particles, splashes, darker lighting), then storm, snow, fog, wind.
@@ -248,3 +261,22 @@ _(filled in after each step)_
   - 386 unit tests. New ones over 50 seeds: deterministic, valid, every natural terrain and shape used, ≥ 65% walkable and all of it reachable, banks sloped, no specks, no pillars, islands ringed by sea, tall ground at the back. Also JSON round trip, hand edits, and 11 kinds of bad file.
   - check.mjs passes 34/34. New: the seed shows and reproduces; R and the button grow new maps without GPU memory growing; edited JSON loads; a bad file is refused and the map kept; the Load picker works.
   - Build is clean.
+
+### M4 review (2026-10-25): rivers, waterfalls and bridges
+- Requested: "Okay" to drafting the M4 plan. Decisions: rivers wadeable everywhere, 1–2 per map, stepping down with waterfalls, and flowing water on the themed maps too.
+- `map/rivers.ts` (pure):
+  - **Drainage:** a priority flood from the outlets (lakes, sea, front edges) gives every tile its next tile downhill, so no river is trapped in a hollow.
+  - **Springs:** high ground (heights 3–6), at least 3 tiles from the edge, with a course of at least 10 tiles. A second river starts at least 7 tiles from the first and may join it as a tributary.
+  - **Heights:** each river tile sits a step below every bank around it and no higher than the tile upstream; a drop marks a waterfall. Water leaving the board falls off the diorama's side.
+  - **Bridges:** one per river, two on rivers of 16+ tiles, at least 5 apart, on straight level stretches between walkable banks one step up. Wood at heights 0–1, stone higher.
+- `build.ts` `slopeToLiquids`: a bank now stands one step above the *highest* liquid it touches (it was the lowest). Proven byte-identical for all six themes and the 50 pre-river seeds; with rivers it keeps falls between rocky sides.
+- `liquid.ts`: a smoothed per-pixel flow field. Ripples are two copies of the pattern, half a loop apart, sliding downstream and cross-faded, so the loop is seamless. Sparkles ride the current as streaks. Foam churns below falls; surf washes sea shores.
+- `waterfall.ts` + a third MapMesh layer: a 16×24 px falling pattern, world-anchored, sliding 2 px a frame.
+- `bridges.ts`: textured boxes. Wood: plank deck, posts into the water, rails. Stone: masonry span with an arch and a parapet. Bridges sit in the MapMesh group, so picking hits the deck and disposal frees them.
+- `terrain.ts` `tileStats`: a bridge is named, walked at deck height, MOV 1. The tile panel uses it.
+- Themes: Meadow's river flows along its curve; the Market canal flows east under two real plank bridges.
+- Tests: 543 pass. New:
+  - over 50 seeds: rivers run downhill tile to tile and end in water or off a front edge; a waterfall exactly where a river drops; rivers are shallow; banks one step above the highest water; bridges sit on straight stretches between walkable banks; one or two rivers per map;
+  - water: sparkles travel downstream in either direction; the loop closes; foam at the foot of a fall and not its top; surf on the sea and not on lakes; the falling pattern slides and wraps.
+  - check.mjs passes 38/38. New: hovering a bridge picks it and names it (world and market); waterfalls exist. The memory check now compares the same seed before and after, since maps differ in bridge count.
+- Note for M5: rivers sit in shallow gorges and can hide behind tall banks from some angles. Keep reeds and trees low near the water.
