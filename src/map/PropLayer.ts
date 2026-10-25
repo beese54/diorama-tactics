@@ -46,6 +46,11 @@ export class PropLayer {
     }
   }
 
+  /** Wind strength from the weather: 1 is a breeze. */
+  setWind(strength: number): void {
+    this.field.setWind(strength);
+  }
+
   update(elapsed: number): void {
     this.field.update(elapsed);
     // Two quick wobbles whose periods divide 4 s, so recorded loops stay seamless.

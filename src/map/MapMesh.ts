@@ -8,6 +8,24 @@ import type { GroundImage } from './ground';
 import { LIQUID_FPS } from './liquid';
 import { FALL_PATTERN_PX, paintWaterfall, type WaterfallImage } from './waterfall';
 
+/**
+ * Weather on the tile tops, in place of three's map_fragment. Liquid pixels carry a lower
+ * alpha (see LIQUID_ALPHA) and are left alone. Wet land darkens and cools. Snow settles in
+ * whole ground pixels, a hash per pixel against the snow amount, clumped by a coarser hash
+ * so it gathers in drifts; only on tops facing up, so steep slopes stay dark.
+ */
+const WEATHER_GROUND = /* glsl */ `
+  #include <map_fragment>
+  float land = step(0.99, diffuseColor.a);
+  diffuseColor.a = 1.0;
+  diffuseColor.rgb *= mix(vec3(1.0), vec3(0.68, 0.72, 0.8), uWet * land);
+  vec2 cell = floor(vWorld.xz * 16.0);
+  float fine = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+  float coarse = fract(sin(dot(floor(vWorld.xz * 2.0), vec2(39.346, 11.135))) * 24634.6345);
+  float settle = step(0.5 * fine + 0.5 * coarse, uSnow * 1.15) * land * step(0.6, vUp);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.95, 0.99) * (0.92 + 0.08 * fine), settle);
+`;
+
 /** Depth of the diorama base below height 0, in steps. */
 const BASE_STEPS = 4;
 
@@ -125,6 +143,10 @@ export class MapMesh {
   private readonly glowTexture: THREE.DataTexture | null;
   private readonly fall: WaterfallImage = paintWaterfall();
   private readonly fallTexture: THREE.DataTexture;
+  private readonly sides: THREE.MeshLambertMaterial;
+  /** Weather on the ground: how wet (0-1) and how much snow has settled (0-1). */
+  private readonly wet = { value: 0 };
+  private readonly snow = { value: 0 };
   private frame = 0;
 
   constructor(
@@ -151,9 +173,20 @@ export class MapMesh {
     this.fallTexture.wrapS = this.fallTexture.wrapT = THREE.RepeatWrapping;
     // Emissive maps make lava, lit windows and neon glow whatever the lighting.
     const glowing = (glow: THREE.Texture | null) => (glow ? { emissiveMap: glow, emissive: 0xffffff } : {});
+    const tops = new THREE.MeshLambertMaterial({ map: this.groundTexture, vertexColors: true, ...glowing(this.glowTexture) });
+    tops.onBeforeCompile = (shader) => {
+      shader.uniforms.uWet = this.wet;
+      shader.uniforms.uSnow = this.snow;
+      shader.vertexShader = 'varying vec3 vWorld;\nvarying float vUp;\n' + shader.vertexShader.replace(
+        '#include <worldpos_vertex>',
+        '#include <worldpos_vertex>\nvWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvUp = objectNormal.y;',
+      );
+      shader.fragmentShader = 'uniform float uWet;\nuniform float uSnow;\nvarying vec3 vWorld;\nvarying float vUp;\n' + shader.fragmentShader.replace('#include <map_fragment>', WEATHER_GROUND);
+    };
+    this.sides = new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true, ...glowing(atlas.glow) });
     this.mesh = new THREE.Mesh(b.build(), [
-      new THREE.MeshLambertMaterial({ map: this.groundTexture, vertexColors: true, ...glowing(this.glowTexture) }),
-      new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true, ...glowing(atlas.glow) }),
+      tops,
+      this.sides,
       new THREE.MeshLambertMaterial({ map: this.fallTexture, vertexColors: true }),
     ]);
     this.bridges = buildBridges(map, (tile) => this.tileOrigin(tile));
@@ -173,6 +206,14 @@ export class MapMesh {
     }
     this.fallTexture.image.data = this.fall.frames[frame];
     this.fallTexture.needsUpdate = true;
+  }
+
+  /** Darkens the ground when wet, and settles snow on the tops (never on water). */
+  setWeather(wet: number, snow: number): void {
+    this.wet.value = wet;
+    this.snow.value = snow;
+    // Wet cliff faces darken too.
+    this.sides.color.setRGB(1 - 0.3 * wet, 1 - 0.27 * wet, 1 - 0.2 * wet);
   }
 
   /** Index of the liquid frame on screen (for headless checks). */

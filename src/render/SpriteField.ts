@@ -64,9 +64,11 @@ const SWAY_VERTEX = /* glsl */ `
   float wave = 0.5 + 0.5 * sin(6.2831853 * (uTime / ${f(WIND_PERIOD)} - along / ${f(WIND_WAVELENGTH)}));
   float gust = 0.6 + 0.4 * sin(6.2831853 * (uTime / ${f(GUST_PERIOD)} - along / ${f(GUST_WAVELENGTH)}));
   float flutter = sin(6.2831853 * (uTime / ${f(FLUTTER_PERIOD)} + phase));
-  float sway = swayAmount * bend * (gust * wave + 0.25 * flutter);
+  float sway = swayAmount * uWind * bend * (gust * wave + 0.25 * flutter);
   vec3 transformed = position + camRight * corner.x + vec3(0.0, corner.y, 0.0);
   transformed.xz += windDir * sway;
+  // Buried (under snow): the quad shrinks to its root and draws nothing.
+  if (phase < uBury) transformed = position;
 `;
 
 /**
@@ -78,6 +80,10 @@ export class SpriteField {
   readonly group = new THREE.Group();
   readonly count: number;
   private readonly time = { value: 0 };
+  /** Wind strength: 1 is a breeze; weather turns it up or down. */
+  private readonly wind = { value: 1 };
+  /** Share of the sprites hidden (by their phase), as snow buries flowers and grass. */
+  private readonly bury = { value: 0 };
 
   constructor(sprites: SpriteInstance[], sheet: THREE.Texture, glow?: THREE.Texture) {
     const positions: number[] = [];
@@ -131,8 +137,10 @@ export class SpriteField {
     });
     material.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = this.time;
+      shader.uniforms.uWind = this.wind;
+      shader.uniforms.uBury = this.bury;
       shader.vertexShader =
-        'uniform float uTime;\nattribute vec2 corner;\nattribute float spriteHeight;\nattribute float swayAmount;\nattribute float phase;\n' +
+        'uniform float uTime;\nuniform float uWind;\nuniform float uBury;\nattribute vec2 corner;\nattribute float spriteHeight;\nattribute float swayAmount;\nattribute float phase;\n' +
         'attribute vec3 frameInfo;\n#define frameCount frameInfo.x\n#define frameRate frameInfo.y\n#define frameStride frameInfo.z\n' +
         shader.vertexShader.replace('#include <uv_vertex>', FRAME_VERTEX).replace('#include <begin_vertex>', SWAY_VERTEX);
     };
@@ -143,5 +151,14 @@ export class SpriteField {
 
   update(elapsed: number): void {
     this.time.value = elapsed;
+  }
+
+  setWind(strength: number): void {
+    this.wind.value = strength;
+  }
+
+  /** Hides this share (0-1) of the sprites, the same ones each time. */
+  setBury(share: number): void {
+    this.bury.value = share;
   }
 }

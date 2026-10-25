@@ -35,3 +35,7 @@
 - **Rule:** Seasonal or climate dressing (snow, frost, autumn colour, ash) must follow the map's actual conditions next to it (a snowfield or peak within reach), never a fixed height or a coin flip. If the map shows no snow anywhere, nothing on it is snowy.
 - **Rule:** Guard each such rule with a test that would fail on a map without the condition, and run it against the old code first to prove it catches the bug.
 
+## 2026-10-25: The same case clash, a second time
+- **What happened:** In M7 I wrote `src/render/Weather.ts` (the renderer) next to `src/render/weather.ts` (the pure rules). On Windows they are one file, so the write overwrote the rules. This repeats the `Props.ts` / `props.ts` lesson, although the rule was already written down.
+- **Rule:** Before creating any file, list its folder ignoring case (`ls <dir> | grep -i <name>`) and pick a name that differs by more than case. Name renderer classes `…Layer.ts` (`PropLayer.ts`, `WeatherLayer.ts`) so they can never clash with a lowercase data module.
+

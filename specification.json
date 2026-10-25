@@ -109,8 +109,10 @@
   },
   "weather": {
     "states": ["clear", "rain", "storm", "snow", "fog"],
-    "wind": "float 0..1, affects rain angle and foliage sway",
-    "toggle": "number keys 1-5 [ASSUMED]"
+    "wind": "strength multiplier (1 = breeze; storm 3): rain slant, plant/banner sway",
+    "ground": "wet darkens land and cliffs; snow settles on upward tops per ground pixel, never on liquid (alpha mask), and buries flowers",
+    "choice": "HUD weather picker (auto = map's own: weatherForMap(seed) on Wild Lands, clear on themes), kept in the URL as weather=<kind>",
+    "loop": "every weather effect loops in 4 s"
   },
   "time_of_day": { "range": "0..24h", "speed": "adjustable, T to pause/advance [ASSUMED]" },
   "ui": {

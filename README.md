@@ -35,8 +35,9 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M3 | Seeded world generator, maps saved and loaded as JSON | done |
 | M4 | Rivers with waterfalls and bridges, flowing water, sea surf | done |
 | M5 | Trees, rocks and swamp snags as sparse cover; reeds, pebbles, murky swamp water | done |
-| M6 | A village, castle or ruins on level ground, roads out to the edges, walkable rooftops | done, in review |
-| M7–M9 | Weather, day and night, performance | planned |
+| M6 | A village, castle or ruins on level ground, roads out to the edges, walkable rooftops | done |
+| M7 | Weather: rain, storms with lightning, snow that settles, fog, wind; wet ground | done, in review |
+| M8–M9 | Day and night, performance | planned |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
 
@@ -65,6 +66,7 @@ npm run build    # type-check and production build
 **Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. Each seed makes an inland valley, an island or a coast, with one or two rivers that step down the hills in waterfalls and are crossed by wooden or stone bridges. Woods grow in sparse clumps, with rocks on the slopes and drowned trees in the swamps; they give cover but never block a tile. Each map is built around a village, a small castle or old ruins, with roads out to the board's edges; rooftops and ramparts can be stood on. The box in the top-left corner has buttons:
 
 - **Map picker** (the drop-down in the box) switches to any of the themed maps or to Wild Lands.
+- **Weather picker** (the second drop-down) sets clear, rain, storm, snow or fog on any map, or leaves each map its own weather (Wild Lands get one from their seed). It is kept in the URL as `&weather=rain`.
 - **New map** (or `R`) grows another map and puts its seed in the URL.
 - **Save** (or `E`) downloads the map as JSON, one tile per line, so you can edit it by hand.
 - **Load** (or drop a file on the page) opens a saved map. A bad file is refused with a note saying what is wrong.

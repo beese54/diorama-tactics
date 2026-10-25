@@ -108,10 +108,18 @@
     {
       "id": "m6",
       "date": "2026-10-25",
-      "commit": "next",
+      "commit": "c953aa1",
       "image": "m6-settlements/four-seeds.png",
       "title": "M6 · Villages, castles, ruins",
       "note": "A settlement per map, roads out to the edges, rooftops you can stand on."
+    },
+    {
+      "id": "m7",
+      "date": "2026-10-25",
+      "commit": "next",
+      "image": "m7-weather/six-weathers.png",
+      "title": "M7 · Weather",
+      "note": "Rain, storm with lightning, snow that settles, fog in the hollows, wind."
     }
   ]
 }

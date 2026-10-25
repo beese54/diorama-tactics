@@ -185,7 +185,7 @@ const picker = await page.$('#hud input[type=file]');
 await picker.uploadFile(file);
 await page.waitForFunction(() => window.__map.tile(0, 0).terrain === 'forest', { timeout: 3000 }).catch(() => {});
 check('Load picks a saved file', (await page.evaluate(() => window.__map.tile(0, 0).terrain)) === 'forest' && (await page.evaluate(() => window.__map.hudText())).includes('Loaded'));
-const offered = await page.$$eval('#hud select option', (os) => os.map((o) => o.value));
+const offered = await page.$$eval('#hud select:first-of-type option', (os) => os.map((o) => o.value));
 const selected = await page.$eval('#hud select', (s) => s.value);
 await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.select('#hud select', 'volcano')]);
 await page.waitForFunction(() => window.__map);
@@ -242,6 +242,43 @@ check('world: a village rooftop can be picked, and the panel names it', onRoof?.
 await shot('08-world-village');
 await page.mouse.move(0, 0);
 await bridgeCheck('market', 'Wooden Bridge');
+
+// Weather (M7): every weather draws without errors and changes the picture; storms flash;
+// the picker switches it; changing maps in the rain doesn't pile up GPU memory.
+errors.length = 0;
+await page.goto(`${url}?map=world&seed=7`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map);
+await page.evaluate(() => (document.getElementById('hud').hidden = true));
+const frameAt = async (kind, t) => {
+  await page.evaluate((k, time) => (window.__map.setWeather(k, true), window.__map.setTime(time)), kind, t);
+  await new Promise((r) => setTimeout(r, 250));
+  return (await page.screenshot({ encoding: 'base64' })).toString();
+};
+const clearFrame = await frameAt('clear', 1);
+for (const kind of ['rain', 'storm', 'snow', 'fog']) {
+  const frame = await frameAt(kind, 1);
+  await shot(`09-weather-${kind}`);
+  const look = await page.evaluate(() => window.__map.weather());
+  check(`weather ${kind} draws and changes the picture`, frame !== clearFrame && look.kind === kind, JSON.stringify({ kind: look.kind }));
+}
+await frameAt('storm', 0.5);
+const dark = await page.evaluate(() => window.__map.weather().skyLight);
+await frameAt('storm', 1.12);
+const flash = await page.evaluate(() => window.__map.weather().skyLight);
+check('a storm flashes lightning', flash > dark + 1, JSON.stringify({ dark, flash }));
+await page.evaluate(() => (document.getElementById('hud').hidden = false));
+await page.select('#hud select:nth-of-type(2)', 'snow');
+await new Promise((r) => setTimeout(r, 200));
+const pickedWeather = await page.evaluate(() => ({ kind: window.__map.weather().kind, search: location.search }));
+check('the weather picker switches the weather and keeps it in the URL', pickedWeather.kind === 'snow' && pickedWeather.search.includes('weather=snow'), JSON.stringify(pickedWeather));
+await page.evaluate(() => window.__map.setWeather('rain', true));
+const wetMemory = await page.evaluate(() => window.__map.gpuMemory());
+for (let i = 0; i < 3; i++) await page.evaluate((s) => window.__map.newMap(s), 100 + i);
+await page.evaluate(() => window.__map.newMap(7));
+await new Promise((r) => setTimeout(r, 300));
+const wetAfter = await page.evaluate(() => window.__map.gpuMemory());
+check('changing maps in the rain frees the old weather', wetAfter.geometries <= wetMemory.geometries && wetAfter.textures <= wetMemory.textures, JSON.stringify({ before: wetMemory, after: wetAfter }));
+check('weather: no console errors', errors.length === 0, errors.join(' | '));
 check('world: no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();

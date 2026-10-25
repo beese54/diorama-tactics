@@ -198,6 +198,16 @@ export class Flora {
     this.group.add(this.field.group);
   }
 
+  /** Settled snow (0-1) buries flowers and grass, a few at first and nearly all under deep snow. */
+  setSnow(cover: number): void {
+    this.field.setBury(Math.min(1, cover * 1.1));
+  }
+
+  /** Wind strength from the weather: 1 is a breeze. */
+  setWind(strength: number): void {
+    this.field.setWind(strength);
+  }
+
   update(elapsed: number): void {
     this.field.update(elapsed);
   }

@@ -25,6 +25,11 @@ const PATCH_SCALE = 2.6;
 /** How much single pixels stray from their patch's shade (in ramp steps). */
 const SPECKLE = 0.9;
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
+/**
+ * Alpha of liquid pixels in the ground image. The tops are drawn opaque whatever their alpha,
+ * so it marks liquid for the weather shader: rain darkens and snow settles on land only.
+ */
+export const LIQUID_ALPHA = 250;
 
 type Rand = () => number;
 /** Draws one detail pixel at tile-local (x, y); it may spill into neighbouring tiles of the same terrain. */
@@ -377,7 +382,7 @@ export function paintGround(map: MapFile, wild = false): GroundImage {
       const colors = image.palette.map(rgb);
       image.frames[f].forEach((c, i) => {
         if (c < 0) return;
-        frame.set([...colors[c], 255], i * 4);
+        frame.set([...colors[c], LIQUID_ALPHA], i * 4);
         if (light && look.glows) light.set([...colors[c], 255], i * 4);
       });
     }

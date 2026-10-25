@@ -14,6 +14,8 @@ import { Backdrop } from './render/Backdrop';
 import { THEMES, themeFromUrl } from './themes';
 import { randomSeed } from './themes/world';
 import { Hud } from './ui/Hud';
+import { WeatherLayer } from './render/WeatherLayer';
+import { WEATHER_KINDS, WEATHER_NAMES, weatherForMap, type WeatherKind } from './render/weather';
 import { TileInfo } from './ui/TileInfo';
 
 /** Map files larger than this are refused unread; a full 64×64 map is well under it. */
@@ -49,13 +51,25 @@ function main(): void {
   const { light } = theme;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(light.background);
-  scene.add(new THREE.HemisphereLight(light.sky, light.bounce, light.ambient));
+  const hemi = new THREE.HemisphereLight(light.sky, light.bounce, light.ambient);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(light.sun, light.sunIntensity);
   sun.position.set(...light.sunFrom);
   scene.add(sun);
 
   const backdrop = new Backdrop(theme.backdrop());
   scene.add(backdrop.mesh);
+
+  // Mist and haze take the theme's sky colour, dimmer under a darker sun.
+  const fogColor = new THREE.Color(light.sky).multiplyScalar(0.55 + 0.25 * Math.min(1, light.sunIntensity / 2));
+  const weather = new WeatherLayer({ hemi, sun, backdrop, fogColor, daylight: light.sunIntensity / 2.2 });
+  scene.add(weather.group);
+  const generated = theme.seed !== undefined;
+  /** The weather picked in the menu (kept in the URL), or the map's own: by seed on Wild Lands, clear on the themed maps. */
+  const weatherFor = (map: MapFile): WeatherKind => {
+    const asked = new URLSearchParams(location.search).get('weather');
+    return WEATHER_KINDS.find((k) => k === asked) ?? (generated ? weatherForMap(map) : 'clear');
+  };
 
   const buildBoard = (map: MapFile): Board => {
     const wild = theme.seed !== undefined;
@@ -66,9 +80,16 @@ function main(): void {
     const flora = new Flora(placeFlora(map, ground, wild), surfacePoint);
     const props = new PropLayer(map, surfacePoint, { lights: light.propLights });
     scene.add(mesh.group, flora.group, props.group);
+    weather.setBoard({
+      map,
+      surfacePoint,
+      setGround: (wet, snow) => (mesh.setWeather(wet, snow), flora.setSnow(snow)),
+      setWind: (strength) => (flora.setWind(strength), props.setWind(strength)),
+    });
     return { map, mesh, flora, props };
   };
   let board = buildBoard(theme.map());
+  weather.set(weatherFor(board.map), true);
 
   const cursor = new Cursor();
   scene.add(cursor.group);
@@ -95,9 +116,18 @@ function main(): void {
     hud.setTitle(theme.name, theme.seed === undefined ? undefined : map.seed);
   };
 
+  /** Rewrites one URL parameter in place (no reload), keeping the rest. */
+  const setParam = (key: string, value: string | null) => {
+    const params = new URLSearchParams(location.search);
+    if (value === null) params.delete(key);
+    else params.set(key, value);
+    history.replaceState(null, '', `?${params}`);
+  };
   const newMap = (seed = randomSeed()) => {
-    history.replaceState(null, '', `?map=world&seed=${seed}`);
+    setParam('map', 'world');
+    setParam('seed', String(seed));
     showMap(generateMap(seed));
+    weather.set(weatherFor(board.map));
   };
   const save = () => {
     const url = URL.createObjectURL(new Blob([serializeMap(board.map)], { type: 'application/json' }));
@@ -122,10 +152,21 @@ function main(): void {
     hud.say(error ? `Couldn't load ${file.name}. ${error}` : `Loaded ${file.name}.`);
   };
 
-  const generated = theme.seed !== undefined;
   const maps = [...THEMES, { id: 'world', name: 'Wild Lands (random)' }];
-  const pick = (id: string) => (location.search = `?map=${id}`);
-  const hud = new Hud(ui, { maps, current: theme.id, pick, newMap: generated ? () => newMap() : undefined, save, load });
+  const pick = (id: string) => {
+    const keep = new URLSearchParams(location.search).get('weather');
+    location.search = `?map=${id}${keep ? `&weather=${keep}` : ''}`;
+  };
+  const weathers = [{ id: 'auto', name: 'Weather: the map\'s own' }, ...WEATHER_KINDS.map((k) => ({ id: k, name: WEATHER_NAMES[k] }))];
+  const pickWeather = (id: string) => {
+    setParam('weather', id === 'auto' ? null : id);
+    weather.set(weatherFor(board.map));
+  };
+  const asked = new URLSearchParams(location.search).get('weather');
+  const hud = new Hud(ui, {
+    maps, current: theme.id, pick, weathers, weather: WEATHER_KINDS.find((k) => k === asked) ?? 'auto', pickWeather,
+    newMap: generated ? () => newMap() : undefined, save, load,
+  });
   hud.setTitle(theme.name, theme.seed);
 
   window.addEventListener('keydown', (e) => {
@@ -157,6 +198,7 @@ function main(): void {
     timer.update(time);
     const elapsed = frozenTime ?? timer.getElapsed();
     rig.update();
+    weather.update(elapsed);
     backdrop.update(elapsed, rig.controls.getAzimuthalAngle(), rig.controls.getPolarAngle());
     board.mesh.update(elapsed);
     board.flora.update(elapsed);
@@ -206,6 +248,8 @@ function main(): void {
         exportJson: () => serializeMap(board.map),
         loadJson: loadText,
         hudText: () => document.getElementById('hud')?.textContent ?? '',
+        setWeather: (kind: WeatherKind, instant = true) => weather.set(kind, instant),
+        weather: () => ({ kind: weather.kind, look: weather.look, skyLight: hemi.intensity }),
         gpuMemory: () => ({ ...pipeline.renderer.info.memory }),
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),

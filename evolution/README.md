@@ -4,7 +4,7 @@ This folder shows how the game's look has improved over time, one version after 
 
 | Folder | What it covers | Status |
 |---|---|---|
-| [land/](#land) | The world map terrain | M0 to M6 done |
+| [land/](#land) | The world map terrain | M0 to M7 done |
 | [characters/](characters/README.md) | Unit sprites and animation | not started |
 | [battles/](battles/README.md) | Battle scenes | not started |
 
@@ -237,6 +237,38 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
 - **Learned:**
   - Levelling ground for a building must leave anything touching water alone, or the banks stop meeting the waterline. A test caught a beach raised beside a castle.
   - A large footprint doesn't fit every map. A rugged island had no room for a castle, so the generator falls back to a smaller settlement.
+
+### M7: Weather
+![Seed 7 in each weather: clear, rain, storm; lightning, snow, fog](land/m7-weather/six-weathers.png)
+
+| Rain | Storm |
+|---|---|
+| ![](land/m7-weather/rain-7.gif) | ![](land/m7-weather/storm-7.gif) |
+
+| Snow | Fog |
+|---|---|
+| ![](land/m7-weather/snow-7.gif) | ![](land/m7-weather/fog-7.gif) |
+
+| Rain on the Night Market | The weather picker |
+|---|---|
+| ![](land/m7-weather/market-rain.gif) | ![](land/m7-weather/menu.png) |
+
+- **What changed:**
+  - **Rain:** pixel streaks slanting with the wind, splashes on the ground and rings on the water. The ground and cliffs darken when wet, and the light turns grey-blue.
+  - **Storm:** heavier, more slanted rain, a strong wind that bends trees, flowers and banners further, and a double lightning flash once every four seconds.
+  - **Snow:** flakes drift and swirl. Snow settles on the tile tops pixel by pixel in drifts, never on water, and buries the flowers and grass.
+  - **Fog:** soft banks of mist pool in the low ground, drift with the wind, and fade the scenery into haze.
+  - Weather eases from one to the next over a couple of seconds; snow takes longer to settle.
+  - Each Wild Lands map gets weather to suit it: snow only where there is snow, rain more often where the land is wet, clear skies most often.
+  - A weather picker in the menu box sets any weather on any map. Every effect loops in four seconds, like the water and the wind.
+- **Decisions:** *"All five"*, *"By seed + picker"*, *"Wet and snowy ground"*.
+- **Learned (fixed before shipping):**
+  - Ordered dithering at low strength made a regular dot grid that read as noise. Mist now uses a few flat steps of see-through fog, and only fog has mist.
+  - Flowers poking through settled snow looked wrong. Snow now buries them as it deepens.
+  - Rain bright enough for daylight glared on the night market. Rain and snow dim with the theme's light, and a smaller board gets fewer drops.
+  - A lightning flash has to whiten the light as well as brighten it, or it reads as a slightly lighter storm.
+  - Snow at snow speed couldn't fall the whole sky in four seconds. Each flake now falls through its own shorter band.
+  - I made the same mistake twice: `Weather.ts` and `weather.ts` are one file on Windows. See `tasks/lessons.md`.
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)

@@ -48,6 +48,10 @@ export class Backdrop {
       hasOver: { value: over ? 1 : 0 },
       scroll: { value: new THREE.Vector2() },
       overScroll: { value: new THREE.Vector2() },
+      tint: { value: new THREE.Color(1, 1, 1) },
+      hazeColor: { value: new THREE.Color(1, 1, 1) },
+      haze: { value: 0 },
+      flash: { value: 0 },
     };
     const material = new THREE.ShaderMaterial({
       uniforms: this.uniforms,
@@ -64,6 +68,10 @@ export class Backdrop {
         uniform float hasOver;
         uniform vec2 scroll;
         uniform vec2 overScroll;
+        uniform vec3 tint;
+        uniform vec3 hazeColor;
+        uniform float haze;
+        uniform float flash;
         void main() {
           // Whole drawing-buffer pixels, counted from the top-left, so texels map one to one.
           vec2 px = vec2(floor(gl_FragCoord.x), ${BASE_HEIGHT.toFixed(1)} - 1.0 - floor(gl_FragCoord.y));
@@ -75,6 +83,8 @@ export class Backdrop {
             vec4 o = texture2D(overTex, vec2((q.x + 0.5) / overSize.x, 1.0 - (q.y + 0.5) / overSize.y));
             color.rgb = mix(color.rgb, o.rgb, o.a);
           }
+          // Weather: tinted and dimmed, faded toward the haze, lit white by lightning.
+          color.rgb = mix(color.rgb * tint, hazeColor, haze) + flash * 0.45;
           gl_FragColor = vec4(color.rgb, 1.0);
           #include <colorspace_fragment>
         }
@@ -84,6 +94,14 @@ export class Backdrop {
     this.mesh.frustumCulled = false;
     this.mesh.renderOrder = -1000; // before the map, which then draws over it
     this.overlayVelocity = over?.velocity ?? [0, 0];
+  }
+
+  /** Weather over the scenery: a tint (and dimming), a fade toward haze (0-1), and a lightning flash (0-1). */
+  setWeather(tint: THREE.Color, hazeColor: THREE.Color, haze: number, flash: number): void {
+    this.uniforms.tint.value.copy(tint);
+    this.uniforms.hazeColor.value.copy(hazeColor);
+    this.uniforms.haze.value = haze;
+    this.uniforms.flash.value = flash;
   }
 
   /** Follows the camera's orbit (azimuth and polar angle, radians) and advances the overlay's drift. */

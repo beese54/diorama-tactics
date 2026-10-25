@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { paintGround } from './ground';
+import { LIQUID_ALPHA, paintGround } from './ground';
+import { TERRAIN } from './terrain';
 import { isLiquid } from './surface';
 import { createTestMap } from './testMap';
 import { TILE_PX } from './textures';
@@ -14,10 +15,14 @@ describe('map-wide ground painting', () => {
   const terrainAt = (gx: number, gy: number) => TERRAIN_IDS[img.material[idx(gx, gy)]];
   const watery = (i: number) => TERRAIN_IDS[img.material[i]].endsWith('water');
 
-  it('paints every pixel opaque, in every frame', () => {
+  it('paints every pixel, marking liquid in the alpha (for the weather) and land fully opaque', () => {
     expect(img.frames).toHaveLength(LIQUID_FRAMES);
-    const clear = img.frames.reduce((n, frame) => n + frame.filter((v, i) => i % 4 === 3 && v !== 255).length, 0);
-    expect(clear).toBe(0);
+    for (const frame of img.frames) {
+      for (let i = 0; i < img.material.length; i++) {
+        const liquid = TERRAIN[TERRAIN_IDS[img.material[i]]].style === 'water' || TERRAIN[TERRAIN_IDS[img.material[i]]].style === 'lava';
+        if (frame[i * 4 + 3] !== (liquid ? LIQUID_ALPHA : 255)) throw new Error(`pixel ${i}: alpha ${frame[i * 4 + 3]}`);
+      }
+    }
   });
 
   it('is deterministic', () => {

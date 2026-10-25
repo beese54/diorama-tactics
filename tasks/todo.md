@@ -175,7 +175,17 @@ coast        → beach, cliffs, sea                    rivers       → run down
     - [x] L2 art: house blocks with roofs and walls in the built style, fields, a well, a watchtower, ruined walls; sprites at the jungle's quality
     - [x] L3 tests: deterministic; settlements on flat dry ground, never on water or cliffs; every settlement linked by road; roads walkable and continuous, crossing rivers only at bridges; everything still reachable; cover cleared off roads and settlements
     - [x] Review: four-seed sheet, village and landmark close-ups, a timeline frame; `evolution/land/m6-settlements/`
-- [ ] **M7: Weather.** Rain first (particles, splashes, darker lighting), then storm, snow, fog, wind.
+- [x] **M7: Weather.** Rain first (particles, splashes, darker lighting), then storm, snow, fog, wind.
+  - Decisions (2026-10-25): all five (rain, storm, snow, fog, wind); weather by seed on Wild Lands plus a weather picker for every map; wet and snowy ground.
+  - Plan (2026-10-25). All effects drawn in the 480x270 pixel buffer, so rain and snow are crisp pixels like everything else; every loop divides 4 s so recordings stay seamless.
+  - [x] L0 `render/weather.ts`: a weather state (clear, rain, storm, snow, fog) with a wind strength; one `Weather` object owns the effects and eases between states instead of snapping
+  - [x] L1 rain: pixel streaks falling at the wind's angle, splashes where they hit tile tops and water, rings on water; darker, cooler light and sky
+  - [x] L2 storm: heavier, more slanted rain, stronger wind (trees and flowers lean further), lightning flashes that light the whole board for a frame or two
+  - [x] L3 snow: flakes drifting and swirling, settling white on tile tops over time; cold, bright light
+  - [x] L4 fog: low banks of mist drifting across the board, thicker further from the camera, softening the backdrop
+  - [x] L5 choosing it: per the decisions below
+  - [x] L6 tests: weather state and easing are pure and deterministic; particle counts stay within a budget; no state leaks when switching maps (GPU memory steady). check.mjs: each weather renders without errors and the frame differs from clear
+  - [x] Review: one still and one GIF per weather on the same seed; a comparison sheet; `evolution/land/m7-weather/`
 - [ ] **M8: Day/night and ambience.** Light cycle, cloud shadows, swaying foliage, fireflies, chimney smoke.
 - [ ] **M9: Large-map performance.** Instancing/chunking and culling, holding 60 fps on the full map.
 
@@ -339,4 +349,40 @@ _(filled in after each step)_
   - castles lean to the back.
   - The terrain, speck and pillar tests now know the settled ground; the cover tests count only cover props.
   - check.mjs passes 40/40. New: hovering a village rooftop picks it and the panel names it.
+
+### M7 review (2026-10-25): weather
+- Requested: "let's continue on to the next step". Decisions: all five weathers; by seed plus a picker; wet and snowy ground.
+- `render/weather.ts` (pure):
+  - `LOOKS` per weather (rain, snow, mist, haze, wind, wet, snow cover, lightning, sky and sun multipliers, tint), with `blendLooks` and smoothstep easing (2.5 s; snow settles over 8 s);
+  - `lightningAt` gives a double flash once per 4 s loop;
+  - `weatherForMap`: snow only where there is snow, more rain on wet land, about half clear;
+  - `loopSpeed` makes falls loop in 4 s.
+- `render/WeatherLayer.ts`:
+  - rain: line segments, density scaled to board area, slanted by wind;
+  - snow: points, each flake in its own 5.5-unit band so it can fall slowly and still loop;
+  - splashes and water rings: points at board surface spots, half-second cycle;
+  - fog: three mist layers just above steps 1 to 3, tileable noise cross-faded for a seamless drift, in three flat steps of opacity, fading at the board edge;
+  - light: hemisphere and sun dimmed and tinted, whitened and brightened by lightning; rain and snow dim on dusk and night themes.
+- `Backdrop.setWeather`: tint, haze toward the fog colour, and lightning.
+- `MapMesh.setWeather`:
+  - liquid pixels carry alpha 250 (`LIQUID_ALPHA`) in the ground image as a mask;
+  - wet land and cliff faces darken and cool;
+  - snow settles per ground pixel (fine hash plus coarse drift hash against the cover) on upward-facing tops.
+- `SpriteField`: `uWind` (sway strength) and `uBury` (snow hides flowers and grass by phase).
+- HUD: a weather picker (the map's own, or any of the five), kept in the URL as `weather=`.
+- Fixed before shipping:
+  - a mist dot grid;
+  - flowers showing through snow;
+  - night rain too bright and too dense on the small market board;
+  - lightning too weak;
+  - snow falling too fast;
+  - `Weather.ts` overwriting `weather.ts` (case clash; renamed to `WeatherLayer.ts`, lesson recorded).
+- Tests: 865 pass. New: looks, blending, easing, lightning loop, loop speeds, and seed weather (deterministic, every kind appears, mostly clear, snow only with snow). The ground alpha test now checks the liquid mask.
+- check.mjs passes 48/48. New:
+  - each weather draws and changes the picture;
+  - a storm flashes;
+  - the weather picker switches and keeps the URL;
+  - changing maps in the rain frees the old weather;
+  - no console errors.
+  - The map picker check now reads only the first picker.
 
