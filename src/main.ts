@@ -5,8 +5,10 @@ import { MapMesh } from './map/MapMesh';
 import { Cursor } from './map/Cursor';
 import { Flora, placeFlora } from './map/Flora';
 import { paintGround } from './map/ground';
-import { createTestMap } from './map/testMap';
+import { PropLayer } from './map/PropLayer';
 import { tileAt, type Tile } from './map/types';
+import { Backdrop } from './render/Backdrop';
+import { THEMES, themeFromUrl } from './themes';
 import { TileInfo } from './ui/TileInfo';
 
 function createPipeline(stage: HTMLElement): PixelPipeline | null {
@@ -26,25 +28,35 @@ function main(): void {
   const pipeline = createPipeline(stage);
   if (!pipeline) return;
 
+  const theme = themeFromUrl(location.search);
+  document.title = `${theme.name} · Diorama Tactics`;
+  const { light } = theme;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0d14);
-  scene.add(new THREE.HemisphereLight(0xdfe6ff, 0x3a2c20, 1.4));
-  const sun = new THREE.DirectionalLight(0xfff1d6, 2.2);
-  sun.position.set(-4, 10, 6);
+  scene.background = new THREE.Color(light.background);
+  scene.add(new THREE.HemisphereLight(light.sky, light.bounce, light.ambient));
+  const sun = new THREE.DirectionalLight(light.sun, light.sunIntensity);
+  sun.position.set(...light.sunFrom);
   scene.add(sun);
 
-  const map = createTestMap();
+  const backdrop = new Backdrop(theme.backdrop());
+  scene.add(backdrop.mesh);
+
+  const map = theme.map();
   const ground = paintGround(map);
   const mapMesh = new MapMesh(map, ground);
   scene.add(mapMesh.group);
-  const flora = new Flora(placeFlora(map, ground), (tile, u, v) => mapMesh.surfacePoint(tile, u, v));
+  const surfacePoint = (tile: Tile, u: number, v: number) => mapMesh.surfacePoint(tile, u, v);
+  const flora = new Flora(placeFlora(map, ground), surfacePoint);
   scene.add(flora.group);
+  const props = new PropLayer(map, surfacePoint, { lights: light.propLights });
+  scene.add(props.group);
 
   const cursor = new Cursor();
   scene.add(cursor.group);
 
   const canvas = pipeline.renderer.domElement;
   const rig = new CameraRig(canvas, map.width / 2);
+  rig.setPose(45, 60, theme.zoom);
   const tileInfo = new TileInfo(document.getElementById('ui')!);
 
   const pointer = new THREE.Vector2();
@@ -67,8 +79,10 @@ function main(): void {
     timer.update(time);
     const elapsed = frozenTime ?? timer.getElapsed();
     rig.update();
+    backdrop.update(elapsed, rig.controls.getAzimuthalAngle(), rig.controls.getPolarAngle());
     mapMesh.update(elapsed);
     flora.update(elapsed);
+    props.update(elapsed);
 
     if (pointerInside) {
       raycaster.setFromCamera(pointer, rig.camera);
@@ -105,6 +119,9 @@ function main(): void {
         setTime: (seconds: number | null) => (frozenTime = seconds),
         waterFrame: () => mapMesh.waterFrame,
         floraCount: () => flora.count,
+        propCount: () => props.count,
+        theme: () => ({ id: theme.id, focus: theme.focus, width: map.width, zoom: theme.zoom }),
+        themes: () => THEMES.map((t) => t.id),
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
           zoom: rig.camera.zoom,

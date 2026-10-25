@@ -15,3 +15,12 @@
 - **What happened:** In M2c I painted the water per pixel across tiles, but left the land on per-tile textures with grid seams. The user had to ask again for the same quality on land.
 - **Rule:** When the user corrects one feature towards a quality ("blend across tiles", "vary naturally"), apply it to every analogous feature in the same pass, and say so. Don't fix only the example they named.
 - **Rule:** Check rendered screenshots for background-coloured pixels inside the map (pinholes). Mixed mesh resolutions need matching edge vertices: no T-junctions.
+
+## 2026-10-25: "They do not look as refined as the very first one"
+- **What happened:** To propose 30 map themes, I drew quick concept sketches with a separate 2D canvas renderer: 10×10 flat blocks with simple props. The user compared them with the real M2d render and judged them as finished quality, so they looked like a step backwards.
+- **Rule:** This user judges every image as finished quality. Never show visuals below the quality bar already reached. Render proposals with the real engine, or say clearly *before* showing them that they are low-fidelity and why.
+- **Rule:** When a proposal covers many variations, render a few at full quality first instead of many at low quality.
+
+## 2026-10-25: Windows file names ignore case
+- **What happened:** I wrote `src/map/Props.ts` (a class) next to `src/map/props.ts` (data). On Windows, and in OneDrive, these are the same file, so the data file was silently overwritten.
+- **Rule:** Never create two files whose names differ only in case. Give each module a distinct name, for example `props.ts` for the data and `PropLayer.ts` for the renderer.

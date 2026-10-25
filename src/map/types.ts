@@ -2,6 +2,8 @@ export const TERRAIN_IDS = [
   'plains', 'meadow', 'farmland', 'road', 'light_woods', 'forest', 'pine_forest',
   'hills', 'mountain', 'peak_snow', 'scree', 'cliff', 'swamp', 'marsh', 'bog',
   'beach', 'shallow_water', 'deep_water', 'badlands', 'desert', 'ruins', 'crystal_field',
+  'snowfield', 'jungle_floor', 'basalt', 'ash', 'lava', 'flagstone', 'cobblestone', 'castle_wall',
+  'asphalt', 'pavement', 'brick_building', 'plaster_building', 'neon_building', 'wet_street', 'boardwalk', 'temple_stone',
 ] as const;
 export type TerrainId = (typeof TERRAIN_IDS)[number];
 
@@ -9,6 +11,17 @@ export const FEATURE_IDS = [
   'village', 'castle', 'watchtower', 'bridge_stone', 'bridge_wood', 'ancient_tree', 'oasis',
 ] as const;
 export type FeatureId = (typeof FEATURE_IDS)[number];
+
+/** Decor standing on a tile: cover, obstacles and landmarks (see props.ts). */
+export const PROP_IDS = [
+  'pine', 'pine_snowy', 'boulder', 'cairn',
+  'crate', 'barrel', 'brazier', 'banner', 'throne', 'haystack',
+  'tree', 'lamp_post', 'bench', 'fountain', 'traffic_light', 'planter',
+  'stall', 'lantern_post', 'lantern_gate', 'vending',
+  'jungle_tree', 'fern', 'altar', 'pillar',
+  'basalt_spire', 'dead_tree', 'ember_rock', 'vent',
+] as const;
+export type PropId = (typeof PROP_IDS)[number];
 
 export interface WaterInfo {
   kind: 'river' | 'lake' | 'sea' | 'ford' | 'waterfall';
@@ -25,6 +38,8 @@ export interface Tile {
   feature: FeatureId | null;
   /** Per-tile variation in [0, 1), free for decor placement. */
   seedRand: number;
+  /** Decor standing on the tile, if any. */
+  prop?: PropId;
 }
 
 export interface MapFile {

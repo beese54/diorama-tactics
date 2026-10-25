@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createTestMap } from './testMap';
-import { BALANCE_SHIFT, isFlat, isWater, RIM_DROP, RIM_WIDTH_MAX, RIM_WIDTH_MIN, SAMPLES, shapeAt, STEP_HEIGHT, surfaceAt } from './surface';
+import { BALANCE_SHIFT, isFlat, isLiquid, RIM_DROP, RIM_WIDTH_MAX, RIM_WIDTH_MIN, SAMPLES, shapeAt, STEP_HEIGHT, surfaceAt } from './surface';
 import { tileAt, type MapFile, type Tile } from './types';
 
 /** A small map from a height grid (rows = y), all plains unless listed as water. */
@@ -79,7 +79,7 @@ describe('rounded surface', () => {
   it('keeps water flat', () => {
     const map = gridMap([[0, 2], [0, 2]], [[0, 0], [0, 1]]);
     const w = tileAt(map, 0, 0)!;
-    expect(isWater(w)).toBe(true);
+    expect(isLiquid(w)).toBe(true);
     for (const s of SAMPLES) expect(surfaceAt(map, w, 1, s).offset).toBe(0);
   });
 
@@ -89,7 +89,7 @@ describe('rounded surface', () => {
     ['stairs and pits', gridMap([[0, 1, 2, 3], [1, 4, 2, 1], [2, 2, 0, 3], [3, 1, 3, 5]])],
   ])('has no cracks between equal-height neighbours (%s)', (_, map) => {
     for (const e of sharedEdges(map)) {
-      if (e.t.height === e.nb.height && isWater(e.t) === isWater(e.nb)) expect(e.a).toBeCloseTo(e.b, 9);
+      if (e.t.height === e.nb.height && isLiquid(e.t) === isLiquid(e.nb)) expect(e.a).toBeCloseTo(e.b, 9);
     }
   });
 
@@ -128,5 +128,31 @@ describe('rounded surface', () => {
     // Middle row, away from the map edge (which counts as a drop).
     const map = gridMap([[2, 2, 3, 3], [2, 2, 3, 3], [2, 2, 3, 3]]);
     for (const s of SAMPLES) expect(y(map, tileAt(map, 1, 1)!, 1, s)).toBeCloseTo(y(map, tileAt(map, 2, 1)!, 0, s), 9);
+  });
+});
+
+describe('built ground', () => {
+  /** A 3x3 of paving at height 1 with a wall (height 4) on its north edge and grass at height 1 to the south. */
+  const map: MapFile = {
+    version: 1, seed: 0, width: 3, height: 3,
+    tiles: [
+      ...[0, 1, 2].map((x): Tile => ({ x, y: 0, height: 4, terrain: 'castle_wall', moisture: 0.5, water: null, feature: null, seedRand: 0 })),
+      ...[0, 1, 2].map((x): Tile => ({ x, y: 1, height: 1, terrain: 'flagstone', moisture: 0.5, water: null, feature: null, seedRand: 0 })),
+      ...[0, 1, 2].map((x): Tile => ({ x, y: 2, height: 1, terrain: 'plains', moisture: 0.5, water: null, feature: null, seedRand: 0 })),
+    ],
+  };
+
+  it('stays flat with sharp edges', () => {
+    for (const t of map.tiles.filter((t) => t.terrain !== 'plains')) {
+      expect(isFlat(map, t)).toBe(true);
+      for (const s of SAMPLES) for (const r of SAMPLES) expect(surfaceAt(map, t, s, r).offset).toBe(0);
+    }
+  });
+
+  it('does not make natural ground curve up into a wall', () => {
+    const wallMap: MapFile = { ...map, tiles: map.tiles.map((t) => (t.y === 1 ? { ...t, terrain: 'plains' } : t)) };
+    const grass = tileAt(wallMap, 1, 1)!;
+    expect(surfaceAt(wallMap, grass, 0.5, 0).offset).toBe(0);
+    expect(surfaceAt(wallMap, grass, 0.5, 0).foot).toBe(0);
   });
 });

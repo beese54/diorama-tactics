@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { paintGround } from './ground';
-import { isWater } from './surface';
+import { isLiquid } from './surface';
 import { createTestMap } from './testMap';
 import { TILE_PX } from './textures';
 import { TERRAIN_IDS, tileAt } from './types';
-import { WATER_FRAMES } from './water';
+import { LIQUID_FRAMES } from './liquid';
 
 describe('map-wide ground painting', () => {
   const map = createTestMap();
@@ -15,7 +15,7 @@ describe('map-wide ground painting', () => {
   const watery = (i: number) => TERRAIN_IDS[img.material[i]].endsWith('water');
 
   it('paints every pixel opaque, in every frame', () => {
-    expect(img.frames).toHaveLength(WATER_FRAMES);
+    expect(img.frames).toHaveLength(LIQUID_FRAMES);
     const clear = img.frames.reduce((n, frame) => n + frame.filter((v, i) => i % 4 === 3 && v !== 255).length, 0);
     expect(clear).toBe(0);
   });
@@ -30,7 +30,7 @@ describe('map-wide ground painting', () => {
     for (const t of map.tiles) {
       expect(terrainAt(t.x * TILE_PX + 8, t.y * TILE_PX + 8)).toBe(t.terrain);
       for (let py = 0; py < TILE_PX; py++) {
-        for (let px = 0; px < TILE_PX; px++) expect(watery(idx(t.x * TILE_PX + px, t.y * TILE_PX + py))).toBe(isWater(t));
+        for (let px = 0; px < TILE_PX; px++) expect(watery(idx(t.x * TILE_PX + px, t.y * TILE_PX + py))).toBe(isLiquid(t));
       }
     }
   });
@@ -42,7 +42,7 @@ describe('map-wide ground painting', () => {
     let ragged = 0;
     for (const t of map.tiles) {
       const nb = tileAt(map, t.x + 1, t.y);
-      if (!nb || isWater(t) || isWater(nb) || nb.terrain === t.terrain || Math.abs(nb.height - t.height) > 1) continue;
+      if (!nb || isLiquid(t) || isLiquid(nb) || nb.terrain === t.terrain || Math.abs(nb.height - t.height) > 1) continue;
       borders++;
       const crossings = new Set<number>();
       for (let py = 0; py < TILE_PX; py++) {
@@ -97,5 +97,27 @@ describe('map-wide ground painting', () => {
     }
     expect(landChanged).toBe(0);
     expect(waterChanged).toBeGreaterThan(100);
+  });
+});
+
+describe('glowing liquids', () => {
+  it('has no glow image on a map without lava', () => {
+    expect(paintGround(createTestMap()).glow).toBeNull();
+  });
+
+  it('lights every lava pixel and nothing else, and animates the lava', () => {
+    const base = createTestMap();
+    const map = { ...base, tiles: base.tiles.map((t) => (t.terrain === 'deep_water' || t.terrain === 'shallow_water' ? { ...t, terrain: 'lava' as const } : t)) };
+    const img = paintGround(map);
+    expect(img.glow).toHaveLength(LIQUID_FRAMES);
+    let wrong = 0;
+    let moved = 0;
+    for (let i = 0; i < img.material.length; i++) {
+      const lit = img.glow![0][i * 4] + img.glow![0][i * 4 + 1] + img.glow![0][i * 4 + 2] > 0;
+      if (lit !== (TERRAIN_IDS[img.material[i]] === 'lava')) wrong++;
+      if (img.frames[0][i * 4] !== img.frames[3][i * 4]) moved++;
+    }
+    expect(wrong).toBe(0);
+    expect(moved).toBeGreaterThan(100);
   });
 });

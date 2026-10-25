@@ -1,5 +1,5 @@
 import { valueNoise } from '../util/noise';
-import { TERRAIN } from './terrain';
+import { LIQUID_STYLES, TERRAIN, type LiquidStyle } from './terrain';
 import { tileAt, type MapFile, type Tile } from './types';
 
 export const STEP_HEIGHT = 0.5;
@@ -24,7 +24,9 @@ const RIM_SPANS = 5;
 export const SAMPLES = Array.from({ length: RIM_SPANS + 1 }, (_, k) => (k / RIM_SPANS) * RIM_WIDTH_MAX);
 SAMPLES.push(...SAMPLES.map((t) => 1 - t).reverse());
 
-export const isWater = (tile: Tile) => TERRAIN[tile.terrain].style === 'water';
+export const isLiquid = (tile: Tile) => LIQUID_STYLES.includes(TERRAIN[tile.terrain].style as LiquidStyle);
+/** Paving, walls and buildings: flat tops and sharp edges. */
+export const isBuilt = (tile: Tile) => TERRAIN[tile.terrain].shape === 'built';
 
 /** 1 at an edge, easing to 0 at `w`; its slope at the edge matches its mirror image, so lip and foot meet smoothly. */
 const profile = (d: number, w: number) => (d >= w ? 0 : 1 - Math.sin((Math.PI / 2) * (d / w)));
@@ -73,21 +75,22 @@ export interface SurfaceSample {
  * Rounded surface of a tile at local (u, v) in [0, 1]: lips curve down towards lower
  * neighbours (and the map edge), feet curve up towards higher ones. A one-step change
  * becomes one seamless S-curve; taller cliffs keep a vertical face between lip and foot.
- * Banks curve a full step down towards lower water. Water stays flat. The rounding's
- * width and balance drift across the map (shapeAt) so it doesn't look machine-made.
+ * Banks curve a full step down towards lower water. Liquids and built ground stay flat,
+ * and natural ground meets a wall without curving up into it. The rounding's width and
+ * balance drift across the map (shapeAt) so it doesn't look machine-made.
  */
 export function surfaceAt(map: MapFile, tile: Tile, u: number, v: number): SurfaceSample {
-  if (isWater(tile)) return { offset: 0, foot: 0 };
+  if (isLiquid(tile) || isBuilt(tile)) return { offset: 0, foot: 0 };
   const { width: w, lipDrop, footRise } = shapeAt(map.seed, tile.x + u, tile.y + v);
-  const foot = profile(edgeDistance(map, tile, u, v, w, (t) => !!t && t.height > tile.height), w);
-  const lip = profile(edgeDistance(map, tile, u, v, w, (t) => !t || (t.height < tile.height && !isWater(t))), w);
-  const bank = profile(edgeDistance(map, tile, u, v, w, (t) => !!t && t.height < tile.height && isWater(t)), w);
+  const foot = profile(edgeDistance(map, tile, u, v, w, (t) => !!t && t.height > tile.height && !isBuilt(t)), w);
+  const lip = profile(edgeDistance(map, tile, u, v, w, (t) => !t || (t.height < tile.height && !isLiquid(t))), w);
+  const bank = profile(edgeDistance(map, tile, u, v, w, (t) => !!t && t.height < tile.height && isLiquid(t)), w);
   return { offset: footRise * foot - Math.max(lipDrop * lip, BANK_DROP * bank), foot };
 }
 
 /** True when no neighbour differs in height, so the tile top is a plain flat square. */
 export function isFlat(map: MapFile, tile: Tile): boolean {
-  if (isWater(tile)) return true;
+  if (isLiquid(tile) || isBuilt(tile)) return true;
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
       const t = tileAt(map, tile.x + dx, tile.y + dy);

@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { TERRAIN } from './terrain';
 import { buildTerrainAtlas, TILE_PX, VARIANTS, type TerrainAtlas, type UvRect } from './textures';
 import { tileAt, type MapFile, type Tile } from './types';
-import { isFlat, isWater, RIM_DROP, SAMPLES, STEP_HEIGHT, surfaceAt } from './surface';
+import { isBuilt, isFlat, isLiquid, RIM_DROP, SAMPLES, STEP_HEIGHT, surfaceAt } from './surface';
 import type { GroundImage } from './ground';
-import { WATER_FPS } from './water';
+import { LIQUID_FPS } from './liquid';
 
 /** Depth of the diorama base below height 0, in steps. */
 const BASE_STEPS = 4;
@@ -117,6 +117,7 @@ export class MapMesh {
   private readonly mesh: THREE.Mesh;
   private readonly triangleTile: Uint32Array;
   private readonly groundTexture: THREE.DataTexture;
+  private readonly glowTexture: THREE.DataTexture | null;
   private frame = 0;
 
   constructor(
@@ -131,26 +132,37 @@ export class MapMesh {
     });
     this.triangleTile = b.triangleTile();
 
-    this.groundTexture = new THREE.DataTexture(ground.frames[0], ground.width, ground.height);
-    this.groundTexture.colorSpace = THREE.SRGBColorSpace;
-    this.groundTexture.needsUpdate = true;
+    const dataTexture = (data: Uint8Array) => {
+      const tex = new THREE.DataTexture(data, ground.width, ground.height);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      return tex;
+    };
+    this.groundTexture = dataTexture(ground.frames[0]);
+    this.glowTexture = ground.glow && dataTexture(ground.glow[0]);
+    // Emissive maps make lava, lit windows and neon glow whatever the lighting.
+    const glowing = (glow: THREE.Texture | null) => (glow ? { emissiveMap: glow, emissive: 0xffffff } : {});
     this.mesh = new THREE.Mesh(b.build(), [
-      new THREE.MeshLambertMaterial({ map: this.groundTexture, vertexColors: true }),
-      new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true }),
+      new THREE.MeshLambertMaterial({ map: this.groundTexture, vertexColors: true, ...glowing(this.glowTexture) }),
+      new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true, ...glowing(atlas.glow) }),
     ]);
     this.group.add(this.mesh);
   }
 
-  /** Advances the water loop to the frame for `elapsed` seconds. */
+  /** Advances the liquid loop to the frame for `elapsed` seconds. */
   update(elapsed: number): void {
-    const frame = Math.floor(elapsed * WATER_FPS) % this.ground.frames.length;
+    const frame = Math.floor(elapsed * LIQUID_FPS) % this.ground.frames.length;
     if (frame === this.frame) return;
     this.frame = frame;
     this.groundTexture.image.data = this.ground.frames[frame];
     this.groundTexture.needsUpdate = true;
+    if (this.glowTexture && this.ground.glow) {
+      this.glowTexture.image.data = this.ground.glow[frame];
+      this.glowTexture.needsUpdate = true;
+    }
   }
 
-  /** Index of the water frame on screen (for headless checks). */
+  /** Index of the liquid frame on screen (for headless checks). */
   get waterFrame(): number {
     return this.frame;
   }
@@ -214,7 +226,8 @@ export class MapMesh {
     const [x0, z0] = this.tileOrigin(tile);
     const topY = tile.height * STEP_HEIGHT;
     const def = TERRAIN[tile.terrain];
-    const cellTop = topY - (isWater(tile) ? 0 : RIM_DROP);
+    // Natural cliffs count their cells from the rounded lip; flat tops from the top itself.
+    const cellTop = topY - (isLiquid(tile) || isBuilt(tile) ? 0 : RIM_DROP);
 
     SIDES.forEach((side, s) => {
       const nb = tileAt(this.map, tile.x + side.dx, tile.y + side.dy);
@@ -243,7 +256,12 @@ export class MapMesh {
           const step = tile.height - 1 - j;
           const variant = variantHash(tile.x, tile.y, step, s);
           // Below height 0 is the diorama's bedrock: plain earth whatever sits on top.
-          const uv = j <= 0 ? atlas.sideTop(tile.terrain, variant) : atlas.sideLower(step < 0 ? 'soil' : def.side, variant);
+          // The step just above the neighbour's ground is street level (shop fronts, doors).
+          const uv =
+            j <= 0 ? atlas.sideTop(tile.terrain, variant)
+            : step < 0 ? atlas.sideLower('soil', variant)
+            : step === nb?.height ? atlas.sideGround(def.side, variant)
+            : atlas.sideLower(def.side, variant);
           const uvAt = (t: number, y: number): Vec2 => [lerp(uv.u0, uv.u1, t), lerp(uv.v0, uv.v1, (y - cLo) / STEP_HEIGHT)];
           b.quad(
             [[L.x, lt, L.z], [R.x, rt, R.z], [R.x, rb, R.z], [L.x, lb, L.z]],

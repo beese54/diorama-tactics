@@ -1,6 +1,6 @@
 {
   "phase": "map-terrain",
-  "updated": "2026-10-24",
+  "updated": "2026-10-25",
   "tasks": [
     {
       "id": "M0",
@@ -41,6 +41,12 @@
     {
       "id": "DOC1",
       "title": "Visual history (evolution/), README with fan-project disclaimer, neutral project name, public GitHub repo",
+      "status": "done",
+      "commit": "see git log"
+    },
+    {
+      "id": "M2e",
+      "title": "Theme kits (built terrain, lava, props, backdrop) and six showcase maps",
       "status": "done",
       "commit": "see git log"
     },

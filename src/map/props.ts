@@ -1,0 +1,70 @@
+import { hash } from '../util/noise';
+import type { PropId, Tile } from './types';
+
+export interface PropLight {
+  color: number;
+  intensity: number;
+  /** Reach in world units. */
+  distance: number;
+}
+
+export interface PropDef {
+  name: string;
+  /** Defence bonus in percent for a unit beside or behind it. Data only during the map phase. */
+  defense: number;
+  /** Units can't stand on its tile (pillars, spires, landmarks). */
+  blocks: boolean;
+  /** Sprite variants, picked per tile. */
+  variants: number;
+  /** Radius of the contact shadow baked into the ground, in px. */
+  shadow: number;
+  /** How far the top leans in the wind, in world units. */
+  sway: number;
+  /** Natural props stand off-centre; built ones sit in the middle of their tile. */
+  jitter: boolean;
+  /** Light it casts on its surroundings (lit only on themes that turn prop lights on). */
+  light?: PropLight;
+}
+
+const prop = (name: string, def: Partial<Omit<PropDef, 'name'>> = {}): PropDef => ({
+  name, defense: 10, blocks: false, variants: 1, shadow: 4, sway: 0, jitter: false, ...def,
+});
+
+export const PROPS: Record<PropId, PropDef> = {
+  pine:          prop('Pine',          { defense: 15, variants: 3, shadow: 5, sway: 0.035, jitter: true }),
+  pine_snowy:    prop('Snowy Pine',    { defense: 15, variants: 2, shadow: 5, sway: 0.03, jitter: true }),
+  boulder:       prop('Boulder',       { defense: 20, variants: 2, shadow: 6, jitter: true }),
+  cairn:         prop('Summit Cairn',  { defense: 0, blocks: true, shadow: 5, sway: 0.02 }),
+  crate:         prop('Crates',        { defense: 15, variants: 2, shadow: 5 }),
+  barrel:        prop('Barrels',       { defense: 15, shadow: 4 }),
+  brazier:       prop('Brazier',       { defense: 0, shadow: 3, light: { color: 0xff9a48, intensity: 4, distance: 4.5 } }),
+  banner:        prop('Banner',        { defense: 0, shadow: 2, sway: 0.05 }),
+  throne:        prop('Throne',        { defense: 0, blocks: true, shadow: 6 }),
+  haystack:      prop('Haystack',      { defense: 15, shadow: 6, jitter: true }),
+  tree:          prop('Tree',          { defense: 15, variants: 2, shadow: 7, sway: 0.04, jitter: true }),
+  lamp_post:     prop('Lamp Post',     { defense: 0, shadow: 2, light: { color: 0xffe0a0, intensity: 3, distance: 4 } }),
+  bench:         prop('Bench',         { defense: 5, shadow: 5 }),
+  fountain:      prop('Fountain',      { defense: 0, blocks: true, shadow: 11 }),
+  traffic_light: prop('Traffic Light', { defense: 0, shadow: 2 }),
+  planter:       prop('Planter',       { defense: 10, shadow: 5 }),
+  stall:         prop('Market Stall',  { defense: 15, variants: 3, shadow: 8, light: { color: 0xffa860, intensity: 2.5, distance: 3.5 } }),
+  lantern_post:  prop('Lantern',       { defense: 0, shadow: 2, sway: 0.015, light: { color: 0xff6a4a, intensity: 3.5, distance: 4.5 } }),
+  lantern_gate:  prop('Lantern Gate',  { defense: 0, blocks: true, shadow: 9, light: { color: 0xff8050, intensity: 6, distance: 6 } }),
+  vending:       prop('Vending Machine', { defense: 15, shadow: 4, light: { color: 0x60e0ff, intensity: 2.5, distance: 3 } }),
+  jungle_tree:   prop('Jungle Tree',   { defense: 20, variants: 2, shadow: 9, sway: 0.035, jitter: true }),
+  fern:          prop('Ferns',         { defense: 5, variants: 2, shadow: 4, sway: 0.05, jitter: true }),
+  altar:         prop('Altar',         { defense: 0, blocks: true, shadow: 7, light: { color: 0xffd060, intensity: 5, distance: 5 } }),
+  pillar:        prop('Broken Pillar', { defense: 0, blocks: true, variants: 2, shadow: 4 }),
+  basalt_spire:  prop('Basalt Spire',  { defense: 0, blocks: true, variants: 2, shadow: 5, jitter: true }),
+  dead_tree:     prop('Charred Tree',  { defense: 10, variants: 2, shadow: 4, jitter: true }),
+  ember_rock:    prop('Ember Rock',    { defense: 15, shadow: 5, jitter: true, light: { color: 0xff6a20, intensity: 2, distance: 2.5 } }),
+  vent:          prop('Obsidian Vent', { defense: 0, blocks: true, shadow: 10, light: { color: 0xff6a20, intensity: 7, distance: 7 } }),
+};
+
+/** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */
+export function propPlacement(tile: Tile): { u: number; v: number; variant: number } {
+  const def = PROPS[tile.prop!];
+  const jx = def.jitter ? (hash(0x1a2b, tile.x, tile.y) - 0.5) * 0.36 : 0;
+  const jy = def.jitter ? (hash(0x3c4d, tile.x, tile.y) - 0.5) * 0.36 : 0;
+  return { u: 0.5 + jx, v: 0.5 + jy, variant: Math.floor(hash(0x5e6f, tile.x, tile.y) * def.variants) };
+}

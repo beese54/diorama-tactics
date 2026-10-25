@@ -4,7 +4,7 @@ This folder shows how the game's look has improved over time, one version after 
 
 | Folder | What it covers | Status |
 |---|---|---|
-| [land/](#land) | The world map terrain | M0 to M2d done |
+| [land/](#land) | The world map terrain | M0 to M2e done |
 | [characters/](characters/README.md) | Unit sprites and animation | not started |
 | [battles/](battles/README.md) | Battle scenes | not started |
 
@@ -95,6 +95,36 @@ Each version records three things: what changed, the feedback that caused the ch
   - fixed pinholes, single background pixels showing through where flat tiles met rounded ones.
 - **Learned:** look closely at screenshots for background-coloured specks. Mesh pieces built at different detail levels must share their edge points.
 
+### M2e: Theme showcases
+Six new maps, one per category, rendered with the same engine as M2d. Each shows a still overview and a 4-second loop. The `m2e-theme-showcases/` folder also has a close-up of each map's landmark and a view from the far side.
+
+| Alpine Pass (Wilds) | Castle Courtyard (Kingdom) |
+|---|---|
+| ![](land/m2e-theme-showcases/alpine/overview.png) | ![](land/m2e-theme-showcases/courtyard/overview.png) |
+| ![](land/m2e-theme-showcases/alpine/loop.gif) | ![](land/m2e-theme-showcases/courtyard/loop.gif) |
+
+| Fountain Plaza (Modern Town) | Night Market Alley (Neon City) |
+|---|---|
+| ![](land/m2e-theme-showcases/plaza/overview.png) | ![](land/m2e-theme-showcases/market/overview.png) |
+| ![](land/m2e-theme-showcases/plaza/loop.gif) | ![](land/m2e-theme-showcases/market/loop.gif) |
+
+| Jungle Temple (Ancient Ruins) | Volcanic Caldera (Elemental) |
+|---|---|
+| ![](land/m2e-theme-showcases/jungle/overview.png) | ![](land/m2e-theme-showcases/volcano/overview.png) |
+| ![](land/m2e-theme-showcases/jungle/loop.gif) | ![](land/m2e-theme-showcases/volcano/loop.gif) |
+
+- **What changed:**
+  - **Built ground:** walls, buildings and paving keep sharp edges and flat tops, while natural ground stays rounded.
+  - **New ground and wall textures:** flagstones, cobbles, temple blocks, paving slabs, asphalt and planks. Building fronts have windows and shop fronts at street level, with lit windows and neon at night.
+  - **Lava:** a second animated liquid, which glows.
+  - **Props:** pixel-art trees, crates, stalls, lamps and landmarks, each with a contact shadow. Lamps and fires light the ground around them.
+  - **Painted backdrop:** scenery behind the board that turns with the camera.
+- **Feedback:** the first proposal was 30 ideas drawn as simple 2D sketches. *"They do not look as refined as the very first one we did… I was looking for quality ones just like the very first one."*
+- **Learned:**
+  - Never show a proposal below the quality already reached.
+  - Render a few options in the real engine rather than many cheap mock-ups.
+  - Keep tall things on the back edges and neon off the tiles, so the board stays readable in every theme.
+
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
 ![Forest](land/comparisons/forest-m2-vs-m2d.png)
@@ -105,7 +135,7 @@ Each version records three things: what changed, the feedback that caused the ch
 ### Adding a new version
 
 1. Start the dev server (`npm run dev`).
-2. Run `node scripts/snapshot.mjs evolution/land/<id-name>`.
+2. Run `node scripts/snapshot.mjs evolution/land/<id-name>`. For a theme, add its URL: `node scripts/snapshot.mjs <dir> "http://localhost:5173/?map=<id>"`.
 3. If the version animates, add a GIF:
 
    ```

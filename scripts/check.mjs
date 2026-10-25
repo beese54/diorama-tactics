@@ -131,6 +131,19 @@ await page.evaluate(() => window.__map.setTime(null));
 
 check('no console errors', errors.length === 0, errors.join(' | '));
 
+// Every theme loads cleanly, shows its props and moves over time.
+for (const id of await page.evaluate(() => window.__map.themes())) {
+  if (id === 'meadow') continue;
+  errors.length = 0;
+  await page.goto(`${url}?map=${id}`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => window.__map);
+  const info = await page.evaluate(() => ({ theme: window.__map.theme().id, props: window.__map.propCount() }));
+  const [a, b] = [await at(0), await at(0.5)];
+  await page.evaluate(() => window.__map.setTime(null));
+  await shot(`05-theme-${id}`);
+  check(`theme ${id} loads with props and motion`, info.theme === id && info.props > 5 && a.shot !== b.shot && errors.length === 0, JSON.stringify({ ...info, errors }));
+}
+
 await browser.close();
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.ok ? '' : `  -> ${r.detail}`}`);
 process.exit(results.every((r) => r.ok) ? 0 : 1);

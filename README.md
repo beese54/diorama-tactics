@@ -31,6 +31,7 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M2b | Rounded edges, seamless one-step slopes | done |
 | M2c | Naturally varied rounding, painted water | done |
 | M2d | Blended ground across tiles, looping water, swaying flowers | done |
+| M2e | Theme kits and six showcase maps (one per category) | done, in review |
 | M3 | Seeded world generator | next |
 | M4–M9 | Rivers and waterfalls, decor, settlements, weather, day and night, performance | planned |
 
@@ -49,6 +50,17 @@ npm run build    # type-check and production build
 
 **Controls:** drag to orbit, scroll to zoom, WASD to pan, and hover a tile to see its terrain.
 
+**Maps:** add `?map=<id>` to the URL to load a showcase:
+
+- `alpine`: Alpine Pass
+- `courtyard`: Castle Courtyard
+- `plaza`: Fountain Plaza
+- `market`: Night Market Alley
+- `jungle`: Jungle Temple
+- `volcano`: Volcanic Caldera
+
+Without it, the original map (`meadow`) loads.
+
 The headless checks need Chrome, and the GIF script also needs ffmpeg. All of them run against the dev server:
 
 ```sh
@@ -60,8 +72,9 @@ node scripts/gif.mjs out.gif 40 58 2.6 21 10 4 12   # looping review GIF
 ## Layout
 
 ```
-src/render   pixel pipeline (480x270, integer upscale), orbit camera
-src/map      terrain types, rounded surface, mesh, ground painter, water, flora, cursor
+src/render   pixel pipeline (480x270, integer upscale), orbit camera, sprites, backdrop
+src/map      terrain types, rounded surface, mesh, ground painter, liquids, flora, props, cursor
+src/themes   map themes: layout, lighting and painted backdrop per showcase
 src/ui       tile info panel
 scripts      headless checks, snapshots, GIF recorder
 evolution    visual history

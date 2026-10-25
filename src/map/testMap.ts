@@ -1,8 +1,8 @@
 import { mulberry32 } from '../util/rng';
-import { tileAt, type MapFile, type TerrainId, type Tile } from './types';
+import { slopeToLiquids } from './build';
+import type { MapFile, TerrainId, Tile } from './types';
 
 const SIZE = 32;
-const WATER: ReadonlySet<TerrainId> = new Set(['deep_water', 'shallow_water']);
 
 /**
  * Hand-placed layout for M1/M2 so every terrain style and height can be inspected.
@@ -19,7 +19,7 @@ export function createTestMap(seed = 1): MapFile {
     }
   }
   const map: MapFile = { version: 1, seed, width: SIZE, height: SIZE, tiles };
-  slopeBanks(map);
+  slopeToLiquids(map);
   return map;
 }
 
@@ -71,32 +71,3 @@ function place(x: number, y: number): [TerrainId, number] {
   return ['plains', roll > 0.55 ? 3 : 2];
 }
 
-/**
- * Land can be no higher than its distance (in tiles, diagonals included) from water, so banks
- * slope down to rivers and lakes instead of ending in a wall. Counting diagonals keeps a
- * staircase-shaped bank one connected strip, so no column drops two steps at a single corner.
- */
-function slopeBanks(map: MapFile): void {
-  const dist = new Array<number>(map.tiles.length).fill(Infinity);
-  const queue: Tile[] = [];
-  for (const t of map.tiles) {
-    if (WATER.has(t.terrain)) {
-      dist[t.y * map.width + t.x] = 0;
-      queue.push(t);
-    }
-  }
-  for (let i = 0; i < queue.length; i++) {
-    const t = queue[i];
-    const d = dist[t.y * map.width + t.x] + 1;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
-      const n = tileAt(map, t.x + dx, t.y + dy);
-      if (n && dist[n.y * map.width + n.x] > d) {
-        dist[n.y * map.width + n.x] = d;
-        queue.push(n);
-      }
-    }
-  }
-  map.tiles.forEach((t, i) => {
-    if (!WATER.has(t.terrain)) t.height = Math.min(t.height, dist[i]);
-  });
-}

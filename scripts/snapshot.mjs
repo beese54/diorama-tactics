@@ -1,7 +1,7 @@
 // Photographs the standard views of the map for the visual history in evolution/.
 // Run it at the end of each visual milestone so every version is shot from the same poses.
 // Needs the dev server (npm run dev). Views a version lacks the hooks for are skipped.
-// Usage: node scripts/snapshot.mjs <outDir> [url]
+// Usage: node scripts/snapshot.mjs <outDir> [url]   (add ?map=<id> to the url for a theme)
 import puppeteer from 'puppeteer-core';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -37,8 +37,13 @@ await settle();
 const shots = ['overview'];
 await page.screenshot({ path: join(outDir, 'overview.png') });
 
+// Themes get a close-up of their landmark and a view from the far side; the original map keeps its three close-ups.
+const theme = hooks.includes('theme') ? await page.evaluate(() => window.__map.theme()) : null;
+const views = theme && theme.id !== 'meadow'
+  ? { 'close-focus': [45, 55, 2.4, ...theme.focus], turned: [225, 60, theme.zoom, theme.width / 2, theme.width / 2] }
+  : CLOSEUPS;
 if (hooks.includes('setPose')) {
-  for (const [name, pose] of Object.entries(CLOSEUPS)) {
+  for (const [name, pose] of Object.entries(views)) {
     await page.evaluate((p) => window.__map.setPose(...p), pose);
     await settle();
     await page.screenshot({ path: join(outDir, `${name}.png`) });

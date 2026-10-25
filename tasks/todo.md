@@ -113,6 +113,15 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] `Flora.ts`: placement on grass pixels (clustered, meadow dense), billboard sprites with wind sway shader
   - [x] tests (ground blending, water loop, flora placement), check.mjs animation checks, GIF capture for review
 - [x] **DOC1: Visual history and public repo.** Rendered every milestone commit from the same camera views into `evolution/land/` (timeline GIF, before/after pairs, notes per version); placeholders for characters and battles; root README with a clear fan-project disclaimer; neutral project name "Diorama Tactics"; published as a public GitHub repo.
+- [x] **M2e: Theme kits + 6 showcase maps.** The 30 proposed variations were 2D sketches below M2d quality (see lessons.md), so each category gets one showcase built in the real engine first, and the user reviews quality before the other 24. Showcases: Alpine Pass (Wilds), Castle Courtyard (Kingdom), Fountain Plaza (Modern Town), Night Market Alley (Neon City), Jungle Temple (Ruins), Volcanic Caldera (Elemental).
+  - [x] Built terrain: `shape: 'built'` keeps edges sharp and tops flat (walls, buildings, paving); new paving painters (flagstone, cobblestone, blocks, slabs, asphalt) that run seamlessly across tiles; new cliff faces (masonry, facade with windows, shopfront, basalt, temple stone)
+  - [x] Liquids: the water painter generalised to lava (own ramp, slower drift); glowing pixels via emissive maps on the ground and cliff faces
+  - [x] Props: generic billboard renderer (Flora reuses it); procedural pixel sprites (trees, crates, stalls, lamps, landmarks); contact shadows baked into the ground; glowing props add point lights
+  - [x] Backdrop: per-theme panorama behind the board that scrolls with the camera's rotation, plus a time-scrolled overlay (clouds, embers, mist). Never drawn over tiles
+  - [x] Theme registry (`?map=<id>`): map builder, lighting, backdrop; the current map becomes the `meadow` theme and stays the default
+  - [x] Six 20×20 showcase maps
+  - [x] Tests: built surfaces are flat and crack-free, lava loops and only lava glows, every theme map is valid and fully connected for walking units, props sit on legal tiles; check.mjs loads every theme without errors
+  - [x] Stills and GIFs per showcase sent for review; add to evolution/
 - [ ] **M3: World generator.** Seeded noise for elevation and moisture, biome classification, one regenerate key. Saved as editable JSON.
 - [ ] **M4: Water.** Rivers carved downhill, flowing-water shader that scrolls along the flow direction, lakes, coast foam, waterfalls at drops, fords and bridges.
 - [ ] **M5: Swamp, forest and mountain detail.** Tree, reed and rock billboard sprites, dead trees, snowcaps, swamp tint.
@@ -190,3 +199,16 @@ _(filled in after each step)_
 - Mesh is now two draw calls: tops (ground texture) and sides (cliff atlas) as material groups. Picking is unchanged.
 - Fixed a pre-existing M2b defect: flat tiles were single quads, so their edges had T-junctions against rounded neighbours, which rendered as background-coloured pinholes (about 15 per view). Flat tops are now fans with matching edge vertices: 0 pinholes.
 - Verified: 62 unit tests; check.mjs 19/19 (new: flora placed, water frames advance and loop, scene moves); build clean; `scripts/gif.mjs` records a looping GIF for review.
+
+### M2e review (2026-10-25): theme kits and six showcases
+- Requested: map variations by category, with a clear split between movable tiles and background art and no clutter that hides the grid. Then, after the 2D sketches: "they do not look as refined as the very first one… I was looking for quality ones". So: one showcase per category, built in the real engine, for review before the other 24.
+- **Built ground:** `shape: 'built'` gives flat tops and sharp edges, and natural ground no longer curves up into walls. 16 new terrains and 6 new paving painters run seamlessly across tiles, where paving meets paving in straight joints. There are 8 new cliff faces, including building fronts with windows, street-level shop windows and doors, and lit shopfronts with neon.
+- **Liquids:** `liquid.ts` generalises the water painter. Lava has its own ramp, crust plates and an emissive glow; the ground gets a glow image and the cliff atlas a glow atlas.
+- **Props:** 28 procedural pixel sprites with shading and selective outlines. `SpriteField` is a generic billboard renderer with wind sway, and Flora now uses it too. Contact shadows are baked into the ground, and glowing props add point lights (12 at most) on dusk and night themes.
+- **Backdrop:** a painted panorama (sky bands, ridges with snow, skylines with windows and neon, castles, canopy, volcanoes, plumes) on a full-screen layer drawn before the map. It slides with the orbit and tilt, and an optional overlay drifts over time (clouds, mist, embers).
+- **Themes:** chosen with `?map=<id>`; each sets the map builder, lighting, backdrop, focus tile and starting zoom. The default stays the original map (`meadow`), so the existing checks are unchanged. The bank rule (`slopeToLiquids`) moved to `map/build.ts`, works for liquids at any height, and the test map uses it too.
+- **Verified:**
+  - 108 unit tests. New ones cover every showcase: valid and deterministic, its landmark on the focus tile, every open tile reachable on foot, banks sloped, and tall built structures only on the back edges. Built ground is flat and doesn't make grass curve up into walls; only lava glows, and it animates.
+  - check.mjs passes 25/25, with 6 new: each theme loads with props and motion and no errors.
+  - Stills and loop GIFs are in `evolution/land/m2e-theme-showcases/`.
+- **Waiting on:** the user's review of the six showcases, before the other 24 variations.

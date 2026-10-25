@@ -5,6 +5,7 @@ import type { GroundImage } from './ground';
 import { TERRAIN } from './terrain';
 import { TILE_PX } from './textures';
 import { TERRAIN_IDS, type MapFile, type Tile } from './types';
+import { SpriteField } from '../render/SpriteField';
 
 /** Sprite cells, 5×6 px, standing on their bottom row. `.` is transparent. */
 const SPRITE_W = 5;
@@ -31,21 +32,10 @@ const BUDS_AT = FLOWERS.length;
 const TUFTS_AT = 2 * FLOWERS.length;
 const SPRITE_COUNT = TUFTS_AT + TUFTS.length;
 
-/** World size of a sprite: one texel per ground texel, like everything else on the map. */
-const PLANT_W = SPRITE_W / TILE_PX;
-const PLANT_H = SPRITE_H / TILE_PX;
-
 /** Places tried per grass tile; how many become plants depends on the terrain and the clustering noise. */
 const CANDIDATES = 6;
 
-/** Wind: direction (world xz), a wave that travels with it, slower gusts, and a per-plant flutter. All periods divide 4 s, so the motion loops. */
-const WIND_DIR = new THREE.Vector2(1, 0.35).normalize();
-const WIND_PERIOD = 2;
-const WIND_WAVELENGTH = 7;
-const GUST_PERIOD = 4;
-const GUST_WAVELENGTH = 16;
-const FLUTTER_PERIOD = 1;
-/** How far a plant's tip leans at full gust, in world units (~2 px). */
+/** How far a plant's tip leans at full gust, in world units (~2 px); the wind itself lives in SpriteField. */
 const SWAY = 0.12;
 
 export interface Plant {
@@ -125,82 +115,23 @@ function spriteSheet(): THREE.CanvasTexture {
   return tex;
 }
 
-const f = (n: number) => n.toFixed(5);
-
-/**
- * Upright billboard (turns to face the camera, stays vertical), then leans with the wind:
- * the tip bends most, a wave of lean travels across the field, gusts swell and fade, and
- * each plant flutters a little on its own phase.
- */
-const SWAY_VERTEX = /* glsl */ `
-  vec3 camRight = normalize(vec3(viewMatrix[0][0], 0.0, viewMatrix[2][0]));
-  vec2 windDir = vec2(${f(WIND_DIR.x)}, ${f(WIND_DIR.y)});
-  float along = dot(position.xz, windDir);
-  float bend = corner.y / ${f(PLANT_H)};
-  bend *= bend;
-  float wave = 0.5 + 0.5 * sin(6.2831853 * (uTime / ${f(WIND_PERIOD)} - along / ${f(WIND_WAVELENGTH)}));
-  float gust = 0.6 + 0.4 * sin(6.2831853 * (uTime / ${f(GUST_PERIOD)} - along / ${f(GUST_WAVELENGTH)}));
-  float flutter = sin(6.2831853 * (uTime / ${f(FLUTTER_PERIOD)} + phase));
-  float sway = ${f(SWAY)} * bend * (gust * wave + 0.25 * flutter);
-  vec3 transformed = position + camRight * corner.x + vec3(0.0, corner.y, 0.0);
-  transformed.xz += windDir * sway;
-`;
-
 /** Flowers and grass tufts on the map, swaying in the wind. One draw call. */
 export class Flora {
   readonly group = new THREE.Group();
   readonly count: number;
-  private readonly time = { value: 0 };
+  private readonly field: SpriteField;
 
   constructor(plants: Plant[], surfacePoint: (tile: Tile, u: number, v: number) => THREE.Vector3) {
-    const positions: number[] = [];
-    const corners: number[] = [];
-    const uvs: number[] = [];
-    const normals: number[] = [];
-    const phases: number[] = [];
-    const indices: number[] = [];
-    plants.forEach((plant, i) => {
-      const root = surfacePoint(plant.tile, plant.u, plant.v);
-      const u0 = plant.sprite / SPRITE_COUNT;
-      const u1 = (plant.sprite + 1) / SPRITE_COUNT;
-      const quad: [number, number, number, number][] = [
-        [-PLANT_W / 2, 0, u0, 0],
-        [PLANT_W / 2, 0, u1, 0],
-        [PLANT_W / 2, PLANT_H, u1, 1],
-        [-PLANT_W / 2, PLANT_H, u0, 1],
-      ];
-      for (const [cx, cy, u, v] of quad) {
-        positions.push(root.x, root.y, root.z);
-        corners.push(cx, cy);
-        uvs.push(u, v);
-        normals.push(0, 1, 0); // lit like the ground it stands on
-        phases.push(plant.phase);
-      }
-      indices.push(4 * i, 4 * i + 1, 4 * i + 2, 4 * i, 4 * i + 2, 4 * i + 3);
-    });
-    this.count = plants.length;
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('corner', new THREE.Float32BufferAttribute(corners, 2));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-    geometry.setAttribute('phase', new THREE.Float32BufferAttribute(phases, 1));
-    geometry.setIndex(indices);
-
-    const material = new THREE.MeshLambertMaterial({ map: spriteSheet(), alphaTest: 0.5, side: THREE.DoubleSide });
-    material.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = this.time;
-      shader.vertexShader =
-        'uniform float uTime;\nattribute vec2 corner;\nattribute float phase;\n' +
-        shader.vertexShader.replace('#include <begin_vertex>', SWAY_VERTEX);
-    };
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.frustumCulled = false; // vertices move in the shader; positions are only the roots
-    this.group.add(mesh);
+    const rect = (sprite: number) => ({ u0: sprite / SPRITE_COUNT, u1: (sprite + 1) / SPRITE_COUNT, v0: 0, v1: 1, w: SPRITE_W, h: SPRITE_H });
+    this.field = new SpriteField(
+      plants.map((p) => ({ root: surfacePoint(p.tile, p.u, p.v), rect: rect(p.sprite), sway: SWAY, phase: p.phase })),
+      spriteSheet(),
+    );
+    this.count = this.field.count;
+    this.group.add(this.field.group);
   }
 
   update(elapsed: number): void {
-    this.time.value = elapsed;
+    this.field.update(elapsed);
   }
 }
