@@ -305,6 +305,6 @@ _(filled in after each step)_
   - wild decor adds to the flowers without changing them; reeds, pebbles and bushes only where they belong;
   - murk beside a bog; none on the sea.
   - check.mjs passes 39/39. New: a generated map has cover, and hovering a tree names it in the panel.
-- Fix (user feedback, 2026-10-25): snowy pines appeared on maps with no snow. Pines are now snowy only within 2 tiles of a snowfield or peak. A new test over 50 seeds failed on 20+ seeds with the old rule and passes now. History images were re-shot.
+- Fix (user feedback, 2026-10-25): snowy pines appeared on maps with no snow. Pines are now snowy only within 2 tiles of a snowfield or peak. A new test over 50 seeds failed with the old rule (seeds 2, 3, 5, 6, 7, 8, 9, 14 and more) and passes now. History images were re-shot.
 - Fix after the first commit: the murk also tinted Meadow Vale's river beside its marsh (about five tiles). It is now generated-maps only (`paintGround(map, wild)`), like the reeds and pebbles, so the six themed maps are unchanged.
 
