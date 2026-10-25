@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LIQUID_ALPHA, paintGround } from './ground';
+import { LIQUID_ALPHA, paintGround, ROOF_ALPHA } from './ground';
 import { TERRAIN } from './terrain';
 import { isLiquid } from './surface';
 import { createTestMap } from './testMap';
@@ -15,12 +15,13 @@ describe('map-wide ground painting', () => {
   const terrainAt = (gx: number, gy: number) => TERRAIN_IDS[img.material[idx(gx, gy)]];
   const watery = (i: number) => TERRAIN_IDS[img.material[i]].endsWith('water');
 
-  it('paints every pixel, marking liquid in the alpha (for the weather) and land fully opaque', () => {
+  it('paints every pixel, marking liquid and roofs in the alpha (for the weather) and other land fully opaque', () => {
     expect(img.frames).toHaveLength(LIQUID_FRAMES);
     for (const frame of img.frames) {
       for (let i = 0; i < img.material.length; i++) {
-        const liquid = TERRAIN[TERRAIN_IDS[img.material[i]]].style === 'water' || TERRAIN[TERRAIN_IDS[img.material[i]]].style === 'lava';
-        if (frame[i * 4 + 3] !== (liquid ? LIQUID_ALPHA : 255)) throw new Error(`pixel ${i}: alpha ${frame[i * 4 + 3]}`);
+        const style = TERRAIN[TERRAIN_IDS[img.material[i]]].style;
+        const want = style === 'water' || style === 'lava' ? LIQUID_ALPHA : style === 'thatch' || style === 'tiles' ? ROOF_ALPHA : 255;
+        if (frame[i * 4 + 3] !== want) throw new Error(`pixel ${i}: alpha ${frame[i * 4 + 3]}`);
       }
     }
   });

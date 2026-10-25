@@ -385,4 +385,9 @@ _(filled in after each step)_
   - changing maps in the rain frees the old weather;
   - no console errors.
   - The map picker check now reads only the first picker.
+- Round 1 (user review, 2026-10-25): "the water droplets… hinders the view", "no flat white grid everywhere… introduce variations in the snow", "introduce water puddles on some grids randomly".
+  - Rain: drops halved (rain 0.28, storm 0.55), 0.38 long, 42% opaque; splashes 50% opaque.
+  - Puddles in the ground shader: about a quarter of the flat, non-roof tiles each get a blob with its own centre, radius (0.16 to 0.42, growing with wetness) and noise-wobbled edge, with blue-grey water, glints and a far rim. Roof pixels are marked with `ROOF_ALPHA` 252 in the ground image.
+  - Snow: two-octave drift noise against cover × 0.72, so there are bare patches and a dusted edge; three tones from finer noise for lumps; snow-mound sprites (lump, drift, heap) revealed as the cover deepens.
+  - Tests: 865 pass (storm rain capped at 0.6; roof alpha in the ground test). check.mjs 48/48. Before/after pictures in `evolution/land/m7-weather/r1-subtle-rain-snow-puddles/`.
 

@@ -8,6 +8,8 @@ describe('weather', () => {
   it('looks like itself: clear is still, rain wets, storms blow and flash, snow settles, fog lies low', () => {
     expect(LOOKS.clear).toMatchObject({ rain: 0, snow: 0, mist: 0, wet: 0, snowCover: 0, lightning: 0, wind: 1 });
     expect(LOOKS.storm.rain).toBeGreaterThan(LOOKS.rain.rain);
+    // Rain stays light enough to see the board through (round 1: "it hinders the view").
+    expect(LOOKS.storm.rain).toBeLessThanOrEqual(0.6);
     expect(LOOKS.storm.wind).toBeGreaterThan(LOOKS.rain.wind);
     expect(LOOKS.storm.sky).toBeLessThan(LOOKS.rain.sky);
     expect(LOOKS.rain.wet).toBeGreaterThan(0.5);
@@ -23,7 +25,7 @@ describe('weather', () => {
     expect(blendLooks(LOOKS.clear, LOOKS.storm, 0)).toEqual(LOOKS.clear);
     expect(blendLooks(LOOKS.clear, LOOKS.storm, 1)).toEqual(LOOKS.storm);
     const half = blendLooks(LOOKS.clear, LOOKS.storm, 0.5);
-    expect(half.rain).toBeCloseTo(0.5);
+    expect(half.rain).toBeCloseTo(LOOKS.storm.rain / 2);
     expect(half.tint[0]).toBeCloseTo((1 + LOOKS.storm.tint[0]) / 2);
   });
 

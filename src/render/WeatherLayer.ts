@@ -3,6 +3,7 @@ import { mulberry32 } from '../util/rng';
 import { isLiquid } from '../map/surface';
 import type { MapFile, Tile } from '../map/types';
 import type { Backdrop } from './Backdrop';
+import { SpriteField } from './SpriteField';
 import {
   blendLooks, ease, EASE_SECONDS, lightningAt, LOOKS, loopSpeed, SNOW_SETTLE_SECONDS, WEATHER_LOOP, type WeatherKind, type WeatherLook,
 } from './weather';
@@ -23,7 +24,12 @@ const SNOW_SPEED = 1.6;
  * slow, and a flake falling the whole volume couldn't loop in WEATHER_LOOP at snow speed.
  */
 const SNOW_BAND = 5.5;
-const DROP_LENGTH = 0.55;
+const DROP_LENGTH = 0.38;
+/** Rain is see-through, and splashes fainter still, so the board stays easy to read through it. */
+const RAIN_OPACITY = 0.42;
+const SPLASH_OPACITY = 0.5;
+/** Little snow mounds and drifts standing on the ground at full snow, scaled to the board. */
+const SNOW_MOUNDS = 260;
 const SLANT = 0.09;
 /** Each splash shows for this share of its half-second cycle. */
 const SPLASH_CYCLE = 0.5;
@@ -79,6 +85,7 @@ export class WeatherLayer {
   private readonly mist: THREE.ShaderMaterial;
   /** Rebuilt for each board; freed when the board changes. */
   private boardObjects: THREE.Object3D[] = [];
+  private mounds: SpriteField | null = null;
   private readonly noise: THREE.DataTexture;
 
   constructor(private readonly targets: WeatherTargets) {
@@ -119,7 +126,15 @@ export class WeatherLayer {
   setBoard(board: WeatherBoard): void {
     for (const object of this.boardObjects) {
       this.group.remove(object);
-      if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) object.geometry.dispose();
+      object.traverse((o) => {
+        if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.LineSegments) o.geometry.dispose();
+      });
+    }
+    // The mounds' sprite sheet and material are made per board; the shared weather materials are not.
+    if (this.mounds) {
+      const material = (this.mounds.group.children[0] as THREE.Mesh).material as THREE.MeshLambertMaterial;
+      material.map?.dispose();
+      material.dispose();
     }
     this.board = board;
     const { map } = board;
@@ -165,6 +180,18 @@ export class WeatherLayer {
     splashGeometry.setAttribute('aInfo', new THREE.Float32BufferAttribute(splashInfo, 3));
     const splashes = new THREE.Points(splashGeometry, this.splash);
 
+    // Snow mounds: shown one by one as the snow deepens (a mound shows once the cover passes its phase).
+    const sheet = moundSheet();
+    const mounds: { tile: Tile; u: number; v: number; kind: number; phase: number }[] = [];
+    const open = map.tiles.filter((t) => !isLiquid(t));
+    for (let i = 0; i < Math.round(SNOW_MOUNDS * share); i++) {
+      mounds.push({ tile: open[Math.floor(rand() * open.length)], u: 0.15 + 0.7 * rand(), v: 0.15 + 0.7 * rand(), kind: Math.floor(rand() * MOUNDS.length), phase: rand() });
+    }
+    this.mounds = new SpriteField(
+      mounds.map((m) => ({ root: board.surfacePoint(m.tile, m.u, m.v), rect: sheet.rect(m.kind), sway: 0, phase: m.phase })),
+      sheet.texture,
+    );
+
     // Mist: flat layers over the board just above the low steps, so higher ground rises out of it.
     const mists = MIST_LAYERS.map((y, k) => {
       const plane = new THREE.Mesh(new THREE.PlaneGeometry(2 * half, 2 * half), this.mist.clone());
@@ -176,7 +203,7 @@ export class WeatherLayer {
     });
 
     for (const object of [rain, snow, splashes, ...mists]) object.frustumCulled = false;
-    this.boardObjects = [rain, snow, splashes, ...mists];
+    this.boardObjects = [rain, snow, splashes, ...mists, this.mounds.group];
     this.group.add(...this.boardObjects);
     this.rain.uniforms.uSpeed.value = loopSpeed(RAIN_SPEED, TOP - BOTTOM);
     this.snow.uniforms.uSpeed.value = loopSpeed(SNOW_SPEED, SNOW_BAND);
@@ -215,6 +242,7 @@ export class WeatherLayer {
     }
     this.rain.uniforms.uLength.value = DROP_LENGTH * (0.8 + 0.2 * look.wind);
     this.splash.uniforms.uAmount.value = look.rain;
+    this.mounds?.setBury(1 - look.snowCover);
     for (const object of this.boardObjects) {
       if (object instanceof THREE.Mesh && object.material instanceof THREE.ShaderMaterial && 'uMist' in object.material.uniforms) {
         object.material.uniforms.uMist.value = look.mist;
@@ -229,7 +257,10 @@ export class WeatherLayer {
 /** Rain (segments: head and slanted tail) or snow (points that swirl as they fall). */
 function fallMaterial(time: { value: number }, color: THREE.Color, wind: THREE.Vector2, rain: boolean): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
+    transparent: rain,
+    depthWrite: !rain,
     uniforms: {
+      uOpacity: { value: rain ? RAIN_OPACITY : 1 },
       uTime: time, uAmount: { value: 0 }, uSpeed: { value: 1 }, uHeight: { value: rain ? TOP - BOTTOM : SNOW_BAND },
       uWind: { value: wind.clone() }, uLength: { value: DROP_LENGTH }, uColor: { value: color },
     },
@@ -250,8 +281,9 @@ function fallMaterial(time: { value: number }, color: THREE.Color, wind: THREE.V
     `,
     fragmentShader: /* glsl */ `
       uniform vec3 uColor;
+      uniform float uOpacity;
       void main() {
-        gl_FragColor = vec4(uColor, 1.0);
+        gl_FragColor = vec4(uColor, uOpacity);
         #include <colorspace_fragment>
       }
     `,
@@ -261,6 +293,8 @@ function fallMaterial(time: { value: number }, color: THREE.Color, wind: THREE.V
 /** Rain hitting the board: a little crown on dry ground, a ring on water, each for a moment of a half-second cycle. */
 function splashMaterial(time: { value: number }): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
     uniforms: { uTime: time, uAmount: { value: 0 }, uColor: { value: SPLASH_COLOR } },
     vertexShader: /* glsl */ `
       uniform float uTime, uAmount;
@@ -290,7 +324,7 @@ function splashMaterial(time: { value: number }): THREE.ShaderMaterial {
           on = (c.y == 2.0 && c.x == 1.0) || (c.y == 1.0 && (c.x == 0.0 || c.x == 2.0) && vAge > 0.1);
         }
         if (!on) discard;
-        gl_FragColor = vec4(uColor, 1.0);
+        gl_FragColor = vec4(uColor, ${SPLASH_OPACITY.toFixed(2)});
         #include <colorspace_fragment>
       }
     `,
@@ -366,5 +400,46 @@ function noiseTexture(): THREE.DataTexture {
   tex.magFilter = THREE.LinearFilter;
   tex.needsUpdate = true;
   return tex;
+}
+
+/**
+ * Snow mounds, drawn row by row: a small lump, a long drift and a heap, each lit from the
+ * upper left with a blue shadow underneath. `#` lit snow, `o` plain snow, `s` shadow.
+ */
+const MOUNDS = [
+  ['..##o..', '.##oooo', 'oooooss'],
+  ['....##oo...', '..##ooooo..', '.#oooooooos', 'ooooooosss.'],
+  ['.##o.', '#oooo', 'ooos.', '.ss..'],
+];
+const MOUND_COLORS: Record<string, string> = { '#': '#f8fbfe', o: '#e2e9f1', s: '#c2cedb' };
+
+/** All the mound sprites in one small sheet, with each one's rectangle. */
+function moundSheet(): { texture: THREE.CanvasTexture; rect: (kind: number) => { u0: number; v0: number; u1: number; v1: number; w: number; h: number } } {
+  const cellW = Math.max(...MOUNDS.map((rows) => rows[0].length));
+  const cellH = Math.max(...MOUNDS.map((rows) => rows.length));
+  const canvas = document.createElement('canvas');
+  canvas.width = cellW * MOUNDS.length;
+  canvas.height = cellH;
+  const ctx = canvas.getContext('2d')!;
+  MOUNDS.forEach((rows, k) => {
+    // Bottom-aligned in its cell, so every mound stands on its root.
+    const top = cellH - rows.length;
+    rows.forEach((row, y) => [...row].forEach((c, x) => {
+      if (c === '.') return;
+      ctx.fillStyle = MOUND_COLORS[c];
+      ctx.fillRect(k * cellW + x, top + y, 1, 1);
+    }));
+  });
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.magFilter = texture.minFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return {
+    texture,
+    rect: (kind) => {
+      const w = MOUNDS[kind][0].length;
+      return { u0: (kind * cellW) / canvas.width, u1: (kind * cellW + w) / canvas.width, v0: 0, v1: 1, w, h: cellH };
+    },
+  };
 }
 

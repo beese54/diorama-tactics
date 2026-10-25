@@ -39,3 +39,8 @@
 - **What happened:** In M7 I wrote `src/render/Weather.ts` (the renderer) next to `src/render/weather.ts` (the pure rules). On Windows they are one file, so the write overwrote the rules. This repeats the `Props.ts` / `props.ts` lesson, although the rule was already written down.
 - **Rule:** Before creating any file, list its folder ignoring case (`ls <dir> | grep -i <name>`) and pick a name that differs by more than case. Name renderer classes `…Layer.ts` (`PropLayer.ts`, `WeatherLayer.ts`) so they can never clash with a lowercase data module.
 
+## 2026-10-25: "The droplets hinder the view… the snow is too flat and monotone"
+- **What happened:** M7's rain was dense and opaque enough to hide the board, and settled snow became a flat white sheet over every top. Both looked dramatic in a still, but on a battle map the player has to read the ground, and a sheet of one colour reads as flat.
+- **Rule:** Effects drawn over the board (rain, snow, fog, particles) stay secondary to the board: sparse, part see-through, low contrast. Check a frame by asking whether you can still read every tile.
+- **Rule:** Anything that covers ground (snow, puddles, moss, ash) must vary like the M2 lessons: patches and bare spots from noise at two scales, at least three tones, and some shapes standing up from it. Never one uniform fill.
+

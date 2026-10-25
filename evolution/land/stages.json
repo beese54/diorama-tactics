@@ -116,10 +116,18 @@
     {
       "id": "m7",
       "date": "2026-10-25",
-      "commit": "next",
+      "commit": "dd36ace",
       "image": "m7-weather/six-weathers.png",
       "title": "M7 · Weather",
       "note": "Rain, storm with lightning, snow that settles, fog in the hollows, wind."
+    },
+    {
+      "id": "m7-r1",
+      "date": "2026-10-25",
+      "commit": "next",
+      "image": "m7-weather/r1-subtle-rain-snow-puddles/snow-before-after.png",
+      "title": "M7 round 1 · Lighter rain, puddles, drifts",
+      "note": "\"Droplets hinder the view… snow too flat\": subtle rain, puddles, drifting snow."
     }
   ]
 }

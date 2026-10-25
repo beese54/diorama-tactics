@@ -10,20 +10,56 @@ import { FALL_PATTERN_PX, paintWaterfall, type WaterfallImage } from './waterfal
 
 /**
  * Weather on the tile tops, in place of three's map_fragment. Liquid pixels carry a lower
- * alpha (see LIQUID_ALPHA) and are left alone. Wet land darkens and cools. Snow settles in
- * whole ground pixels, a hash per pixel against the snow amount, clumped by a coarser hash
- * so it gathers in drifts; only on tops facing up, so steep slopes stay dark.
+ * alpha (LIQUID_ALPHA) and are left alone; roofs (ROOF_ALPHA) take snow but never puddles.
+ * Everything is worked out per ground pixel (16 per tile), so it stays crisp pixel art.
+ * - Wet land darkens and cools.
+ * - Puddles: about a quarter of the flat tiles hold one, a blob of its own size and place,
+ *   its edge wobbled by noise; they spread as the ground gets wetter. Dark sky-blue water,
+ *   a light rim on the far side.
+ * - Snow lies in drifts from two octaves of noise, thick in some places and thin or bare
+ *   in others, with a dusting of single flakes at its edges; three tones (lit, plain and
+ *   blue shadow) from finer noise give it lumps and hollows. Only on tops facing up.
  */
 const WEATHER_GROUND = /* glsl */ `
   #include <map_fragment>
-  float land = step(0.99, diffuseColor.a);
+  float notLiquid = step(0.984, diffuseColor.a);
+  float roof = notLiquid * (1.0 - step(0.994, diffuseColor.a));
   diffuseColor.a = 1.0;
-  diffuseColor.rgb *= mix(vec3(1.0), vec3(0.68, 0.72, 0.8), uWet * land);
-  vec2 cell = floor(vWorld.xz * 16.0);
-  float fine = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
-  float coarse = fract(sin(dot(floor(vWorld.xz * 2.0), vec2(39.346, 11.135))) * 24634.6345);
-  float settle = step(0.5 * fine + 0.5 * coarse, uSnow * 1.15) * land * step(0.6, vUp);
-  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.92, 0.95, 0.99) * (0.92 + 0.08 * fine), settle);
+  vec2 px = floor(vWorld.xz * 16.0) / 16.0;
+  float fine = wHash(px * 16.0);
+  diffuseColor.rgb *= mix(vec3(1.0), vec3(0.68, 0.72, 0.8), uWet * notLiquid);
+
+  // Puddles.
+  vec2 tileId = floor(vWorld.xz);
+  float chance = wHash(tileId + 17.0);
+  vec2 centre = tileId + 0.25 + 0.5 * vec2(wHash(tileId + 3.1), wHash(tileId + 7.7));
+  float radius = (0.16 + 0.26 * wHash(tileId + 11.3)) * smoothstep(0.15, 0.9, uWet);
+  float wobble = 0.12 * (wNoise(px * 5.0 + chance * 13.0) - 0.5);
+  float d = length((px + 0.5 / 16.0 - centre) * vec2(1.0, 1.25)) + wobble;
+  float puddle = step(chance, 0.25) * step(d, radius) * notLiquid * (1.0 - roof) * step(0.92, vUp);
+  float rim = puddle * step(radius - 1.5 / 16.0, d) * step(0.0, px.y + 0.5 / 16.0 - centre.y);
+  // Dark water reflecting a grey sky, a few lighter glints, and a light rim on the far bank.
+  vec3 water = mix(vec3(0.33, 0.41, 0.52), vec3(0.58, 0.66, 0.76), step(0.88, fine));
+  diffuseColor.rgb = mix(diffuseColor.rgb, mix(water, vec3(0.66, 0.73, 0.8), rim), puddle);
+
+  // Snow.
+  float drift = 0.65 * wNoise(px * 0.6 + 4.0) + 0.35 * wNoise(px * 1.9 + 9.0);
+  float depth = uSnow * 0.72 - drift;
+  float covered = step(0.0, depth) + step(-0.08, depth) * step(fine, 0.35) * (1.0 - step(0.0, depth));
+  float settle = min(1.0, covered) * notLiquid * step(0.6, vUp);
+  float lump = wNoise(px * 3.2 + 2.0) + 0.15 * (fine - 0.5);
+  vec3 snow = lump > 0.6 ? vec3(0.98, 0.99, 1.0) : lump < 0.4 ? vec3(0.7, 0.77, 0.87) : vec3(0.87, 0.91, 0.96);
+  diffuseColor.rgb = mix(diffuseColor.rgb, snow, settle);
+`;
+/** Hash and value noise for WEATHER_GROUND. */
+const WEATHER_NOISE = /* glsl */ `
+  float wHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float wNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(wHash(i), wHash(i + vec2(1.0, 0.0)), u.x), mix(wHash(i + vec2(0.0, 1.0)), wHash(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
 `;
 
 /** Depth of the diorama base below height 0, in steps. */
@@ -181,7 +217,7 @@ export class MapMesh {
         '#include <worldpos_vertex>',
         '#include <worldpos_vertex>\nvWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvUp = objectNormal.y;',
       );
-      shader.fragmentShader = 'uniform float uWet;\nuniform float uSnow;\nvarying vec3 vWorld;\nvarying float vUp;\n' + shader.fragmentShader.replace('#include <map_fragment>', WEATHER_GROUND);
+      shader.fragmentShader = 'uniform float uWet;\nuniform float uSnow;\nvarying vec3 vWorld;\nvarying float vUp;\n' + WEATHER_NOISE + shader.fragmentShader.replace('#include <map_fragment>', WEATHER_GROUND);
     };
     this.sides = new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true, ...glowing(atlas.glow) });
     this.mesh = new THREE.Mesh(b.build(), [

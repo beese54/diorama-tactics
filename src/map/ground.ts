@@ -30,6 +30,9 @@ const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) =>
  * so it marks liquid for the weather shader: rain darkens and snow settles on land only.
  */
 export const LIQUID_ALPHA = 250;
+/** Alpha of roof pixels: snow settles on roofs, but rain doesn't pool on them. */
+export const ROOF_ALPHA = 252;
+const ROOF_STYLES: readonly PaintStyle[] = ['thatch', 'tiles'];
 
 type Rand = () => number;
 /** Draws one detail pixel at tile-local (x, y); it may spill into neighbouring tiles of the same terrain. */
@@ -317,7 +320,7 @@ export function paintGround(map: MapFile, wild = false): GroundImage {
   const terrainIndex = new Map(TERRAIN_IDS.map((id, i) => [id, i]));
   const material = new Uint8Array(width * height);
   const land = new Uint8Array(width * height * 4);
-  const write = (i: number, hex: string) => land.set([...rgb(hex), 255], i * 4);
+  const write = (i: number, hex: string) => land.set([...rgb(hex), ROOF_STYLES.includes(TERRAIN[TERRAIN_IDS[material[i]]].style) ? ROOF_ALPHA : 255], i * 4);
 
   for (let gy = 0; gy < height; gy++) {
     for (let gx = 0; gx < width; gx++) {

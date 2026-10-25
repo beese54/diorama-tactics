@@ -32,8 +32,8 @@ export interface WeatherLook {
 
 export const LOOKS: Record<WeatherKind, WeatherLook> = {
   clear: { rain: 0, snow: 0, mist: 0, haze: 0, wind: 1, wet: 0, snowCover: 0, lightning: 0, sky: 1, sun: 1, tint: [1, 1, 1] },
-  rain: { rain: 0.55, snow: 0, mist: 0, haze: 0.2, wind: 1.6, wet: 0.8, snowCover: 0, lightning: 0, sky: 0.8, sun: 0.35, tint: [0.78, 0.84, 0.95] },
-  storm: { rain: 1, snow: 0, mist: 0, haze: 0.35, wind: 3, wet: 1, snowCover: 0, lightning: 1, sky: 0.62, sun: 0.15, tint: [0.62, 0.68, 0.82] },
+  rain: { rain: 0.28, snow: 0, mist: 0, haze: 0.2, wind: 1.6, wet: 0.8, snowCover: 0, lightning: 0, sky: 0.8, sun: 0.35, tint: [0.78, 0.84, 0.95] },
+  storm: { rain: 0.55, snow: 0, mist: 0, haze: 0.35, wind: 3, wet: 1, snowCover: 0, lightning: 1, sky: 0.62, sun: 0.15, tint: [0.62, 0.68, 0.82] },
   snow: { rain: 0, snow: 0.8, mist: 0, haze: 0.3, wind: 0.8, wet: 0, snowCover: 0.85, lightning: 0, sky: 1.05, sun: 0.55, tint: [0.92, 0.96, 1.05] },
   fog: { rain: 0, snow: 0, mist: 1, haze: 0.6, wind: 0.4, wet: 0.3, snowCover: 0, lightning: 0, sky: 0.95, sun: 0.4, tint: [0.9, 0.93, 0.96] },
 };

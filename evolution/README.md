@@ -269,6 +269,18 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - A lightning flash has to whiten the light as well as brighten it, or it reads as a slightly lighter storm.
   - Snow at snow speed couldn't fall the whole sky in four seconds. Each flake now falls through its own shorter band.
   - I made the same mistake twice: `Weather.ts` and `weather.ts` are one file on Windows. See `tasks/lessons.md`.
+- **Round 1 (review):** *"The water droplets for rain and storm is too much, it hinders the view… For snow, instead of every grid being fully white… introduce some bumps and shapes… For rain and storm, introduce water puddles on some grids randomly."*
+  - **Rain and storm:** about half as many drops, shorter and see-through, with fainter splashes.
+  - **Puddles:** about a quarter of the flat tiles hold one. Each has its own size, place and wobbly edge, and they spread as the ground gets wetter. Blue-grey water with glints and a light far rim, never on roofs.
+  - **Snow:** it lies in drifts, with bare grass and paths showing through and a dusting of flakes at the edges. Three tones (lit, plain and blue shadow) give it lumps, and small snow mounds stand on the ground as it deepens.
+
+  ![Rain before and after](land/m7-weather/r1-subtle-rain-snow-puddles/rain-before-after.png)
+  ![Snow before and after](land/m7-weather/r1-subtle-rain-snow-puddles/snow-before-after.png)
+
+  | Puddles | Snow up close |
+  |---|---|
+  | ![](land/m7-weather/r1-subtle-rain-snow-puddles/puddles-close.png) | ![](land/m7-weather/r1-subtle-rain-snow-puddles/snow-close.png) |
+  | ![](land/m7-weather/r1-subtle-rain-snow-puddles/rain-7.gif) | ![](land/m7-weather/r1-subtle-rain-snow-puddles/snow-7.gif) |
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
