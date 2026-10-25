@@ -61,6 +61,7 @@ npm run build    # type-check and production build
 
 **Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. Each seed makes an inland valley, an island or a coast. The box in the top-left corner has buttons:
 
+- **Map picker** (the drop-down in the box) switches to any of the themed maps or to Wild Lands.
 - **New map** (or `R`) grows another map and puts its seed in the URL.
 - **Save** (or `E`) downloads the map as JSON, one tile per line, so you can edit it by hand.
 - **Load** (or drop a file on the page) opens a saved map. A bad file is refused with a note saying what is wrong.

@@ -71,10 +71,12 @@
       }
       #hud .buttons {
         display: flex;
+        flex-wrap: wrap;
         gap: calc(var(--px) * 4);
         margin-top: calc(var(--px) * 3);
       }
-      #hud button {
+      #hud button,
+      #hud select {
         pointer-events: auto;
         cursor: pointer;
         font: inherit;
@@ -85,8 +87,13 @@
         border: var(--px) solid #8fa0d8;
         border-radius: calc(var(--px) * 1);
       }
+      #hud select option {
+        background: #22306a;
+      }
       #hud button:hover,
-      #hud button:focus-visible {
+      #hud button:focus-visible,
+      #hud select:hover,
+      #hud select:focus-visible {
         background: #3a4f9a;
         outline: none;
       }

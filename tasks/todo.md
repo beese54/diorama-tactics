@@ -243,6 +243,7 @@ _(filled in after each step)_
 - Fixed along the way:
   - dried-out puddles got NaN heights, which showed as holes;
   - a pre-existing slow test (water determinism compared 12 frames element by element and timed out) now compares in a loop, so it runs in 0.4 s.
+- Follow-up (2026-10-25): the user asked for a map picker. The HUD now has a drop-down of every theme plus Wild Lands; picking one reloads the page on `?map=<id>`. check.mjs adds a test that the picker lists all 8 maps and switches to one, so it now passes 35/35.
 - Verified:
   - 386 unit tests. New ones over 50 seeds: deterministic, valid, every natural terrain and shape used, ≥ 65% walkable and all of it reachable, banks sloped, no specks, no pillars, islands ringed by sea, tall ground at the back. Also JSON round trip, hand edits, and 11 kinds of bad file.
   - check.mjs passes 34/34. New: the seed shows and reproduces; R and the button grow new maps without GPU memory growing; edited JSON loads; a bad file is refused and the map kept; the Load picker works.

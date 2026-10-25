@@ -121,7 +121,9 @@ function main(): void {
   };
 
   const generated = theme.seed !== undefined;
-  const hud = new Hud(ui, { newMap: generated ? () => newMap() : undefined, save, load });
+  const maps = [...THEMES, { id: 'world', name: 'Wild Lands (random)' }];
+  const pick = (id: string) => (location.search = `?map=${id}`);
+  const hud = new Hud(ui, { maps, current: theme.id, pick, newMap: generated ? () => newMap() : undefined, save, load });
   hud.setTitle(theme.name, theme.seed);
 
   window.addEventListener('keydown', (e) => {

@@ -181,6 +181,12 @@ const picker = await page.$('#hud input[type=file]');
 await picker.uploadFile(file);
 await page.waitForFunction(() => window.__map.tile(0, 0).terrain === 'forest', { timeout: 3000 }).catch(() => {});
 check('Load picks a saved file', (await page.evaluate(() => window.__map.tile(0, 0).terrain)) === 'forest' && (await page.evaluate(() => window.__map.hudText())).includes('Loaded'));
+const offered = await page.$$eval('#hud select option', (os) => os.map((o) => o.value));
+const selected = await page.$eval('#hud select', (s) => s.value);
+await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.select('#hud select', 'volcano')]);
+await page.waitForFunction(() => window.__map);
+const picked = await page.evaluate(() => ({ theme: window.__map.theme().id, shown: document.querySelector('#hud select').value }));
+check('the map picker offers every map and switches to one', selected === 'world' && offered.includes('world') && offered.length === 8 && picked.theme === 'volcano' && picked.shown === 'volcano', JSON.stringify({ offered, selected, picked }));
 check('world: no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();

@@ -1,4 +1,9 @@
 export interface HudActions {
+  /** The maps the picker offers, and the one on screen. */
+  maps: readonly { id: string; name: string }[];
+  current: string;
+  /** Switches to another map. */
+  pick: (id: string) => void;
   /** Grows a new random map; generated themes only. */
   newMap?: () => void;
   save: () => void;
@@ -9,8 +14,8 @@ export interface HudActions {
 const NOTICE_MS = 5000;
 
 /**
- * FFT-style box in the top-left corner: the map's name and seed, buttons to grow a new
- * map, save it as JSON or load a saved one, and a line for short notices.
+ * FFT-style box in the top-left corner: the map's name and seed, a picker to switch maps,
+ * buttons to grow a new map, save it as JSON or load a saved one, and a line for short notices.
  */
 export class Hud {
   private readonly title: HTMLElement;
@@ -33,6 +38,12 @@ export class Hud {
       b.addEventListener('click', onClick);
       buttons.appendChild(b);
     };
+    const maps = document.createElement('select');
+    maps.title = 'Switch map';
+    for (const { id, name } of actions.maps) maps.add(new Option(name, id, false, id === actions.current));
+    maps.addEventListener('change', () => actions.pick(maps.value));
+    buttons.appendChild(maps);
+
     const picker = document.createElement('input');
     picker.type = 'file';
     picker.accept = '.json,application/json';
