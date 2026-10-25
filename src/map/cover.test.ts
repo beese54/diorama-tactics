@@ -19,21 +19,25 @@ const BELONGS: Record<string, readonly TerrainId[]> = {
   snag: ['swamp', 'bog'],
 };
 
+/** Trees, rocks and snags; settlements bring their own props (wells, haystacks, banners, pillars). */
+const COVER = new Set(Object.keys(BELONGS));
+const covered = (t: Tile) => !!t.prop && COVER.has(t.prop);
+
 describe('cover on generated maps', () => {
   it.each(SEEDS)('seed %i puts each kind of cover only on the ground it grows on', (seed) => {
-    for (const t of maps[seed - 1].tiles.filter((t) => t.prop)) expect(BELONGS[t.prop!], `${t.prop} on ${t.terrain}`).toContain(t.terrain);
+    for (const t of maps[seed - 1].tiles.filter(covered)) expect(BELONGS[t.prop!], `${t.prop} on ${t.terrain}`).toContain(t.terrain);
   });
 
   it.each(SEEDS)('seed %i keeps cover sparse: at most an eighth of the land, and over 80% of open tiles clear', (seed) => {
     const land = maps[seed - 1].tiles.filter((t) => !isLiquid(t));
-    const covered = land.filter((t) => t.prop).length;
-    expect(covered).toBeLessThanOrEqual(Math.floor(land.length * COVER_SHARE));
-    expect(1 - covered / land.length).toBeGreaterThan(0.8);
+    const cover = land.filter(covered).length;
+    expect(cover).toBeLessThanOrEqual(Math.floor(land.length * COVER_SHARE));
+    expect(1 - land.filter((t) => t.prop).length / land.length).toBeGreaterThan(0.8);
   });
 
   it.each(SEEDS)('seed %i keeps water, bridges and their neighbours, and river banks clear', (seed) => {
     const map = maps[seed - 1];
-    for (const t of map.tiles.filter((t) => t.prop)) {
+    for (const t of map.tiles.filter(covered)) {
       expect(isLiquid(t) || !!t.feature).toBe(false);
       const near = around(map, t);
       expect(near.some((n) => n.feature), `${t.x},${t.y} beside a bridge`).toBe(false);
@@ -53,19 +57,19 @@ describe('cover on generated maps', () => {
   });
 
   it('never blocks a tile, so units can still stand anywhere they could before', () => {
-    for (const map of maps) for (const t of map.tiles.filter((t) => t.prop)) expect(PROPS[t.prop!].blocks).toBe(false);
+    for (const map of maps) for (const t of map.tiles.filter(covered)) expect(PROPS[t.prop!].blocks).toBe(false);
   });
 
   it('grows every kind of cover somewhere, and gives every map some', () => {
-    const kinds = new Set<PropId>(maps.flatMap((m) => m.tiles.filter((t) => t.prop).map((t) => t.prop!)));
+    const kinds = new Set<PropId>(maps.flatMap((m) => m.tiles.filter(covered).map((t) => t.prop!)));
     expect([...kinds].sort()).toEqual(['boulder', 'broadleaf', 'pine', 'pine_snowy', 'snag']);
-    for (const map of maps) expect(map.tiles.filter((t) => t.prop).length).toBeGreaterThanOrEqual(15);
+    for (const map of maps) expect(map.tiles.filter(covered).length).toBeGreaterThanOrEqual(15);
   });
 
   it('is thinner on the front rows, where it would hide the board behind it', () => {
     const share = (front: boolean) => {
       const tiles = maps.flatMap((m) => m.tiles.filter((t) => !isLiquid(t) && (Math.min(WORLD_SIZE - 1 - t.x, WORLD_SIZE - 1 - t.y) < 3) === front));
-      return tiles.filter((t) => t.prop).length / tiles.length;
+      return tiles.filter(covered).length / tiles.length;
     };
     expect(share(true)).toBeLessThan(share(false) * 0.6);
   });

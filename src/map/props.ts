@@ -63,6 +63,7 @@ export const PROPS: Record<PropId, PropDef> = {
   vent:          prop('Obsidian Vent', { defense: 0, blocks: true, shadow: 10, light: { color: 0xff6a20, intensity: 7, distance: 7, flicker: true } }),
   broadleaf:     prop('Broadleaf Tree', { defense: 15, variants: 3, shadow: 7, sway: 0.04, jitter: true }),
   snag:          prop('Drowned Tree',  { defense: 10, variants: 2, shadow: 4, sway: 0.015, jitter: true }),
+  well:          prop('Village Well',  { defense: 0, blocks: true, shadow: 6 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

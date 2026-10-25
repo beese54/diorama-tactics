@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { generateMap, WORLD_SHAPES, WORLD_SIZE, WORLD_TERRAINS, worldTraits } from './generator';
+import { generateMap, SETTLED_TERRAINS, WORLD_SHAPES, WORLD_SIZE, WORLD_TERRAINS, worldTraits } from './generator';
+import { MAX_HEIGHT } from './mapFile';
 import { parseMap, serializeMap } from './mapFile';
 import { isLiquid } from './surface';
-import { IMPASSABLE, tileStats } from './terrain';
+import { IMPASSABLE, TERRAIN, tileStats } from './terrain';
 import { tileAt, type MapFile, type Tile } from './types';
 
 const SEEDS = Array.from({ length: 50 }, (_, i) => i + 1);
@@ -41,8 +42,8 @@ describe('generateMap', () => {
     expect(map.tiles).toHaveLength(WORLD_SIZE * WORLD_SIZE);
     for (const t of map.tiles) {
       expect(tileAt(map, t.x, t.y)).toBe(t);
-      expect(Number.isInteger(t.height) && t.height >= 0 && t.height <= 8).toBe(true);
-      expect(WORLD_TERRAINS).toContain(t.terrain);
+      expect(Number.isInteger(t.height) && t.height >= 0 && t.height <= MAX_HEIGHT).toBe(true);
+      expect([...WORLD_TERRAINS, ...SETTLED_TERRAINS]).toContain(t.terrain);
       expect(t.moisture >= 0 && t.moisture <= 1).toBe(true);
       // Water and only water is liquid; lakes and sea lie at the bottom, rivers run higher up.
       expect(isLiquid(t)).toBe(t.water !== null);
@@ -74,8 +75,10 @@ describe('generateMap', () => {
 
   it.each(SEEDS)('seed %i has no one-tile specks of land cover', (seed) => {
     const map = maps[seed - 1];
-    const specks = map.tiles.filter((t) => {
-      const land = neighbours(map, t).filter((n) => !n.water);
+    // Settlements and roads are laid out on purpose: a lone house or a one-tile road is no speck.
+    const natural = (t: Tile) => !t.water && !SETTLED_TERRAINS.includes(t.terrain);
+    const specks = map.tiles.filter(natural).filter((t) => {
+      const land = neighbours(map, t).filter(natural);
       return !t.water && land.length > 0 && !land.some((n) => n.terrain === t.terrain);
     });
     expect(specks.map((t) => `${t.x},${t.y} ${t.terrain}`)).toEqual([]);
@@ -83,7 +86,8 @@ describe('generateMap', () => {
 
   it.each(SEEDS)('seed %i has no lone pillars or pits', (seed) => {
     const map = maps[seed - 1];
-    for (const t of map.tiles.filter((t) => !t.water)) {
+    // Houses, ramparts and ruined walls stand tall on purpose.
+    for (const t of map.tiles.filter((t) => !t.water && TERRAIN[t.terrain].shape !== 'built')) {
       const heights = neighbours(map, t).map((n) => n.height);
       expect(t.height).toBeLessThanOrEqual(Math.max(...heights) + 1);
       expect(t.height).toBeGreaterThanOrEqual(Math.min(...heights) - 1);

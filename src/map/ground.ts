@@ -218,6 +218,25 @@ const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
     },
   },
   asphalt: { base: (px, p) => (px.grain < 0.05 ? p[3] : px.grain > 0.985 ? p[2] : ramp(1, 0)(px, p)) },
+  // Straw thatch: bundles 5 px deep with a dark tie line, each strand its own shade.
+  thatch: {
+    base(px, p) {
+      if (px.gy % 5 === 0) return p[2];
+      const strand = hash(0x7a11, px.gx, Math.floor(px.gy / 5));
+      return strand < 0.25 ? p[1] : strand > 0.85 ? p[3] : px.gy % 5 === 1 ? p[3] : p[0];
+    },
+  },
+  // Clay roof tiles: courses 3 px deep, staggered, lit on top and shadowed underneath.
+  tiles: {
+    base(px, p) {
+      const row = Math.floor(px.gy / 3);
+      const x = px.gx + (row & 1) * 2;
+      if (px.gy % 3 === 2) return p[2];
+      if (x % 4 === 0) return p[1];
+      if (px.gy % 3 === 0) return p[3];
+      return px.grain < 0.1 ? p[1] : p[0];
+    },
+  },
   // Boards 4 px wide with staggered joints.
   planks: {
     base(px, p) {

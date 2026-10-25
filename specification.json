@@ -103,7 +103,7 @@
       "waterfall wherever a river drops a level, and where a river leaves the board",
       "cover: trees in clumps on woods, rocks on hills/scree/mountain/badlands, snags in swamp/bog; <= 12.5% of land, front rows thinned, clear of water, bridges and river banks; walkable, adds defense",
       "bridges: 1 per river (2 on rivers >= 16 tiles), >= 5 apart, on straight level stretches; bridge_wood at heights 0-1, bridge_stone higher; walked at height + 1 with move cost 1",
-      "settlements on flat dry tiles near rivers; roads = A* between settlements; bridge where road crosses river"
+      "settlements by seed (village 45%, castle 30%, ruins 25%; +ruins on half the others) on the flattest dry footprint, levelled; roads = Dijkstra from the main settlement to the second and to the two cheapest board edges, gentle slopes, crossing rivers straight over a bridge (reused or new); rooftops, ramparts and ruined walls walkable"
     ],
     "controls": "the HUD map picker switches to any theme or Wild Lands (reloads with ?map=<id>); R or the New map button = new random seed (written to the URL); seed shown in HUD; ?seed=N URL param; E or Save downloads the map JSON (S is taken by WASD panning); Load button or dropping a file opens a saved map, validated by parseMap"
   },

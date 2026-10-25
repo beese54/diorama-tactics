@@ -226,6 +226,21 @@ const onTree = await hoverAt(cover.x, cover.y);
 const treePanel = await page.evaluate(() => document.querySelector('#tile-info')?.textContent ?? '');
 check('world: trees and rocks stand on the map, and the panel names the cover', cover.count >= 15 && onTree?.x === cover.x && onTree?.y === cover.y && treePanel.includes('Broadleaf Tree'), JSON.stringify({ cover, onTree, treePanel }));
 await page.mouse.move(0, 0);
+// Settlements (M6): a village's rooftops can be picked and stood on.
+await page.goto(`${url}?map=world&seed=19`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map);
+await page.evaluate(() => (document.getElementById('hud').hidden = true));
+const roof = await page.evaluate(() => {
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if (window.__map.tile(x, y).terrain.startsWith('house_')) return window.__map.tile(x, y);
+  return null;
+});
+await page.evaluate((r) => window.__map.setPose(45, 60, 2.5, r.x, r.y), roof);
+await new Promise((r) => setTimeout(r, 300));
+const onRoof = await hoverAt(roof.x, roof.y);
+const roofPanel = await page.evaluate(() => document.querySelector('#tile-info')?.textContent ?? '');
+check('world: a village rooftop can be picked, and the panel names it', onRoof?.x === roof.x && onRoof?.y === roof.y && /Roof/.test(roofPanel) && roofPanel.includes(`HT ${roof.height}`) && !roofPanel.includes('MOV --'), JSON.stringify({ roof, onRoof, roofPanel }));
+await shot('08-world-village');
+await page.mouse.move(0, 0);
 await bridgeCheck('market', 'Wooden Bridge');
 check('world: no console errors', errors.length === 0, errors.join(' | '));
 

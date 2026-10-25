@@ -593,6 +593,24 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  well: {
+    w: 15, h: 18,
+    paint(g) {
+      // A round stone well under a little shingled roof, with a bucket on its rope.
+      g.ball(7.5, 14, 7, 3.6, STONE);
+      g.rect(1, 13, 13, 4, STONE[2]);
+      for (let x = 1; x < 14; x += 3) g.rect(x, 13, 1, 4, STONE[1]);
+      g.rect(1, 12, 13, 1, STONE[3]);
+      g.rect(3, 12, 9, 1, '#2a3640');
+      g.rect(2, 3, 1, 10, WOOD[1]);
+      g.rect(12, 3, 1, 10, WOOD[0]);
+      for (let r = 0; r < 4; r++) g.rect(4 - r, r, 7 + 2 * r, 1, r % 2 ? '#8a4430' : '#a4553c');
+      g.rect(3, 5, 9, 1, WOOD[2]);
+      g.line(7, 6, 7, 9, '#c9b993');
+      g.rect(6, 9, 3, 2, WOOD[1]);
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

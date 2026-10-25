@@ -4,7 +4,7 @@ This folder shows how the game's look has improved over time, one version after 
 
 | Folder | What it covers | Status |
 |---|---|---|
-| [land/](#land) | The world map terrain | M0 to M5 done |
+| [land/](#land) | The world map terrain | M0 to M6 done |
 | [characters/](characters/README.md) | Unit sprites and animation | not started |
 | [battles/](battles/README.md) | Battle scenes | not started |
 
@@ -212,6 +212,31 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
 - **Round 1 (snowline):** *"Some trees have snow… it is not a snow environment."* Pine forest at height 5 or more got snow even on maps with no snowfield or peak. Now pines carry snow only within two tiles of snow. The after pictures are in `m5-cover/r1-snowline/`.
 
   ![Seed 9 before and after](land/m5-cover/r1-snowline/seed-9-before-after.png)
+
+### M6: Villages, castles, ruins and roads
+![Four generated seeds with settlements](land/m6-settlements/four-seeds.png)
+
+![Seed 7, M5 and M6](land/m6-settlements/seed-7-m5-vs-m6.png)
+
+| Village (seed 19) | Castle (seed 7) | Ruins (seed 9) |
+|---|---|---|
+| ![](land/m6-settlements/village-19.png) | ![](land/m6-settlements/castle-7.png) | ![](land/m6-settlements/ruins-9.png) |
+
+![Banners on the castle (seed 7)](land/m6-settlements/castle-7.gif)
+
+- **What changed:**
+  - Each generated map is built around a settlement, picked by seed:
+    - a **village:** half-timbered cottages with thatched or tiled roofs around two crossing streets, a well, gardens with haystacks, and fields outside;
+    - a **castle:** a walled square with corner towers, banners, a gate facing the middle of the board, a keep at the back and a flagstone yard;
+    - **ruins:** mossy wall stubs and broken pillars on high ground.
+  - Half the maps that aren't ruins also have ruins nearby.
+  - Sites are chosen on the flattest dry ground, away from water. Castles lean to the back of the view, where their walls hide the least. The footprint is cut level and the ground around it eased to meet it.
+  - Roads follow the gentlest route between settlements and out to the two nearest board edges. They cross rivers straight over a bridge, reusing one if it's there.
+  - Rooftops, ramparts and ruined walls can be stood on, FFT style. The tile panel names them.
+- **Decisions:** *"Mix by seed"* for the settlement, *"Walkable rooftops"*, and roads to *"Settlements and edges"*.
+- **Learned:**
+  - Levelling ground for a building must leave anything touching water alone, or the banks stop meeting the waterline. A test caught a beach raised beside a castle.
+  - A large footprint doesn't fit every map. A rugged island had no room for a castle, so the generator falls back to a smaller settlement.
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)

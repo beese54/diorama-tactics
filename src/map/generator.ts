@@ -3,6 +3,8 @@ import { mulberry32 } from '../util/rng';
 import { slopeToLiquids } from './build';
 import { placeCover } from './cover';
 import { carveRivers, placeBridges } from './rivers';
+import { placeRoads } from './roads';
+import { placeSettlements, type Settlement } from './settlements';
 import { IMPASSABLE, TERRAIN } from './terrain';
 import { tileAt, type MapFile, type TerrainId, type Tile } from './types';
 
@@ -10,10 +12,14 @@ import { tileAt, type MapFile, type TerrainId, type Tile } from './types';
 export type WorldShape = 'valley' | 'island' | 'coast';
 export const WORLD_SHAPES: readonly WorldShape[] = ['valley', 'island', 'coast'];
 
-/** The natural terrains a generated map uses. Roads, ruins, farms and built ground come with settlements (M6). */
+/** The natural terrains a generated map uses. */
 export const WORLD_TERRAINS: readonly TerrainId[] = [
   'deep_water', 'shallow_water', 'beach', 'marsh', 'swamp', 'bog', 'desert', 'plains', 'meadow',
   'badlands', 'light_woods', 'forest', 'hills', 'pine_forest', 'scree', 'mountain', 'snowfield', 'peak_snow',
+];
+/** What settlements and roads lay over the land (see settlements.ts and roads.ts). */
+export const SETTLED_TERRAINS: readonly TerrainId[] = [
+  'road', 'farmland', 'ruins', 'flagstone', 'house_thatch', 'house_tile', 'rampart', 'ruined_wall',
 ];
 
 export const WORLD_SIZE = 32;
@@ -212,14 +218,16 @@ function connect(map: MapFile): void {
 
 /**
  * Land tiles with no edge neighbour of their own kind take their neighbours' most common
- * cover, so regions read as clear shapes. Shore and water are left alone.
+ * cover, so regions read as clear shapes. Shore and water are left alone, and so are
+ * settlements and roads, which are laid out on purpose and never spread.
  */
 function mergeSpecks(map: MapFile): void {
+  const natural = (t: Tile) => !t.water && !SETTLED_TERRAINS.includes(t.terrain);
   for (let pass = 0; pass < 8; pass++) {
     let changed = false;
     for (const tile of map.tiles) {
-      if (tile.water) continue;
-      const near = EDGES.map(([dx, dy]) => tileAt(map, tile.x + dx, tile.y + dy)).filter((n): n is Tile => !!n && !n.water);
+      if (!natural(tile)) continue;
+      const near = EDGES.map(([dx, dy]) => tileAt(map, tile.x + dx, tile.y + dy)).filter((n): n is Tile => !!n && natural(n));
       if (near.length === 0 || near.some((n) => n.terrain === tile.terrain)) continue;
       const counts = new Map<TerrainId, number>();
       for (const n of near) counts.set(n.terrain, (counts.get(n.terrain) ?? 0) + 1);
@@ -235,10 +243,16 @@ function mergeSpecks(map: MapFile): void {
  * the lowest share flooded into lakes or sea; moisture from its own noise and nearness to
  * water; land cover by height and moisture. Banks slope down to the water, one-tile specks
  * merge into their surroundings, and every walkable tile can be reached. One or two rivers
- * run down from the hills (see rivers.ts), and woods, rocks and swamps get sparse cover
- * (see cover.ts). Deterministic.
+ * run down from the hills (see rivers.ts); a village, castle or ruins stand on level ground
+ * with roads out to the edges (settlements.ts, roads.ts); and woods, rocks and swamps get
+ * sparse cover (see cover.ts). Deterministic.
  */
 export function generateMap(seed: number, size = WORLD_SIZE): MapFile {
+  return generateWorld(seed, size).map;
+}
+
+/** The generated map along with where its settlements stand (for tests and later milestones). */
+export function generateWorld(seed: number, size = WORLD_SIZE): { map: MapFile; settlements: Settlement[] } {
   const traits = worldTraits(seed);
   const n = size * size;
   const xy = (i: number) => [i % size, Math.floor(i / size)] as const;
@@ -294,6 +308,10 @@ export function generateMap(seed: number, size = WORLD_SIZE): MapFile {
   mergeSpecks(map);
   connect(map);
   placeBridges(map, rivers);
+  const settlements = placeSettlements(map);
+  placeRoads(map, settlements);
+  // Roads cut through woods and fields; tidy the slivers they leave.
+  mergeSpecks(map);
   placeCover(map);
-  return map;
+  return { map, settlements };
 }

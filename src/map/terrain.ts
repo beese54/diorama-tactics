@@ -5,7 +5,7 @@ import type { TerrainId, Tile } from './types';
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
   | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal'
-  | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks'
+  | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
 /** Liquids are flat, keep their exact shoreline and animate (see liquid.ts). */
@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage',
 ];
 
 /**
@@ -85,6 +85,12 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   wet_street:       built({ name: 'Street',         moveCost: 1, defense: 0,  style: 'flagstone',   side: 'masonry',   palette: ['#4a4752', '#423f4a', '#2a2830', '#5a5664'] }),
   boardwalk:        built({ name: 'Boardwalk',      moveCost: 1, defense: 5,  style: 'planks',      side: 'timber',    palette: ['#8a6a48', '#7a5c3e', '#4a3726', '#9e7c56'] }),
   temple_stone:     built({ name: 'Temple Steps',   moveCost: 1, defense: 10, style: 'blocks',      side: 'temple',    palette: ['#a49e80', '#969073', '#6b664f', '#b8b292', '#6f8a4a'] }),
+
+  // Settlements on generated maps (M6). Rooftops and wall-walks can be stood on, FFT style.
+  house_thatch:     built({ name: 'Thatched Roof',  moveCost: 1, defense: 10, style: 'thatch',      side: 'cottage',   palette: ['#b08a48', '#9a763c', '#6e5226', '#c9a25a'] }),
+  house_tile:       built({ name: 'Tiled Roof',     moveCost: 1, defense: 10, style: 'tiles',       side: 'cottage',   palette: ['#a4553c', '#8a4430', '#5e2c20', '#bc6a4a'] }),
+  rampart:          built({ name: 'Rampart',        moveCost: 1, defense: 20, style: 'blocks',      side: 'masonry',   palette: ['#8f8a80', '#817c72', '#5a564f', '#a39e93'] }),
+  ruined_wall:      built({ name: 'Ruined Wall',    moveCost: 1, defense: 15, style: 'blocks',      side: 'temple',    palette: ['#8e8a78', '#807c6c', '#5c594d', '#a19d8a', '#6f8a4a'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

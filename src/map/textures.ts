@@ -45,10 +45,11 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   timber: ['#6e5236', '#5a4230', '#806040', '#3e2c1e'],
   temple: ['#8f896a', '#78735a', '#a29c7c', '#5f7a3e'],
   basalt: ['#3e3938', '#2e2a29', '#4d4746', '#211e1d'],
+  cottage: ['#e2d6bc', '#cbbd9f', '#efe6d0', '#5a3e26'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
-const FACADES: ReadonlySet<SideStyle> = new Set(['brick', 'plaster', 'shopfront']);
+const FACADES: ReadonlySet<SideStyle> = new Set(['brick', 'plaster', 'shopfront', 'cottage']);
 const NEON = ['#ff5fa8', '#4fe3ff', '#ffd84a'];
 const GLASS = ['#3c4c60', '#4c6078', '#7f97ad'];
 
@@ -130,6 +131,9 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
     case 'concrete':
       for (let x = 0; x < TILE_PX; x++) for (let y = 0; y < STEP_PX; y++) put(x, y, y === 7 ? accent : rand() < 0.15 ? dark : rand() < 0.1 ? light : base);
       return;
+    case 'cottage':
+      paintCottage(put, rand, p, groundFloor, variant);
+      return;
   }
   if (FACADES.has(style)) {
     const lit = style === 'shopfront';
@@ -170,6 +174,33 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
     const y = int(rand, STEP_PX);
     put(x, y, accent);
     if (style === 'rock') put(x, y + 1, accent);
+  }
+}
+
+/**
+ * A whitewashed, half-timbered cottage wall: dark posts at the corners and middle. At street
+ * level a plank door (or, on some faces, a window); above, a shuttered window and a brace.
+ */
+function paintCottage(put: Put, rand: Rand, [base, dark, light, beam]: readonly string[], groundFloor: boolean, variant: number): void {
+  for (let y = 0; y < STEP_PX; y++) for (let x = 0; x < TILE_PX; x++) put(x, y, rand() < 0.12 ? dark : rand() < 0.08 ? light : base);
+  for (let y = 0; y < STEP_PX; y++) for (const x of [0, 15]) put(x, y, beam);
+  if (groundFloor && variant % 2 === 0) {
+    for (let y = 2; y < STEP_PX; y++) for (let x = 6; x < 10; x++) put(x, y, y === 2 ? beam : x === 6 ? '#4a3020' : '#6e4a2c');
+    put(8, 5, '#d9b44a');
+    return;
+  }
+  for (let y = 2; y < 6; y++) for (let x = 6; x < 10; x++) put(x, y, y === 2 ? '#6c88a0' : '#3c4c60');
+  for (let y = 2; y < 6; y++) (put(5, y, '#5e7a4a'), put(10, y, '#5e7a4a'));
+  for (let x = 5; x < 11; x++) put(x, 6, beam);
+  if (!groundFloor) for (let k = 0; k < 4; k++) put(1 + k, STEP_PX - 1 - k, beam);
+}
+
+/** A roof's eave over a cottage wall: two rows of the roof's own colours with a shadow line under them. */
+function paintEave(put: Put, roof: readonly string[]): void {
+  for (let x = 0; x < TILE_PX; x++) {
+    put(x, 0, roof[3]);
+    put(x, 1, x % 3 === 0 ? roof[1] : roof[0]);
+    put(x, 2, roof[2]);
   }
 }
 
@@ -245,7 +276,8 @@ export function buildTerrainAtlas(): TerrainAtlas {
       const put = cell(v * TILE_PX, row * STEP_PX);
       const rand = mulberry32(row * 977 + v * 31 + 5);
       paintSide(put, rand, def.side, false, v);
-      if (def.shape === 'built') paintCoping(put, def.side);
+      if (def.side === 'cottage') paintEave(put, def.palette);
+      else if (def.shape === 'built') paintCoping(put, def.side);
       else paintLip(put, rand, def.palette);
     }
   });
