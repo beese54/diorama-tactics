@@ -305,4 +305,5 @@ _(filled in after each step)_
   - wild decor adds to the flowers without changing them; reeds, pebbles and bushes only where they belong;
   - murk beside a bog; none on the sea.
   - check.mjs passes 39/39. New: a generated map has cover, and hovering a tree names it in the panel.
+- Fix after the first commit: the murk also tinted Meadow Vale's river beside its marsh (about five tiles). It is now generated-maps only (`paintGround(map, wild)`), like the reeds and pebbles, so the six themed maps are unchanged.
 

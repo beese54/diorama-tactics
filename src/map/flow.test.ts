@@ -106,7 +106,7 @@ describe('swamp water', () => {
   it('turns murky beside marsh, swamp and bog, and stays clear away from them', () => {
     // A lake filling x 2-7, with a bog along x 0-1.
     const map = buildMap(5, SIZE, (x): Cell => (x >= 2 ? { terrain: 'shallow_water', height: 0, water: { kind: 'lake', flow: [0, 0] } } : { terrain: 'bog', height: 1 }));
-    const { frames, palette } = paintLiquid(map, PX, 'water');
+    const { frames, palette } = paintLiquid(map, PX, 'water', true);
     const murky = new Set(['#7a8c66', '#667c5a', '#587050', '#4c6448', '#425840', '#3a4e3a'].map((c) => palette.indexOf(c)));
     const share = (x0: number, x1: number) => {
       let n = 0;
@@ -116,11 +116,14 @@ describe('swamp water', () => {
     };
     expect(share(2 * PX, 2 * PX + 8)).toBeGreaterThan(0.8);
     expect(share(5 * PX, 8 * PX)).toBe(0);
+    // Only on generated maps: the hand-built themes keep their water as designed.
+    const plain = paintLiquid(map, PX, 'water');
+    expect(plain.frames[0].some((c) => murky.has(c))).toBe(false);
   });
 
   it('leaves the open sea clear, so coasts keep their surf', () => {
     const map = buildMap(5, SIZE, (x): Cell => (x >= 2 ? { terrain: 'shallow_water', height: 0, water: { kind: 'sea', flow: [0, 0] } } : { terrain: 'marsh', height: 1 }));
-    const { frames, palette } = paintLiquid(map, PX, 'water');
+    const { frames, palette } = paintLiquid(map, PX, 'water', true);
     const murky = new Set(['#7a8c66', '#667c5a', '#587050', '#4c6448', '#425840', '#3a4e3a'].map((c) => palette.indexOf(c)));
     expect(frames[0].some((c) => murky.has(c))).toBe(false);
   });

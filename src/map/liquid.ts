@@ -87,7 +87,7 @@ export interface LiquidImage {
  * edges and sparse glints. Animated as a seamless loop: the contour noise drifts around a
  * circle and glints twinkle in and out on their own phase. Deterministic per map seed.
  */
-export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): LiquidImage {
+export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle, wild = false): LiquidImage {
   const look = LIQUIDS[style];
   const ramp = look.ramp.length;
   const palette = [...look.ramp, ...new Set(look.glint)];
@@ -105,7 +105,8 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle): L
   const flow = flowField(map, tilePx, ours);
   const flowAt = (gx: number, gy: number) => [flow[2 * (gy * width + gx)], flow[2 * (gy * width + gx) + 1]];
   const foam = style === 'water' ? foamField(map, tilePx) : null;
-  const murk = style === 'water' ? murkField(map, tilePx, ours) : null;
+  // Swamp murk is wild-map dressing; the hand-built themes keep their water as designed.
+  const murk = style === 'water' && wild ? murkField(map, tilePx, ours) : null;
 
   const rand = mulberry32(map.seed ^ 0x9a17);
   const glints = map.tiles.filter((t) => ours(t.x, t.y)).flatMap((tile) =>

@@ -284,9 +284,10 @@ function rgb(hex: string): [number, number, number] {
  * Paints every tile top of the map as one image, so colour flows across tile borders the
  * way it does outdoors: terrains fray into each other, and each terrain's light and dark
  * patches come from world-space noise rather than per-tile variants. Liquids come from
- * liquid.ts, one image per animation frame. Deterministic per map seed.
+ * liquid.ts, one image per animation frame; `wild` (generated maps) turns water beside
+ * swamps murky. Deterministic per map seed.
  */
-export function paintGround(map: MapFile): GroundImage {
+export function paintGround(map: MapFile, wild = false): GroundImage {
   const width = map.width * TILE_PX;
   const height = map.height * TILE_PX;
   const terrainIndex = new Map(TERRAIN_IDS.map((id, i) => [id, i]));
@@ -346,7 +347,7 @@ export function paintGround(map: MapFile): GroundImage {
   }
 
   const present = LIQUID_STYLES.filter((style) => map.tiles.some((t) => TERRAIN[t.terrain].style === style));
-  const liquids = present.map((style) => ({ look: LIQUIDS[style], image: paintLiquid(map, TILE_PX, style) }));
+  const liquids = present.map((style) => ({ look: LIQUIDS[style], image: paintLiquid(map, TILE_PX, style, wild) }));
   const glowing = liquids.some((l) => l.look.glows);
   const frames: Uint8Array[] = [];
   const glow: Uint8Array[] = [];
