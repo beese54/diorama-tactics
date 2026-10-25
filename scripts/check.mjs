@@ -279,6 +279,40 @@ await new Promise((r) => setTimeout(r, 300));
 const wetAfter = await page.evaluate(() => window.__map.gpuMemory());
 check('changing maps in the rain frees the old weather', wetAfter.geometries <= wetMemory.geometries && wetAfter.textures <= wetMemory.textures, JSON.stringify({ before: wetMemory, after: wetAfter }));
 check('weather: no console errors', errors.length === 0, errors.join(' | '));
+
+// Day and night (M8): every time draws and differs; shadows are on by day and fainter by moonlight;
+// windows glow and fireflies come out at night; the picker and the cycle move the clock.
+errors.length = 0;
+await page.goto(`${url}?map=world&seed=19&weather=clear`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map);
+await page.evaluate(() => (document.getElementById('hud').hidden = true));
+const atTime = async (choice) => {
+  await page.evaluate((c) => (window.__map.setTimeOfDay(c, true), window.__map.setTime(1)), choice);
+  await new Promise((r) => setTimeout(r, 250));
+  return { frame: (await page.screenshot({ encoding: 'base64' })).toString(), light: await page.evaluate(() => window.__map.daylight()) };
+};
+const noon = await atTime('day');
+check('day: the sun casts shadows', noon.light.shadows && noon.light.shadow > 0.5 && noon.light.night === 0, JSON.stringify(noon.light));
+for (const choice of ['dawn', 'dusk', 'night']) {
+  const at = await atTime(choice);
+  await shot(`10-time-${choice}`);
+  check(`time ${choice} draws and differs from day`, at.frame !== noon.frame && at.light.choice === choice, JSON.stringify(at.light));
+}
+const night = await atTime('night');
+check('night: dark, faint moon shadows, windows lit, fireflies out', night.light.night === 1 && night.light.sky < noon.light.sky * 0.5 && night.light.shadow < noon.light.shadow && night.light.fireflies > 0, JSON.stringify(night.light));
+await page.evaluate(() => (window.__map.setTimeOfDay('cycle', true), window.__map.setTime(0)));
+await new Promise((r) => setTimeout(r, 200));
+const cycleA = await page.evaluate(() => window.__map.daylight().sunAt);
+await page.evaluate(() => window.__map.setTime(30));
+await new Promise((r) => setTimeout(r, 200));
+const cycleB = await page.evaluate(() => window.__map.daylight().sunAt);
+check('the day-night cycle moves the sun', JSON.stringify(cycleA) !== JSON.stringify(cycleB), JSON.stringify({ cycleA, cycleB }));
+await page.evaluate(() => (document.getElementById('hud').hidden = false));
+await page.select('#hud select:nth-of-type(3)', 'dusk');
+await new Promise((r) => setTimeout(r, 200));
+const pickedTime = await page.evaluate(() => ({ choice: window.__map.daylight().choice, search: location.search }));
+check('the time picker switches the time and keeps it in the URL', pickedTime.choice === 'dusk' && pickedTime.search.includes('time=dusk'), JSON.stringify(pickedTime));
+check('day and night: no console errors', errors.length === 0, errors.join(' | '));
 check('world: no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();

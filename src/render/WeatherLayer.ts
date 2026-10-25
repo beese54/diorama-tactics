@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { mulberry32 } from '../util/rng';
 import { isLiquid } from '../map/surface';
 import type { MapFile, Tile } from '../map/types';
-import type { Backdrop } from './Backdrop';
 import { SpriteField } from './SpriteField';
 import {
   blendLooks, ease, EASE_SECONDS, lightningAt, LOOKS, loopSpeed, SNOW_SETTLE_SECONDS, WEATHER_LOOP, type WeatherKind, type WeatherLook,
@@ -42,17 +41,6 @@ const RAIN_COLOR = new THREE.Color('#a9c2da');
 const SNOW_COLOR = new THREE.Color('#f4f8fc');
 const SPLASH_COLOR = new THREE.Color('#d2e4f0');
 
-/** The bits of the scene weather acts on. */
-export interface WeatherTargets {
-  hemi: THREE.HemisphereLight;
-  sun: THREE.DirectionalLight;
-  backdrop: Backdrop;
-  /** Colour of mist and distance haze for this theme's light. */
-  fogColor: THREE.Color;
-  /** How bright the theme's daylight is (1 = full day); rain and snow dim to match a dusk or night map. */
-  daylight: number;
-}
-
 /** What weather needs from the board in play. */
 export interface WeatherBoard {
   map: MapFile;
@@ -65,9 +53,9 @@ export interface WeatherBoard {
 
 /**
  * Rain, storms, snow and fog over the board: falling pixel streaks and flakes, splashes and
- * rings, drifting low mist and lightning, with the light, sky, wind and ground changed to
- * match. A change of weather eases in over a couple of seconds (snow settles slower).
- * Every motion loops in WEATHER_LOOP seconds.
+ * rings, drifting low mist and lightning, with the wind and ground changed to match (the
+ * lights are LightRig's, from this layer's look and flash). A change of weather eases in
+ * over a couple of seconds (snow settles slower). Every motion loops in WEATHER_LOOP seconds.
  */
 export class WeatherLayer {
   readonly group = new THREE.Group();
@@ -77,7 +65,6 @@ export class WeatherLayer {
   private now = 0;
   private shown: WeatherLook = LOOKS.clear;
   private board: WeatherBoard | null = null;
-  private readonly base: { sky: number; sun: number; skyColor: THREE.Color; ground: THREE.Color; sunColor: THREE.Color };
   private readonly time = { value: 0 };
   private readonly rain: THREE.ShaderMaterial;
   private readonly snow: THREE.ShaderMaterial;
@@ -88,21 +75,33 @@ export class WeatherLayer {
   private mounds: SpriteField | null = null;
   private readonly noise: THREE.DataTexture;
 
-  constructor(private readonly targets: WeatherTargets) {
-    this.base = {
-      sky: targets.hemi.intensity,
-      sun: targets.sun.intensity,
-      skyColor: targets.hemi.color.clone(),
-      ground: targets.hemi.groundColor.clone(),
-      sunColor: targets.sun.color.clone(),
-    };
+  constructor() {
     const wind = new THREE.Vector2();
-    const dim = 0.4 + 0.6 * Math.min(1, targets.daylight);
-    this.rain = fallMaterial(this.time, RAIN_COLOR.clone().multiplyScalar(dim), wind, true);
-    this.snow = fallMaterial(this.time, SNOW_COLOR.clone().multiplyScalar(dim), wind, false);
+    this.rain = fallMaterial(this.time, RAIN_COLOR.clone(), wind, true);
+    this.snow = fallMaterial(this.time, SNOW_COLOR.clone(), wind, false);
     this.splash = splashMaterial(this.time);
     this.noise = noiseTexture();
-    this.mist = mistMaterial(this.noise, targets.fogColor);
+    this.mist = mistMaterial(this.noise, new THREE.Color(1, 1, 1));
+  }
+
+  /** How bright a lightning flash is right now (0-1). */
+  get flash(): number {
+    return this.shown.lightning * lightningAt(this.now);
+  }
+
+  /**
+   * Matches the light: rain and snow dim at dusk and night (0 dark to 1 full day), and mist
+   * takes the colour of the haze.
+   */
+  setLight(daylight: number, fogColor: THREE.Color): void {
+    const dim = 0.4 + 0.6 * Math.min(1, daylight);
+    this.rain.uniforms.uColor.value.copy(RAIN_COLOR).multiplyScalar(dim);
+    this.snow.uniforms.uColor.value.copy(SNOW_COLOR).multiplyScalar(dim);
+    for (const object of this.boardObjects) {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.ShaderMaterial && 'uMist' in object.material.uniforms) {
+        object.material.uniforms.uColor.value.copy(fogColor);
+      }
+    }
   }
 
   get kind(): WeatherKind {
@@ -194,7 +193,9 @@ export class WeatherLayer {
 
     // Mist: flat layers over the board just above the low steps, so higher ground rises out of it.
     const mists = MIST_LAYERS.map((y, k) => {
-      const plane = new THREE.Mesh(new THREE.PlaneGeometry(2 * half, 2 * half), this.mist.clone());
+      const material = this.mist.clone();
+      material.uniforms.uColor = { value: new THREE.Color(1, 1, 1) };
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(2 * half, 2 * half), material);
       plane.rotation.x = -Math.PI / 2;
       plane.position.y = y;
       (plane.material as THREE.ShaderMaterial).uniforms.uLayer.value = k;
@@ -223,17 +224,6 @@ export class WeatherLayer {
     const look = blendLooks(this.from, target, ease(since, EASE_SECONDS));
     look.snowCover = this.from.snowCover + (target.snowCover - this.from.snowCover) * ease(since, SNOW_SETTLE_SECONDS);
     this.shown = look;
-
-    const flash = look.lightning * lightningAt(this.now);
-    // Lightning washes the storm's blue-grey out to white for a moment.
-    const tint = new THREE.Color(...look.tint).lerp(new THREE.Color(1, 1, 1), flash);
-    const { hemi, sun, backdrop, fogColor } = this.targets;
-    hemi.intensity = this.base.sky * (look.sky + 1.6 * flash);
-    hemi.color.copy(this.base.skyColor).multiply(tint);
-    hemi.groundColor.copy(this.base.ground).multiply(tint);
-    sun.intensity = this.base.sun * (look.sun + 0.8 * flash);
-    sun.color.copy(this.base.sunColor).multiply(tint);
-    backdrop.setWeather(tint.clone().multiplyScalar(look.sky), fogColor, look.haze, flash);
 
     const windVec = WIND_DIR.clone().multiplyScalar(SLANT * look.wind);
     for (const [material, amount] of [[this.rain, look.rain], [this.snow, look.snow]] as const) {

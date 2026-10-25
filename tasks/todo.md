@@ -186,7 +186,16 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] L5 choosing it: per the decisions below
   - [x] L6 tests: weather state and easing are pure and deterministic; particle counts stay within a budget; no state leaks when switching maps (GPU memory steady). check.mjs: each weather renders without errors and the frame differs from clear
   - [x] Review: one still and one GIF per weather on the same seed; a comparison sheet; `evolution/land/m7-weather/`
-- [ ] **M8: Day/night and ambience.** Light cycle, cloud shadows, swaying foliage, fireflies, chimney smoke.
+- [x] **M8: Day/night and ambience.** Light cycle, cloud shadows, swaying foliage, fireflies, chimney smoke.
+  - Decisions (user, 2026-10-25): dawn and dusk as well as day and night; subtle shadows cast by higher ground and tall things (buildings, castle walls, mountains); an option to choose the time of day. My defaults, mirroring the weather picker: a time picker with the map's own time (Wild Lands: day; themed maps: their designed light), dawn, day, dusk, night, and a running cycle (a full day in 2 minutes), kept in the URL as `time=`.
+  - [x] L0 `render/daytime.ts` (pure): sun and moon direction, colours and strengths for any hour from keyframes (night, dawn, morning, noon, afternoon, dusk), blended; a change of time eases forward through the hours between
+  - [x] L1 `render/LightRig.ts`: one place that sets the lights, from the theme's own light × time of day × weather (the weather layer stops touching the lights); sun position from the hour; sky backdrop tinted, with stars at night under a clear sky
+  - [x] L2 shadows: the sun casts real shadows from the terrain columns, buildings, walls and bridges onto the ground and sprites, kept subtle (partial strength) and crisp (no blur); long at dawn and dusk, short at noon, faint by moonlight, weak under cloud
+  - [x] L3 night: cottage windows glow warm; themed lamps and lanterns keep their light; fireflies over meadows, woods and water
+  - [x] L4 ambience: chimney smoke rising from cottages and drifting with the wind; soft cloud shadows sliding over the ground by day
+  - [x] L5 time picker in the menu box; dev hooks to set the hour for captures
+  - [x] L6 tests: hours loop and blend smoothly; sun up by day and down at night; dawn and dusk warm, night dark; shadows longest at dawn and dusk; easing goes forward in time. check.mjs: each time renders and differs, shadows are on, windows glow at night, fireflies at night only, no errors
+  - [x] Review: the same map at dawn, day, dusk and night; a cycle GIF; shadow close-ups; `evolution/land/m8-day-night/`
 - [ ] **M9: Large-map performance.** Instancing/chunking and culling, holding 60 fps on the full map.
 
 ---
@@ -394,4 +403,28 @@ _(filled in after each step)_
   - Puddle chance went from 0.25 to 0.175 per flat tile.
   - `SpriteField` snow caps: `uSnowCap` and `uTexel`. For each pixel the shader counts the opaque rows above it to the sprite's top edge; a cap fills rows up to a depth of floor(cover × (2.6 + 2 × wave)), where the wave rolls across columns. Bright top, plain middle, blue underside. `PropLayer.setSnow` is driven by the weather's snow cover.
   - Tests: 865 pass; check.mjs 48/48. Before/after pictures in `evolution/land/m7-weather/r2-fewer-puddles-snowy-trees/`.
+
+### M8 review (2026-10-25): day and night
+- Requested: after M7 round 2, "go with day and night now… introduce dawn and dusk as well… subtle shadow effects coming from higher elevation objects… allow the option to choose the day time".
+- `render/daytime.ts` (pure):
+  - `dayAt(hour)` blends keyframes (night, dawn 6.5, morning 9, noon 12.5, afternoon 16, dusk 18.4, twilight 19.8, full night from 22): sun and sky strength, sun colour, sky tint, scenery tint, night amount and shadow strength;
+  - `lightDirection` moves the sun from the right of the view (sunrise 5.6) to the left (sunset 19.2), peaking at 62° and leaning left at noon; the moon hangs at 40° by night;
+  - `easeHour` runs forward through the hours between;
+  - `DayClock` handles fixed times, the cycle (24 h in 120 s), the map's own light, and a pinned hour for captures.
+- `render/LightRig.ts`: one place sets the lights, theme × day × weather. It moves the sun, sets shadow strength (sun 0.85, sky 0.32, × day × weather sun), tints the backdrop, adds stars on clear nights, and returns night and fog colour. WeatherLayer no longer touches the lights; it exposes `look` and `flash` and takes `setLight` for rain, snow and mist colours.
+- Shadows: `BasicShadowMap` (crisp), 2048 map fitted to the board. MapMesh and bridges cast and receive; sprites receive. `render/skyShadow.ts` lets the shadow dim the hemisphere light too (tops, sides, sprites), so low-sun shadows show.
+- Night and ambience:
+  - cottage windows have glow pixels in the side atlas (a `Put` can now glow a different colour from what it draws), scaled by `MapMesh.setNightGlow`;
+  - `render/AmbienceLayer.ts`: fireflies (points, a blinking 2 s beat, hidden in rain, snow and fog), chimney stacks on 60% of cottages, and smoke puffs that rise, swell and drift in two flat alpha steps;
+  - cloud shadows in the ground shader (slow drift, not looped).
+- HUD: a third picker for the time, kept in the URL as `time=`; map switches keep the weather and time.
+- Themed maps keep their designed light by default and now get subtle shadows from their own sun.
+- Tests: 871 pass. New `daytime.test.ts`: loops and smooth blending, bright day and dark night, warm dawn and dusk (dusk warmer, moon cold), sun up by day and moon by night, long dawn and dusk shadows, forward easing, and the clock. The ground determinism test now compares in a loop (it timed out under a full run).
+- check.mjs passes 56/56. New:
+  - shadows on by day;
+  - dawn, dusk and night draw and differ;
+  - night is dark, with fainter shadows and fireflies;
+  - the cycle moves the sun;
+  - the time picker switches and keeps the URL;
+  - no errors.
 

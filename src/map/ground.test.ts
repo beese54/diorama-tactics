@@ -28,8 +28,10 @@ describe('map-wide ground painting', () => {
 
   it('is deterministic', () => {
     const again = paintGround(map);
-    expect(again.material).toEqual(img.material);
-    expect(again.frames[0]).toEqual(img.frames[0]);
+    // Plain loops: toEqual on arrays this large takes seconds and timed out under a full run.
+    const same = (a: ArrayLike<number>, b: ArrayLike<number>) => a.length === b.length && Array.prototype.every.call(a, (v: number, i: number) => v === b[i]);
+    expect(same(again.material, img.material)).toBe(true);
+    expect(same(again.frames[0], img.frames[0])).toBe(true);
   });
 
   it('keeps each tile its own terrain at its centre, and water exactly on water tiles', () => {

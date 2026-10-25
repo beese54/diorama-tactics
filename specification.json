@@ -114,7 +114,12 @@
     "choice": "HUD weather picker (auto = map's own: weatherForMap(seed) on Wild Lands, clear on themes), kept in the URL as weather=<kind>",
     "loop": "every weather effect loops in 4 s"
   },
-  "time_of_day": { "range": "0..24h", "speed": "adjustable, T to pause/advance [ASSUMED]" },
+  "time_of_day": {
+    "range": "0..24h; picker: the map's own light | dawn 6.5 | day 12.5 | dusk 18.4 | night 23.5 | cycle (24 h in 120 s), kept in the URL as time=<choice>",
+    "sun": "rises right of the opening view, sets left, 62 deg at noon leaning left; moon at 40 deg by night",
+    "shadows": "BasicShadowMap 2048, terrain/buildings/bridges cast, everything receives; subtle: sun blocked 85%, sky light 32%, scaled by time and weather",
+    "night": "cottage windows glow, fireflies (not in rain/snow/fog), stars on clear nights; chimney smoke day and night; cloud shadows on bright days"
+  },
   "ui": {
     "tile_info_panel": "HTML overlay with pixel font: terrain (or bridge) name, height, cover standing there, move cost, defense (terrain + cover)",
     "hud": "seed, weather, time, fps (debug toggle F3)"

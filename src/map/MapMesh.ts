@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { bridgeOf, TERRAIN } from './terrain';
 import { buildBridges } from './bridges';
+import { addSkyShadow, skyShadow } from '../render/skyShadow';
 import { buildTerrainAtlas, TILE_PX, VARIANTS, type TerrainAtlas, type UvRect } from './textures';
 import { tileAt, type MapFile, type Tile } from './types';
 import { isBuilt, isFlat, isLiquid, RIM_DROP, SAMPLES, STEP_HEIGHT, surfaceAt } from './surface';
@@ -16,6 +17,8 @@ import { FALL_PATTERN_PX, paintWaterfall, type WaterfallImage } from './waterfal
  * - Puddles: about one flat tile in six holds one, a blob of its own size and place,
  *   its edge wobbled by noise; they spread as the ground gets wetter. Dark sky-blue water,
  *   a light rim on the far side.
+ * - Cloud shadows: soft patches of shade drifting downwind by day (they don't loop; they
+ *   are slow and broad enough that a jump at a clip's end isn't noticed).
  * - Snow lies in drifts from two octaves of noise, thick in some places and thin or bare
  *   in others, with a dusting of single flakes at its edges; three tones (lit, plain and
  *   blue shadow) from finer noise give it lumps and hollows. Only on tops facing up.
@@ -28,6 +31,10 @@ const WEATHER_GROUND = /* glsl */ `
   vec2 px = floor(vWorld.xz * 16.0) / 16.0;
   float fine = wHash(px * 16.0);
   diffuseColor.rgb *= mix(vec3(1.0), vec3(0.68, 0.72, 0.8), uWet * notLiquid);
+
+  // Cloud shadows.
+  float cloud = wNoise(px / 7.0 - vec2(0.94, 0.33) * uTime * 0.05) * 0.7 + wNoise(px / 3.0 + 5.0 - vec2(0.94, 0.33) * uTime * 0.11) * 0.3;
+  diffuseColor.rgb *= 1.0 - 0.13 * uCloud * step(0.58, cloud);
 
   // Puddles.
   vec2 tileId = floor(vWorld.xz);
@@ -183,6 +190,9 @@ export class MapMesh {
   /** Weather on the ground: how wet (0-1) and how much snow has settled (0-1). */
   private readonly wet = { value: 0 };
   private readonly snow = { value: 0 };
+  /** How strongly drifting clouds shade the ground (0-1), and the clock they drift by. */
+  private readonly cloud = { value: 0 };
+  private readonly time = { value: 0 };
   private frame = 0;
 
   constructor(
@@ -213,24 +223,32 @@ export class MapMesh {
     tops.onBeforeCompile = (shader) => {
       shader.uniforms.uWet = this.wet;
       shader.uniforms.uSnow = this.snow;
+      shader.uniforms.uCloud = this.cloud;
+      shader.uniforms.uTime = this.time;
+      addSkyShadow(shader, skyShadow);
       shader.vertexShader = 'varying vec3 vWorld;\nvarying float vUp;\n' + shader.vertexShader.replace(
         '#include <worldpos_vertex>',
         '#include <worldpos_vertex>\nvWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvUp = objectNormal.y;',
       );
-      shader.fragmentShader = 'uniform float uWet;\nuniform float uSnow;\nvarying vec3 vWorld;\nvarying float vUp;\n' + WEATHER_NOISE + shader.fragmentShader.replace('#include <map_fragment>', WEATHER_GROUND);
+      shader.fragmentShader = 'uniform float uWet;\nuniform float uSnow;\nuniform float uCloud;\nuniform float uTime;\nvarying vec3 vWorld;\nvarying float vUp;\n' + WEATHER_NOISE + shader.fragmentShader.replace('#include <map_fragment>', WEATHER_GROUND);
     };
     this.sides = new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true, ...glowing(atlas.glow) });
+    this.sides.onBeforeCompile = (shader) => addSkyShadow(shader, skyShadow);
     this.mesh = new THREE.Mesh(b.build(), [
       tops,
       this.sides,
       new THREE.MeshLambertMaterial({ map: this.fallTexture, vertexColors: true }),
     ]);
     this.bridges = buildBridges(map, (tile) => this.tileOrigin(tile));
+    // Columns, walls and bridges cast the sun's shadow and take it.
+    this.mesh.castShadow = this.mesh.receiveShadow = true;
+    this.bridges.traverse((o) => (o.castShadow = o.receiveShadow = true));
     this.group.add(this.mesh, this.bridges);
   }
 
   /** Advances the liquid loop to the frame for `elapsed` seconds. */
   update(elapsed: number): void {
+    this.time.value = elapsed;
     const frame = Math.floor(elapsed * LIQUID_FPS) % this.ground.frames.length;
     if (frame === this.frame) return;
     this.frame = frame;
@@ -242,6 +260,16 @@ export class MapMesh {
     }
     this.fallTexture.image.data = this.fall.frames[frame];
     this.fallTexture.needsUpdate = true;
+  }
+
+  /** Cloud shadows drifting over the ground, 0 (none: night or overcast) to 1 (a bright day with clouds about). */
+  setClouds(strength: number): void {
+    this.cloud.value = strength;
+  }
+
+  /** Lit windows (cottages, shopfronts, neon): 0 by day, 1 at night. */
+  setNightGlow(strength: number): void {
+    this.sides.emissiveIntensity = strength;
   }
 
   /** Darkens the ground when wet, and settles snow on the tops (never on water). */

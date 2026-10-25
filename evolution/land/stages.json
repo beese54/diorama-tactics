@@ -132,10 +132,18 @@
     {
       "id": "m7-r2",
       "date": "2026-10-25",
-      "commit": "next",
+      "commit": "81548d8",
       "image": "m7-weather/r2-fewer-puddles-snowy-trees/trees-before-after.png",
       "title": "M7 round 2 · Snowy trees, fewer puddles",
       "note": "\"Trees do not have snow on their roof\": snow caps on every crown; 30% fewer puddles."
+    },
+    {
+      "id": "m8",
+      "date": "2026-10-25",
+      "commit": "next",
+      "image": "m8-day-night/four-times.png",
+      "title": "M8 · Day and night",
+      "note": "Dawn, day, dusk, night and a cycle; subtle shadows; lit windows, fireflies, smoke."
     }
   ]
 }

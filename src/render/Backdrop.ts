@@ -52,6 +52,7 @@ export class Backdrop {
       hazeColor: { value: new THREE.Color(1, 1, 1) },
       haze: { value: 0 },
       flash: { value: 0 },
+      stars: { value: 0 },
     };
     const material = new THREE.ShaderMaterial({
       uniforms: this.uniforms,
@@ -72,6 +73,7 @@ export class Backdrop {
         uniform vec3 hazeColor;
         uniform float haze;
         uniform float flash;
+        uniform float stars;
         void main() {
           // Whole drawing-buffer pixels, counted from the top-left, so texels map one to one.
           vec2 px = vec2(floor(gl_FragCoord.x), ${BASE_HEIGHT.toFixed(1)} - 1.0 - floor(gl_FragCoord.y));
@@ -85,6 +87,11 @@ export class Backdrop {
           }
           // Weather: tinted and dimmed, faded toward the haze, lit white by lightning.
           color.rgb = mix(color.rgb * tint, hazeColor, haze) + flash * 0.45;
+          // Stars on a clear night: single pixels, a few brighter, fixed to the sky as it turns.
+          if (stars > 0.0 && px.y < ${(BASE_HEIGHT * 0.5).toFixed(1)}) {
+            float s = fract(sin(dot(floor(p), vec2(12.9898, 78.233))) * 43758.5453);
+            if (s > 0.9965) color.rgb = mix(color.rgb, vec3(s > 0.9993 ? 1.0 : 0.78), stars * (1.0 - px.y / ${(BASE_HEIGHT * 0.5).toFixed(1)}) * 1.4);
+          }
           gl_FragColor = vec4(color.rgb, 1.0);
           #include <colorspace_fragment>
         }
@@ -96,12 +103,13 @@ export class Backdrop {
     this.overlayVelocity = over?.velocity ?? [0, 0];
   }
 
-  /** Weather over the scenery: a tint (and dimming), a fade toward haze (0-1), and a lightning flash (0-1). */
-  setWeather(tint: THREE.Color, hazeColor: THREE.Color, haze: number, flash: number): void {
+  /** Light and weather over the scenery: a tint (and dimming), a fade toward haze (0-1), a lightning flash (0-1) and stars (0-1). */
+  setWeather(tint: THREE.Color, hazeColor: THREE.Color, haze: number, flash: number, stars = 0): void {
     this.uniforms.tint.value.copy(tint);
     this.uniforms.hazeColor.value.copy(hazeColor);
     this.uniforms.haze.value = haze;
     this.uniforms.flash.value = flash;
+    this.uniforms.stars.value = stars;
   }
 
   /** Follows the camera's orbit (azimuth and polar angle, radians) and advances the overlay's drift. */

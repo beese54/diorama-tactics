@@ -10,9 +10,11 @@ export const STEP_PX = 8;
 export const VARIANTS = 4;
 
 type Rand = () => number;
-type Ctx = CanvasRenderingContext2D;
-/** Paints one pixel of the cell being drawn; `glows` also writes it to the emissive atlas. */
-type Put = (x: number, y: number, color: string, glows?: boolean) => void;
+/**
+ * Paints one pixel of the cell being drawn. `glows` also writes it to the emissive atlas:
+ * true for its own colour, or a colour of its own (a window dark by day that glows warm at night).
+ */
+type Put = (x: number, y: number, color: string, glows?: boolean | string) => void;
 
 function toTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
@@ -189,7 +191,8 @@ function paintCottage(put: Put, rand: Rand, [base, dark, light, beam]: readonly 
     put(8, 5, '#d9b44a');
     return;
   }
-  for (let y = 2; y < 6; y++) for (let x = 6; x < 10; x++) put(x, y, y === 2 ? '#6c88a0' : '#3c4c60');
+  // Glass: dark by day; at night the hearth behind it glows (see MapMesh.setNightGlow).
+  for (let y = 2; y < 6; y++) for (let x = 6; x < 10; x++) put(x, y, y === 2 ? '#6c88a0' : '#3c4c60', y === 2 ? '#ffe0a0' : x === 6 ? '#e8a050' : '#ffc870');
   for (let y = 2; y < 6; y++) (put(5, y, '#5e7a4a'), put(10, y, '#5e7a4a'));
   for (let x = 5; x < 11; x++) put(x, 6, beam);
   if (!groundFloor) for (let k = 0; k < 4; k++) put(1 + k, STEP_PX - 1 - k, beam);
@@ -264,10 +267,10 @@ export function buildTerrainAtlas(): TerrainAtlas {
 
   const cell = (x0: number, y0: number): Put => (x, y, c, glows) => {
     if (x < 0 || y < 0 || x >= TILE_PX || y >= STEP_PX) return;
-    for (const [ctx, on] of [[color, true], [light, !!glows]] as [Ctx, boolean][]) {
-      ctx.fillStyle = on ? c : '#000';
-      ctx.fillRect(x0 + x, y0 + y, 1, 1);
-    }
+    color.fillStyle = c;
+    color.fillRect(x0 + x, y0 + y, 1, 1);
+    light.fillStyle = typeof glows === 'string' ? glows : glows ? c : '#000';
+    light.fillRect(x0 + x, y0 + y, 1, 1);
   };
 
   TERRAIN_IDS.forEach((id, row) => {

@@ -15,6 +15,9 @@ import { THEMES, themeFromUrl } from './themes';
 import { randomSeed } from './themes/world';
 import { Hud } from './ui/Hud';
 import { WeatherLayer } from './render/WeatherLayer';
+import { AmbienceLayer } from './render/AmbienceLayer';
+import { LightRig } from './render/LightRig';
+import { dayAt, DayClock, TIME_NAMES, TIMES, type TimeChoice } from './render/daytime';
 import { WEATHER_KINDS, WEATHER_NAMES, weatherForMap, type WeatherKind } from './render/weather';
 import { TileInfo } from './ui/TileInfo';
 
@@ -46,6 +49,10 @@ function main(): void {
   const pipeline = createPipeline(stage);
   if (!pipeline) return;
 
+  // Crisp shadows (no blur), as befits pixel art; LightRig keeps them subtle.
+  pipeline.renderer.shadowMap.enabled = true;
+  pipeline.renderer.shadowMap.type = THREE.BasicShadowMap;
+
   const theme = themeFromUrl(location.search);
   document.title = `${theme.name} · Diorama Tactics`;
   const { light } = theme;
@@ -55,16 +62,29 @@ function main(): void {
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(light.sun, light.sunIntensity);
   sun.position.set(...light.sunFrom);
-  scene.add(sun);
+  scene.add(sun, sun.target);
 
   const backdrop = new Backdrop(theme.backdrop());
   scene.add(backdrop.mesh);
 
-  // Mist and haze take the theme's sky colour, dimmer under a darker sun.
-  const fogColor = new THREE.Color(light.sky).multiplyScalar(0.55 + 0.25 * Math.min(1, light.sunIntensity / 2));
-  const weather = new WeatherLayer({ hemi, sun, backdrop, fogColor, daylight: light.sunIntensity / 2.2 });
-  scene.add(weather.group);
+  const lights = new LightRig(hemi, sun, backdrop, {
+    sky: light.ambient, sun: light.sunIntensity,
+    skyColor: new THREE.Color(light.sky), groundColor: new THREE.Color(light.bounce), sunColor: new THREE.Color(light.sun),
+    sunDir: new THREE.Vector3(...light.sunFrom).normalize(),
+    litByDesign: light.propLights,
+    // Mist and haze take the theme's sky colour, dimmer under a darker sun.
+    fogColor: new THREE.Color(light.sky).multiplyScalar(0.55 + 0.25 * Math.min(1, light.sunIntensity / 2)),
+  });
+  const weather = new WeatherLayer();
+  const ambience = new AmbienceLayer();
+  scene.add(weather.group, ambience.group);
   const generated = theme.seed !== undefined;
+  /** The time picked in the menu (kept in the URL), or the map's own: day on Wild Lands, the designed light on themed maps. */
+  const timeChoice = (): TimeChoice => {
+    const asked = new URLSearchParams(location.search).get('time');
+    return ([...TIMES, 'cycle'] as const).find((t) => t === asked) ?? (generated ? 'day' : 'own');
+  };
+  const clock = new DayClock(timeChoice());
   /** The weather picked in the menu (kept in the URL), or the map's own: by seed on Wild Lands, clear on the themed maps. */
   const weatherFor = (map: MapFile): WeatherKind => {
     const asked = new URLSearchParams(location.search).get('weather');
@@ -86,6 +106,8 @@ function main(): void {
       setGround: (wet, snow) => (mesh.setWeather(wet, snow), flora.setSnow(snow), props.setSnow(snow)),
       setWind: (strength) => (flora.setWind(strength), props.setWind(strength)),
     });
+    ambience.setBoard(map, surfacePoint);
+    lights.setBoard(Math.max(map.width, map.height) / 2);
     return { map, mesh, flora, props };
   };
   let board = buildBoard(theme.map());
@@ -154,17 +176,26 @@ function main(): void {
 
   const maps = [...THEMES, { id: 'world', name: 'Wild Lands (random)' }];
   const pick = (id: string) => {
-    const keep = new URLSearchParams(location.search).get('weather');
-    location.search = `?map=${id}${keep ? `&weather=${keep}` : ''}`;
+    // A new map keeps the weather and time picked for the last one.
+    const params = new URLSearchParams(location.search);
+    const keep = ['weather', 'time'].filter((k) => params.has(k)).map((k) => `&${k}=${params.get(k)}`).join('');
+    location.search = `?map=${id}${keep}`;
   };
   const weathers = [{ id: 'auto', name: 'Weather: the map\'s own' }, ...WEATHER_KINDS.map((k) => ({ id: k, name: WEATHER_NAMES[k] }))];
   const pickWeather = (id: string) => {
     setParam('weather', id === 'auto' ? null : id);
     weather.set(weatherFor(board.map));
   };
+  const times = [{ id: 'own', name: 'Time: the map\'s own' }, ...[...TIMES, 'cycle' as const].map((t) => ({ id: t, name: TIME_NAMES[t] }))];
+  const pickTime = (id: string) => {
+    setParam('time', id === 'own' ? null : id);
+    clock.set(timeChoice(), lastElapsed);
+  };
   const asked = new URLSearchParams(location.search).get('weather');
+  const askedTime = new URLSearchParams(location.search).get('time');
   const hud = new Hud(ui, {
     maps, current: theme.id, pick, weathers, weather: WEATHER_KINDS.find((k) => k === asked) ?? 'auto', pickWeather,
+    times, time: [...TIMES, 'cycle'].find((t) => t === askedTime) ?? 'own', pickTime,
     newMap: generated ? () => newMap() : undefined, save, load,
   });
   hud.setTitle(theme.name, theme.seed);
@@ -194,11 +225,25 @@ function main(): void {
   const timer = new THREE.Timer();
   /** Fixed animation time in seconds, for headless captures; null = real time. */
   let frozenTime: number | null = null;
+  let lastElapsed = 0;
+  /** How dark it is now (0 day to 1 night), for checks. */
+  let nightNow = 0;
   pipeline.renderer.setAnimationLoop((time) => {
     timer.update(time);
     const elapsed = frozenTime ?? timer.getElapsed();
+    lastElapsed = elapsed;
     rig.update();
     weather.update(elapsed);
+    const hour = clock.hourAt(elapsed);
+    const day = hour === null ? null : dayAt(hour);
+    const look = weather.look;
+    const { night, fogColor } = lights.apply(day, look, weather.flash);
+    nightNow = night;
+    weather.setLight(day ? 1 - 0.8 * night : Math.min(1, light.sunIntensity / 2.2), fogColor);
+    board.mesh.setNightGlow(night);
+    // Cloud shadows only on a bright day with broken cloud: not at night, not under rain, snow or fog.
+    board.mesh.setClouds((1 - night) * (day ? day.sun : 1) * Math.max(0, 1 - 2 * (look.rain + look.snow + look.mist)));
+    ambience.update(elapsed, night, look);
     backdrop.update(elapsed, rig.controls.getAzimuthalAngle(), rig.controls.getPolarAngle());
     board.mesh.update(elapsed);
     board.flora.update(elapsed);
@@ -250,6 +295,14 @@ function main(): void {
         hudText: () => document.getElementById('hud')?.textContent ?? '',
         setWeather: (kind: WeatherKind, instant = true) => weather.set(kind, instant),
         weather: () => ({ kind: weather.kind, look: weather.look, skyLight: hemi.intensity }),
+        setTimeOfDay: (choice: TimeChoice, instant = true) => clock.set(choice, lastElapsed, instant),
+        pinHour: (hour: number | null) => clock.pin(hour),
+        daylight: () => ({
+          choice: clock.current, night: nightNow, sun: sun.intensity, sky: hemi.intensity, shadow: sun.shadow.intensity,
+          sunAt: sun.position.toArray(), shadows: pipeline.renderer.shadowMap.enabled && sun.castShadow,
+          fireflies: ambience.fireflyCount, chimneys: ambience.chimneyCount,
+          shadowMap: !!sun.shadow.map, shadowCamera: [sun.shadow.camera.left, sun.shadow.camera.right, sun.shadow.camera.near, sun.shadow.camera.far], casters: (() => { let n = 0; scene.traverse((o) => { if (o.castShadow) n++; }); return n; })(),
+        }),
         gpuMemory: () => ({ ...pipeline.renderer.info.memory }),
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),

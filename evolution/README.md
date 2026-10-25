@@ -4,7 +4,7 @@ This folder shows how the game's look has improved over time, one version after 
 
 | Folder | What it covers | Status |
 |---|---|---|
-| [land/](#land) | The world map terrain | M0 to M7 done |
+| [land/](#land) | The world map terrain | M0 to M8 done |
 | [characters/](characters/README.md) | Unit sprites and animation | not started |
 | [battles/](battles/README.md) | Battle scenes | not started |
 
@@ -288,6 +288,35 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   ![Trees before and after](land/m7-weather/r2-fewer-puddles-snowy-trees/trees-before-after.png)
   ![Puddles before and after](land/m7-weather/r2-fewer-puddles-snowy-trees/puddles-before-after.png)
   ![Snow on the trees](land/m7-weather/r2-fewer-puddles-snowy-trees/snow-trees.gif)
+
+### M8: Day and night
+![Seed 7 at dawn, day, dusk and night](land/m8-day-night/four-times.png)
+
+![A whole day on seed 7](land/m8-day-night/cycle-7.gif)
+
+| Dusk shadows across the castle | Cottage shadows and chimney smoke |
+|---|---|
+| ![](land/m8-day-night/shadows-dusk-castle.png) | ![](land/m8-day-night/village-shadows-smoke.png) |
+
+| A village at night | Smoke by day |
+|---|---|
+| ![](land/m8-day-night/night-village-19.gif) | ![](land/m8-day-night/smoke-village-19.gif) |
+
+![The time picker](land/m8-day-night/menu.png)
+
+- **What changed:**
+  - Four times of day and a running cycle. Dawn is pink-gold under a lavender sky, day is bright, dusk is deep orange under amber, and night is cold moonlight under stars. The light, the sky behind the board and the haze all follow the hour.
+  - The sun moves. It rises on the right of the opening view and sets on the left, so morning and evening shadows stretch sideways where you can see them; at noon they are short.
+  - **Shadows:** cliffs, columns, cottages, castle walls and bridges cast shadows on the ground, trees and flowers. They are crisp but subtle, fainter by moonlight and under cloud. Besides blocking the sun, a shadow dims the sky light a little, so long dawn and dusk shadows still show on flat ground.
+  - **Night:** cottage windows glow warm, and fireflies blink over meadows, marsh and woods (but not in rain or snow).
+  - **Ambience:** smoke rises from cottage chimneys and drifts downwind, and on bright days cloud shadows slide slowly over the ground.
+  - A third picker in the menu box chooses the time; themed maps keep their own designed light unless you pick one.
+- **Decisions:** *"Introduce dawn and dusk as well… subtle shadow effects coming from higher elevation objects… allow the option to choose the day time."*
+- **Learned:**
+  - A shadow only removes the sun, and a low sun barely lights flat ground, so long shadows were invisible. Letting shadows dim the sky light too made them show at every hour.
+  - Which way the sun leans decides whether shadows can be seen at all. With the noon sun behind the camera, every shadow hid behind the thing casting it.
+  - Pale smoke on pale ground disappears. It needed to be greyer, more solid, and bigger than first drawn.
+  - All the lighting now goes through one place (`LightRig`): theme × time of day × weather. Weather no longer sets the lights itself.
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { addSkyShadow, skyShadow } from './skyShadow';
 
 /** Pixels per world unit: sprites keep one texel per ground texel. */
 const PX = 16;
@@ -165,6 +166,7 @@ export class SpriteField {
       shader.uniforms.uWind = this.wind;
       shader.uniforms.uBury = this.bury;
       shader.uniforms.uSnowCap = this.snowCap;
+      addSkyShadow(shader, skyShadow);
       const { width, height } = sheet.image as { width: number; height: number };
       shader.uniforms.uTexel = { value: new THREE.Vector2(1 / width, 1 / height) };
       shader.fragmentShader = 'uniform float uSnowCap;\nuniform vec2 uTexel;\n' + shader.fragmentShader.replace('#include <map_fragment>', SNOW_CAP_FRAGMENT);
@@ -175,6 +177,7 @@ export class SpriteField {
     };
     const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false; // vertices move in the shader; positions are only the roots
+    mesh.receiveShadow = true; // trees and flowers darken in the shadow of a wall or a cliff
     this.group.add(mesh);
   }
 
