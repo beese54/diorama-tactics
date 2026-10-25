@@ -37,7 +37,7 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M5 | Trees, rocks and swamp snags as sparse cover; reeds, pebbles, murky swamp water | done |
 | M6 | A village, castle or ruins on level ground, roads out to the edges, walkable rooftops | done |
 | M7 | Weather: rain, storms with lightning, snow that settles, fog, wind; wet ground | done |
-| M8 | Dawn, day, dusk and night with a running cycle; subtle sun and moon shadows; lit windows, fireflies, chimney smoke, cloud shadows | done, in review |
+| M8 | Dawn, day, dusk and night with a running cycle; subtle sun and moon shadows; lit windows, fireflies, chimney smoke, cloud shadows | done |
 | M9 | Performance on large maps | planned |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).

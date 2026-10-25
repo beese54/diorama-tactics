@@ -428,3 +428,4 @@ _(filled in after each step)_
   - the time picker switches and keeps the URL;
   - no errors.
 
+- Approved 2026-10-25 ("looks good"). Next: M9, performance on large maps.
