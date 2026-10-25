@@ -190,7 +190,7 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
 ![The tile panel names the cover and counts its defence](land/m5-cover/tile-panel.png)
 
 - **What changed:**
-  - Generated maps grow cover: broadleaf trees (oak, poplar and birch shapes) in the woods, pines in pine forest and snowy pines up high, boulders on hills, scree, mountains and badlands, and drowned dead trees in swamps and bogs.
+  - Generated maps grow cover: broadleaf trees (oak, poplar and birch shapes) in the woods, pines in pine forest and snowy pines at the snowline, boulders on hills, scree, mountains and badlands, and drowned dead trees in swamps and bogs.
   - Trees grow in clumps with open ground between them. At most an eighth of the land carries cover, the front rows are thinner, and water, bridges, the tiles beside them and river banks stay clear.
   - Cover never blocks a tile. It adds its defence bonus, and the tile panel names it.
   - Low decor that is never cover: reeds in marshes and along the water's edge, pebbles on rocky ground, small bushes in light woods.
@@ -199,6 +199,7 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
 - **Learned:**
   - Capping cover by share of the land, and letting the strongest spots win, keeps every seed readable however the noise falls.
   - A tint that dithers over a wide band reads as grain. A short, sharp fade looks like a colour change in the water.
+  - *"Some trees have snow… it is not a snow environment."* Snow on trees has to follow snow on the map, not height alone. Snowy pines now grow only near a snowfield or peak.
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)

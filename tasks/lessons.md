@@ -29,3 +29,9 @@
 - **What happened:** I scattered jungle trees at random, thick at the back. The map looked lush, but units would have had to thread through a forest, and the trees hid where they could go.
 - **Rule:** On a battle map, place cover deliberately: a few pockets of cover with open lanes between them (to the objective, around the landmark, across the board). Get the jungle or city feel from low decor (ferns, flowers) and from the backdrop, not from tall props on playable tiles.
 - **Rule:** Guard it with a test: most open tiles stay free of props.
+
+## 2026-10-25: "some trees have snow… it is not a snow environment"
+- **What happened:** In M5 I gave pine forest at height 5 or more snowy pines half the time. Height alone isn't climate: on maps with no snowfield or peaks, green lowland-looking woods got snow-covered trees.
+- **Rule:** Seasonal or climate dressing (snow, frost, autumn colour, ash) must follow the map's actual conditions next to it (a snowfield or peak within reach), never a fixed height or a coin flip. If the map shows no snow anywhere, nothing on it is snowy.
+- **Rule:** Guard each such rule with a test that would fail on a map without the condition, and run it against the old code first to prove it catches the bug.
+

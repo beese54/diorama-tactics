@@ -10,6 +10,9 @@ const CLUMP_SCALE = 3.2;
 /** Rows nearest the front edges carry less cover, so it doesn't hide the board behind it. */
 const FRONT_ROWS = 3;
 const FRONT_THINNING = 0.35;
+/** Pines this close to snow (in tiles, diagonals count as one) are snow-covered; nowhere else is. */
+const SNOW_REACH = 2;
+const SNOWY: readonly TerrainId[] = ['snowfield', 'peak_snow'];
 
 /**
  * What each natural ground grows, and how thickly at the heart of a clump (0-1).
@@ -41,6 +44,12 @@ const stretch = (n: number) => Math.min(1, Math.max(0, (n - 0.5) * 2 + 0.5));
 export function placeCover(map: MapFile): void {
   const rand = mulberry32(map.seed ^ 0xc0e4);
   const size = Math.max(map.width, map.height);
+  const nearSnow = (t: Tile) => {
+    for (let dy = -SNOW_REACH; dy <= SNOW_REACH; dy++) {
+      for (let dx = -SNOW_REACH; dx <= SNOW_REACH; dx++) if (SNOWY.includes(tileAt(map, t.x + dx, t.y + dy)?.terrain as TerrainId)) return true;
+    }
+    return false;
+  };
   const near = (t: Tile, test: (n: Tile) => boolean) => AROUND.some(([dx, dy]) => { const n = tileAt(map, t.x + dx, t.y + dy); return !!n && test(n); });
   const scored: { tile: Tile; prop: PropId; score: number }[] = [];
   for (const tile of map.tiles) {
@@ -53,8 +62,8 @@ export function placeCover(map: MapFile): void {
     const front = Math.min(map.width - 1 - tile.x, map.height - 1 - tile.y) < FRONT_ROWS ? FRONT_THINNING : 1;
     const chance = grows.density * clump * clump * front;
     if (roll >= chance) continue;
-    // High pine woods catch the snow.
-    const prop = tile.terrain === 'pine_forest' && tile.height >= 5 && pick < 0.5 ? 'pine_snowy' : grows.props[Math.floor(pick * grows.props.length)];
+    // Pines at the snowline catch the snow; a map without snow has none on its trees.
+    const prop = tile.terrain === 'pine_forest' && nearSnow(tile) && pick < 0.5 ? 'pine_snowy' : grows.props[Math.floor(pick * grows.props.length)];
     scored.push({ tile, prop, score: chance - roll });
   }
   const land = map.tiles.filter((t) => !isLiquid(t)).length;

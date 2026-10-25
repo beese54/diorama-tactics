@@ -41,6 +41,17 @@ describe('cover on generated maps', () => {
     }
   });
 
+  it.each(SEEDS)('seed %i puts snow on pines only at the snowline, and none on a map without snow', (seed) => {
+    const map = maps[seed - 1];
+    const snowy = (t: Tile) => t.terrain === 'snowfield' || t.terrain === 'peak_snow';
+    for (const t of map.tiles.filter((t) => t.prop === 'pine_snowy')) {
+      let near = false;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) near ||= !!tileAt(map, t.x + dx, t.y + dy) && snowy(tileAt(map, t.x + dx, t.y + dy)!);
+      expect(near, `snowy pine at ${t.x},${t.y} on ${t.terrain}, far from any snow`).toBe(true);
+    }
+    if (!map.tiles.some(snowy)) expect(map.tiles.some((t) => t.prop === 'pine_snowy')).toBe(false);
+  });
+
   it('never blocks a tile, so units can still stand anywhere they could before', () => {
     for (const map of maps) for (const t of map.tiles.filter((t) => t.prop)) expect(PROPS[t.prop!].blocks).toBe(false);
   });
