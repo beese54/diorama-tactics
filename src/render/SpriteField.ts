@@ -51,6 +51,29 @@ const FRAME_VERTEX = /* glsl */ `
 `;
 
 /**
+ * Snow on a sprite. Counting down from a top edge (a pixel with empty sheet above: a crown,
+ * a tier of branches, a rock's back), each column of the sprite takes a cap of snow 2 to 4
+ * pixels deep, its depth rolling across the columns so the cap's lower edge is a soft wave: a bright top row,
+ * plain snow, and a blue shadow along the underside. The cap deepens with the cover.
+ * Works on any sprite, since it reads only the sheet's alpha.
+ */
+const SNOW_CAP_FRAGMENT = /* glsl */ `
+  #include <map_fragment>
+  if (uSnowCap > 0.0 && diffuseColor.a > 0.5) {
+    // Rows of sprite above this pixel before the edge (0 = this pixel is the top).
+    float rows = 4.0;
+    for (int k = 4; k >= 1; k--) if (texture2D(map, vMapUv + vec2(0.0, float(k) * uTexel.y)).a < 0.5) rows = float(k - 1);
+    // The cap's depth rolls gently from column to column, so its underside is a soft wave.
+    float column = floor(vMapUv.x / uTexel.x);
+    float wave = 0.5 + 0.5 * sin(column * 1.1 + 2.0 * sin(column * 0.37));
+    float depth = floor(uSnowCap * (2.6 + 2.0 * wave));
+    if (rows < depth) {
+      diffuseColor.rgb = rows < 0.5 ? vec3(0.97, 0.98, 1.0) : rows + 1.0 >= depth ? vec3(0.74, 0.8, 0.9) : vec3(0.9, 0.93, 0.97);
+    }
+  }
+`;
+
+/**
  * Upright billboard (turns to face the camera, stays vertical), then leans with the wind:
  * the top bends most, a wave of lean travels across the field, gusts swell and fade, and
  * each sprite flutters a little on its own phase.
@@ -84,6 +107,8 @@ export class SpriteField {
   private readonly wind = { value: 1 };
   /** Share of the sprites hidden (by their phase), as snow buries flowers and grass. */
   private readonly bury = { value: 0 };
+  /** How much snow lies on the sprites' top edges (0-1). */
+  private readonly snowCap = { value: 0 };
 
   constructor(sprites: SpriteInstance[], sheet: THREE.Texture, glow?: THREE.Texture) {
     const positions: number[] = [];
@@ -139,6 +164,10 @@ export class SpriteField {
       shader.uniforms.uTime = this.time;
       shader.uniforms.uWind = this.wind;
       shader.uniforms.uBury = this.bury;
+      shader.uniforms.uSnowCap = this.snowCap;
+      const { width, height } = sheet.image as { width: number; height: number };
+      shader.uniforms.uTexel = { value: new THREE.Vector2(1 / width, 1 / height) };
+      shader.fragmentShader = 'uniform float uSnowCap;\nuniform vec2 uTexel;\n' + shader.fragmentShader.replace('#include <map_fragment>', SNOW_CAP_FRAGMENT);
       shader.vertexShader =
         'uniform float uTime;\nuniform float uWind;\nuniform float uBury;\nattribute vec2 corner;\nattribute float spriteHeight;\nattribute float swayAmount;\nattribute float phase;\n' +
         'attribute vec3 frameInfo;\n#define frameCount frameInfo.x\n#define frameRate frameInfo.y\n#define frameStride frameInfo.z\n' +
@@ -155,6 +184,11 @@ export class SpriteField {
 
   setWind(strength: number): void {
     this.wind.value = strength;
+  }
+
+  /** Settles snow (0-1) along every top edge of the sprites: branches, crowns, rocks, roofs. */
+  setSnowCap(cover: number): void {
+    this.snowCap.value = cover;
   }
 
   /** Hides this share (0-1) of the sprites, the same ones each time. */

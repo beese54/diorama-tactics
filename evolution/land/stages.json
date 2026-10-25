@@ -124,10 +124,18 @@
     {
       "id": "m7-r1",
       "date": "2026-10-25",
-      "commit": "next",
+      "commit": "68c102c",
       "image": "m7-weather/r1-subtle-rain-snow-puddles/snow-before-after.png",
       "title": "M7 round 1 · Lighter rain, puddles, drifts",
       "note": "\"Droplets hinder the view… snow too flat\": subtle rain, puddles, drifting snow."
+    },
+    {
+      "id": "m7-r2",
+      "date": "2026-10-25",
+      "commit": "next",
+      "image": "m7-weather/r2-fewer-puddles-snowy-trees/trees-before-after.png",
+      "title": "M7 round 2 · Snowy trees, fewer puddles",
+      "note": "\"Trees do not have snow on their roof\": snow caps on every crown; 30% fewer puddles."
     }
   ]
 }

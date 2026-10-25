@@ -51,6 +51,11 @@ export class PropLayer {
     this.field.setWind(strength);
   }
 
+  /** Settled snow (0-1) lies on the props' top edges: tree crowns, branches, rocks, roofs. */
+  setSnow(cover: number): void {
+    this.field.setSnowCap(cover);
+  }
+
   update(elapsed: number): void {
     this.field.update(elapsed);
     // Two quick wobbles whose periods divide 4 s, so recorded loops stay seamless.

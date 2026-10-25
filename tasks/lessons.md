@@ -44,3 +44,7 @@
 - **Rule:** Effects drawn over the board (rain, snow, fog, particles) stay secondary to the board: sparse, part see-through, low contrast. Check a frame by asking whether you can still read every tile.
 - **Rule:** Anything that covers ground (snow, puddles, moss, ash) must vary like the M2 lessons: patches and bare spots from noise at two scales, at least three tones, and some shapes standing up from it. Never one uniform fill.
 
+## 2026-10-25: "Trees do not have snow… so that we can be consistent"
+- **What happened:** Snow settled on the ground, the roofs and the mounds, but the trees and rocks stayed bare green. That contradicts the ground around them.
+- **Rule:** A weather or season effect must reach everything exposed to it: ground, cliffs, roofs, trees, rocks and props. List every layer the scene draws (ground, sides, bridges, props, flora, backdrop) and decide for each one, before showing it.
+

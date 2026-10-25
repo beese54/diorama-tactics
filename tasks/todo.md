@@ -390,4 +390,8 @@ _(filled in after each step)_
   - Puddles in the ground shader: about a quarter of the flat, non-roof tiles each get a blob with its own centre, radius (0.16 to 0.42, growing with wetness) and noise-wobbled edge, with blue-grey water, glints and a far rim. Roof pixels are marked with `ROOF_ALPHA` 252 in the ground image.
   - Snow: two-octave drift noise against cover × 0.72, so there are bare patches and a dusted edge; three tones from finer noise for lumps; snow-mound sprites (lump, drift, heap) revealed as the cover deepens.
   - Tests: 865 pass (storm rain capped at 0.6; roof alpha in the ground test). check.mjs 48/48. Before/after pictures in `evolution/land/m7-weather/r1-subtle-rain-snow-puddles/`.
+- Round 2 (user review, 2026-10-25): "puddles are too many, reduce them by about 30%", "trees… do not have snow on their roof… so that we can be consistent".
+  - Puddle chance went from 0.25 to 0.175 per flat tile.
+  - `SpriteField` snow caps: `uSnowCap` and `uTexel`. For each pixel the shader counts the opaque rows above it to the sprite's top edge; a cap fills rows up to a depth of floor(cover × (2.6 + 2 × wave)), where the wave rolls across columns. Bright top, plain middle, blue underside. `PropLayer.setSnow` is driven by the weather's snow cover.
+  - Tests: 865 pass; check.mjs 48/48. Before/after pictures in `evolution/land/m7-weather/r2-fewer-puddles-snowy-trees/`.
 

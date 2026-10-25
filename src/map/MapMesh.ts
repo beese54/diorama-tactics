@@ -13,7 +13,7 @@ import { FALL_PATTERN_PX, paintWaterfall, type WaterfallImage } from './waterfal
  * alpha (LIQUID_ALPHA) and are left alone; roofs (ROOF_ALPHA) take snow but never puddles.
  * Everything is worked out per ground pixel (16 per tile), so it stays crisp pixel art.
  * - Wet land darkens and cools.
- * - Puddles: about a quarter of the flat tiles hold one, a blob of its own size and place,
+ * - Puddles: about one flat tile in six holds one, a blob of its own size and place,
  *   its edge wobbled by noise; they spread as the ground gets wetter. Dark sky-blue water,
  *   a light rim on the far side.
  * - Snow lies in drifts from two octaves of noise, thick in some places and thin or bare
@@ -36,7 +36,7 @@ const WEATHER_GROUND = /* glsl */ `
   float radius = (0.16 + 0.26 * wHash(tileId + 11.3)) * smoothstep(0.15, 0.9, uWet);
   float wobble = 0.12 * (wNoise(px * 5.0 + chance * 13.0) - 0.5);
   float d = length((px + 0.5 / 16.0 - centre) * vec2(1.0, 1.25)) + wobble;
-  float puddle = step(chance, 0.25) * step(d, radius) * notLiquid * (1.0 - roof) * step(0.92, vUp);
+  float puddle = step(chance, 0.175) * step(d, radius) * notLiquid * (1.0 - roof) * step(0.92, vUp);
   float rim = puddle * step(radius - 1.5 / 16.0, d) * step(0.0, px.y + 0.5 / 16.0 - centre.y);
   // Dark water reflecting a grey sky, a few lighter glints, and a light rim on the far bank.
   vec3 water = mix(vec3(0.33, 0.41, 0.52), vec3(0.58, 0.66, 0.76), step(0.88, fine));

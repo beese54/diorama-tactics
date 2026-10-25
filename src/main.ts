@@ -83,7 +83,7 @@ function main(): void {
     weather.setBoard({
       map,
       surfacePoint,
-      setGround: (wet, snow) => (mesh.setWeather(wet, snow), flora.setSnow(snow)),
+      setGround: (wet, snow) => (mesh.setWeather(wet, snow), flora.setSnow(snow), props.setSnow(snow)),
       setWind: (strength) => (flora.setWind(strength), props.setWind(strength)),
     });
     return { map, mesh, flora, props };

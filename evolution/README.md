@@ -281,6 +281,13 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   |---|---|
   | ![](land/m7-weather/r1-subtle-rain-snow-puddles/puddles-close.png) | ![](land/m7-weather/r1-subtle-rain-snow-puddles/snow-close.png) |
   | ![](land/m7-weather/r1-subtle-rain-snow-puddles/rain-7.gif) | ![](land/m7-weather/r1-subtle-rain-snow-puddles/snow-7.gif) |
+- **Round 2 (review):** *"The number of puddles are too many, reduce them by about 30%… when the weather is snow, the trees… do not have snow on their roof."*
+  - Puddles: one flat tile in six, down from one in four.
+  - Snow caps: every standing sprite (trees, pines, rocks, snags, the well, banners) takes snow along its top edges, 2 to 4 pixels deep in a soft wave, with a bright top and a blue underside. Pines catch it on each tier. It deepens with the snow on the ground.
+
+  ![Trees before and after](land/m7-weather/r2-fewer-puddles-snowy-trees/trees-before-after.png)
+  ![Puddles before and after](land/m7-weather/r2-fewer-puddles-snowy-trees/puddles-before-after.png)
+  ![Snow on the trees](land/m7-weather/r2-fewer-puddles-snowy-trees/snow-trees.gif)
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
