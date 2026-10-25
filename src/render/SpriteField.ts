@@ -20,6 +20,10 @@ export interface SpriteRect {
   /** Size in px. */
   w: number;
   h: number;
+  /** Optional animation: frames laid side by side, `stride` apart in u, played at `fps`. */
+  frames?: number;
+  fps?: number;
+  stride?: number;
 }
 
 export interface SpriteInstance {
@@ -33,6 +37,18 @@ export interface SpriteInstance {
 }
 
 const f = (n: number) => n.toFixed(5);
+
+/** Steps the sprite through its animation frames; each sprite starts at its own phase. */
+const FRAME_VERTEX = /* glsl */ `
+  #include <uv_vertex>
+  float frameShift = frameStride * floor(mod(uTime * frameRate + phase * frameCount, max(frameCount, 1.0)));
+  #ifdef USE_MAP
+    vMapUv.x += frameShift;
+  #endif
+  #ifdef USE_EMISSIVEMAP
+    vEmissiveMapUv.x += frameShift;
+  #endif
+`;
 
 /**
  * Upright billboard (turns to face the camera, stays vertical), then leans with the wind:
@@ -71,6 +87,7 @@ export class SpriteField {
     const uvs: number[] = [];
     const normals: number[] = [];
     const phases: number[] = [];
+    const frames: number[] = [];
     const indices: number[] = [];
     sprites.forEach(({ root, rect, sway, phase }, i) => {
       const w = rect.w / PX;
@@ -89,6 +106,7 @@ export class SpriteField {
         uvs.push(u, v);
         normals.push(0, 1, 0); // lit like the ground it stands on
         phases.push(phase);
+        frames.push(rect.frames ?? 1, rect.fps ?? 0, rect.stride ?? 0);
       }
       indices.push(4 * i, 4 * i + 1, 4 * i + 2, 4 * i, 4 * i + 2, 4 * i + 3);
     });
@@ -102,6 +120,7 @@ export class SpriteField {
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     geometry.setAttribute('phase', new THREE.Float32BufferAttribute(phases, 1));
+    geometry.setAttribute('frameInfo', new THREE.Float32BufferAttribute(frames, 3));
     geometry.setIndex(indices);
 
     const material = new THREE.MeshLambertMaterial({
@@ -114,7 +133,8 @@ export class SpriteField {
       shader.uniforms.uTime = this.time;
       shader.vertexShader =
         'uniform float uTime;\nattribute vec2 corner;\nattribute float spriteHeight;\nattribute float swayAmount;\nattribute float phase;\n' +
-        shader.vertexShader.replace('#include <begin_vertex>', SWAY_VERTEX);
+        'attribute vec3 frameInfo;\n#define frameCount frameInfo.x\n#define frameRate frameInfo.y\n#define frameStride frameInfo.z\n' +
+        shader.vertexShader.replace('#include <uv_vertex>', FRAME_VERTEX).replace('#include <begin_vertex>', SWAY_VERTEX);
     };
     const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false; // vertices move in the shader; positions are only the roots

@@ -81,3 +81,15 @@ describe('themes', () => {
     }
   });
 });
+
+describe('room to move', () => {
+  it.each(showcases.map((t) => [t.id, t] as const))('%s keeps most open tiles free of props', (_, theme) => {
+    const open = theme.map().tiles.filter(walkable);
+    expect(open.filter((t) => !t.prop).length / open.length).toBeGreaterThan(0.8);
+  });
+
+  it('jungle keeps its tall trees to a few deliberate spots', () => {
+    const map = THEMES.find((t) => t.id === 'jungle')!.map();
+    expect(map.tiles.filter((t) => t.prop === 'jungle_tree').length).toBeLessThanOrEqual(12);
+  });
+});

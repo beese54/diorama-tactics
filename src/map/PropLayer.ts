@@ -16,6 +16,8 @@ export class PropLayer {
   readonly group = new THREE.Group();
   readonly count: number;
   private readonly field: SpriteField;
+  /** Firelit lights with their steady brightness and a per-light phase. */
+  private readonly flames: { light: THREE.PointLight; base: number; phase: number }[] = [];
 
   constructor(map: MapFile, surfacePoint: (tile: Tile, u: number, v: number) => THREE.Vector3, options: { lights: boolean }) {
     const sheet = buildPropSheet();
@@ -40,10 +42,14 @@ export class PropLayer {
       const light = new THREE.PointLight(color, intensity, distance, 1);
       light.position.copy(surfacePoint(tile, u, v)).add(new THREE.Vector3(0, (sheet.cell(tile.prop!, variant).h / 16) * 0.7, 0));
       this.group.add(light);
+      if (PROPS[tile.prop!].light!.flicker) this.flames.push({ light, base: intensity, phase: hash(0x2d9f, tile.x, tile.y) * 6.283 });
     }
   }
 
   update(elapsed: number): void {
     this.field.update(elapsed);
+    // Two quick wobbles whose periods divide 4 s, so recorded loops stay seamless.
+    const w = (2 * Math.PI * elapsed) / 4;
+    for (const { light, base, phase } of this.flames) light.intensity = base * (0.84 + 0.09 * Math.sin(w * 11 + phase) + 0.07 * Math.sin(w * 23 + phase * 2));
   }
 }

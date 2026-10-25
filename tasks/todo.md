@@ -212,3 +212,7 @@ _(filled in after each step)_
   - check.mjs passes 25/25, with 6 new: each theme loads with props and motion and no errors.
   - Stills and loop GIFs are in `evolution/land/m2e-theme-showcases/`.
 - **Waiting on:** the user's review of the six showcases, before the other 24 variations.
+- Review round 1 (2026-10-25):
+  - Jungle: trees placed by hand in cover pockets with open lanes. A new test checks that over 80% of open tiles on every showcase are free of props.
+  - Animation: sprites now support animation frames (`SpriteField` shifts the UV per frame). Animated: brazier and altar flames, lantern candles, the vent, and fountain droplets and ripples. Firelit point lights flicker on periods that divide 4 s, and clouds drift at 2 px/s.
+  - Verified: 115 unit tests; check.mjs 25/25.

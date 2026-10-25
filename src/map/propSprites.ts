@@ -72,7 +72,10 @@ class Gfx {
 interface SpriteArt {
   w: number;
   h: number;
-  paint: (g: Gfx, variant: number, rand: Rand) => void;
+  /** Animation frames (default 1) and how fast they play; each loop divides 4 s, so recordings loop seamlessly. */
+  frames?: number;
+  fps?: number;
+  paint: (g: Gfx, variant: number, rand: Rand, frame: number) => void;
 }
 
 const WOOD = ['#4a321e', '#6a4a2c', '#8a6438', '#a87c4a'];
@@ -92,6 +95,20 @@ function conifer(g: Gfx, cx: number, top: number, height: number, halfWidth: num
       g.set(cx + x, top + r, c);
     }
   }
+}
+
+/** A tongue of fire rising from (cx, base) that wavers and leans with the animation frame. */
+function flame(g: Gfx, cx: number, base: number, height: number, width: number, frame: number): void {
+  for (let r = 0; r < height; r++) {
+    const t = r / Math.max(1, height - 1); // 0 at the base, 1 at the tip
+    const hw = Math.round(width * Math.sqrt(1 - t) * (0.85 + 0.15 * Math.sin(frame * 2.1 + r)));
+    const lean = Math.round(Math.sin((frame * Math.PI) / 2 + r * 0.8) * t * 1.5);
+    for (let x = -hw; x <= hw; x++) {
+      const core = Math.abs(x) <= hw * 0.45 && t < 0.7;
+      g.set(cx + x + lean, base - r, core ? FIRE[2] : Math.abs(x) < hw * 0.8 ? FIRE[1] : FIRE[0], true);
+    }
+  }
+  if (frame % 2 === 0) g.set(cx + (frame === 0 ? 1 : -1), base - height - 1, FIRE[0], true); // a spark leaping off the tip
 }
 
 const ART: Record<PropId, SpriteArt> = {
@@ -166,18 +183,14 @@ const ART: Record<PropId, SpriteArt> = {
     },
   },
   brazier: {
-    w: 9, h: 16,
-    paint(g) {
+    w: 9, h: 16, frames: 4, fps: 8,
+    paint(g, _v, _r, frame) {
       g.line(1, 15, 3, 9, IRON[1]);
       g.line(7, 15, 5, 9, IRON[0]);
       g.line(4, 15, 4, 9, IRON[2]);
       g.rect(0, 7, 9, 3, IRON[1]);
       g.rect(0, 7, 9, 1, IRON[2]);
-      // Flames: a tapering tongue of fire with a bright core.
-      const rows = [[4, 4], [3, 5], [3, 5], [2, 6], [2, 6], [1, 7], [1, 7]];
-      rows.forEach(([a, b], y) => {
-        for (let x = a; x <= b; x++) g.set(x, y, Math.abs(x - 4) < 1 && y > 2 ? FIRE[2] : Math.abs(x - 4) < 2 ? FIRE[1] : FIRE[0], true);
-      });
+      flame(g, 4, 6, 6 + (frame % 2), 3, frame);
       g.outline(0.35);
     },
   },
@@ -267,8 +280,8 @@ const ART: Record<PropId, SpriteArt> = {
     },
   },
   fountain: {
-    w: 27, h: 25,
-    paint(g) {
+    w: 27, h: 25, frames: 4, fps: 6,
+    paint(g, _v, _r, frame) {
       const water = ['#3f7fa8', '#5c9cc4', '#8cc4e0', '#d8f0f8'];
       // Lower basin: a wide stone ring holding water.
       for (let y = 16; y < 25; y++) {
@@ -287,16 +300,24 @@ const ART: Record<PropId, SpriteArt> = {
       g.rect(12, 9, 1, 9, STONE[3]);
       g.ball(13.5, 9, 6, 1.8, STONE);
       g.ball(13.5, 8.5, 4.5, 1, water);
-      // Jets: a spout and arcs falling into the basin.
-      g.rect(13, 2, 1, 7, water[3]);
-      g.rect(13, 1, 1, 1, water[2]);
-      for (let i = 0; i <= 10; i++) {
-        const t = i / 10;
-        const dx = 2 + t * 9;
-        const dy = 7 + t * t * 10 - (1 - t) * 3;
-        g.set(13.5 - dx, dy, water[t < 0.5 ? 3 : 2]);
-        g.set(13.5 + dx, dy, water[t < 0.5 ? 2 : 1]);
+      // Jets: a bobbing spout, and arcs falling into the basin with droplets running down them.
+      const top = 1 + (frame % 2);
+      g.rect(13, top + 1, 1, 8 - top, water[3]);
+      g.set(13, top, water[2]);
+      const arc = (t: number): [number, number] => [2 + t * 9, 7 + t * t * 10 - (1 - t) * 3];
+      for (let i = 0; i <= 20; i++) {
+        const [dx, dy] = arc(i / 20);
+        g.set(13.5 - dx, dy, water[1]);
+        g.set(13.5 + dx, dy, water[1]);
       }
+      for (let i = 0; i < 6; i++) {
+        const t = (i + frame / 4) / 6;
+        const [dx, dy] = arc(t);
+        g.set(13.5 - dx, dy, water[3]);
+        g.set(13.5 + dx, dy, water[t < 0.5 ? 3 : 2]);
+      }
+      // Ripples spreading across the basin.
+      for (let k = 0; k < 4; k++) g.set(4 + ((k * 5 + frame * 2) % 19), 17 + (k % 3), water[3]);
       g.outline(0.5);
     },
   },
@@ -347,12 +368,19 @@ const ART: Record<PropId, SpriteArt> = {
     },
   },
   lantern_post: {
-    w: 7, h: 24,
-    paint(g) {
+    w: 7, h: 24, frames: 4, fps: 4,
+    paint(g, _v, _r, frame) {
       g.rect(3, 9, 1, 15, WOOD[1]);
       g.rect(3, 9, 1, 1, WOOD[0]);
       g.rect(1, 1, 5, 1, WOOD[0]);
-      g.ball(3.5, 5, 3, 3.6, ['#b02a22', '#e04a30', '#ff7a4a', '#ffb070'], true);
+      // The candle inside gutters a little from frame to frame.
+      const glow = [
+        ['#b02a22', '#e04a30', '#ff7a4a', '#ffb070'],
+        ['#a82620', '#d84228', '#ff6e40', '#ffa060'],
+        ['#b02a22', '#e04a30', '#ff7a4a', '#ffb070'],
+        ['#b8302a', '#e8523a', '#ff8656', '#ffbc80'],
+      ][frame];
+      g.ball(3.5, 5, 3, 3.6, glow, true);
       g.rect(2, 1, 3, 1, '#2a1a14');
       g.rect(3, 9, 1, 1, '#ffd060', true);
       g.outline();
@@ -433,8 +461,8 @@ const ART: Record<PropId, SpriteArt> = {
     },
   },
   altar: {
-    w: 17, h: 20,
-    paint(g) {
+    w: 17, h: 20, frames: 4, fps: 8,
+    paint(g, _v, _r, frame) {
       const temple = ['#5f5a44', '#7d7758', '#9a9474', '#b8b292'];
       g.rect(0, 11, 17, 9, temple[1]);
       g.rect(0, 11, 17, 1, temple[3]);
@@ -448,10 +476,7 @@ const ART: Record<PropId, SpriteArt> = {
       g.set(10, 5, '#3a2a10');
       for (const x of [1, 14]) {
         g.rect(x, 9, 3, 2, '#3a3428');
-        g.set(x + 1, 8, FIRE[2], true);
-        g.set(x + 1, 7, FIRE[1], true);
-        g.set(x, 8, FIRE[0], true);
-        g.set(x + 2, 8, FIRE[0], true);
+        flame(g, x + 1, 8, 3 + (frame % 2), 1, frame + x);
       }
       g.outline();
     },
@@ -510,8 +535,8 @@ const ART: Record<PropId, SpriteArt> = {
     },
   },
   vent: {
-    w: 23, h: 25,
-    paint(g) {
+    w: 23, h: 25, frames: 4, fps: 6,
+    paint(g, _v, _r, frame) {
       const obsidian = ['#14101a', '#221a2a', '#342a40', '#54486a'];
       // A glassy black cone with a glowing crater.
       for (let y = 5; y < 25; y++) {
@@ -521,19 +546,20 @@ const ART: Record<PropId, SpriteArt> = {
           g.set(x, y, t < 0.2 ? obsidian[3] : t < 0.5 ? obsidian[2] : t < 0.8 ? obsidian[1] : obsidian[0]);
         }
       }
-      g.rect(8, 4, 7, 2, '#ffb347', true);
+      g.rect(8, 4, 7, 2, frame % 2 ? '#ffb347' : '#ffc860', true);
       g.rect(9, 3, 5, 1, '#ffe08a', true);
-      g.rect(10, 0, 3, 3, '#ff7a2a', true);
-      g.set(11, 0, '#ffe08a', true);
-      // Lava running down the sides.
-      for (const [x0, len] of [[9, 9], [14, 12], [11, 6]]) for (let y = 6; y < 6 + len; y++) g.set(x0 + (y % 4 === 0 ? 1 : 0), y, y < 9 ? '#ffb347' : '#ff7a2a', true);
+      flame(g, 11, 2, 3 + (frame % 2), 1, frame);
+      // Lava running down the sides, with bright pulses travelling downhill.
+      for (const [x0, len] of [[9, 9], [14, 12], [11, 6]]) {
+        for (let y = 6; y < 6 + len; y++) g.set(x0 + (y % 4 === 0 ? 1 : 0), y, (y - frame + 8) % 4 === 0 ? '#ffd060' : y < 9 ? '#ffb347' : '#ff7a2a', true);
+      }
       g.outline(0.7);
     },
   },
 };
 
 export interface SpriteCell {
-  /** UV rectangle in the sheet (v0 = bottom). */
+  /** UV rectangle of the first frame in the sheet (v0 = bottom). */
   u0: number;
   v0: number;
   u1: number;
@@ -541,6 +567,10 @@ export interface SpriteCell {
   /** Size in px. */
   w: number;
   h: number;
+  /** Animation: frame count, frames per second, and the u offset from one frame to the next. */
+  frames: number;
+  fps: number;
+  stride: number;
 }
 
 export interface PropSheet {
@@ -567,14 +597,16 @@ export function buildPropSheet(): PropSheet {
   let x = 0;
   let y = 0;
   let rowH = 0;
+  // Each variant's frames sit side by side in one strip.
+  const span = (art: SpriteArt) => (art.frames ?? 1) * (art.w + PAD) - PAD;
   for (const { id, variant, art } of [...items].sort((a, b) => b.art.h - a.art.h)) {
-    if (x + art.w > SHEET_W) {
+    if (x + span(art) > SHEET_W) {
       x = 0;
       y += rowH + PAD;
       rowH = 0;
     }
     placed.set(`${id}/${variant}`, { x, y, w: art.w, h: art.h });
-    x += art.w + PAD;
+    x += span(art) + PAD;
     rowH = Math.max(rowH, art.h);
   }
   const height = 2 ** Math.ceil(Math.log2(y + rowH));
@@ -589,16 +621,20 @@ export function buildPropSheet(): PropSheet {
 
   for (const { id, variant, art } of items) {
     const at = placed.get(`${id}/${variant}`)!;
-    const g = new Gfx(art.w, art.h);
-    art.paint(g, variant, mulberry32(PROP_IDS.indexOf(id) * 131 + variant * 17 + 7));
-    g.color.forEach((c, i) => {
-      if (!c) return;
-      ctx.fillStyle = c;
-      ctx.fillRect(at.x + (i % art.w), at.y + Math.floor(i / art.w), 1, 1);
-      if (!g.glow[i]) return;
-      glowCtx.fillStyle = c;
-      glowCtx.fillRect(at.x + (i % art.w), at.y + Math.floor(i / art.w), 1, 1);
-    });
+    for (let frame = 0; frame < (art.frames ?? 1); frame++) {
+      const g = new Gfx(art.w, art.h);
+      // Same random stream every frame, so only what the frame animates changes.
+      art.paint(g, variant, mulberry32(PROP_IDS.indexOf(id) * 131 + variant * 17 + 7), frame);
+      const x0 = at.x + frame * (art.w + PAD);
+      g.color.forEach((c, i) => {
+        if (!c) return;
+        ctx.fillStyle = c;
+        ctx.fillRect(x0 + (i % art.w), at.y + Math.floor(i / art.w), 1, 1);
+        if (!g.glow[i]) return;
+        glowCtx.fillStyle = c;
+        glowCtx.fillRect(x0 + (i % art.w), at.y + Math.floor(i / art.w), 1, 1);
+      });
+    }
   }
 
   return {
@@ -606,8 +642,12 @@ export function buildPropSheet(): PropSheet {
     glow: nearestTexture(glowCanvas),
     cell(prop, variant) {
       const at = placed.get(`${prop}/${variant}`)!;
+      const art = ART[prop];
       // CanvasTexture is flipped: canvas y = 0 is v = 1.
-      return { u0: at.x / SHEET_W, u1: (at.x + at.w) / SHEET_W, v0: 1 - (at.y + at.h) / height, v1: 1 - at.y / height, w: at.w, h: at.h };
+      return {
+        u0: at.x / SHEET_W, u1: (at.x + at.w) / SHEET_W, v0: 1 - (at.y + at.h) / height, v1: 1 - at.y / height, w: at.w, h: at.h,
+        frames: art.frames ?? 1, fps: art.fps ?? 0, stride: (at.w + PAD) / SHEET_W,
+      };
     },
   };
 }

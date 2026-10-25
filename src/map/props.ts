@@ -6,6 +6,8 @@ export interface PropLight {
   intensity: number;
   /** Reach in world units. */
   distance: number;
+  /** Firelight wavers; electric light stays steady. */
+  flicker?: boolean;
 }
 
 export interface PropDef {
@@ -37,7 +39,7 @@ export const PROPS: Record<PropId, PropDef> = {
   cairn:         prop('Summit Cairn',  { defense: 0, blocks: true, shadow: 5, sway: 0.02 }),
   crate:         prop('Crates',        { defense: 15, variants: 2, shadow: 5 }),
   barrel:        prop('Barrels',       { defense: 15, shadow: 4 }),
-  brazier:       prop('Brazier',       { defense: 0, shadow: 3, light: { color: 0xff9a48, intensity: 4, distance: 4.5 } }),
+  brazier:       prop('Brazier',       { defense: 0, shadow: 3, light: { color: 0xff9a48, intensity: 4, distance: 4.5, flicker: true } }),
   banner:        prop('Banner',        { defense: 0, shadow: 2, sway: 0.05 }),
   throne:        prop('Throne',        { defense: 0, blocks: true, shadow: 6 }),
   haystack:      prop('Haystack',      { defense: 15, shadow: 6, jitter: true }),
@@ -47,18 +49,18 @@ export const PROPS: Record<PropId, PropDef> = {
   fountain:      prop('Fountain',      { defense: 0, blocks: true, shadow: 11 }),
   traffic_light: prop('Traffic Light', { defense: 0, shadow: 2 }),
   planter:       prop('Planter',       { defense: 10, shadow: 5 }),
-  stall:         prop('Market Stall',  { defense: 15, variants: 3, shadow: 8, light: { color: 0xffa860, intensity: 2.5, distance: 3.5 } }),
-  lantern_post:  prop('Lantern',       { defense: 0, shadow: 2, sway: 0.015, light: { color: 0xff6a4a, intensity: 3.5, distance: 4.5 } }),
-  lantern_gate:  prop('Lantern Gate',  { defense: 0, blocks: true, shadow: 9, light: { color: 0xff8050, intensity: 6, distance: 6 } }),
+  stall:         prop('Market Stall',  { defense: 15, variants: 3, shadow: 8, light: { color: 0xffa860, intensity: 2.5, distance: 3.5, flicker: true } }),
+  lantern_post:  prop('Lantern',       { defense: 0, shadow: 2, sway: 0.015, light: { color: 0xff6a4a, intensity: 3.5, distance: 4.5, flicker: true } }),
+  lantern_gate:  prop('Lantern Gate',  { defense: 0, blocks: true, shadow: 9, light: { color: 0xff8050, intensity: 6, distance: 6, flicker: true } }),
   vending:       prop('Vending Machine', { defense: 15, shadow: 4, light: { color: 0x60e0ff, intensity: 2.5, distance: 3 } }),
   jungle_tree:   prop('Jungle Tree',   { defense: 20, variants: 2, shadow: 9, sway: 0.035, jitter: true }),
   fern:          prop('Ferns',         { defense: 5, variants: 2, shadow: 4, sway: 0.05, jitter: true }),
-  altar:         prop('Altar',         { defense: 0, blocks: true, shadow: 7, light: { color: 0xffd060, intensity: 5, distance: 5 } }),
+  altar:         prop('Altar',         { defense: 0, blocks: true, shadow: 7, light: { color: 0xffd060, intensity: 5, distance: 5, flicker: true } }),
   pillar:        prop('Broken Pillar', { defense: 0, blocks: true, variants: 2, shadow: 4 }),
   basalt_spire:  prop('Basalt Spire',  { defense: 0, blocks: true, variants: 2, shadow: 5, jitter: true }),
   dead_tree:     prop('Charred Tree',  { defense: 10, variants: 2, shadow: 4, jitter: true }),
-  ember_rock:    prop('Ember Rock',    { defense: 15, shadow: 5, jitter: true, light: { color: 0xff6a20, intensity: 2, distance: 2.5 } }),
-  vent:          prop('Obsidian Vent', { defense: 0, blocks: true, shadow: 10, light: { color: 0xff6a20, intensity: 7, distance: 7 } }),
+  ember_rock:    prop('Ember Rock',    { defense: 15, shadow: 5, jitter: true, light: { color: 0xff6a20, intensity: 2, distance: 2.5, flicker: true } }),
+  vent:          prop('Obsidian Vent', { defense: 0, blocks: true, shadow: 10, light: { color: 0xff6a20, intensity: 7, distance: 7, flicker: true } }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

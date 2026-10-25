@@ -7,6 +7,16 @@ const SIZE = 20;
 const SEED = 85;
 const APEX = 9;
 
+/**
+ * Trees are placed by hand, a few at a time, so they give cover without walling units in:
+ * a frame around the back corner, a pocket on each back edge, and a single tree on each
+ * side of the stream. Everything else stays open ground.
+ */
+const TREES = new Set(['1,1', '3,0', '0,4', '14,2', '17,1', '16,4', '2,14', '1,17', '4,16', '15,12', '12,16']);
+
+/** Open lanes: the four stairways' axes out to the board edges, and the walkway around the temple. */
+const lane = (x: number, y: number, ring: number) => Math.abs(x - APEX) <= 1 || Math.abs(y - APEX) <= 1 || ring <= 6;
+
 /** Distance to the stream that cuts across the front corner. */
 const stream = (x: number, y: number) => Math.abs(x + y - 30.5 - 1.6 * Math.sin(x * 0.55));
 
@@ -20,10 +30,9 @@ function place(x: number, y: number, rand: () => number): Cell {
   if (stream(x, y) < 0.9 && x > 6 && y > 6) return { terrain: stream(x, y) < 0.45 ? 'deep_water' : 'shallow_water', height: 0 };
 
   const height = 1 + (valueNoise(SEED, x / 2.6, y / 2.6) > 0.62 ? 1 : 0);
-  // Jungle is thickest at the back of the board and thins towards the front, so units stay visible.
-  const back = 1 - (x + y) / (2 * SIZE - 2);
-  const roll = rand();
-  const prop = ring <= 5 ? undefined : roll < 0.08 + back * 0.5 ? 'jungle_tree' : roll < 0.3 + back * 0.3 ? 'fern' : undefined;
+  if (lane(x, y, ring)) return { terrain: 'jungle_floor', height };
+  // Low ferns fill in the jungle feel without hiding anyone.
+  const prop = TREES.has(`${x},${y}`) ? 'jungle_tree' : rand() < 0.12 ? 'fern' : undefined;
   return { terrain: 'jungle_floor', height, prop };
 }
 
