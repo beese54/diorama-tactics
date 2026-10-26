@@ -55,6 +55,7 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   container: ['#a8402e', '#7e2e22', '#c45a44', '#2a2a2e'],
   hull: ['#1e2a3a', '#16202e', '#2c3a4e', '#6a3a26'],
   sandstone: ['#c0a068', '#a88a58', '#d4b880', '#8a6e46'],
+  arcade: ['#bcb090', '#a49878', '#d4caa8', '#3a3228'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
@@ -139,6 +140,18 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
       return;
     case 'timber':
       for (let x = 0; x < TILE_PX; x++) for (let y = 0; y < STEP_PX; y++) put(x, y, x % 4 === 0 ? accent : rand() < 0.25 ? dark : x % 4 === 1 ? light : base);
+      return;
+    case 'arcade':
+      // The colosseum's arcades: travertine piers and an arched opening into the dark under the
+      // stands on every face, a cornice along the top, the odd sprig of weed in the joints.
+      for (let x = 0; x < TILE_PX; x++) {
+        for (let y = 0; y < STEP_PX; y++) {
+          const d = Math.hypot(x - 7.5, (y - 3.5) * 1.4);
+          const opening = x >= 4 && x <= 11 && y >= 2 && (y >= 4 || d < 4.2);
+          put(x, y, y === 0 ? light : opening ? (y > 5 ? '#2a241c' : accent) : rand() < 0.14 ? dark : base);
+        }
+      }
+      if (variant === 3) for (const [x, y] of [[1, 1], [2, 1], [14, 2]]) put(x, y, '#5e7e3e');
       return;
     case 'container':
       // The corrugated side of a container, one box per step: its own livery, vertical ribs,

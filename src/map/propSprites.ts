@@ -2183,6 +2183,49 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline(0.6);
     },
   },
+  gladiator: {
+    w: 23, h: 50,
+    paint(g) {
+      // A bronze gladiator on a marble plinth, gone green with age: a crested helmet, a round
+      // shield on one arm, the sword raised in the other, one foot forward.
+      const bronze = ['#24453a', '#346050', '#4a7e68', '#6aa08a'];
+      g.rect(2, 40, 19, 10, '#c8c4b8');
+      g.rect(2, 40, 19, 1, '#e4e0d4');
+      g.rect(16, 41, 5, 9, '#a8a498');
+      g.rect(4, 47, 15, 1, '#a8a498');
+      // Legs, one forward, and the kilt.
+      g.rect(8, 30, 3, 10, bronze[2]);
+      g.rect(13, 31, 3, 9, bronze[1]);
+      g.rect(7, 26, 10, 5, bronze[1]);
+      g.rect(7, 26, 10, 1, bronze[3]);
+      // Torso, the shield arm, the raised sword.
+      g.rect(8, 15, 8, 11, bronze[2]);
+      g.rect(8, 15, 3, 11, bronze[3]);
+      g.ball(5, 22, 4.5, 5, bronze);
+      g.set(5, 22, '#c89a30');
+      g.rect(16, 10, 2, 7, bronze[1]);
+      g.rect(17, 1, 1, 10, '#8aa898');
+      g.rect(15, 10, 5, 1, bronze[0]);
+      // Helmet with its crest.
+      g.ball(12, 11, 3.4, 3.6, bronze);
+      g.rect(10, 11, 4, 2, bronze[0]);
+      for (let x = 9; x < 15; x++) g.set(x, 7 - Math.round(Math.sin(((x - 9) / 5) * Math.PI) * 2), bronze[3]);
+      g.outline();
+    },
+  },
+  cypress: {
+    w: 9, h: 32,
+    paint(g, v) {
+      // An Italian cypress: a tall, narrow flame of dark green on a short trunk.
+      const leaves = v ? ['#1a3420', '#24442a', '#305636', '#406a44'] : ['#1c3622', '#26462c', '#325a38', '#446e48'];
+      g.rect(4, 27, 1, 5, WOOD[1]);
+      for (let y = 1; y < 28; y++) {
+        const hw = Math.round(Math.sin(Math.min(1, y / 22) * Math.PI * 0.62) * 3.6);
+        for (let x = -hw; x <= hw; x++) g.set(4 + x, y, x < -hw / 3 ? leaves[3] : x > hw / 3 ? leaves[0] : leaves[1 + (y & 1)]);
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

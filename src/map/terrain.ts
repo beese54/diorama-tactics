@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick' | 'retaining' | 'container' | 'hull' | 'sandstone';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick' | 'retaining' | 'container' | 'hull' | 'sandstone' | 'arcade';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick', 'retaining', 'container', 'hull', 'sandstone',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick', 'retaining', 'container', 'hull', 'sandstone', 'arcade',
 ];
 
 /**
@@ -131,6 +131,8 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
 
   // Ruins themes (M15).
   pyramid:          built({ name: 'Pyramid Steps',  moveCost: 2, defense: 10, style: 'blocks',      side: 'sandstone', palette: ['#c8a870', '#b89860', '#8a7048', '#dcc088'] }),
+  seating:          built({ name: 'Stands',         moveCost: 1, defense: 10, style: 'blocks',      side: 'arcade',    palette: ['#c4b898', '#b4a888', '#8a8068', '#d6ccae', '#6f8a4a'] }),
+  arena_sand:       natural({ name: 'Arena Floor',  moveCost: 1, defense: 0,  style: 'sand',        side: 'sand',      palette: ['#d6c49a', '#ccb88e', '#e2d4ae'] }),
   sand_paving:      built({ name: 'Causeway',       moveCost: 1, defense: 0,  style: 'flagstone',   side: 'sandstone', palette: ['#c4a874', '#b49866', '#8a744c', '#d6bc88'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
