@@ -504,7 +504,7 @@ The user asked for the four deferred items before units and battles. Order: tech
     - Desert Pyramid: a pyramid bigger than the board in the back corner (walkable steps), a causeway lined with ram sphinxes; landmark an obelisk. New: `pyramid`, `sand_paving` (`sandstone` face), obelisk, ram_sphinx, colossal_head; `Panorama.pyramids`. Its check.mjs run was killed overnight for low memory; it passed 79/79 when rerun.
     - Sunken Temple: a flooded temple, platforms and a broken causeway out of wadeable shallows, columns, lilies; landmark a colossal stone face. New: column ×2, stone_idol, lilies (floats).
     - Overgrown Colosseum: a curve of the stands along the back edges, an arena floor of sand, grass and fallen stones; landmark a bronze gladiator statue. New: `seating` (`arcade` face), `arena_sand`, gladiator, cypress ×2.
-    - Stone Circle: a henge bank and ditch round a ring of trilithons on a misty plain, barrows; landmark the great trilithon.
+    - Stone Circle: a henge bank and ditch round a ring of standing stones and a horseshoe of trilithons on misty downs, barrows; landmark the great trilithon. New: standing_stone ×2, trilithon, great_trilithon.
   - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog
 
 ## Deferred (map phase)

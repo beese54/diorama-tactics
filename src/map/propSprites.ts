@@ -2226,6 +2226,72 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  standing_stone: {
+    w: 13, h: 28,
+    paint(g, v, rand) {
+      // A sarsen standing stone, roughly dressed: taller than a person twice over, grey and
+      // weathered, splotched with lichen.
+      const stone = ['#5e5c56', '#7c7a72', '#9a978c', '#b4b0a4'];
+      const top = v ? 3 : 0;
+      for (let y = top; y < 28; y++) {
+        const hw = 4 + (y > 20 ? 1 : 0) - (y < top + 3 ? 1 : 0);
+        for (let x = -hw; x <= hw; x++) {
+          const t = (x + hw) / (2 * hw);
+          g.set(6 + x + (v && y < 8 ? 1 : 0), y, t < 0.3 ? stone[3] : t < 0.7 ? stone[2] : stone[1]);
+        }
+      }
+      for (let i = 0; i < 12; i++) {
+        const x = 3 + Math.floor(rand() * 7);
+        const y = top + 2 + Math.floor(rand() * 22);
+        if (g.get(x, y)) g.set(x, y, rand() < 0.5 ? '#a8a870' : '#c8c49a');
+      }
+      for (let y = top + 4; y < 26; y += 6) g.set(7, y, stone[0]);
+      g.outline();
+    },
+  },
+  trilithon: {
+    w: 27, h: 38,
+    paint(g, _v, rand) {
+      // A trilithon: two great sarsen uprights capped by a lintel laid across their tops.
+      const stone = ['#5e5c56', '#7c7a72', '#9a978c', '#b4b0a4'];
+      for (const x0 of [2, 16]) {
+        for (let y = 8; y < 38; y++) for (let x = x0; x < x0 + 9; x++) g.set(x, y, x < x0 + 3 ? stone[3] : x < x0 + 6 ? stone[2] : stone[1]);
+      }
+      g.rect(0, 2, 27, 6, stone[2]);
+      g.rect(0, 2, 27, 2, stone[3]);
+      g.rect(0, 7, 27, 1, stone[0]);
+      for (let i = 0; i < 16; i++) {
+        const x = Math.floor(rand() * 27);
+        const y = 2 + Math.floor(rand() * 36);
+        if (g.get(x, y)) g.set(x, y, rand() < 0.5 ? '#a8a870' : '#c8c49a');
+      }
+      g.outline();
+    },
+  },
+  great_trilithon: {
+    w: 31, h: 52,
+    paint(g, _v, rand) {
+      // The great trilithon at the head of the horseshoe, tallest of all: two towering uprights,
+      // one leaning a little, under a heavy lintel.
+      const stone = ['#5a5852', '#78766e', '#969388', '#b0ac9e'];
+      for (const [x0, lean] of [[2, 0], [19, 1]] as const) {
+        for (let y = 9; y < 52; y++) {
+          const dx = lean && y < 20 ? 1 : 0;
+          for (let x = x0; x < x0 + 10; x++) g.set(x + dx, y, x < x0 + 3 ? stone[3] : x < x0 + 7 ? stone[2] : stone[1]);
+        }
+      }
+      g.rect(0, 2, 31, 7, stone[2]);
+      g.rect(0, 2, 31, 2, stone[3]);
+      g.rect(0, 8, 31, 1, stone[0]);
+      g.set(15, 4, stone[0]);
+      for (let i = 0; i < 22; i++) {
+        const x = Math.floor(rand() * 31);
+        const y = 2 + Math.floor(rand() * 50);
+        if (g.get(x, y)) g.set(x, y, rand() < 0.5 ? '#a8a870' : '#c8c49a');
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

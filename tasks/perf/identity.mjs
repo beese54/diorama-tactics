@@ -35,6 +35,7 @@ const CASES = [
   ['pyramid', 'map=pyramid'],
   ['sunken', 'map=sunken'],
   ['colosseum', 'map=colosseum'],
+  ['henge', 'map=henge'],
   ['w32-clear-day', 'map=world&seed=4242&weather=clear&time=day'],
   ['w32-storm-night', 'map=world&seed=4242&weather=storm&time=night'],
   ['w32-snow-dusk', 'map=world&seed=4242&weather=snow&time=dusk'],

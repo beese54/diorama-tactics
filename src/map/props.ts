@@ -126,6 +126,9 @@ export const PROPS: Record<PropId, PropDef> = {
   lilies:        prop('Water Lilies',  { defense: 0, variants: 2, shadow: 0, sway: 0.01, floats: true }),
   gladiator:     prop('Bronze Gladiator', { defense: 0, blocks: true, shadow: 7 }),
   cypress:       prop('Cypress',       { defense: 15, variants: 2, shadow: 4, sway: 0.03, jitter: true }),
+  standing_stone: prop('Standing Stone', { defense: 25, variants: 2, shadow: 5 }),
+  trilithon:     prop('Trilithon',     { defense: 0, blocks: true, shadow: 9 }),
+  great_trilithon: prop('Great Trilithon', { defense: 0, blocks: true, shadow: 11 }),
   floodlight:    prop('Floodlight Mast', { defense: 0, shadow: 3, light: { color: 0xfff0d8, intensity: 5, distance: 7 } }),
   string_lights: prop('String Lights', { defense: 0, shadow: 2, sway: 0.02, light: { color: 0xffd890, intensity: 2, distance: 3.5 } }),
 };
