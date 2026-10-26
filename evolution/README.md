@@ -360,6 +360,29 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Measure what the GPU does, layer by layer, before optimising. The planned culling wasn't needed: 60% of the GPU time was the shadow map, redrawn every frame for a board that never moves.
   - Hitches that come at a steady rate point to something periodic. Here it was the water animation re-uploading a 4 MB texture.
 
+### M11: Four more Wilds maps
+![Autumn Ridge, Desert Mesa Oasis, Frozen Lake and Highland Moor](land/m11-wilds/four-wilds.png)
+
+| Autumn Ridge: the old maple | Desert Mesa Oasis: the sandstone arch |
+|---|---|
+| ![](land/m11-wilds/autumn/close-focus.png) | ![](land/m11-wilds/desert/close-focus.png) |
+
+| Frozen Lake: the fishing hut | Highland Moor: the shepherd's bothy |
+|---|---|
+| ![](land/m11-wilds/frozen/close-focus.png) | ![](land/m11-wilds/moor/close-focus.png) |
+
+- **What changed:**
+  - **Autumn Ridge** (`?map=autumn`): a ridge climbing to an old red maple. A stream tumbles down in waterfalls to a pond, crossed by a footbridge where two trails meet. Fallen leaves lie in drifts, and autumn woods stand in three pockets.
+  - **Desert Mesa Oasis** (`?map=desert`): red-rock mesas with rock stairs, a lone butte, a sandy canyon floor, and a palm-ringed spring at the centre. The landmark is a sandstone arch. The backdrop has a new mesa skyline.
+  - **Frozen Lake** (`?map=frozen`): walkable lake ice (no footing: −10 defence) with a few long cracks, snowy shores and pine stands. The landmark is a red fishing hut with its hole by the door. Light snow drifts across the sky.
+  - **Highland Moor** (`?map=moor`): moor grass and purple heather at golden dusk, with peat pools, dry-stone walls with gateways, gorse and sheep. The landmark is a shepherd's bothy on a rise.
+  - Under the hood: the cliff atlas and the sprite sheet have fixed sizes and append-only layouts, so new art never shifts old maps. Two bugs were fixed. Cliff faces could sample the next atlas row, and snow caps could read the sprite stacked above them.
+- **Decisions:** the 24 new theme names were approved as listed; one category per milestone, each reviewed before the next.
+- **Learned:**
+  - Waterfalls need straight runs. Where a stream drops at a bend, a bank touching both pools ends up two steps above the lower one. Authoring the stream tile by tile, with each drop on a straight run, gives every pool its own banks.
+  - Natural ground needs restraint. Leaves, cracks and heather looked busy at first, so they were thinned to drifts that come and go with broad noise.
+  - Pixel-perfect checks catch more than regressions. A single changed pixel led to a real UV bug that had been there since M2b.
+
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
 ![Forest](land/comparisons/forest-m2-vs-m2d.png)

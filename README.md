@@ -60,6 +60,10 @@ npm run build    # type-check and production build
 **Maps:** add `?map=<id>` to the URL to load a showcase:
 
 - `alpine`: Alpine Pass
+- `autumn`: Autumn Ridge
+- `desert`: Desert Mesa Oasis
+- `frozen`: Frozen Lake
+- `moor`: Highland Moor
 - `courtyard`: Castle Courtyard
 - `plaza`: Fountain Plaza
 - `market`: Night Market Alley

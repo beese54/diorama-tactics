@@ -488,7 +488,7 @@ The user asked for the four deferred items before units and battles. Order: tech
   - Approved 2026-10-26 ("it looks good").
   - M10c done: the shadow map is redrawn only when the sun or board changes; one texture per water frame (no re-uploads); zoomed-out samples rounded (3×3 at 0.31). Intel GPU ms at 64×64: 5.6 → 2.4 at default zoom (2.4×), 14.4 → 7.2 fully zoomed out. Chunked culling not needed. Details are in perf_log.md.
 - [ ] **M11–M16: 24 more themes**, one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
-  - [ ] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor
+  - [x] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor (in review)
   - [ ] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair
   - [ ] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street
   - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
@@ -501,3 +501,26 @@ Not needed for the agreed bar; pick up if circumstances change.
 - **Drawing on weaker GPUs or boards past 64×64:** chunked meshes with frustum culling, and a cheaper shadow pass (the mesh is ~99% of triangles and is drawn twice). On the Intel UHD iGPU: 155 fps at 64, 69 at 128 (M9 baseline).
 - **Texel shimmer when zoomed out** (no mipmaps, noted in M1). It is also why zoom stops at 0.5, so a 64×64 board can't be seen whole.
 - **Load:** the column build is now the critical path (~370 ms at 64). It could move to a worker once the atlas layout is free of three.js.
+
+### M11 review (2026-10-26): four Wilds maps
+- Built one at a time; each was committed and pushed, and its pictures were sent:
+  - Autumn Ridge (a2bcd49);
+  - Desert Mesa Oasis (47641fc);
+  - Frozen Lake (ec5f7ba);
+  - Highland Moor (1927aff).
+- New terrains: autumn_grass (`leaves` painter), red_rock, oasis_grass, ice (`ice` painter, `ice` cliff face), heather (`heather` painter), moor_grass, drystone (built, walkable).
+- New props: autumn_tree ×3, great_maple, palm ×2, cactus ×2, stone_arch, ice_hut, snow_rock ×2, bothy, sheep ×2, gorse ×2.
+- New backdrop shape: `Panorama.mesas`.
+- Infrastructure:
+  - the cliff atlas reserves 128 terrain and 32 material rows;
+  - the sprite sheet is 512×1024, packed in PROP_IDS order, with 5 clear rows above each shelf;
+  - adding art no longer moves existing texels.
+- Bugs fixed:
+  - cliff faces' v is clamped to their cell (columns.test.ts; strays existed on 9 of 11 maps);
+  - snow caps no longer read the sprite above.
+- Harness:
+  - identity captures wait for `liquidReady`;
+  - the 64×64 tests get 30 s;
+  - check.mjs counts the themes.
+- One check.mjs run had a single unexplained failure; the next five runs passed in full. Watch for it.
+- Tests: 951; check.mjs 66/66; 30 captures in the identity set.
