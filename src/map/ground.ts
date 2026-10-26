@@ -227,7 +227,22 @@ function clippedHedge(px: Pixel, p: readonly string[]): string {
   return clump < 0.25 ? p[0] : lit ? p[3] : clump < 0.65 ? p[1] : p[2];
 }
 
+/**
+ * Railway track running east-west: two steel rails on timber sleepers bedded in ballast.
+ * The rails sit on fixed rows of each tile, so a line of rail tiles makes one straight track.
+ */
+function railTrack(px: Pixel, p: readonly string[]): string {
+  const y = px.gy % TILE_PX;
+  if (y === 4 || y === 11) return p[5];
+  if (y === 5 || y === 12) return p[6];
+  const sleeper = px.gx % 6;
+  if (y >= 2 && y <= 13 && sleeper < 2) return sleeper === 0 && y !== 13 ? p[4] : p[3];
+  if (y === 14 && sleeper < 2) return p[1];
+  return rakedGravel(px, p);
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  rails: { base: railTrack },
   gravel: { base: rakedGravel },
   lawn: { base: mownLawn },
   hedge: { base: clippedHedge },

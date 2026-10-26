@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -108,6 +108,9 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   lawn:             natural({ name: 'Lawn',         moveCost: 1, defense: 0,  style: 'lawn',        side: 'soil',      palette: ['#5a8c3e', '#4c7c36', '#669a46', '#78aa52'] }),
   hedge:            built({ name: 'Hedge',          moveCost: 3, defense: 20, style: 'hedge',       side: 'hedge',     palette: ['#2a5226', '#356430', '#44763a', '#5a8c46'] }),
   flowerbed:        natural({ name: 'Flower Bed',   moveCost: 2, defense: 0,  style: 'flowers',     side: 'soil',      palette: ['#4e6a34', '#44602e', '#587638', '#6a8a40', '#d83a3a', '#f0c030', '#9a4ac8', '#f4f0e8'] }),
+
+  // Modern Town themes (M13). Rail palette: [ballast, ballast dark, ballast light, sleeper, sleeper lit, rail head, rail shadow].
+  rail:             built({ name: 'Railway',        moveCost: 2, defense: 0,  style: 'rails',       side: 'concrete',  palette: ['#857f74', '#6e695f', '#9c968a', '#4a3a2c', '#5e4a36', '#d4d8dc', '#34363c'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

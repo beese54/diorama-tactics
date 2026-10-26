@@ -1167,6 +1167,164 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline(0.55);
     },
   },
+  locomotive: {
+    w: 48, h: 36,
+    paint(g, _v, rand) {
+      // A preserved steam engine on a stone plinth: green boiler banded in brass, a black
+      // smokebox and chimney at the front, the cab behind, and big red driving wheels.
+      const green = ['#173a26', '#235436', '#2f6e46', '#4a8c5e'];
+      const brass = '#d8b040';
+      const black = ['#16161a', '#24252a', '#3a3c42'];
+      const red = ['#6a1a16', '#9a2a22', '#c4402e'];
+      // Plinth, with a short length of track along its top.
+      g.rect(1, 31, 46, 5, STONE[2]);
+      g.rect(1, 31, 46, 1, STONE[3]);
+      g.rect(38, 32, 9, 4, STONE[1]);
+      g.rect(1, 30, 46, 1, '#4a3a2c');
+      g.rect(1, 29, 46, 1, '#c8ccd0');
+      // Footplate and red buffer beam.
+      g.rect(3, 22, 42, 2, black[1]);
+      g.rect(2, 21, 3, 4, red[1]);
+      g.rect(0, 22, 2, 2, black[2]);
+      // Boiler, a cylinder lit from above, with brass bands.
+      for (let y = 10; y < 22; y++) {
+        const t = (y - 10) / 12;
+        g.rect(9, y, 24, 1, t < 0.2 ? green[3] : t < 0.55 ? green[2] : t < 0.85 ? green[1] : green[0]);
+      }
+      for (const x of [16, 23, 30]) g.rect(x, 10, 1, 12, brass);
+      // Smokebox and chimney at the front, a brass dome on top.
+      for (let y = 10; y < 22; y++) g.rect(4, y, 5, 1, y < 13 ? black[2] : black[1]);
+      g.rect(5, 3, 3, 7, black[1]);
+      g.rect(4, 2, 5, 2, black[2]);
+      g.rect(5, 3, 1, 7, black[2]);
+      g.ball(20, 9.5, 2.6, 2.2, ['#8a6a20', '#c89a30', '#f0d060']);
+      g.rect(26, 7, 2, 3, black[1]);
+      // The cab: windows, a curved roof, and the coal bunker behind.
+      g.rect(33, 7, 11, 15, green[2]);
+      g.rect(33, 7, 1, 15, green[3]);
+      g.rect(42, 7, 2, 15, green[1]);
+      g.rect(32, 5, 13, 2, black[2]);
+      g.rect(35, 9, 3, 4, '#3c4c60');
+      g.rect(39, 9, 3, 4, '#3c4c60');
+      g.set(35, 9, '#7f97ad');
+      g.set(39, 9, '#7f97ad');
+      g.rect(34, 15, 8, 1, brass);
+      g.rect(44, 12, 3, 10, black[1]);
+      for (let i = 0; i < 6; i++) g.set(44 + Math.floor(rand() * 3), 11 + Math.floor(rand() * 2), black[2]);
+      // Cylinder at the front, then three driving wheels and a small leading wheel.
+      g.rect(5, 19, 7, 4, black[2]);
+      g.rect(5, 19, 7, 1, '#55585f');
+      const wheel = (cx: number, r: number) => {
+        for (let y = -r; y <= r; y++) {
+          for (let x = -r; x <= r; x++) {
+            const d = Math.hypot(x, y);
+            if (d > r + 0.3) continue;
+            const rim = d > r - 1.2;
+            const spoke = (x === 0 || y === 0 || x === y || x === -y) && d < r - 1;
+            g.set(cx + x, 28 - r + y, rim ? black[0] : spoke ? red[2] : d < 1.2 ? red[0] : red[1]);
+          }
+        }
+      };
+      wheel(8, 3);
+      for (const cx of [17, 26, 35]) wheel(cx, 5);
+      g.line(17, 24, 35, 24, '#8a8c92');
+      g.outline();
+    },
+  },
+  bus_shelter: {
+    w: 25, h: 24,
+    paint(g) {
+      // A glass bus shelter: a steel frame, panes catching the light, a bench inside, the
+      // timetable on the end panel and the stop's sign on a pole beside it.
+      const frame = ['#3a3c43', '#55585f', '#8a8e96'];
+      g.rect(1, 3, 19, 2, frame[1]);
+      g.rect(1, 3, 19, 1, frame[2]);
+      for (const x of [1, 10, 19]) g.rect(x, 5, 1, 19, frame[1]);
+      for (let y = 5; y < 23; y++) {
+        for (let x = 2; x < 19; x++) {
+          if (x === 10) continue;
+          const glint = (x + y) % 9 === 0 || (x + y) % 9 === 1;
+          g.set(x, y, glint ? '#d8e8f0' : y > 19 ? '#7e939c' : '#a6bcc6');
+        }
+      }
+      g.rect(3, 16, 15, 2, WOOD[2]);
+      g.rect(3, 16, 15, 1, WOOD[3]);
+      g.rect(4, 18, 1, 4, frame[0]);
+      g.rect(16, 18, 1, 4, frame[0]);
+      g.rect(12, 7, 5, 6, '#f2f0e8');
+      for (let y = 8; y < 12; y += 1) g.rect(13, y, 3, 1, y % 2 ? '#9aa0a8' : '#4a4e56');
+      g.rect(1, 23, 19, 1, frame[0]);
+      // The sign: a red disc on a pole.
+      g.rect(22, 4, 1, 20, frame[1]);
+      g.ball(22.5, 3, 2.6, 2.6, ['#7a1a16', '#c4302a', '#e85a48']);
+      g.rect(21, 2, 3, 1, '#f2f0e8');
+      g.outline();
+    },
+  },
+  bike_rack: {
+    w: 17, h: 11,
+    paint(g) {
+      // Steel hoops with a bicycle leaning on one.
+      const steel = ['#55585f', '#8a8e96', '#c4c8ce'];
+      for (const x of [1, 6, 11]) {
+        g.rect(x, 2, 1, 9, steel[1]);
+        g.rect(x + 3, 2, 1, 9, steel[0]);
+        g.rect(x, 1, 4, 1, steel[2]);
+      }
+      // The bike: two wheels, a red frame and a saddle.
+      const wheel = (cx: number) => {
+        for (let a = 0; a < 16; a++) g.set(cx + Math.cos((a / 16) * Math.PI * 2) * 3, 7 + Math.sin((a / 16) * Math.PI * 2) * 3, '#24252a');
+      };
+      wheel(4);
+      wheel(13);
+      g.line(4, 7, 8, 4, '#c4302a');
+      g.line(8, 4, 13, 7, '#c4302a');
+      g.line(8, 4, 8, 7, '#c4302a');
+      g.line(8, 7, 4, 7, '#9a2a22');
+      g.rect(7, 3, 3, 1, '#24252a');
+      g.line(12, 3, 13, 7, '#55585f');
+      g.rect(11, 2, 3, 1, '#55585f');
+      g.outline(0.55);
+    },
+  },
+  buffer_stop: {
+    w: 15, h: 12,
+    paint(g) {
+      // The end of the line: a steel frame with a beam striped red and white, two buffers.
+      g.line(1, 11, 5, 4, '#3a3c43');
+      g.line(13, 11, 9, 4, '#3a3c43');
+      g.rect(3, 9, 9, 2, '#24252a');
+      for (let x = 1; x < 14; x++) g.rect(x, 3, 1, 3, Math.floor((x - 1) / 2) % 2 ? '#f2f0e8' : '#c4302a');
+      g.rect(1, 6, 13, 1, '#55585f');
+      for (const x of [2, 11]) {
+        g.rect(x, 7, 2, 2, '#24252a');
+        g.rect(x, 7, 2, 1, '#55585f');
+      }
+      g.outline();
+    },
+  },
+  station_clock: {
+    w: 15, h: 30,
+    paint(g) {
+      // A platform clock: a dark green column with a bracket arm holding a white-faced clock.
+      const post = ['#16301e', '#24442c', '#3a5e40'];
+      g.rect(3, 8, 2, 20, post[1]);
+      g.rect(3, 8, 1, 20, post[2]);
+      g.rect(2, 26, 4, 4, post[0]);
+      g.rect(2, 26, 1, 4, post[1]);
+      g.rect(3, 7, 7, 1, post[1]);
+      g.line(4, 11, 8, 8, post[1]);
+      g.rect(9, 6, 1, 2, post[0]);
+      // The clock face: a black rim, white dial and hands at ten to two.
+      g.ball(9.5, 13, 5, 5, ['#16161a', '#24252a', '#3a3c42']);
+      g.ball(9.5, 13, 4, 4, ['#c8c4b8', '#e8e4d8', '#f8f6ee']);
+      for (const [x, y] of [[9, 9], [13, 13], [9, 16], [6, 13]]) g.set(x, y, '#24252a');
+      g.line(9, 13, 7, 11, '#16161a');
+      g.line(9, 13, 12, 12, '#16161a');
+      g.set(9, 13, '#c4302a');
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

@@ -205,9 +205,10 @@ export class Panorama {
       const wall = rgb(o.walls[Math.floor(o.rand() * o.walls.length)]);
       const roof = rgb(o.roofs[Math.floor(o.rand() * o.roofs.length)]);
       for (let y = o.base - h; y < this.height; y++) for (let x = x0; x < x0 + w; x++) this.px(x, y, wall);
+      // The gable rises to a point, overhanging the walls by a pixel; the chimney stands on its right slope.
       const peak = Math.round(w / 2);
-      for (let r = 0; r <= peak; r++) for (let x = x0 - 1 + r; x <= x0 + w - r; x++) this.px(x, o.base - h - peak + r, x < x0 + peak ? mix(roof, [255, 255, 255], 0.1) : roof);
-      if (o.rand() < 0.6) for (let y = 0; y < 7; y++) for (let x = 0; x < 3; x++) this.px(x0 + w - 6 + x, o.base - h - peak + 1 - y + Math.round(peak / 2), mix(wall, [0, 0, 0], 0.3));
+      for (let r = 0; r <= peak; r++) for (let x = x0 + peak - r - 1; x <= x0 + w - peak + r; x++) this.px(x, o.base - h - peak + r, x < x0 + peak ? mix(roof, [255, 255, 255], 0.1) : roof);
+      if (o.rand() < 0.6) for (let y = 3; y < 9; y++) for (let x = 0; x < 3; x++) this.px(x0 + w - 6 + x, o.base - h - y, mix(wall, [0, 0, 0], 0.3));
       for (let k = 0; k < 2; k++) if (o.rand() < 0.7) for (let y = 0; y < 3; y++) for (let x = 0; x < 2; x++) this.px(x0 + 4 + k * 8 + x, o.base - h + 4 + y, rgb(o.window));
       x0 += w + 1;
     }

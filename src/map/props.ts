@@ -86,6 +86,11 @@ export const PROPS: Record<PropId, PropDef> = {
   maypole:       prop('Maypole',       { defense: 0, blocks: true, shadow: 6, sway: 0.01 }),
   fair_tent:     prop('Fair Tent',     { defense: 0, blocks: true, variants: 3, shadow: 11 }),
   bunting:       prop('Bunting',       { defense: 0, shadow: 2, sway: 0.03 }),
+  locomotive:    prop('Steam Engine',  { defense: 0, blocks: true, shadow: 14 }),
+  bus_shelter:   prop('Bus Shelter',   { defense: 15, shadow: 9 }),
+  bike_rack:     prop('Bike Rack',     { defense: 5, shadow: 6 }),
+  buffer_stop:   prop('Buffer Stop',   { defense: 20, shadow: 6 }),
+  station_clock: prop('Platform Clock', { defense: 0, shadow: 2 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */
