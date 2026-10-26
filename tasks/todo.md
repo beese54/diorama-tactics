@@ -603,3 +603,19 @@ Not needed for the agreed bar; pick up if circumstances change.
 - themes.test.ts: the banks rule skips cloud.
 - Tests: 1119; check.mjs 86/86; 70 captures in the identity set.
 - All 30 themes are built (6 showcases + 24). M13–M16 await the user's review.
+
+---
+
+## 5. PHASE 2: units and battles (PROPOSED 2026-10-27, waiting for answers)
+The user approved M13–M16 and closed the map phase. Status: question matrix sent; no code until the answers are in and the spec is approved.
+
+Proposed milestones (each one reviewed with screenshots before the next):
+- [ ] **B0 Rules core** (pure TS, tests only): units, classes, stats, weapon triangle, terrain defence from `TERRAIN`, move range by `moveCost` on a shared MOV pool, Union shapes (`+`/`x`), clash maths, Morale.
+- [ ] **B1 Units on the map:** procedural pixel units (heads, two sides), idle animation, deployment on any theme, select, move range and path preview, move tween, unit info panel. Shots in `evolution/characters/`.
+- [ ] **B2 Battle scene v0:** attack an adjacent enemy, transition to a side view whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
+- [ ] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
+- [ ] **B4 Cards and turns:** card hand (POW, MOV, ACE, skill), one card per turn, one attack per turn, end turn.
+- [ ] **B5 Unions:** shape detection and highlight, chained clashes.
+- [ ] **B6 Card skills:** cut-ins, flash, hit-stop, shake.
+- [ ] **B7 Enemy AI and win/lose:** a full playable skirmish.
+- [ ] **B8 Polish:** transitions, audio, art pass.
