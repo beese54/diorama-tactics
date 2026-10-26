@@ -113,25 +113,25 @@
     {
       "id": "M13",
       "title": "Four Modern Town maps: Station Square, Suburban Park, Canal Quarter, High Street",
-      "status": "review",
+      "status": "done",
       "commit": "009c386"
     },
     {
       "id": "M14",
       "title": "Four Neon City maps: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps",
-      "status": "review",
+      "status": "done",
       "commit": "ab2b7ab"
     },
     {
       "id": "M15",
       "title": "Four Ruins maps: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle",
-      "status": "review",
+      "status": "done",
       "commit": "d395705"
     },
     {
       "id": "M16",
       "title": "Four Elemental maps: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog",
-      "status": "review",
+      "status": "done",
       "commit": "8ed5869"
     }
   ],
