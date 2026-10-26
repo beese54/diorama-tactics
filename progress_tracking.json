@@ -120,7 +120,13 @@
       "id": "M14",
       "title": "Four Neon City maps: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps",
       "status": "review",
-      "commit": "72497ea"
+      "commit": "ab2b7ab"
+    },
+    {
+      "id": "M15",
+      "title": "Four Ruins maps: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle",
+      "status": "review",
+      "commit": "8a39c59"
     }
   ],
   "backlog": [

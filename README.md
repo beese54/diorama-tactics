@@ -80,6 +80,10 @@ npm run build    # type-check and production build
 - `port`: Container Port
 - `shrine`: Shrine Steps
 - `jungle`: Jungle Temple
+- `pyramid`: Desert Pyramid
+- `sunken`: Sunken Temple
+- `colosseum`: Overgrown Colosseum
+- `henge`: Stone Circle
 - `volcano`: Volcanic Caldera
 
 **Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. `&size=48` or `&size=64` grows it bigger; rivers and settlements scale with the board. Each seed makes an inland valley, an island or a coast, with one or two rivers that step down the hills in waterfalls and are crossed by wooden or stone bridges. Woods grow in sparse clumps, with rocks on the slopes and drowned trees in the swamps; they give cover but never block a tile. Each map is built around a village, a small castle or old ruins, with roads out to the board's edges; rooftops and ramparts can be stood on. The box in the top-left corner has buttons:

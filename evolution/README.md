@@ -383,6 +383,29 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Natural ground needs restraint. Leaves, cracks and heather looked busy at first, so they were thinned to drifts that come and go with broad noise.
   - Pixel-perfect checks catch more than regressions. A single changed pixel led to a real UV bug that had been there since M2b.
 
+### M15: Four more Ruins maps
+![Desert Pyramid, Sunken Temple, Overgrown Colosseum and Stone Circle](land/m15-ruins/four-ruins.png)
+
+| Desert Pyramid: the obelisk | Sunken Temple: the stone face |
+|---|---|
+| ![](land/m15-ruins/pyramid/close-focus.png) | ![](land/m15-ruins/sunken/close-focus.png) |
+
+| Overgrown Colosseum: the bronze gladiator | Stone Circle: the great trilithon |
+|---|---|
+| ![](land/m15-ruins/colosseum/close-focus.png) | ![](land/m15-ruins/henge/close-focus.png) |
+
+- **What changed:**
+  - **Desert Pyramid** (`?map=pyramid`): a pyramid bigger than the board, nine steps high in the back corner, whose two front faces are walkable steps. A causeway lined with ram sphinxes runs out to the front, with a granite obelisk at its head, dunes all round, and the half-buried head of a fallen colossus.
+  - **Sunken Temple** (`?map=sunken`): a temple drowned in a jungle flood. Platforms of mossy stone stand out of wadeable shallows, a broken causeway leads in, columns and lilies dot the water, and a colossal stone face rises on the stepped sanctuary.
+  - **Overgrown Colosseum** (`?map=colosseum`): the stands climb a step per tile round the back, every face an arch, with grass and trees taking them over. They have collapsed at the front. The hypogeum's passages lie open in the arena floor, with a bronze gladiator at its centre.
+  - **Stone Circle** (`?map=henge`): a henge bank and ditch on chalk downs at dawn. Inside are a ring of sarsens and a horseshoe of trilithons with the great trilithon at its head; an avenue runs out to the heel stone, with barrows and sheep beyond.
+- **Decisions:** scale first, as agreed after M13. The pyramid is terrain that overflows the board, and the stone face was scaled up to dwarf the columns. The stones are sized against a person.
+- **Learned:**
+  - A diagonal on the tile grid comes out as a zigzag. Run built features (causeways, walls) square to the grid, and leave diagonals to natural ground that frays anyway.
+  - Radial heights give curved architecture for free. Measuring the distance from a centre gives the colosseum's tiers and the henge's ring and ditch.
+  - Front-of-landmark clutter hides the landmark: a column on the sanctuary's front corner covered the face, so it went.
+  - Heavy browser checks can be stopped when the machine runs short of memory. Run them one at a time, in the foreground.
+
 ### M14: Four more Neon City maps
 ![Highway Overpass, Rooftop Arcade, Container Port and Shrine Steps](land/m14-neon/four-neon.png)
 

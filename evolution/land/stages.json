@@ -192,6 +192,14 @@
       "image": "m14-neon/four-neon.png",
       "title": "M14 · Four more Neon City maps",
       "note": "Highway Overpass, Rooftop Arcade, Container Port and Shrine Steps."
+    },
+    {
+      "id": "m15",
+      "date": "2026-10-27",
+      "commit": "8a39c59",
+      "image": "m15-ruins/four-ruins.png",
+      "title": "M15 · Four more Ruins maps",
+      "note": "Desert Pyramid, Sunken Temple, Overgrown Colosseum and Stone Circle."
     }
   ]
 }
