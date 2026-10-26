@@ -474,3 +474,11 @@ _(filled in after each step)_
 - Known:
   - zoom stays 0.5–3, so a 64×64 board is explored by panning; further out, the pixel art would shimmer;
   - `?size` is capped at 64, the agreed size.
+- Approved 2026-10-26. All land milestones (M0–M9) are done.
+
+## Deferred (map phase)
+Not needed for the agreed bar; pick up if circumstances change.
+- **Theme variations:** 24 of the 30 proposed map themes are not built (M2e built one showcase per category: Alpine Pass, Castle Courtyard, Fountain Plaza, Night Market Alley, Jungle Temple, Volcanic Caldera).
+- **Drawing on weaker GPUs or boards past 64×64:** chunked meshes with frustum culling, and a cheaper shadow pass (the mesh is ~99% of triangles and is drawn twice). On the Intel UHD iGPU: 155 fps at 64, 69 at 128 (M9 baseline).
+- **Texel shimmer when zoomed out** (no mipmaps, noted in M1). It is also why zoom stops at 0.5, so a 64×64 board can't be seen whole.
+- **Load:** the column build is now the critical path (~370 ms at 64). It could move to a worker once the atlas layout is free of three.js.

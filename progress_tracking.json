@@ -89,8 +89,8 @@
     {
       "id": "M9",
       "title": "Performance pass: boards up to 64x64 at 60 fps, ground painted on workers, board size picker, settlements and rivers scale with the board",
-      "status": "review",
-      "commit": null
+      "status": "done",
+      "commit": "47a437f"
     }
   ],
   "backlog": [

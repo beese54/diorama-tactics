@@ -38,7 +38,7 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M6 | A village, castle or ruins on level ground, roads out to the edges, walkable rooftops | done |
 | M7 | Weather: rain, storms with lightning, snow that settles, fog, wind; wet ground | done |
 | M8 | Dawn, day, dusk and night with a running cycle; subtle sun and moon shadows; lit windows, fireflies, chimney smoke, cloud shadows | done |
-| M9 | Boards up to 64×64 at 60 fps; loading 45–57% faster (the ground is painted on worker threads); a board-size picker; bigger boards get more rivers and settlements | in review |
+| M9 | Boards up to 64×64 at 60 fps; loading 45–57% faster (the ground is painted on worker threads); a board-size picker; bigger boards get more rivers and settlements | done |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
 
