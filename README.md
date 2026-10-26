@@ -39,6 +39,8 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M7 | Weather: rain, storms with lightning, snow that settles, fog, wind; wet ground | done |
 | M8 | Dawn, day, dusk and night with a running cycle; subtle sun and moon shadows; lit windows, fireflies, chimney smoke, cloud shadows | done |
 | M9 | Boards up to 64×64 at 60 fps; loading 45–57% faster (the ground is painted on worker threads); a board-size picker; bigger boards get more rivers and settlements | done |
+| M10 | Tech pass: loading 16–20% faster, zoom out until a whole board fits (supersampled, no shimmer), 2.4× less GPU time on laptop graphics | done |
+| M11–M16 | 24 more themed maps, four per category | in progress |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
 
