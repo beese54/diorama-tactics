@@ -24,6 +24,11 @@ const FOOTPRINT: Record<SettlementKind, number> = { village: 6, castle: 7, ruins
 const MARGIN = 2;
 /** How far (tiles, diagonals count as one) a footprint keeps from water: wider first, narrower if nothing fits. */
 const WATER_CLEARANCES = [4, 3, 2];
+/** Open ground kept between footprints: between a seed's own settlements, and around the extras bigger boards get, per tile of board width. */
+const APART = 2;
+const EXTRA_APART = 0.2;
+/** What the extra settlements on bigger boards are, by chance. */
+const EXTRA_KINDS: readonly [number, SettlementKind][] = [[0.5, 'village'], [0.85, 'ruins'], [1, 'castle']];
 /** A site whose ground varies more than this many steps is too rugged to build on. */
 const MAX_RELIEF = 3;
 
@@ -43,17 +48,27 @@ export function settlementKinds(seed: number): SettlementKind[] {
  * snow, leaning to the back of the board (castles most), villages near water and ruins on
  * high ground. Each footprint is cut level and the ground around it eased to meet it.
  * Houses, ramparts and ruined walls stand above the street, and their tops can be stood on.
+ * Bigger boards ask for `extra` settlements (villages, ruins, now and then a castle), kept
+ * well apart; the seed's own come first, so a standard board is unchanged.
  */
-export function placeSettlements(map: MapFile): Settlement[] {
+export function placeSettlements(map: MapFile, extra = 0): Settlement[] {
   const rand = mulberry32(map.seed ^ 0x5e78);
+  const extraRand = mulberry32(map.seed ^ 0x5e79);
+  const own = settlementKinds(map.seed);
+  const extras = Array.from({ length: extra }, () => {
+    const roll = extraRand();
+    return EXTRA_KINDS.find(([upTo]) => roll < upTo)![1];
+  });
   const built: Settlement[] = [];
-  for (const wanted of settlementKinds(map.seed)) {
+  for (const [i, wanted] of [...own, ...extras].entries()) {
+    // Extras spread out over the board instead of crowding the best corner.
+    const apart = i < own.length ? APART : Math.round(EXTRA_APART * map.width);
     // Where the wanted kind doesn't fit (a rugged island has no room for a castle), a smaller one is built instead.
     const tries = SETTLEMENT_KINDS.slice(SETTLEMENT_KINDS.indexOf(wanted)).filter((k) => k === wanted || !built.some((b) => b.kind === k));
     let kind = wanted;
     let site = null;
     for (const k of tries) {
-      site = bestSite(map, k, built, rand);
+      site = bestSite(map, k, built, rand, apart);
       kind = k;
       if (site) break;
     }
@@ -75,7 +90,7 @@ function footprintTiles(map: MapFile, s: Pick<Settlement, 'x' | 'y' | 'size'>): 
 /** Whether a tile lies inside a settlement's footprint. */
 export const inside = (s: Pick<Settlement, 'x' | 'y' | 'size'>, t: Pick<Tile, 'x' | 'y'>) => t.x >= s.x && t.y >= s.y && t.x < s.x + s.size && t.y < s.y + s.size;
 
-function bestSite(map: MapFile, kind: SettlementKind, taken: readonly Settlement[], rand: () => number) {
+function bestSite(map: MapFile, kind: SettlementKind, taken: readonly Settlement[], rand: () => number, apart: number) {
   const n = FOOTPRINT[kind];
   const size = map.width;
   const liquids = map.tiles.filter(isLiquid);
@@ -84,8 +99,8 @@ function bestSite(map: MapFile, kind: SettlementKind, taken: readonly Settlement
     for (let y = MARGIN; y + n <= size - MARGIN; y++) {
       for (let x = MARGIN; x + n <= size - MARGIN; x++) {
         const site = { x, y, size: n };
-        // Keep two tiles of open ground between settlements.
-        if (taken.some((o) => x < o.x + o.size + 2 && o.x < x + n + 2 && y < o.y + o.size + 2 && o.y < y + n + 2)) continue;
+        // Keep open ground between settlements.
+        if (taken.some((o) => x < o.x + o.size + apart && o.x < x + n + apart && y < o.y + o.size + apart && o.y < y + n + apart)) continue;
         const tiles = footprintTiles(map, site);
         if (tiles.some((t) => isLiquid(t) || t.feature || BLOCKED.includes(t.terrain) || TERRAIN[t.terrain].moveCost >= IMPASSABLE)) continue;
         const gap = (t: Tile) => Math.max(Math.max(x - t.x, t.x - (x + n - 1), 0), Math.max(y - t.y, t.y - (y + n - 1), 0));

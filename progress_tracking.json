@@ -1,6 +1,6 @@
 {
   "phase": "map-terrain",
-  "updated": "2026-10-25",
+  "updated": "2026-10-26",
   "tasks": [
     {
       "id": "M0",
@@ -88,8 +88,8 @@
     },
     {
       "id": "M9",
-      "title": "Performance pass",
-      "status": "pending",
+      "title": "Performance pass: boards up to 64x64 at 60 fps, ground painted on workers, board size picker, settlements and rivers scale with the board",
+      "status": "review",
       "commit": null
     }
   ],

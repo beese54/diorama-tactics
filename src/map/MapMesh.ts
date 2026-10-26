@@ -4,7 +4,7 @@ import { buildBridges } from './bridges';
 import { addSkyShadow, skyShadow } from '../render/skyShadow';
 import { buildTerrainAtlas, TILE_PX, VARIANTS, type TerrainAtlas, type UvRect } from './textures';
 import { tileAt, type MapFile, type Tile } from './types';
-import { isBuilt, isFlat, isLiquid, RIM_DROP, SAMPLES, STEP_HEIGHT, surfaceAt } from './surface';
+import { isBuilt, isFlat, isLiquid, RIM_DROP, SAMPLES, STEP_HEIGHT, surfaceAt, tileSurface } from './surface';
 import type { GroundImage } from './ground';
 import { LIQUID_FPS } from './liquid';
 import { FALL_PATTERN_PX, paintWaterfall, type WaterfallImage } from './waterfall';
@@ -170,6 +170,154 @@ class GeometryBuilder {
   }
 }
 
+/** The board's columns as one merged geometry, before any ground is painted onto it. */
+export interface MapShape {
+  geometry: THREE.BufferGeometry;
+  /** Triangle index -> tile index, for picking. */
+  triangleTile: Uint32Array;
+  atlas: TerrainAtlas;
+}
+
+/**
+ * Builds the merged geometry of every column: rounded tops and cliff faces. It needs only
+ * the map, so it can run while the ground image is still being painted (see GroundPainter.ts).
+ */
+export function buildColumns(map: MapFile): MapShape {
+  const atlas = buildTerrainAtlas();
+  const b = new GeometryBuilder();
+  map.tiles.forEach((tile, i) => {
+    buildTop(map, b, tile, i, groundRect(map, tile));
+    buildSides(map, b, tile, i, atlas);
+  });
+  return { geometry: b.build(), triangleTile: b.triangleTile(), atlas };
+}
+
+/** World-space north-west corner of a tile; the map is centred on the origin. */
+function tileOrigin(map: MapFile, tile: Pick<Tile, 'x' | 'y'>): [number, number] {
+  return [tile.x - map.width / 2, tile.y - map.height / 2];
+}
+
+/**
+ * A tile's window onto the ground image. The image's rows run north to south and data
+ * textures aren't flipped, so v grows southward: v1 is the tile's north edge.
+ */
+function groundRect(map: MapFile, tile: Tile): UvRect {
+  const [W, H] = [map.width * TILE_PX, map.height * TILE_PX];
+  return {
+    u0: (tile.x * TILE_PX) / W,
+    u1: ((tile.x + 1) * TILE_PX) / W,
+    v0: ((tile.y + 1) * TILE_PX) / H,
+    v1: (tile.y * TILE_PX) / H,
+  };
+}
+
+function buildTop(map: MapFile, b: GeometryBuilder, tile: Tile, index: number, uv: UvRect): void {
+  const [x0, z0] = tileOrigin(map, tile);
+  const topY = tile.height * STEP_HEIGHT;
+  const uvAt = (u: number, v: number): Vec2 => [lerp(uv.u0, uv.u1, u), lerp(uv.v1, uv.v0, v)];
+
+  if (isFlat(map, tile)) {
+    // A fan whose rim has a vertex at every edge sample, matching rounded neighbours' edges
+    // exactly: a plain quad would leave T-junctions there, which rasterise as pinholes.
+    const flat = ([u, v]: Vec2) => b.vertex([x0 + u, topY, z0 + v], [0, 1, 0], uvAt(u, v), 1);
+    const centre = flat([0.5, 0.5]);
+    const rim = FLAT_RIM.map(flat);
+    rim.forEach((p, k) => b.tri(centre, rim[(k + 1) % rim.length], p, index, TOP_LAYER));
+    return;
+  }
+
+  // Rounded top: a grid draped over the surface, with smooth normals so the lips catch the light.
+  const surface = tileSurface(map, tile);
+  const offset = (u: number, v: number) => surface(clamp01(u), clamp01(v)).offset;
+  const n = SAMPLES.length;
+  const first = b.positions.length / 3;
+  for (const v of SAMPLES) {
+    for (const u of SAMPLES) {
+      const s = surface(u, v);
+      const gu = (offset(u + NORMAL_EPS, v) - offset(u - NORMAL_EPS, v)) / (clamp01(u + NORMAL_EPS) - clamp01(u - NORMAL_EPS));
+      const gv = (offset(u, v + NORMAL_EPS) - offset(u, v - NORMAL_EPS)) / (clamp01(v + NORMAL_EPS) - clamp01(v - NORMAL_EPS));
+      const len = Math.hypot(gu, 1, gv);
+      b.vertex([x0 + u, topY + s.offset, z0 + v], [-gu / len, 1 / len, -gv / len], uvAt(u, v), 1 - FOOT_SHADE * s.foot);
+    }
+  }
+  for (let j = 0; j < n - 1; j++) {
+    for (let i = 0; i < n - 1; i++) {
+      const tl = first + j * n + i;
+      b.tri(tl, tl + n, tl + 1, index, TOP_LAYER);
+      b.tri(tl + 1, tl + n, tl + n + 1, index, TOP_LAYER);
+    }
+  }
+}
+
+/**
+ * Faces towards lower-or-equal neighbours, wherever this tile's edge sits above theirs.
+ * Textured in step-tall cells counted down from the rounded lip, so texel density stays constant.
+ */
+function buildSides(map: MapFile, b: GeometryBuilder, tile: Tile, index: number, atlas: TerrainAtlas): void {
+  const [x0, z0] = tileOrigin(map, tile);
+  const topY = tile.height * STEP_HEIGHT;
+  const def = TERRAIN[tile.terrain];
+  // Natural cliffs count their cells from the rounded lip; flat tops from the top itself.
+  const cellTop = topY - (isLiquid(tile) || isBuilt(tile) ? 0 : RIM_DROP);
+  const surface = tileSurface(map, tile);
+
+  SIDES.forEach((side, s) => {
+    const nb = tileAt(map, tile.x + side.dx, tile.y + side.dy);
+    if (nb && nb.height > tile.height) return;
+    // Water pouring onto lower water, or a river spilling off the board's edge.
+    const below = nb && tileSurface(map, nb);
+    const falls = !!tile.water && (nb ? !!nb.water && nb.height < tile.height : tile.water.kind === 'waterfall' && tile.water.flow[0] === side.dx && tile.water.flow[1] === side.dy);
+    const edgePoint = (t: number) => {
+      const u = lerp(side.a[0], side.b[0], t);
+      const v = lerp(side.a[1], side.b[1], t);
+      const top = topY + surface(u, v).offset;
+      const bottom = nb && below ? nb.height * STEP_HEIGHT + below(u - side.dx, v - side.dy).offset : -BASE_STEPS * STEP_HEIGHT;
+      return { t, x: x0 + u, z: z0 + v, top, bottom };
+    };
+    type EdgePoint = ReturnType<typeof edgePoint>;
+    const within = (y: number, e: EdgePoint) => Math.min(Math.max(y, e.bottom), e.top);
+
+    for (let k = 0; k < SAMPLES.length - 1; k++) {
+      const L = edgePoint(SAMPLES[k]);
+      const R = edgePoint(SAMPLES[k + 1]);
+      if (L.top - L.bottom < EPS && R.top - R.bottom < EPS) continue;
+      const hi = Math.max(L.top, R.top);
+      const lo = Math.min(L.bottom, R.bottom);
+      for (let j = Math.floor((cellTop - hi) / STEP_HEIGHT); cellTop - j * STEP_HEIGHT > lo + EPS; j++) {
+        const cHi = cellTop - j * STEP_HEIGHT;
+        const cLo = cHi - STEP_HEIGHT;
+        const [lt, lb, rt, rb] = [within(cHi, L), within(cLo, L), within(cHi, R), within(cLo, R)];
+        if (lt - lb < EPS && rt - rb < EPS) continue;
+        if (falls) {
+          // World-anchored, so the pattern runs unbroken down a fall of any height.
+          const fallUv = (t: number, y: number): Vec2 => [t, (y * TILE_PX) / FALL_PATTERN_PX];
+          b.quad([[L.x, lt, L.z], [R.x, rt, R.z], [R.x, rb, R.z], [L.x, lb, L.z]], side.normal,
+            [fallUv(L.t, lt), fallUv(R.t, rt), fallUv(R.t, rb), fallUv(L.t, lb)], [1, 1, 1, 1], index, FALL_LAYER);
+          continue;
+        }
+        const step = tile.height - 1 - j;
+        const variant = variantHash(tile.x, tile.y, step, s);
+        // Below height 0 is the diorama's bedrock: plain earth whatever sits on top.
+        // The step just above the neighbour's ground is street level (shop fronts, doors).
+        const uv =
+          j <= 0 ? atlas.sideTop(tile.terrain, variant)
+          : step < 0 ? atlas.sideLower('soil', variant)
+          : step === nb?.height ? atlas.sideGround(def.side, variant)
+          : atlas.sideLower(def.side, variant);
+        const uvAt = (t: number, y: number): Vec2 => [lerp(uv.u0, uv.u1, t), lerp(uv.v0, uv.v1, (y - cLo) / STEP_HEIGHT)];
+        b.quad(
+          [[L.x, lt, L.z], [R.x, rt, R.z], [R.x, rb, R.z], [L.x, lb, L.z]],
+          side.normal,
+          [uvAt(L.t, lt), uvAt(R.t, rt), uvAt(R.t, rb), uvAt(L.t, lb)],
+          [shadeAt(topY - lt), shadeAt(topY - rt), shadeAt(topY - rb), shadeAt(topY - lb)],
+          index,
+          SIDE_LAYER,
+        );
+      }
+    }
+  });
+}
+
 /**
  * The whole map as one merged mesh of stepped columns with rounded edges (see surface.ts),
  * in three draw calls: tile tops sample the map-wide ground image (see ground.ts), whose water
@@ -198,14 +346,10 @@ export class MapMesh {
   constructor(
     private readonly map: MapFile,
     private readonly ground: GroundImage,
+    shape: MapShape = buildColumns(map),
   ) {
-    const atlas = buildTerrainAtlas();
-    const b = new GeometryBuilder();
-    map.tiles.forEach((tile, i) => {
-      this.buildTop(b, tile, i, this.groundRect(tile));
-      this.buildSides(b, tile, i, atlas);
-    });
-    this.triangleTile = b.triangleTile();
+    const { geometry, atlas } = shape;
+    this.triangleTile = shape.triangleTile;
 
     const dataTexture = (data: Uint8Array, width = ground.width, height = ground.height) => {
       const tex = new THREE.DataTexture(data, width, height);
@@ -234,7 +378,7 @@ export class MapMesh {
     };
     this.sides = new THREE.MeshLambertMaterial({ map: atlas.texture, vertexColors: true, ...glowing(atlas.glow) });
     this.sides.onBeforeCompile = (shader) => addSkyShadow(shader, skyShadow);
-    this.mesh = new THREE.Mesh(b.build(), [
+    this.mesh = new THREE.Mesh(geometry, [
       tops,
       this.sides,
       new THREE.MeshLambertMaterial({ map: this.fallTexture, vertexColors: true }),
@@ -285,127 +429,9 @@ export class MapMesh {
     return this.frame;
   }
 
-  /**
-   * A tile's window onto the ground image. The image's rows run north to south and data
-   * textures aren't flipped, so v grows southward: v1 is the tile's north edge.
-   */
-  private groundRect(tile: Tile): UvRect {
-    const { width: W, height: H } = this.ground;
-    return {
-      u0: (tile.x * TILE_PX) / W,
-      u1: ((tile.x + 1) * TILE_PX) / W,
-      v0: ((tile.y + 1) * TILE_PX) / H,
-      v1: (tile.y * TILE_PX) / H,
-    };
-  }
-
-  private buildTop(b: GeometryBuilder, tile: Tile, index: number, uv: UvRect): void {
-    const [x0, z0] = this.tileOrigin(tile);
-    const topY = tile.height * STEP_HEIGHT;
-    const uvAt = (u: number, v: number): Vec2 => [lerp(uv.u0, uv.u1, u), lerp(uv.v1, uv.v0, v)];
-
-    if (isFlat(this.map, tile)) {
-      // A fan whose rim has a vertex at every edge sample, matching rounded neighbours' edges
-      // exactly: a plain quad would leave T-junctions there, which rasterise as pinholes.
-      const flat = ([u, v]: Vec2) => b.vertex([x0 + u, topY, z0 + v], [0, 1, 0], uvAt(u, v), 1);
-      const centre = flat([0.5, 0.5]);
-      const rim = FLAT_RIM.map(flat);
-      rim.forEach((p, k) => b.tri(centre, rim[(k + 1) % rim.length], p, index, TOP_LAYER));
-      return;
-    }
-
-    // Rounded top: a grid draped over the surface, with smooth normals so the lips catch the light.
-    const offset = (u: number, v: number) => surfaceAt(this.map, tile, clamp01(u), clamp01(v)).offset;
-    const n = SAMPLES.length;
-    const first = b.positions.length / 3;
-    for (const v of SAMPLES) {
-      for (const u of SAMPLES) {
-        const s = surfaceAt(this.map, tile, u, v);
-        const gu = (offset(u + NORMAL_EPS, v) - offset(u - NORMAL_EPS, v)) / (clamp01(u + NORMAL_EPS) - clamp01(u - NORMAL_EPS));
-        const gv = (offset(u, v + NORMAL_EPS) - offset(u, v - NORMAL_EPS)) / (clamp01(v + NORMAL_EPS) - clamp01(v - NORMAL_EPS));
-        const len = Math.hypot(gu, 1, gv);
-        b.vertex([x0 + u, topY + s.offset, z0 + v], [-gu / len, 1 / len, -gv / len], uvAt(u, v), 1 - FOOT_SHADE * s.foot);
-      }
-    }
-    for (let j = 0; j < n - 1; j++) {
-      for (let i = 0; i < n - 1; i++) {
-        const tl = first + j * n + i;
-        b.tri(tl, tl + n, tl + 1, index, TOP_LAYER);
-        b.tri(tl + 1, tl + n, tl + n + 1, index, TOP_LAYER);
-      }
-    }
-  }
-
-  /**
-   * Faces towards lower-or-equal neighbours, wherever this tile's edge sits above theirs.
-   * Textured in step-tall cells counted down from the rounded lip, so texel density stays constant.
-   */
-  private buildSides(b: GeometryBuilder, tile: Tile, index: number, atlas: TerrainAtlas): void {
-    const [x0, z0] = this.tileOrigin(tile);
-    const topY = tile.height * STEP_HEIGHT;
-    const def = TERRAIN[tile.terrain];
-    // Natural cliffs count their cells from the rounded lip; flat tops from the top itself.
-    const cellTop = topY - (isLiquid(tile) || isBuilt(tile) ? 0 : RIM_DROP);
-
-    SIDES.forEach((side, s) => {
-      const nb = tileAt(this.map, tile.x + side.dx, tile.y + side.dy);
-      if (nb && nb.height > tile.height) return;
-      // Water pouring onto lower water, or a river spilling off the board's edge.
-      const falls = !!tile.water && (nb ? !!nb.water && nb.height < tile.height : tile.water.kind === 'waterfall' && tile.water.flow[0] === side.dx && tile.water.flow[1] === side.dy);
-      const edgePoint = (t: number) => {
-        const u = lerp(side.a[0], side.b[0], t);
-        const v = lerp(side.a[1], side.b[1], t);
-        const top = topY + surfaceAt(this.map, tile, u, v).offset;
-        const bottom = nb ? nb.height * STEP_HEIGHT + surfaceAt(this.map, nb, u - side.dx, v - side.dy).offset : -BASE_STEPS * STEP_HEIGHT;
-        return { t, x: x0 + u, z: z0 + v, top, bottom };
-      };
-      type EdgePoint = ReturnType<typeof edgePoint>;
-      const within = (y: number, e: EdgePoint) => Math.min(Math.max(y, e.bottom), e.top);
-
-      for (let k = 0; k < SAMPLES.length - 1; k++) {
-        const L = edgePoint(SAMPLES[k]);
-        const R = edgePoint(SAMPLES[k + 1]);
-        if (L.top - L.bottom < EPS && R.top - R.bottom < EPS) continue;
-        const hi = Math.max(L.top, R.top);
-        const lo = Math.min(L.bottom, R.bottom);
-        for (let j = Math.floor((cellTop - hi) / STEP_HEIGHT); cellTop - j * STEP_HEIGHT > lo + EPS; j++) {
-          const cHi = cellTop - j * STEP_HEIGHT;
-          const cLo = cHi - STEP_HEIGHT;
-          const [lt, lb, rt, rb] = [within(cHi, L), within(cLo, L), within(cHi, R), within(cLo, R)];
-          if (lt - lb < EPS && rt - rb < EPS) continue;
-          if (falls) {
-            // World-anchored, so the pattern runs unbroken down a fall of any height.
-            const fallUv = (t: number, y: number): Vec2 => [t, (y * TILE_PX) / FALL_PATTERN_PX];
-            b.quad([[L.x, lt, L.z], [R.x, rt, R.z], [R.x, rb, R.z], [L.x, lb, L.z]], side.normal,
-              [fallUv(L.t, lt), fallUv(R.t, rt), fallUv(R.t, rb), fallUv(L.t, lb)], [1, 1, 1, 1], index, FALL_LAYER);
-            continue;
-          }
-          const step = tile.height - 1 - j;
-          const variant = variantHash(tile.x, tile.y, step, s);
-          // Below height 0 is the diorama's bedrock: plain earth whatever sits on top.
-          // The step just above the neighbour's ground is street level (shop fronts, doors).
-          const uv =
-            j <= 0 ? atlas.sideTop(tile.terrain, variant)
-            : step < 0 ? atlas.sideLower('soil', variant)
-            : step === nb?.height ? atlas.sideGround(def.side, variant)
-            : atlas.sideLower(def.side, variant);
-          const uvAt = (t: number, y: number): Vec2 => [lerp(uv.u0, uv.u1, t), lerp(uv.v0, uv.v1, (y - cLo) / STEP_HEIGHT)];
-          b.quad(
-            [[L.x, lt, L.z], [R.x, rt, R.z], [R.x, rb, R.z], [L.x, lb, L.z]],
-            side.normal,
-            [uvAt(L.t, lt), uvAt(R.t, rt), uvAt(R.t, rb), uvAt(L.t, lb)],
-            [shadeAt(topY - lt), shadeAt(topY - rt), shadeAt(topY - rb), shadeAt(topY - lb)],
-            index,
-            SIDE_LAYER,
-          );
-        }
-      }
-    });
-  }
-
   /** World-space north-west corner of a tile; the map is centred on the origin. */
   tileOrigin(tile: Pick<Tile, 'x' | 'y'>): [number, number] {
-    return [tile.x - this.map.width / 2, tile.y - this.map.height / 2];
+    return tileOrigin(this.map, tile);
   }
 
   tileCenter(tile: Tile): THREE.Vector3 {

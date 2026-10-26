@@ -1,3 +1,6 @@
+/** Pixels per tile side in every texture: ground image, cliff atlas, sprites. */
+export const TILE_PX = 16;
+
 export const TERRAIN_IDS = [
   'plains', 'meadow', 'farmland', 'road', 'light_woods', 'forest', 'pine_forest',
   'hills', 'mountain', 'peak_snow', 'scree', 'cliff', 'swamp', 'marsh', 'bog',

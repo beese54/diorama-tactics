@@ -4,6 +4,8 @@ import { isBuilt, isLiquid } from '../map/surface';
 import { IMPASSABLE, TERRAIN, tileStats } from '../map/terrain';
 import { PROP_IDS, TERRAIN_IDS, tileAt, type MapFile, type Tile } from '../map/types';
 import { THEMES, themeFromUrl } from './index';
+import { BOARD_SIZES, MAX_SIZE, MIN_SIZE, sizeFromUrl } from './world';
+import { WORLD_SIZE } from '../map/generator';
 
 const showcases = THEMES.filter((t) => t.id !== 'meadow');
 const walkable = (t: Tile) => tileStats(t).moveCost < IMPASSABLE && !(t.prop && PROPS[t.prop].blocks);
@@ -104,5 +106,30 @@ describe('room to move', () => {
   it('jungle keeps its tall trees to a few deliberate spots', () => {
     const map = THEMES.find((t) => t.id === 'jungle')!.map();
     expect(map.tiles.filter((t) => t.prop === 'jungle_tree').length).toBeLessThanOrEqual(12);
+  });
+});
+
+describe('board size', () => {
+  it('reads ?size=N within the allowed range, else the standard size', () => {
+    expect(sizeFromUrl('?size=64')).toBe(64);
+    expect(sizeFromUrl('?size=48&seed=3')).toBe(48);
+    expect(sizeFromUrl('')).toBe(WORLD_SIZE);
+    expect(sizeFromUrl('?size=abc')).toBe(WORLD_SIZE);
+    expect(sizeFromUrl('?size=-5')).toBe(WORLD_SIZE);
+    expect(sizeFromUrl('?size=4')).toBe(MIN_SIZE);
+    expect(sizeFromUrl('?size=500')).toBe(MAX_SIZE);
+    expect(sizeFromUrl('?size=9999')).toBe(WORLD_SIZE);
+  });
+
+  it('grows Wild Lands at the asked size, centred on its focus', () => {
+    const theme = themeFromUrl('?map=world&seed=5&size=48');
+    const map = theme.map();
+    expect([map.width, map.height]).toEqual([48, 48]);
+    expect(theme.focus).toEqual([24, 24]);
+  });
+
+  it('offers only sizes the URL accepts, the standard one first', () => {
+    expect(BOARD_SIZES[0]).toBe(WORLD_SIZE);
+    for (const n of BOARD_SIZES) expect(sizeFromUrl(`?size=${n}`)).toBe(n);
   });
 });

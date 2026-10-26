@@ -318,6 +318,31 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Pale smoke on pale ground disappears. It needed to be greyer, more solid, and bigger than first drawn.
   - All the lighting now goes through one place (`LightRig`): theme × time of day × weather. Weather no longer sets the lights itself.
 
+### M9: Big boards and fast loading
+![Seed 99 at 32×32 and at 64×64](land/m9-performance/seed99-32-vs-64.png)
+
+![Time to load a board, before and after](land/m9-performance/load-times.png)
+
+| Seed 4242 at 64×64 | A village on the 64×64 board |
+|---|---|
+| ![](land/m9-performance/whole-64-4242.png) | ![](land/m9-performance/snapshot/close-focus.png) |
+
+![A 64×64 board before and after its rivers and settlements scaled with it](land/m9-performance/big-board-sparse-vs-scaled.png)
+
+![The board size picker](land/m9-performance/menu.png)
+
+- **What changed:**
+  - Wild Lands come in 32×32 (standard), 48×48 and 64×64, from a fourth picker in the menu box or `&size=` in the URL.
+  - Bigger boards keep the standard board's density. Rivers scale with the board's width and settlements with its area: a 64×64 board has two to four rivers and usually four or five villages, castles and ruins (three on a cramped one), spread apart and joined by roads. 32×32 boards are exactly as before.
+  - Loading is faster: 0.79 s → 0.43 s on a 32×32 board, and 2.15 s → 0.92 s on a 64×64 one. Pressing R regrows just as fast.
+  - The picture didn't change: 16 fixed captures (the themed maps and Wild Lands at 32×32, in clear, storm, snow, rain, day, night, dawn and dusk) match the old build pixel for pixel.
+- **Decisions:** *boards up to 64×64; this laptop's RTX 4060 sets the bar; no visible change;* then, after seeing how bare a 64×64 board was with one village, *scale settlements and rivers with the board.*
+- **Learned:**
+  - Measure before optimising. The plan said instancing, chunking and culling. The profile showed drawing already ran at 240 fps (about 3,000 uncapped) on 64×64. The real cost was building the board when it loads, so that was the work.
+  - The tile surface was sampled 720 times per rounded tile, each sample scanning the neighbours three times. Scanning once per tile removed a quarter of the load. A copy of the old code, kept in a test, proves the shapes are bit-for-bit the same.
+  - Two tweaks that looked faster (fewer noise hashes, fewer allocations) were within measurement noise, so they were reverted.
+  - Web Workers now paint the ground and the 12 water frames while the main thread builds the mesh. Two Chrome surprises: a worker can't start while the main thread is busy, and the last job sent to a worker waits until the main thread yields. So the board waits for the workers to start, sends the jobs, yields once, and only then builds the mesh.
+
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
 ![Forest](land/comparisons/forest-m2-vs-m2d.png)

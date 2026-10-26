@@ -2,17 +2,18 @@ import * as THREE from 'three';
 import { PixelPipeline } from './render/PixelPipeline';
 import { CameraRig } from './render/CameraRig';
 import { disposeTree } from './render/dispose';
-import { MapMesh } from './map/MapMesh';
+import { buildColumns, MapMesh, type MapShape } from './map/MapMesh';
 import { Cursor } from './map/Cursor';
 import { Flora, placeFlora } from './map/Flora';
-import { generateMap } from './map/generator';
-import { paintGround } from './map/ground';
+import { generateMap, WORLD_SIZE } from './map/generator';
+import type { GroundImage } from './map/ground';
+import { GroundPainter } from './map/GroundPainter';
 import { parseMap, serializeMap } from './map/mapFile';
 import { PropLayer } from './map/PropLayer';
 import { tileAt, type MapFile, type Tile } from './map/types';
 import { Backdrop } from './render/Backdrop';
 import { THEMES, themeFromUrl } from './themes';
-import { randomSeed } from './themes/world';
+import { BOARD_SIZES, randomSeed } from './themes/world';
 import { Hud } from './ui/Hud';
 import { WeatherLayer } from './render/WeatherLayer';
 import { AmbienceLayer } from './render/AmbienceLayer';
@@ -36,6 +37,13 @@ function createPipeline(stage: HTMLElement): PixelPipeline | null {
   }
 }
 
+/** A map's columns and ground image, built but not yet shown. */
+interface Prepared {
+  map: MapFile;
+  shape: MapShape;
+  ground: GroundImage;
+}
+
 /** Everything drawn for one map; rebuilt whole when the map changes. */
 interface Board {
   map: MapFile;
@@ -44,7 +52,7 @@ interface Board {
   props: PropLayer;
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const stage = document.getElementById('stage')!;
   const pipeline = createPipeline(stage);
   if (!pipeline) return;
@@ -91,10 +99,20 @@ function main(): void {
     return WEATHER_KINDS.find((k) => k === asked) ?? (generated ? weatherForMap(map) : 'clear');
   };
 
-  const buildBoard = (map: MapFile): Board => {
+  // Workers start loading now, while the first map is generated.
+  const painter = new GroundPainter();
+  /** Workers paint the ground while this thread builds the columns. */
+  const prepareBoard = async (map: MapFile): Promise<Prepared> => {
+    await painter.ready;
+    const painting = painter.paint(map, generated);
+    // Chrome passes the last of the workers' jobs on only once this thread yields, so yield before the long build.
+    await new Promise((resolve) => setTimeout(resolve));
+    const shape = buildColumns(map);
+    return { map, shape, ground: await painting };
+  };
+  const buildBoard = ({ map, shape, ground }: Prepared): Board => {
     const wild = theme.seed !== undefined;
-    const ground = paintGround(map, wild);
-    const mesh = new MapMesh(map, ground);
+    const mesh = new MapMesh(map, ground, shape);
     const surfacePoint = (tile: Tile, u: number, v: number) => mesh.surfacePoint(tile, u, v);
     // Generated maps get wild decor (reeds, pebbles, bushes, swamp murk); the themed maps stay as designed.
     const flora = new Flora(placeFlora(map, ground, wild), surfacePoint);
@@ -110,7 +128,9 @@ function main(): void {
     lights.setBoard(Math.max(map.width, map.height) / 2);
     return { map, mesh, flora, props };
   };
-  let board = buildBoard(theme.map());
+  let board = buildBoard(await prepareBoard(theme.map()));
+  // When the first board was ready, for load-time measurements (works in production builds too).
+  performance.mark('board-ready');
   weather.set(weatherFor(board.map), true);
 
   const cursor = new Cursor();
@@ -125,13 +145,23 @@ function main(): void {
   let hovered: Tile | null = null;
   let cursorTile: Tile | null = null;
 
+  /** The latest map asked for; a map that finishes preparing after a newer request is dropped. */
+  let latest = 0;
   /** Swaps in a new map: the old board's meshes and textures are freed, and the cursor lets go of its tiles. */
-  const showMap = (map: MapFile) => {
+  const showMap = async (map: MapFile) => {
+    const ticket = ++latest;
+    const next = await prepareBoard(map);
+    if (ticket !== latest) {
+      next.shape.geometry.dispose();
+      next.shape.atlas.texture.dispose();
+      next.shape.atlas.glow.dispose();
+      return;
+    }
     for (const { group } of [board.mesh, board.flora, board.props]) {
       scene.remove(group);
       disposeTree(group);
     }
-    board = buildBoard(map);
+    board = buildBoard(next);
     rig.panLimit = Math.max(map.width, map.height) / 2;
     hovered = cursorTile = null;
     cursor.setTarget(null);
@@ -145,10 +175,10 @@ function main(): void {
     else params.set(key, value);
     history.replaceState(null, '', `?${params}`);
   };
-  const newMap = (seed = randomSeed()) => {
+  const newMap = async (seed = randomSeed()) => {
     setParam('map', 'world');
     setParam('seed', String(seed));
-    showMap(generateMap(seed));
+    await showMap(generateMap(seed, board.map.width));
     weather.set(weatherFor(board.map));
   };
   const save = () => {
@@ -160,9 +190,9 @@ function main(): void {
     URL.revokeObjectURL(url);
   };
   /** Loads map text; returns null on success, or what's wrong with it. */
-  const loadText = (text: string): string | null => {
+  const loadText = async (text: string): Promise<string | null> => {
     try {
-      showMap(parseMap(text));
+      await showMap(parseMap(text));
       return null;
     } catch (e) {
       return e instanceof Error ? e.message : String(e);
@@ -170,15 +200,15 @@ function main(): void {
   };
   const load = async (file: File) => {
     if (file.size > MAX_FILE_BYTES) return hud.say('That file is too large to be a map.');
-    const error = loadText(await file.text());
+    const error = await loadText(await file.text());
     hud.say(error ? `Couldn't load ${file.name}. ${error}` : `Loaded ${file.name}.`);
   };
 
   const maps = [...THEMES, { id: 'world', name: 'Wild Lands (random)' }];
   const pick = (id: string) => {
-    // A new map keeps the weather and time picked for the last one.
+    // A new map keeps the weather, time and board size picked for the last one.
     const params = new URLSearchParams(location.search);
-    const keep = ['weather', 'time'].filter((k) => params.has(k)).map((k) => `&${k}=${params.get(k)}`).join('');
+    const keep = ['weather', 'time', 'size'].filter((k) => params.has(k)).map((k) => `&${k}=${params.get(k)}`).join('');
     location.search = `?map=${id}${keep}`;
   };
   const weathers = [{ id: 'auto', name: 'Weather: the map\'s own' }, ...WEATHER_KINDS.map((k) => ({ id: k, name: WEATHER_NAMES[k] }))];
@@ -191,18 +221,26 @@ function main(): void {
     setParam('time', id === 'own' ? null : id);
     clock.set(timeChoice(), lastElapsed);
   };
+  const sizes = BOARD_SIZES.map((n) => ({ id: String(n), name: `Board: ${n}×${n}${n === WORLD_SIZE ? ' (standard)' : ''}` }));
+  /** The same seed grown again at another size, in place. */
+  const pickSize = async (id: string) => {
+    setParam('size', Number(id) === WORLD_SIZE ? null : id);
+    await showMap(generateMap(board.map.seed, Number(id)));
+    weather.set(weatherFor(board.map));
+  };
   const asked = new URLSearchParams(location.search).get('weather');
   const askedTime = new URLSearchParams(location.search).get('time');
   const hud = new Hud(ui, {
     maps, current: theme.id, pick, weathers, weather: WEATHER_KINDS.find((k) => k === asked) ?? 'auto', pickWeather,
     times, time: [...TIMES, 'cycle'].find((t) => t === askedTime) ?? 'own', pickTime,
-    newMap: generated ? () => newMap() : undefined, save, load,
+    ...(generated ? { sizes, size: String(board.map.width), pickSize: (id: string) => void pickSize(id) } : {}),
+    newMap: generated ? () => void newMap() : undefined, save, load,
   });
   hud.setTitle(theme.name, theme.seed);
 
   window.addEventListener('keydown', (e) => {
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.code === 'KeyR' && generated) newMap();
+    if (e.code === 'KeyR' && generated) void newMap();
     if (e.code === 'KeyE') save();
   });
   window.addEventListener('dragover', (e) => e.preventDefault());
@@ -228,7 +266,10 @@ function main(): void {
   let lastElapsed = 0;
   /** How dark it is now (0 day to 1 night), for checks. */
   let nightNow = 0;
+  /** CPU milliseconds spent in each recent frame (for scripts/bench.mjs). */
+  const frameCpu: number[] = [];
   pipeline.renderer.setAnimationLoop((time) => {
+    const started = performance.now();
     timer.update(time);
     const elapsed = frozenTime ?? timer.getElapsed();
     lastElapsed = elapsed;
@@ -264,6 +305,7 @@ function main(): void {
     tileInfo.show(hovered);
 
     pipeline.render(scene, rig.camera);
+    if (import.meta.env.DEV && frameCpu.push(performance.now() - started) > 2000) frameCpu.splice(0, 1000);
   });
 
   if (import.meta.env.DEV) {
@@ -290,6 +332,7 @@ function main(): void {
         themes: () => THEMES.map((t) => t.id),
         seed: () => board.map.seed,
         newMap: (seed?: number) => newMap(seed),
+        setSize: (size: number) => pickSize(String(size)),
         exportJson: () => serializeMap(board.map),
         loadJson: loadText,
         hudText: () => document.getElementById('hud')?.textContent ?? '',
@@ -304,6 +347,24 @@ function main(): void {
           shadowMap: !!sun.shadow.map, shadowCamera: [sun.shadow.camera.left, sun.shadow.camera.right, sun.shadow.camera.near, sun.shadow.camera.far], casters: (() => { let n = 0; scene.traverse((o) => { if (o.castShadow) n++; }); return n; })(),
         }),
         gpuMemory: () => ({ ...pipeline.renderer.info.memory }),
+        renderInfo: () => ({ ...pipeline.renderer.info.render }),
+        /** Triangles per layer, and how many of them also cast shadows (for scripts/bench.mjs). */
+        triangles() {
+          const layers = { mesh: board.mesh.group, flora: board.flora.group, props: board.props.group, weather: weather.group, ambience: ambience.group, cursor: cursor.group };
+          return Object.fromEntries(Object.entries(layers).map(([name, group]) => {
+            let tris = 0, casting = 0, objects = 0;
+            group.traverse((o) => {
+              const g = (o as THREE.Mesh).geometry as THREE.BufferGeometry | undefined;
+              if (!g || !(o as THREE.Mesh).isMesh) return;
+              const n = ((g.index ? g.index.count : g.attributes.position.count) / 3) * ((o as THREE.InstancedMesh).count ?? 1);
+              tris += n; objects++;
+              if (o.castShadow) casting += n;
+            });
+            return [name, { objects, tris: Math.round(tris), casting: Math.round(casting) }];
+          }));
+        },
+        /** CPU frame times since the last call, in ms. */
+        takeFrameCpu: () => frameCpu.splice(0),
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
           zoom: rig.camera.zoom,
@@ -314,4 +375,4 @@ function main(): void {
   }
 }
 
-main();
+void main();

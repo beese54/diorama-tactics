@@ -158,6 +158,9 @@ for (let i = 0; i < 4; i++) {
   await page.keyboard.press('KeyR');
   await new Promise((r) => setTimeout(r, 300));
 }
+// Boards build asynchronously (M9): wait until the last map asked for is the one shown.
+const shownAsAsked = () => page.waitForFunction(() => location.search.includes(`seed=${window.__map.seed()}`) && window.__map.seed() !== 1234, { timeout: 10000 }).catch(() => {});
+await shownAsAsked();
 const regrown = await page.evaluate(() => ({ seed: window.__map.seed(), search: location.search, memory: window.__map.gpuMemory() }));
 check('R grows a new map and puts its seed in the URL', regrown.seed !== 1234 && regrown.search === `?map=world&seed=${regrown.seed}` && (await tilesNow()) !== first, JSON.stringify(regrown));
 // Maps differ in how many bridges they draw, so compare like with like: back on the first seed, nothing piled up.
@@ -166,7 +169,7 @@ await new Promise((r) => setTimeout(r, 300));
 const returned = await page.evaluate(() => window.__map.gpuMemory());
 check('regrowing frees the old map', returned.geometries <= memory.geometries && returned.textures <= memory.textures, JSON.stringify({ before: memory, after: returned }));
 await page.click('#hud button');
-await new Promise((r) => setTimeout(r, 300));
+await page.waitForFunction((s) => window.__map.seed() !== s, { timeout: 10000 }, regrown.seed).catch(() => {});
 check('New map button grows another', (await page.evaluate(() => window.__map.seed())) !== regrown.seed);
 await page.goto(`${url}?map=world&seed=1234`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
@@ -191,6 +194,31 @@ await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.s
 await page.waitForFunction(() => window.__map);
 const picked = await page.evaluate(() => ({ theme: window.__map.theme().id, shown: document.querySelector('#hud select').value }));
 check('the map picker offers every map and switches to one', selected === 'world' && offered.includes('world') && offered.length === 8 && picked.theme === 'volcano' && picked.shown === 'volcano', JSON.stringify({ offered, selected, picked }));
+// Big boards (M9): ?size= grows Wild Lands bigger; the size picker regrows the same seed in place,
+// R keeps the size, the standard size leaves the URL clean, and switching sizes frees the old board.
+errors.length = 0;
+await page.goto(`${url}?map=world&seed=4242&size=64`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map, { timeout: 30000 });
+const big = await page.evaluate(() => ({ width: window.__map.theme().width, picker: document.querySelector('#hud select:nth-of-type(4)')?.value, corner: window.__map.tile(63, 63)?.terrain }));
+await shot('11-board-64');
+check('a 64×64 board loads, and the size picker shows it', big.width === 64 && big.picker === '64' && !!big.corner, JSON.stringify(big));
+const bigMemory = await page.evaluate(() => window.__map.gpuMemory());
+await page.select('#hud select:nth-of-type(4)', '48');
+await page.waitForFunction(() => window.__map.theme().width === 48, { timeout: 10000 }).catch(() => {});
+const resized = await page.evaluate(() => ({ width: window.__map.theme().width, seed: window.__map.seed(), search: location.search }));
+check('the size picker regrows the same seed at 48×48', resized.width === 48 && resized.seed === 4242 && resized.search.includes('size=48'), JSON.stringify(resized));
+await page.keyboard.press('KeyR');
+await page.waitForFunction(() => window.__map.seed() !== 4242, { timeout: 10000 }).catch(() => {});
+check('R keeps the board size', (await page.evaluate(() => window.__map.theme().width)) === 48);
+await page.evaluate(() => window.__map.setSize(32));
+const standardSize = await page.evaluate(() => ({ width: window.__map.theme().width, search: location.search }));
+check('the standard size leaves size out of the URL', standardSize.width === 32 && !standardSize.search.includes('size='), JSON.stringify(standardSize));
+await page.evaluate(() => window.__map.setSize(64));
+await page.evaluate(() => window.__map.newMap(4242));
+const bigAgain = await page.evaluate(() => window.__map.gpuMemory());
+check('switching sizes frees the old board', bigAgain.geometries <= bigMemory.geometries && bigAgain.textures <= bigMemory.textures, JSON.stringify({ before: bigMemory, after: bigAgain }));
+check('big boards: no console errors', errors.length === 0, errors.join(' | '));
+
 // Rivers (M4): bridges can be picked and stand a step above the water; waterfalls exist.
 const bridgeCheck = async (where, wanted) => {
   await page.goto(`${url}?map=${where}`, { waitUntil: 'networkidle0' });

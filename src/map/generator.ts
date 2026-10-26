@@ -290,7 +290,9 @@ export function generateWorld(seed: number, size = WORLD_SIZE): { map: MapFile; 
     return { x, y, height: height[i], terrain, moisture: 0, water, feature: null, seedRand: rand() };
   });
   const map: MapFile = { version: 1, seed, width: size, height: size, tiles };
-  const rivers = carveRivers(map, elevation, traits.rivers);
+  // Bigger boards keep the standard board's density: rivers by width, settlements by area.
+  const scale = size / WORLD_SIZE;
+  const rivers = carveRivers(map, elevation, Math.round(traits.rivers * scale));
   slopeToLiquids(map);
 
   const waterDistance = distanceTo(size, (i) => tiles[i].water !== null);
@@ -308,7 +310,7 @@ export function generateWorld(seed: number, size = WORLD_SIZE): { map: MapFile; 
   mergeSpecks(map);
   connect(map);
   placeBridges(map, rivers);
-  const settlements = placeSettlements(map);
+  const settlements = placeSettlements(map, Math.max(0, Math.round(scale * scale) - 1));
   placeRoads(map, settlements);
   // Roads cut through woods and fields; tidy the slivers they leave.
   mergeSpecks(map);

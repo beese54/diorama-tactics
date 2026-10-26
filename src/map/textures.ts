@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../util/rng';
 import { SIDE_STYLES, TERRAIN, type SideStyle } from './terrain';
-import { TERRAIN_IDS, type TerrainId } from './types';
+import { TERRAIN_IDS, TILE_PX, type TerrainId } from './types';
 
-export const TILE_PX = 16;
+export { TILE_PX };
 /** One height step is half a tile tall, so its side face is 8 px. */
 export const STEP_PX = 8;
 /** Cliff-face texture variants painted per material, so neighbouring steps don't repeat. */

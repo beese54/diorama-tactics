@@ -144,6 +144,14 @@
       "image": "m8-day-night/four-times.png",
       "title": "M8 · Day and night",
       "note": "Dawn, day, dusk, night and a cycle; subtle shadows; lit windows, fireflies, smoke."
+    },
+    {
+      "id": "m9",
+      "date": "2026-10-26",
+      "commit": "next",
+      "image": "m9-performance/seed99-32-vs-64.png",
+      "title": "M9 · Big boards, fast loads",
+      "note": "Boards up to 64×64 at 60 fps; loads 45–57% faster; more rivers and settlements on big boards."
     }
   ]
 }

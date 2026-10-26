@@ -23,7 +23,7 @@ interface Step {
 }
 
 /**
- * Roads: from the main settlement to the second (if any), and out to the two board edges
+ * Roads: from the main settlement to each of the others, and out to the two board edges
  * it reaches most cheaply. Each follows the cheapest gentle route (slopes and rough ground
  * cost more; existing roads are cheap) and never enters another footprint except at a gate.
  * It crosses a river only straight over a single river tile between level banks, on the

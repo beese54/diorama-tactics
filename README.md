@@ -38,7 +38,7 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M6 | A village, castle or ruins on level ground, roads out to the edges, walkable rooftops | done |
 | M7 | Weather: rain, storms with lightning, snow that settles, fog, wind; wet ground | done |
 | M8 | Dawn, day, dusk and night with a running cycle; subtle sun and moon shadows; lit windows, fireflies, chimney smoke, cloud shadows | done |
-| M9 | Performance on large maps | planned |
+| M9 | Boards up to 64×64 at 60 fps; loading 45–57% faster (the ground is painted on worker threads); a board-size picker; bigger boards get more rivers and settlements | in review |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
 
@@ -64,12 +64,13 @@ npm run build    # type-check and production build
 - `jungle`: Jungle Temple
 - `volcano`: Volcanic Caldera
 
-**Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. Each seed makes an inland valley, an island or a coast, with one or two rivers that step down the hills in waterfalls and are crossed by wooden or stone bridges. Woods grow in sparse clumps, with rocks on the slopes and drowned trees in the swamps; they give cover but never block a tile. Each map is built around a village, a small castle or old ruins, with roads out to the board's edges; rooftops and ramparts can be stood on. The box in the top-left corner has buttons:
+**Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. `&size=48` or `&size=64` grows it bigger; rivers and settlements scale with the board. Each seed makes an inland valley, an island or a coast, with one or two rivers that step down the hills in waterfalls and are crossed by wooden or stone bridges. Woods grow in sparse clumps, with rocks on the slopes and drowned trees in the swamps; they give cover but never block a tile. Each map is built around a village, a small castle or old ruins, with roads out to the board's edges; rooftops and ramparts can be stood on. The box in the top-left corner has buttons:
 
 - **Map picker** (the drop-down in the box) switches to any of the themed maps or to Wild Lands.
 - **Weather picker** (the second drop-down) sets clear, rain, storm, snow or fog on any map, or leaves each map its own weather (Wild Lands get one from their seed). It is kept in the URL as `&weather=rain`.
 - **Time picker** (the third drop-down) sets dawn, day, dusk or night, runs the day-night cycle (a full day in two minutes), or leaves each map its own light. It is kept in the URL as `&time=dusk`.
-- **New map** (or `R`) grows another map and puts its seed in the URL.
+- **Board size picker** (the fourth drop-down, on Wild Lands only) regrows the same seed at 32×32, 48×48 or 64×64. Sizes other than 32 are kept in the URL as `&size=64`.
+- **New map** (or `R`) grows another map at the same size and puts its seed in the URL.
 - **Save** (or `E`) downloads the map as JSON, one tile per line, so you can edit it by hand.
 - **Load** (or drop a file on the page) opens a saved map. A bad file is refused with a note saying what is wrong.
 

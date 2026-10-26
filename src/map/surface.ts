@@ -1,6 +1,6 @@
 import { valueNoise } from '../util/noise';
 import { LIQUID_STYLES, TERRAIN, type LiquidStyle } from './terrain';
-import { tileAt, type MapFile, type Tile } from './types';
+import { tileAt, type MapFile, type TerrainId, type Tile } from './types';
 
 export const STEP_HEIGHT = 0.5;
 /**
@@ -24,31 +24,54 @@ const RIM_SPANS = 5;
 export const SAMPLES = Array.from({ length: RIM_SPANS + 1 }, (_, k) => (k / RIM_SPANS) * RIM_WIDTH_MAX);
 SAMPLES.push(...SAMPLES.map((t) => 1 - t).reverse());
 
-export const isLiquid = (tile: Tile) => LIQUID_STYLES.includes(TERRAIN[tile.terrain].style as LiquidStyle);
+const TERRAIN_IDS = Object.keys(TERRAIN) as TerrainId[];
+const LIQUID = new Set(TERRAIN_IDS.filter((id) => LIQUID_STYLES.includes(TERRAIN[id].style as LiquidStyle)));
+const BUILT = new Set(TERRAIN_IDS.filter((id) => TERRAIN[id].shape === 'built'));
+
+export const isLiquid = (tile: Tile) => LIQUID.has(tile.terrain);
 /** Paving, walls and buildings: flat tops and sharp edges. */
-export const isBuilt = (tile: Tile) => TERRAIN[tile.terrain].shape === 'built';
+export const isBuilt = (tile: Tile) => BUILT.has(tile.terrain);
 
 /** 1 at an edge, easing to 0 at `w`; its slope at the edge matches its mirror image, so lip and foot meet smoothly. */
 const profile = (d: number, w: number) => (d >= w ? 0 : 1 - Math.sin((Math.PI / 2) * (d / w)));
 
+/** The eight neighbours as [dx, dy]; bit k of an edge mask stands for AROUND[k]. */
+const AROUND = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]] as const;
+
 /**
- * Distance from tile-local (u, v) to the nearest neighbouring tile matching `outside`,
- * with corners between two outside edges rounded at radius `w`. Depends only on the point
- * and the heights around it, so two equal-height tiles agree along their shared edge (no cracks).
+ * Which neighbours a tile's rim curves towards: higher natural ground (its foot rises),
+ * lower land or the board's edge (its lip drops), and lower liquid (its bank drops a full step).
  */
-function edgeDistance(map: MapFile, tile: Tile, u: number, v: number, w: number, outside: (t: Tile | undefined) => boolean): number {
+function edgeMasks(map: MapFile, tile: Tile): { foot: number; lip: number; bank: number } {
+  let foot = 0;
+  let lip = 0;
+  let bank = 0;
+  AROUND.forEach(([dx, dy], k) => {
+    const t = tileAt(map, tile.x + dx, tile.y + dy);
+    if (!t) lip |= 1 << k;
+    else if (t.height > tile.height) foot |= isBuilt(t) ? 0 : 1 << k;
+    else if (t.height < tile.height) (isLiquid(t) ? (bank |= 1 << k) : (lip |= 1 << k));
+  });
+  return { foot, lip, bank };
+}
+
+/**
+ * Distance from tile-local (u, v) to the nearest neighbour in `mask`, with corners between
+ * two masked edges rounded at radius `w`. Depends only on the point and the heights around it,
+ * so two equal-height tiles agree along their shared edge (no cracks).
+ */
+function edgeDistance(mask: number, u: number, v: number, w: number): number {
   let alongX = Infinity;
   let alongZ = Infinity;
   let diagonal = Infinity;
-  for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
-      if ((dx === 0 && dy === 0) || !outside(tileAt(map, tile.x + dx, tile.y + dy))) continue;
-      const ex = dx < 0 ? u : dx > 0 ? 1 - u : 0;
-      const ez = dy < 0 ? v : dy > 0 ? 1 - v : 0;
-      if (dy === 0) alongX = Math.min(alongX, ex);
-      else if (dx === 0) alongZ = Math.min(alongZ, ez);
-      else diagonal = Math.min(diagonal, Math.hypot(ex, ez));
-    }
+  for (let k = 0; k < AROUND.length; k++) {
+    if (!(mask & (1 << k))) continue;
+    const [dx, dy] = AROUND[k];
+    const ex = dx < 0 ? u : dx > 0 ? 1 - u : 0;
+    const ez = dy < 0 ? v : dy > 0 ? 1 - v : 0;
+    if (dy === 0) alongX = Math.min(alongX, ex);
+    else if (dx === 0) alongZ = Math.min(alongZ, ez);
+    else diagonal = Math.min(diagonal, Math.hypot(ex, ez));
   }
   const sides = alongX < w && alongZ < w ? Math.max(0, w - Math.hypot(w - alongX, w - alongZ)) : Math.min(alongX, alongZ);
   return Math.min(sides, diagonal);
@@ -80,12 +103,20 @@ export interface SurfaceSample {
  * balance drift across the map (shapeAt) so it doesn't look machine-made.
  */
 export function surfaceAt(map: MapFile, tile: Tile, u: number, v: number): SurfaceSample {
-  if (isLiquid(tile) || isBuilt(tile)) return { offset: 0, foot: 0 };
-  const { width: w, lipDrop, footRise } = shapeAt(map.seed, tile.x + u, tile.y + v);
-  const foot = profile(edgeDistance(map, tile, u, v, w, (t) => !!t && t.height > tile.height && !isBuilt(t)), w);
-  const lip = profile(edgeDistance(map, tile, u, v, w, (t) => !t || (t.height < tile.height && !isLiquid(t))), w);
-  const bank = profile(edgeDistance(map, tile, u, v, w, (t) => !!t && t.height < tile.height && isLiquid(t)), w);
-  return { offset: footRise * foot - Math.max(lipDrop * lip, BANK_DROP * bank), foot };
+  return tileSurface(map, tile)(u, v);
+}
+
+/** surfaceAt for one tile, its neighbours looked up once: for sampling a tile many times. */
+export function tileSurface(map: MapFile, tile: Tile): (u: number, v: number) => SurfaceSample {
+  const { foot, lip, bank } = isLiquid(tile) || isBuilt(tile) ? { foot: 0, lip: 0, bank: 0 } : edgeMasks(map, tile);
+  if (!(foot | lip | bank)) return () => ({ offset: 0, foot: 0 });
+  return (u, v) => {
+    const { width: w, lipDrop, footRise } = shapeAt(map.seed, tile.x + u, tile.y + v);
+    const rise = profile(edgeDistance(foot, u, v, w), w);
+    const drop = profile(edgeDistance(lip, u, v, w), w);
+    const sink = profile(edgeDistance(bank, u, v, w), w);
+    return { offset: footRise * rise - Math.max(lipDrop * drop, BANK_DROP * sink), foot: rise };
+  };
 }
 
 /** True when no neighbour differs in height, so the tile top is a plain flat square. */

@@ -196,7 +196,17 @@ coast        → beach, cliffs, sea                    rivers       → run down
   - [x] L5 time picker in the menu box; dev hooks to set the hour for captures
   - [x] L6 tests: hours loop and blend smoothly; sun up by day and down at night; dawn and dusk warm, night dark; shadows longest at dawn and dusk; easing goes forward in time. check.mjs: each time renders and differs, shadows are on, windows glow at night, fireflies at night only, no errors
   - [x] Review: the same map at dawn, day, dusk and night; a cycle GIF; shadow close-ups; `evolution/land/m8-day-night/`
-- [ ] **M9: Large-map performance.** Instancing/chunking and culling, holding 60 fps on the full map.
+- [x] **M9: Large-map performance.** Instancing/chunking and culling, holding 60 fps on the full map.
+  - Decisions (user, 2026-10-26): boards up to 64×64; the RTX 4060 laptop sets the bar; no visible change. Baseline and attribution are in `tasks/perf_log.md`. Drawing already holds 60 fps at 64×64 (240 fps at the cap, 0 frames over 16.7 ms, about 15× headroom uncapped). The cost is board building: 2.4 s at 64 and 1.0 s at 32, against a 0.43 s floor.
+  - Targets: 64×64 loads in ≤ 1.2 s and 32×32 in ≤ 0.6 s; still 0 frames over 16.7 ms; heap no higher than baseline; captures pixel-identical to the old build.
+  - [x] L0 harness: `?size=N` for Wild Lands (16 to 128); `tasks/perf/` bench and profilers; `tasks/perf/identity.mjs` captures fixed poses with a frozen clock and pinned hour (32 and 64; clear, storm, snow; day and night) and compares them pixel for pixel with the baseline captures
+  - [x] L1 surface (27% of load): one neighbour scan per sample instead of three; O(1) terrain flags instead of `Array.includes`; no `tileAt` in the inner loop
+  - [x] L2 noise (9%): `valueNoise` hashes each lattice corner once (4 hashes, not 6)
+  - [x] L3 re-profile, then the next hotspots in order: the liquid frame painter (17%), then the ground painter (13%). One change at a time, kept only if measured above noise and the captures still match
+  - [x] L4 board size in the menu for Wild Lands: 32 (standard), 48, 64, kept in the URL as `size=`; R and map switches keep it. Check that 64×64 generates well (rivers, settlements, cover spread across the larger board)
+  - [x] L5 tests: `sizeFromUrl`; the new surface code matches the old one exactly over many seeds and sizes; check.mjs loads a 64×64 board without errors; the bench meets the targets
+  - [x] Review: before/after load table; 64×64 overview shots; `evolution/land/m9-performance/`
+  - Not planned: chunking, instancing or culling of the drawing. The profile doesn't attribute any cost to it on the target machine (protocol: no optimisation without attribution). Logged under Deferred for weaker GPUs or boards past 64.
 
 ---
 
@@ -429,3 +439,38 @@ _(filled in after each step)_
   - no errors.
 
 - Approved 2026-10-25 ("looks good"). Next: M9, performance on large maps.
+
+### M9 review (2026-10-26): big boards and fast loading
+- Decisions:
+  - (user) Boards up to 64×64; the RTX 4060 laptop sets the bar; no visible change.
+  - (user, after seeing a sparse 64×64 board) Scale settlements and rivers with the board.
+- The baseline overturned the plan. Drawing was not the cost: 64×64 ran at 240 fps capped and about 3,000 uncapped, with 0 frames over 16.7 ms. Building the board took 2.3 s. Instancing, chunking and culling were not done, because nothing in the profile pointed at them.
+- `surface.ts`: `tileSurface(map, tile)` scans the neighbours once per tile into foot/lip/bank masks, and liquid/built are Set lookups. `surfaceAt` is unchanged for callers. `surface.reference.test.ts` keeps the pre-M9 code and proves bit-identical output across 13 maps.
+- `ground.ts`:
+  - split into `paintLand`, `paintLiquids(map, wild, frames)` and `composeGround`;
+  - `paintGround` is the three together, so its output is unchanged;
+  - `TILE_PX` moved to `types.ts` (re-exported from textures), so workers don't load three.js.
+- `GroundPainter` + `ground.worker.ts`:
+  - one worker paints the land and 1–3 share the 12 liquid frames; `composeGround` joins the parts;
+  - `ready` resolves once the workers have loaded;
+  - falls back to the main thread when workers are missing or crash.
+- `MapMesh`: `buildColumns(map)` builds the geometry without the ground image, so it runs while the workers paint; `new MapMesh(map, ground, shape)`.
+- `main.ts`:
+  - boards build asynchronously (`prepareBoard` → `buildBoard`);
+  - when maps are asked for in quick succession, the latest wins and older ones are freed;
+  - it awaits `painter.ready`, posts the jobs, yields once (Chrome holds the last job until then), then builds the columns;
+  - `board-ready` performance mark.
+- Size:
+  - `?size=N` (16–64);
+  - a Board picker (32/48/64) on Wild Lands that regrows the same seed in place;
+  - R and map switches keep the size.
+- Generator: rivers × width/32, plus round((size/32)²) − 1 extra settlements (village 50%, ruins 35%, castle 15%), each at least 0.2 × the width from the others. A 32×32 board is unchanged: a fingerprint of 60 seeds is pinned in `generatorScale.test.ts`.
+- Results (interleaved A/B):
+  - load 784 → 431 ms at 32×32, 2152 → 919 ms at 64×64;
+  - heap at 64×64 down from about 210 to about 130 MB;
+  - 0 frames over 16.7 ms;
+  - 895 tests and check.mjs 62/62 pass.
+  - Details are in `tasks/perf_log.md`.
+- Known:
+  - zoom stays 0.5–3, so a 64×64 board is explored by panning; further out, the pixel art would shimmer;
+  - `?size` is capped at 64, the agreed size.

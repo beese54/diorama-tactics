@@ -2,9 +2,8 @@ import { hash, valueNoise } from '../util/noise';
 import { mulberry32 } from '../util/rng';
 import { isBuilt, isLiquid } from './surface';
 import { LIQUID_STYLES, TERRAIN, type LiquidStyle, type PaintStyle } from './terrain';
-import { TILE_PX } from './textures';
-import { TERRAIN_IDS, tileAt, type MapFile, type Tile } from './types';
-import { LIQUID_FRAMES, LIQUIDS, paintLiquid } from './liquid';
+import { TERRAIN_IDS, TILE_PX, tileAt, type MapFile, type Tile } from './types';
+import { ALL_FRAMES, LIQUID_FRAMES, LIQUIDS, paintLiquid } from './liquid';
 import { propPlacement, PROPS } from './props';
 
 /**
@@ -270,6 +269,23 @@ const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
   },
 };
 
+/** The land part of the ground image, painted once: liquid pixels are left for the frames. */
+export interface LandImage {
+  width: number;
+  height: number;
+  /** Per pixel (row 0 = north): index into TERRAIN_IDS of the terrain drawn there. */
+  material: Uint8Array;
+  /** RGBA of the land pixels; liquid pixels are 0. */
+  rgba: Uint8Array;
+}
+
+/** One liquid's animation frames (some or all of them), as liquid.ts paints them. */
+export interface LiquidLayer {
+  style: LiquidStyle;
+  palette: string[];
+  frames: Int8Array[];
+}
+
 export interface GroundImage {
   /** Pixels per side of the whole map (tiles × TILE_PX). */
   width: number;
@@ -312,9 +328,15 @@ function rgb(hex: string): [number, number, number] {
  * way it does outdoors: terrains fray into each other, and each terrain's light and dark
  * patches come from world-space noise rather than per-tile variants. Liquids come from
  * liquid.ts, one image per animation frame; `wild` (generated maps) turns water beside
- * swamps murky. Deterministic per map seed.
+ * swamps murky. Deterministic per map seed. The three steps can also run apart, on
+ * workers (see groundWorkers.ts): the result is the same.
  */
 export function paintGround(map: MapFile, wild = false): GroundImage {
+  return composeGround(paintLand(map), paintLiquids(map, wild));
+}
+
+/** Every land pixel of the ground image: terrain, its patches and details, and props' contact shadows. */
+export function paintLand(map: MapFile): LandImage {
   const width = map.width * TILE_PX;
   const height = map.height * TILE_PX;
   const terrainIndex = new Map(TERRAIN_IDS.map((id, i) => [id, i]));
@@ -373,21 +395,41 @@ export function paintGround(map: MapFile, wild = false): GroundImage {
     }
   }
 
+  return { width, height, material, rgba: land };
+}
+
+/** The liquids on this map (water, lava), each painted for the frames in `only` (all by default). */
+export function paintLiquids(map: MapFile, wild = false, only: readonly number[] = ALL_FRAMES): LiquidLayer[] {
   const present = LIQUID_STYLES.filter((style) => map.tiles.some((t) => TERRAIN[t.terrain].style === style));
-  const liquids = present.map((style) => ({ look: LIQUIDS[style], image: paintLiquid(map, TILE_PX, style, wild) }));
-  const glowing = liquids.some((l) => l.look.glows);
+  return present.map((style) => {
+    const { palette, frames } = paintLiquid(map, TILE_PX, style, wild, only);
+    return { style, palette, frames };
+  });
+}
+
+/** Lays each frame of the liquids over the land. `liquids` hold every frame, in order. */
+export function composeGround(land: LandImage, liquids: LiquidLayer[]): GroundImage {
+  const { width, height, material } = land;
+  const glowing = liquids.some((l) => LIQUIDS[l.style].glows);
   const frames: Uint8Array[] = [];
   const glow: Uint8Array[] = [];
   for (let f = 0; f < LIQUID_FRAMES; f++) {
-    const frame = land.slice();
+    const frame = land.rgba.slice();
     const light = glowing ? new Uint8Array(width * height * 4) : null;
-    for (const { look, image } of liquids) {
-      const colors = image.palette.map(rgb);
-      image.frames[f].forEach((c, i) => {
-        if (c < 0) return;
-        frame.set([...colors[c], LIQUID_ALPHA], i * 4);
-        if (light && look.glows) light.set([...colors[c], 255], i * 4);
-      });
+    for (const { style, palette, frames: painted } of liquids) {
+      const colors = palette.map(rgb);
+      const lit = !!light && LIQUIDS[style].glows;
+      const index = painted[f];
+      for (let i = 0; i < index.length; i++) {
+        const c = index[i];
+        if (c < 0) continue;
+        const [r, g, b] = colors[c];
+        frame[i * 4] = r;
+        frame[i * 4 + 1] = g;
+        frame[i * 4 + 2] = b;
+        frame[i * 4 + 3] = LIQUID_ALPHA;
+        if (lit) light!.set([r, g, b, 255], i * 4);
+      }
     }
     frames.push(frame);
     if (light) glow.push(light);

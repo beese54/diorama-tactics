@@ -77,17 +77,21 @@ export interface LiquidImage {
   height: number;
   /** Colours the frames index into: the ramp, then the glints, then the crust or foam. */
   palette: string[];
-  /** One image per animation frame. Per pixel: index into `palette`, or -1 where this liquid isn't. */
+  /** One image per animation frame painted (all of them unless asked for fewer). Per pixel: index into `palette`, or -1 where this liquid isn't. */
   frames: Int8Array[];
 }
+
+/** Every frame of the loop, in order. */
+export const ALL_FRAMES: readonly number[] = Array.from({ length: LIQUID_FRAMES }, (_, f) => f);
 
 /**
  * Paints every pixel of one liquid at once, so colour follows the real shoreline instead
  * of tile boundaries: banded by distance from land, with wobbly contours, dithered band
  * edges and sparse glints. Animated as a seamless loop: the contour noise drifts around a
  * circle and glints twinkle in and out on their own phase. Deterministic per map seed.
+ * `only` paints just those frames, in that order.
  */
-export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle, wild = false): LiquidImage {
+export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle, wild = false, only: readonly number[] = ALL_FRAMES): LiquidImage {
   const look = LIQUIDS[style];
   const ramp = look.ramp.length;
   const palette = [...look.ramp, ...new Set(look.glint)];
@@ -119,7 +123,8 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle, wi
     })),
   );
 
-  const frames = Array.from({ length: LIQUID_FRAMES }, (_, f) => {
+  // Each frame depends only on its own index, so a subset can be painted apart (see groundWorkers.ts).
+  const frames = only.map((f) => {
     /** How far through the loop this frame is, 0..1. */
     const loop = f / LIQUID_FRAMES;
     const angle = 2 * Math.PI * loop;

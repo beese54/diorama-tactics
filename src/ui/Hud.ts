@@ -12,6 +12,10 @@ export interface HudActions {
   times: readonly { id: string; name: string }[];
   time: string;
   pickTime: (id: string) => void;
+  /** Board sizes the fourth picker offers (generated maps only), the one chosen, and what to do on a change. */
+  sizes?: readonly { id: string; name: string }[];
+  size?: string;
+  pickSize?: (id: string) => void;
   /** Grows a new random map; generated themes only. */
   newMap?: () => void;
   save: () => void;
@@ -23,7 +27,7 @@ const NOTICE_MS = 5000;
 
 /**
  * FFT-style box in the top-left corner: the map's name and seed, pickers for the map, the
- * weather and the time of day, buttons to grow a new map, save it as JSON or load a saved one, and a line for
+ * weather, the time of day and (on generated maps) the board size, buttons to grow a new map, save it as JSON or load a saved one, and a line for
  * short notices.
  */
 export class Hud {
@@ -57,6 +61,7 @@ export class Hud {
     select('Switch map', actions.maps, actions.current, actions.pick);
     select('Weather', actions.weathers, actions.weather, actions.pickWeather);
     select('Time of day', actions.times, actions.time, actions.pickTime);
+    if (actions.sizes && actions.pickSize) select('Board size', actions.sizes, actions.size ?? '', actions.pickSize);
 
     const picker = document.createElement('input');
     picker.type = 'file';
