@@ -47,6 +47,7 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   basalt: ['#3e3938', '#2e2a29', '#4d4746', '#211e1d'],
   cottage: ['#e2d6bc', '#cbbd9f', '#efe6d0', '#5a3e26'],
   ice: ['#8eb8d0', '#5e88a8', '#c4dcea', '#2e4a66'],
+  hedge: ['#356430', '#24481f', '#4a7a3c', '#5e9048'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
@@ -134,6 +135,16 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
       return;
     case 'cottage':
       paintCottage(put, rand, p, groundFloor, variant);
+      return;
+    case 'hedge':
+      // Clipped box hedge: dense leaves in small clumps, lit on top, darker at the root.
+      for (let y = 0; y < STEP_PX; y++) {
+        for (let x = 0; x < TILE_PX; x++) {
+          const r = rand();
+          put(x, y, r < 0.18 ? light : r < 0.4 ? dark : y > 6 ? dark : base);
+        }
+      }
+      for (let i = 0; i < 4; i++) put(int(rand, TILE_PX), int(rand, 4), accent);
       return;
     case 'ice':
       // A cut through lake ice: clear and pale near the top, darkening to the cold water beneath,

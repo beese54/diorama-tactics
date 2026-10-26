@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge',
 ];
 
 /**
@@ -102,6 +102,12 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   heather:          natural({ name: 'Heather',      moveCost: 2, defense: 5,  style: 'heather',     side: 'soil',      palette: ['#5e4a54', '#4e3e48', '#6c5662', '#7a4a78', '#9a5c96', '#bc7cb4', '#d89ccc'] }),
   moor_grass:       natural({ name: 'Moor Grass',   moveCost: 1, defense: 0,  style: 'grass',       side: 'soil',      palette: ['#8a8a50', '#7c7c48', '#9a985a', '#b0aa68'] }),
   drystone:         built({ name: 'Dry-Stone Wall', moveCost: 2, defense: 15, style: 'cobblestone', side: 'masonry',   palette: ['#8a887a', '#7a786c', '#4e4d46', '#a09e90'] }),
+
+  // Kingdom themes (M12).
+  gravel:           natural({ name: 'Gravel Walk',  moveCost: 1, defense: 0,  style: 'gravel',      side: 'soil',      palette: ['#c4b89c', '#b4a88c', '#8e826a', '#dcd2bc'] }),
+  lawn:             natural({ name: 'Lawn',         moveCost: 1, defense: 0,  style: 'lawn',        side: 'soil',      palette: ['#5a8c3e', '#4c7c36', '#669a46', '#78aa52'] }),
+  hedge:            built({ name: 'Hedge',          moveCost: 3, defense: 20, style: 'hedge',       side: 'hedge',     palette: ['#2a5226', '#356430', '#44763a', '#5a8c46'] }),
+  flowerbed:        natural({ name: 'Flower Bed',   moveCost: 2, defense: 0,  style: 'flowers',     side: 'soil',      palette: ['#4e6a34', '#44602e', '#587638', '#6a8a40', '#d83a3a', '#f0c030', '#9a4ac8', '#f4f0e8'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

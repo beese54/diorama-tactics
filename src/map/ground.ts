@@ -200,7 +200,37 @@ function heatherBloom(px: Pixel, p: readonly string[]): string {
   return ramp(1, 0, 2)(px, p);
 }
 
+/** Raked gravel: pale stones of mixed size and tone, each a pixel or two, over a darker bed. */
+function rakedGravel(px: Pixel, p: readonly string[]): string {
+  const stone = hash(0x67a1, px.gx >> 1, px.gy >> 1);
+  if (stone < 0.12) return p[2];
+  if (stone > 0.86) return p[3];
+  return ramp(1, 0)(px, p);
+}
+
+/**
+ * A mown lawn: broad stripes where the mower ran one way and back, light and dark in turn,
+ * running across the whole garden in world pixels. Within a stripe, the patches and speckle
+ * keep it from looking flat.
+ */
+function mownLawn(px: Pixel, p: readonly string[]): string {
+  const stripe = Math.floor((px.gx + px.gy * 0.02) / 24) & 1;
+  if (px.grain < 0.04) return p[3];
+  const tone = px.patch * 0.5 + (px.grain - 0.5) * 0.4 + (px.dither - 0.5) * 0.3 + (stripe ? 0.45 : 0);
+  return tone < 0.2 ? p[1] : tone < 0.6 ? p[0] : p[2];
+}
+
+/** The clipped top of a hedge: tight clumps of leaves, lit on their upper-left edge. */
+function clippedHedge(px: Pixel, p: readonly string[]): string {
+  const clump = hash(0x4ed9, px.gx >> 1, px.gy >> 1);
+  const lit = ((px.gx & 1) === 0 && (px.gy & 1) === 0) || px.grain > 0.9;
+  return clump < 0.25 ? p[0] : lit ? p[3] : clump < 0.65 ? p[1] : p[2];
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  gravel: { base: rakedGravel },
+  lawn: { base: mownLawn },
+  hedge: { base: clippedHedge },
   heather: { base: heatherBloom },
   ice: { base: lakeIce },
   leaves: { base: fallenLeaves, details: (put, rand, p) => tufts(put, rand, p[3], 4) },

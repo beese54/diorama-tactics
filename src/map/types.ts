@@ -9,6 +9,7 @@ export const TERRAIN_IDS = [
   'asphalt', 'pavement', 'brick_building', 'plaster_building', 'neon_building', 'wet_street', 'boardwalk', 'temple_stone',
   'house_thatch', 'house_tile', 'rampart', 'ruined_wall',
   'autumn_grass', 'red_rock', 'oasis_grass', 'ice', 'heather', 'moor_grass', 'drystone',
+  'gravel', 'lawn', 'hedge', 'flowerbed',
 ] as const;
 export type TerrainId = (typeof TERRAIN_IDS)[number];
 
@@ -27,7 +28,7 @@ export const PROP_IDS = [
   'basalt_spire', 'dead_tree', 'ember_rock', 'vent',
   'broadleaf', 'snag', 'well',
   'autumn_tree', 'great_maple', 'palm', 'cactus', 'stone_arch', 'ice_hut', 'snow_rock', 'bothy', 'sheep', 'gorse',
-  'boat', 'lighthouse', 'net_rack',
+  'boat', 'lighthouse', 'net_rack', 'gazebo', 'topiary', 'statue',
 ] as const;
 export type PropId = (typeof PROP_IDS)[number];
 

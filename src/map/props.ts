@@ -79,6 +79,9 @@ export const PROPS: Record<PropId, PropDef> = {
   boat:          prop('Moored Boat',   { defense: 0, variants: 2, shadow: 0, sway: 0.01, floats: true }),
   lighthouse:    prop('Lighthouse',    { defense: 0, blocks: true, shadow: 8, light: { color: 0xfff0b0, intensity: 6, distance: 8 } }),
   net_rack:      prop('Drying Nets',   { defense: 15, shadow: 6 }),
+  gazebo:        prop('Gazebo',        { defense: 0, blocks: true, shadow: 13 }),
+  topiary:       prop('Topiary',       { defense: 15, variants: 2, shadow: 5 }),
+  statue:        prop('Statue',        { defense: 20, variants: 2, shadow: 5 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

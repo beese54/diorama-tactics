@@ -954,6 +954,86 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline(0.6);
     },
   },
+  gazebo: {
+    w: 37, h: 44,
+    paint(g) {
+      // A white garden gazebo: slender columns on a round stone plinth, a scalloped eave and a
+      // green copper dome with a gilded finial.
+      const white = ['#9aa0a4', '#c4c8ca', '#e2e4e2', '#f6f6f2'];
+      const copper = ['#2e5a4c', '#3e7462', '#56907a', '#78ac92'];
+      g.ball(18.5, 39, 17, 4.5, STONE);
+      g.rect(2, 37, 33, 3, STONE[2]);
+      g.rect(2, 37, 33, 1, STONE[3]);
+      for (const [x, lit] of [[5, 3], [12, 3], [18, 2], [24, 1], [31, 1]] as const) {
+        g.rect(x, 18, 2, 19, white[lit]);
+        g.set(x, 18, white[3]);
+        g.rect(x - 1, 36, 4, 1, white[1]);
+      }
+      // Shade inside, so the far columns read as further back.
+      g.rect(7, 22, 23, 14, '#4a5a4e');
+      for (const x of [9, 15, 21, 27]) g.rect(x, 22, 2, 14, white[1]);
+      // Eave: a band with a scalloped valance underneath.
+      g.rect(1, 15, 35, 3, white[2]);
+      g.rect(1, 15, 35, 1, white[3]);
+      for (let x = 1; x < 36; x += 3) g.rect(x, 18, 2, 1, white[1]);
+      // Dome and finial.
+      g.ball(18.5, 13, 15, 8, copper);
+      g.rect(3, 13, 31, 2, copper[1]);
+      g.rect(18, 1, 1, 4, '#d8b040');
+      g.ball(18.5, 4.5, 1.6, 1.6, ['#8a6a20', '#c89a30', '#f0d060']);
+      g.outline();
+    },
+  },
+  topiary: {
+    w: 11, h: 21,
+    paint(g, v) {
+      // Clipped yew in a stone planter: a cone, or two balls stacked on a stem.
+      const leaves = ['#1e3e1c', '#2a5226', '#3a6a30', '#4e823e'];
+      g.rect(2, 17, 7, 4, STONE[2]);
+      g.rect(2, 17, 7, 1, STONE[3]);
+      g.rect(8, 17, 1, 4, STONE[1]);
+      if (v === 0) {
+        for (let r = 0; r < 15; r++) {
+          const hw = Math.round(((r + 1) / 15) * 4.5);
+          for (let x = -hw; x <= hw; x++) g.set(5 + x, 2 + r, x < -hw / 3 ? leaves[3] : x > hw / 2 ? leaves[0] : leaves[1 + ((r + x) & 1)]);
+        }
+      } else {
+        g.rect(5, 9, 1, 8, WOOD[1]);
+        g.ball(5.5, 12.5, 4.6, 4, leaves);
+        g.ball(5.5, 4.5, 3.4, 3.2, leaves);
+      }
+      g.outline();
+    },
+  },
+  statue: {
+    w: 13, h: 28,
+    paint(g, v) {
+      // Weathered marble on a plinth: a knight leaning on his sword, or an urn spilling ivy.
+      const marble = ['#7e8282', '#a6aaa8', '#c8cac6', '#e4e4de'];
+      g.rect(1, 20, 11, 8, STONE[2]);
+      g.rect(1, 20, 11, 1, STONE[3]);
+      g.rect(0, 26, 13, 2, STONE[1]);
+      g.rect(10, 21, 2, 5, STONE[1]);
+      if (v === 0) {
+        g.ball(6.5, 3, 2, 2.2, marble);
+        g.rect(4, 5, 5, 8, marble[2]);
+        g.rect(4, 5, 2, 8, marble[3]);
+        g.rect(8, 5, 1, 8, marble[1]);
+        g.rect(4, 13, 2, 7, marble[2]);
+        g.rect(7, 13, 2, 7, marble[1]);
+        g.line(10, 7, 10, 19, marble[3]);
+        g.rect(9, 9, 3, 1, marble[1]);
+        g.line(9, 7, 7, 9, marble[1]);
+      } else {
+        g.ball(6.5, 14, 4.5, 4.5, marble);
+        g.rect(4, 8, 5, 2, marble[2]);
+        g.rect(3, 7, 7, 1, marble[3]);
+        g.rect(5, 18, 3, 2, marble[1]);
+        for (const [x, y] of [[3, 9], [2, 11], [2, 13], [9, 10], [10, 12], [3, 15]]) g.set(x, y, '#3e6a30');
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

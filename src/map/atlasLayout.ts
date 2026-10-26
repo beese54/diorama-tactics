@@ -44,12 +44,16 @@ export function atlasLayout(): AtlasLayout {
   const groundY = lowerY + STYLE_ROWS * STEP_PX;
   const W = TILE_PX * VARIANTS;
   const H = groundY + STYLE_ROWS * STEP_PX;
-  // The atlas is a CanvasTexture, which is flipped: canvas y = 0 is v = 1.
+  // The atlas is a CanvasTexture, which is flipped: canvas y = 0 is v = 1. Each cell's top and
+  // bottom are pulled in by a sliver of a texel, so a face sampled exactly on that edge still
+  // reads its own row, never the row above or below (which changes whenever a terrain is added).
+  // Side by side are only variants of the same face, so the left and right edges stay put.
+  const e = 0.02;
   const rect = (x: number, y: number): UvRect => ({
     u0: x / W,
     u1: (x + TILE_PX) / W,
-    v0: 1 - (y + STEP_PX) / H,
-    v1: 1 - y / H,
+    v0: 1 - (y + STEP_PX - e) / H,
+    v1: 1 - (y + e) / H,
   });
   const terrainRow = new Map(TERRAIN_IDS.map((id, i) => [id, i]));
   const sideRow = new Map(SIDE_STYLES.map((s, i) => [s, i]));
