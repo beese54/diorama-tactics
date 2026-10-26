@@ -493,7 +493,7 @@ The user asked for the four deferred items before units and battles. Order: tech
   - [x] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street (in review)
     - Station Square: rail tracks along the back, raised platforms, the station building, a taxi rank and bus shelter; landmark a preserved steam engine on a plinth in the square. New: `rail` terrain (ballast and sleepers), locomotive, bus_shelter, bike_rack, buffer_stop, station_clock.
     - Suburban Park: houses with gardens behind hedges, a cul-de-sac, a park with a pond and paths; landmark a playground (slide and swings). New: `house_brick` (red-brick `villa` walls, slate roof), `bark`, playground, picnic_table, washing_line, ducks.
-    - Canal Quarter: a canal in two pounds joined by a lock, towpaths, brick warehouses and a footbridge; landmark a mill chimney. New: narrowboat ×2 (floats), lock_gate (floats), bollard, mill_chimney.
+    - Canal Quarter: a canal in two pounds joined by a lock, towpaths, brick warehouses and a footbridge; landmark a mill chimney. New: lock_gate (floats), bollard, mill_chimney (narrowboats removed in review).
     - High Street: shopfronts with awnings along the back, a crossing, a bus stop; landmark the town clock tower. New: `shop_building` and `shop_brick` (a `shop` face: fascia, striped awning, display window and door), `zebra` crossing, phone_box, post_box, belisha, cafe_table ×2, clock_tower.
   - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
   - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle
@@ -549,8 +549,9 @@ Not needed for the agreed bar; pick up if circumstances change.
   - Canal Quarter (c25698d);
   - High Street (6c5c6ea).
 - New terrains: rail (`rails` painter), house_brick (`villa` face), bark, shop_building and shop_brick (`shop` face), zebra (`zebra` painter).
-- New props: locomotive, bus_shelter, bike_rack, buffer_stop, station_clock, playground, picnic_table, washing_line, ducks (floats), narrowboat ×2 (floats), lock_gate (floats), bollard, mill_chimney, clock_tower, phone_box, post_box, belisha (glows), cafe_table ×2.
+- New props: locomotive, bus_shelter, bike_rack, buffer_stop, station_clock, playground, picnic_table, washing_line, ducks (floats), lock_gate (floats), bollard, mill_chimney, clock_tower, phone_box, post_box, belisha (glows), cafe_table ×2.
 - Fix: `Panorama.rooftops` drew its gables upside down. Village Fair's backdrop band changed (rows 388-442 of the capture), nothing else.
 - check.mjs: the size-picker and R checks wait up to 30 s for a 48×48 board (10 s timed out once on a busy machine).
 - Tooling: tasks/perf/sheet.mjs builds the four-map sheet.
 - Tests: 1017; check.mjs 74/74; 46 captures in the identity set.
+- Round 1 (user: "remove the ships… ships are supposed to be way bigger"): the narrowboats are gone from Canal Quarter, and the sprite with them. Lesson in lessons.md. The clock tower's random brick courses changed slightly, because its sprite seed follows its place in PROP_IDS.

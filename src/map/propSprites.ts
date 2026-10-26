@@ -1421,45 +1421,6 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline(0.6);
     },
   },
-  narrowboat: {
-    w: 44, h: 18,
-    paint(g, v) {
-      // A canal narrowboat, long and low: a painted cabin with brass portholes and a panel of
-      // roses, a stove chimney with brass bands, plant pots on the roof, the tiller at the stern.
-      const [body, trim, panel] = v ? ['#1e3a6a', '#d8a838', '#a42e24'] : ['#7a1e1a', '#2e6a3a', '#e8c040'];
-      // Black hull at the waterline.
-      g.rect(1, 13, 42, 3, '#1a1a1e');
-      g.rect(0, 12, 44, 1, '#3a3c42');
-      g.rect(3, 16, 38, 1, '#1e3446');
-      g.rect(6, 17, 32, 1, '#2e4c60');
-      // The cabin, with a contrasting band along the top and a lighter roof.
-      g.rect(6, 5, 32, 7, body);
-      g.rect(6, 5, 32, 1, trim);
-      g.rect(6, 11, 32, 1, trim);
-      g.rect(5, 4, 34, 1, '#c8c4b8');
-      for (const x of [10, 15, 20, 25]) {
-        g.ball(x + 0.5, 8, 1.4, 1.4, ['#8a6a20', '#c89a30', '#f0d060']);
-        g.set(x, 8, '#2a3440');
-      }
-      // A painted panel of roses on the cabin side, near the stern.
-      g.rect(29, 6, 7, 5, panel);
-      for (const [x, y, c] of [[30, 7, '#f4f0e8'], [32, 8, '#d83a3a'], [34, 7, '#f4f0e8'], [31, 9, '#3e8a44'], [33, 9, '#3e8a44']] as const) g.set(x, y, c);
-      // The stove chimney, plant pots on the roof, and the tiller and rudder at the stern.
-      g.rect(12, 0, 2, 4, '#24252a');
-      g.rect(12, 1, 2, 1, '#d8b040');
-      for (const x of [18, 22]) {
-        g.rect(x, 2, 3, 2, '#a4553c');
-        g.rect(x, 1, 3, 1, '#4e8a3a');
-        g.set(x + 1, 0, '#d83a3a');
-      }
-      g.line(39, 5, 43, 2, WOOD[2]);
-      g.rect(40, 6, 2, 6, '#3a3c42');
-      // The bow, rising and pointed.
-      g.rect(1, 9, 5, 3, body);
-      g.rect(1, 9, 5, 1, trim);
-      g.outline(0.55);
-    },
-  },
   lock_gate: {
     w: 24, h: 18,
     paint(g) {

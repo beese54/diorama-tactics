@@ -28,8 +28,7 @@ const TERRACES: [number, number, number][] = [[3, 6, 17], [14, 17, 16]];
 /** Hand-placed decor, keyed "x,y". */
 const PROPS: Record<string, PropId> = {
   '8,4': 'mill_chimney',
-  // Boats moored in the basin and along the canal; the lock gates.
-  '4,9': 'narrowboat', '3,12': 'narrowboat', '14,11': 'narrowboat', '18,10': 'narrowboat',
+  // The lock gates.
   '12,10': 'lock_gate', '12,11': 'lock_gate',
   // Bollards along the quays and towpaths, cargo on the wharf.
   '3,7': 'bollard', '6,7': 'bollard', '8,9': 'bollard', '11,9': 'bollard', '14,12': 'bollard', '18,12': 'bollard', '4,14': 'bollard',

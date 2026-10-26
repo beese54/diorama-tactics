@@ -32,7 +32,7 @@ export const PROP_IDS = [
   'boat', 'lighthouse', 'net_rack', 'gazebo', 'topiary', 'statue', 'gatehouse', 'maypole', 'fair_tent', 'bunting',
   'locomotive', 'bus_shelter', 'bike_rack', 'buffer_stop', 'station_clock',
   'playground', 'picnic_table', 'washing_line', 'ducks',
-  'narrowboat', 'lock_gate', 'bollard', 'mill_chimney',
+  'lock_gate', 'bollard', 'mill_chimney',
   'clock_tower', 'phone_box', 'post_box', 'belisha', 'cafe_table',
 ] as const;
 export type PropId = (typeof PROP_IDS)[number];

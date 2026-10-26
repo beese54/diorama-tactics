@@ -95,7 +95,6 @@ export const PROPS: Record<PropId, PropDef> = {
   picnic_table:  prop('Picnic Table',  { defense: 10, shadow: 6 }),
   washing_line:  prop('Washing Line',  { defense: 5, shadow: 3, sway: 0.03 }),
   ducks:         prop('Ducks',         { defense: 0, shadow: 0, sway: 0.01, floats: true }),
-  narrowboat:    prop('Narrowboat',    { defense: 0, variants: 2, shadow: 0, sway: 0.005, floats: true }),
   lock_gate:     prop('Lock Gate',     { defense: 0, shadow: 0, floats: true }),
   bollard:       prop('Bollard',       { defense: 5, shadow: 2 }),
   mill_chimney:  prop('Mill Chimney',  { defense: 0, blocks: true, shadow: 8 }),

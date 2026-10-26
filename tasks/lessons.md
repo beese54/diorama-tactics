@@ -48,3 +48,8 @@
 - **What happened:** Snow settled on the ground, the roofs and the mounds, but the trees and rocks stayed bare green. That contradicts the ground around them.
 - **Rule:** A weather or season effect must reach everything exposed to it: ground, cliffs, roofs, trees, rocks and props. List every layer the scene draws (ground, sides, bridges, props, flora, backdrop) and decide for each one, before showing it.
 
+
+## 2026-10-26: "Ships are supposed to be way bigger"
+- **What happened:** In Canal Quarter I moored narrowboats in a canal two tiles wide. A tile-sized boat sprite next to warehouses six and seven steps tall looked like a toy, so the user had them removed.
+- **Rule:** Before adding a prop, check its scale against the buildings and terrain around it: a tile is a few metres across, and a building column is a few storeys. Leave out anything that can't be drawn near its true size on one tile (vehicles, ships, large machines) rather than shrink it. Suggest the place with scenery (moorings, bollards, a lock) instead.
+- **Rule:** Apply this to everything still to come in M14–M16 (container ships, cars, trains): no miniature vehicles.
