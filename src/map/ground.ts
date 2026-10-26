@@ -263,7 +263,19 @@ function expressway(px: Pixel, p: readonly string[]): string {
   return PAINTERS.asphalt.base(px, p);
 }
 
+/**
+ * A flat roof: bitumen membrane laid in strips with dark seams between, patched here and there
+ * with newer squares, and a scatter of grit.
+ */
+function roofing(px: Pixel, p: readonly string[]): string {
+  if (px.gy % 12 === 0) return p[2];
+  if (hash(0x7e0f, px.gx >> 3, Math.floor(px.gy / 12)) < 0.12) return (px.gx & 7) === 0 ? p[2] : p[3];
+  if (px.grain < 0.06) return p[4];
+  return px.patch + (px.dither - 0.5) * 0.4 > 0.55 ? p[0] : p[1];
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  roofing: { base: roofing },
   lanes: { base: expressway },
   zebra: { base: zebraCrossing },
   rails: { base: railTrack },

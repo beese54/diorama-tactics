@@ -1709,6 +1709,138 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  neon_sign: {
+    w: 50, h: 58,
+    paint(g) {
+      // A big rooftop sign on steel scaffolding: a lightning bolt over ARCADE in pink neon,
+      // framed by a cyan tube, all glowing against the night.
+      for (const x of [8, 40]) {
+        g.rect(x, 30, 2, 28, IRON[1]);
+        g.rect(x, 30, 1, 28, IRON[2]);
+      }
+      for (let y = 34; y < 56; y += 7) {
+        g.line(9, y, 40, y + 6, IRON[0]);
+        g.line(40, y, 9, y + 6, IRON[0]);
+      }
+      g.rect(2, 2, 46, 28, '#120e1c');
+      const cyan = '#6ff4ff';
+      for (let x = 3; x < 47; x++) {
+        g.set(x, 3, cyan, true);
+        g.set(x, 28, cyan, true);
+      }
+      for (let y = 3; y < 29; y++) {
+        g.set(3, y, cyan, true);
+        g.set(46, y, cyan, true);
+      }
+      // The bolt.
+      for (const [x, y] of [[26, 5], [25, 6], [24, 7], [23, 8], [22, 9], [23, 9], [24, 9], [25, 9], [26, 9], [25, 10], [24, 11], [23, 12], [22, 13]] as const) g.rect(x, y, 2, 1, '#ffe85a', true);
+      // ARCADE in a 3x5 pixel font.
+      const glyphs: Record<string, string[]> = {
+        A: ['010', '101', '111', '101', '101'],
+        R: ['110', '101', '110', '101', '101'],
+        C: ['011', '100', '100', '100', '011'],
+        D: ['110', '101', '101', '101', '110'],
+        E: ['111', '100', '110', '100', '111'],
+      };
+      // Each font pixel is drawn 2x2, so the letters are big enough to read at a glance.
+      [...'ARCADE'].forEach((ch, i) => {
+        glyphs[ch].forEach((row, y) => [...row].forEach((on, x) => {
+          if (on === '1') g.rect(4 + i * 7 + x * 2, 16 + y * 2, 2, 2, '#ff5fb8', true);
+        }));
+      });
+      g.outline(0.45);
+    },
+  },
+  arcade_cabinet: {
+    w: 11, h: 19,
+    paint(g, v) {
+      // An arcade cabinet: a lit marquee on top, the glowing screen, a control panel with a
+      // stick and buttons, and the coin door.
+      const [body, side] = v ? ['#2a2a6a', '#3e3e92'] : ['#6a1e4a', '#922a66'];
+      g.rect(1, 0, 9, 19, body);
+      g.rect(1, 0, 2, 19, side);
+      g.rect(1, 0, 9, 3, v ? '#ffe86a' : '#7ff0ff', true);
+      g.rect(3, 4, 6, 6, v ? '#4ac8ff' : '#7aff9a', true);
+      g.set(4, 6, '#ffffff', true);
+      g.rect(5, 7, 2, 1, '#ff5fa8', true);
+      g.rect(0, 11, 11, 2, '#24252a');
+      g.set(3, 10, '#d02a2a');
+      g.set(6, 11, '#f0c030', true);
+      g.set(8, 11, '#40c0ff', true);
+      g.rect(4, 14, 3, 3, '#16161a');
+      g.set(5, 15, '#ff8a3a', true);
+      g.outline();
+    },
+  },
+  claw_machine: {
+    w: 13, h: 21,
+    paint(g) {
+      // A claw machine: a glass case lit pink, a heap of plush toys inside, the claw hanging over
+      // them, and a light-up sign on top.
+      g.rect(0, 0, 13, 21, '#5a1e4e');
+      g.rect(0, 0, 13, 3, '#ffd84a', true);
+      for (let x = 1; x < 12; x += 2) g.set(x, 1, '#ff5fa8', true);
+      g.rect(1, 4, 11, 10, '#f0b8e0', true);
+      g.rect(1, 4, 11, 1, '#ffffff', true);
+      g.rect(6, 4, 1, 4, IRON[1]);
+      g.rect(5, 8, 3, 1, IRON[2]);
+      for (const [x, c] of [[2, '#f0c040'], [4, '#7ad0ff'], [7, '#ff7a7a'], [9, '#9aff9a'], [3, '#ffffff'], [8, '#c08aff']] as const) g.ball(x + 0.5, x % 2 ? 12 : 11.5, 1.6, 1.4, [shade(c, 0.7), c, shade(c, 1.15)]);
+      g.rect(1, 14, 11, 2, '#24252a');
+      g.rect(5, 17, 3, 3, '#16161a');
+      g.set(6, 18, '#ffd84a', true);
+      g.outline();
+    },
+  },
+  water_tank: {
+    w: 19, h: 32,
+    paint(g) {
+      // A rooftop water tank: a timber barrel bound with iron hoops under a conical cap, raised
+      // on a steel frame.
+      for (const x of [2, 15]) g.rect(x, 20, 2, 12, IRON[1]);
+      g.line(3, 22, 15, 30, IRON[0]);
+      g.line(15, 22, 3, 30, IRON[0]);
+      g.rect(1, 19, 17, 2, IRON[2]);
+      for (let y = 7; y < 19; y++) {
+        for (let x = 2; x < 17; x++) {
+          const t = (x - 2) / 15;
+          g.set(x, y, x % 3 === 0 ? WOOD[0] : t < 0.3 ? WOOD[3] : t < 0.7 ? WOOD[2] : WOOD[1]);
+        }
+      }
+      for (const y of [9, 13, 17]) g.rect(2, y, 15, 1, IRON[1]);
+      for (let r = 0; r < 6; r++) g.rect(9 - r * 1.5, 1 + r, 1 + r * 3, 1, r < 2 ? '#5a5e66' : '#4a4e56');
+      g.outline();
+    },
+  },
+  ac_unit: {
+    w: 17, h: 12,
+    paint(g) {
+      // A rooftop air-conditioning unit: a steel box with louvred sides and a fan grille on top.
+      const steel = ['#6a6e76', '#8a8e96', '#a6aab2', '#c4c8ce'];
+      g.rect(0, 4, 17, 8, steel[1]);
+      g.rect(0, 4, 4, 8, steel[2]);
+      for (let y = 6; y < 11; y += 2) g.rect(5, y, 11, 1, steel[0]);
+      g.rect(0, 2, 17, 2, steel[3]);
+      g.ball(10.5, 2.5, 4.5, 1.6, ['#24252a', '#3a3c42', '#55585f']);
+      g.outline();
+    },
+  },
+  string_lights: {
+    w: 35, h: 20,
+    paint(g) {
+      // Festoon lights strung between two posts, warm bulbs along a sagging wire.
+      g.rect(1, 2, 2, 18, IRON[1]);
+      g.rect(32, 2, 2, 18, IRON[1]);
+      for (let x = 3; x < 32; x++) {
+        const y = 3 + Math.round(Math.sin(((x - 3) / 29) * Math.PI) * 5);
+        g.set(x, y, '#24252a');
+        if ((x - 3) % 4 === 2) {
+          g.set(x, y + 1, '#ffd890', true);
+          g.set(x, y + 2, '#fff0c0', true);
+        }
+      }
+      g.outline(0.55);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

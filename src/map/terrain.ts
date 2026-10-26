@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails' | 'zebra' | 'lanes'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails' | 'zebra' | 'lanes' | 'roofing'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -119,6 +119,10 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
 
   // Neon City themes (M14). Highway palette: asphalt ×4 as the road's, then lane paint and tyre wear.
   highway:          built({ name: 'Expressway',     moveCost: 1, defense: 0,  style: 'lanes',       side: 'retaining', palette: ['#4a4c54', '#42444c', '#383a40', '#56585e', '#d8d8d0', '#3a3c42'] }),
+  // Roofing palette: [membrane, membrane dark, seam, patch, grit].
+  roof_deck:        built({ name: 'Rooftop',        moveCost: 1, defense: 0,  style: 'roofing',     side: 'shopfront', palette: ['#4a4652', '#423e4a', '#2c2a32', '#5a5662', '#6a6672'] }),
+  roof_plant:       built({ name: 'Plant Room Roof', moveCost: 1, defense: 10, style: 'roofing',    side: 'concrete',  palette: ['#5a5862', '#524f5a', '#36343c', '#6a6872', '#7a7882'] }),
+  turf:             built({ name: 'Artificial Turf', moveCost: 1, defense: 0, style: 'lawn',        side: 'concrete',  palette: ['#2e9a52', '#268a48', '#36a85c', '#48b86a'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
 

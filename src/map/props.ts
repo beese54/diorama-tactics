@@ -108,6 +108,12 @@ export const PROPS: Record<PropId, PropDef> = {
   jersey_barrier: prop('Road Barrier', { defense: 25, shadow: 6 }),
   traffic_cone:  prop('Traffic Cones', { defense: 0, shadow: 3 }),
   highway_lamp:  prop('Highway Lamp',  { defense: 0, shadow: 2, light: { color: 0xffa040, intensity: 3.5, distance: 5 } }),
+  neon_sign:     prop('Neon Sign',     { defense: 0, blocks: true, shadow: 8, light: { color: 0x60e8ff, intensity: 5, distance: 6 } }),
+  arcade_cabinet: prop('Arcade Cabinet', { defense: 15, variants: 2, shadow: 4, light: { color: 0x9a7aff, intensity: 1.5, distance: 2 } }),
+  claw_machine:  prop('Claw Machine',  { defense: 15, shadow: 5, light: { color: 0xff7ad0, intensity: 1.5, distance: 2 } }),
+  water_tank:    prop('Water Tank',    { defense: 0, blocks: true, shadow: 8 }),
+  ac_unit:       prop('Air Conditioner', { defense: 20, shadow: 6 }),
+  string_lights: prop('String Lights', { defense: 0, shadow: 2, sway: 0.02, light: { color: 0xffd890, intensity: 2, distance: 3.5 } }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */
