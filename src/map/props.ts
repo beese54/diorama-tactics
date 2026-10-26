@@ -118,6 +118,9 @@ export const PROPS: Record<PropId, PropDef> = {
   stone_lantern: prop('Stone Lantern', { defense: 10, shadow: 3, light: { color: 0xffc070, intensity: 2, distance: 3, flicker: true } }),
   sakura:        prop('Cherry Tree',   { defense: 15, variants: 2, shadow: 8, sway: 0.03, jitter: true }),
   shrine:        prop('Shrine',        { defense: 0, blocks: true, shadow: 15, light: { color: 0xffb060, intensity: 3, distance: 5, flicker: true } }),
+  obelisk:       prop('Obelisk',       { defense: 0, blocks: true, shadow: 5 }),
+  ram_sphinx:    prop('Ram Sphinx',    { defense: 20, shadow: 8 }),
+  colossal_head: prop('Colossal Head', { defense: 25, shadow: 10 }),
   floodlight:    prop('Floodlight Mast', { defense: 0, shadow: 3, light: { color: 0xfff0d8, intensity: 5, distance: 7 } }),
   string_lights: prop('String Lights', { defense: 0, shadow: 2, sway: 0.02, light: { color: 0xffd890, intensity: 2, distance: 3.5 } }),
 };

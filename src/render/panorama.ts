@@ -133,6 +133,19 @@ export class Panorama {
     for (let y = o.base; y < this.height; y++) for (let x = 0; x < this.width; x++) this.px(x, y, c);
   }
 
+  /** Distant pyramids on the horizon: a sunlit left face, a shaded right one, standing on a filled band. */
+  pyramids(o: { base: number; color: string; shade: string; at: [number, number][] }): void {
+    const c = rgb(o.color);
+    const sh = rgb(o.shade);
+    for (const [cx, h] of o.at) {
+      for (let y = Math.round(o.base - h); y < o.base; y++) {
+        const half = y - (o.base - h);
+        for (let x = Math.round(cx - half); x <= Math.round(cx + half); x++) this.px(x, y, x <= cx ? c : sh);
+      }
+    }
+    for (let y = o.base; y < this.height; y++) for (let x = 0; x < this.width; x++) this.px(x, y, c);
+  }
+
   /** A row of tree crowns (round or conifer) standing on a filled band. */
   treeline(o: { rand: Rand; base: number; color: string; light?: string; kind: 'round' | 'pine'; size: number }): void {
     const c = rgb(o.color);

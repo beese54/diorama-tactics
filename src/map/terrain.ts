@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick' | 'retaining' | 'container' | 'hull';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick' | 'retaining' | 'container' | 'hull' | 'sandstone';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick', 'retaining', 'container', 'hull',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick', 'retaining', 'container', 'hull', 'sandstone',
 ];
 
 /**
@@ -128,6 +128,10 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   // Deck palette: [paint, paint dark, weld seam, tread].
   ship_deck:        built({ name: 'Ship\'s Deck',   moveCost: 1, defense: 0,  style: 'deckplate',   side: 'hull',      palette: ['#4e5a52', '#46524a', '#2e3630', '#5e6a62'] }),
   moss:             natural({ name: 'Mossy Slope',    moveCost: 2, defense: 5,  style: 'grass',       side: 'rock',      palette: ['#3e5a34', '#34502e', '#4a683c', '#5e7e48'] }),
+
+  // Ruins themes (M15).
+  pyramid:          built({ name: 'Pyramid Steps',  moveCost: 2, defense: 10, style: 'blocks',      side: 'sandstone', palette: ['#c8a870', '#b89860', '#8a7048', '#dcc088'] }),
+  sand_paving:      built({ name: 'Causeway',       moveCost: 1, defense: 0,  style: 'flagstone',   side: 'sandstone', palette: ['#c4a874', '#b49866', '#8a744c', '#d6bc88'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
 

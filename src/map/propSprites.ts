@@ -2016,6 +2016,79 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  obelisk: {
+    w: 17, h: 96,
+    paint(g, _v, rand) {
+      // A granite obelisk on a stepped plinth: a tall tapering shaft carved with columns of
+      // hieroglyphs, its pyramidion tip capped in gold.
+      const granite = ['#6a4a3c', '#8a6450', '#a67c62', '#c09478'];
+      g.rect(0, 90, 17, 6, STONE[2]);
+      g.rect(0, 90, 17, 1, STONE[3]);
+      g.rect(2, 87, 13, 3, STONE[3]);
+      for (let y = 10; y < 87; y++) {
+        const hw = 3 + Math.round(((y - 10) / 77) * 2.5);
+        for (let x = -hw; x <= hw; x++) {
+          const t = (x + hw) / (2 * hw);
+          g.set(8 + x, y, t < 0.3 ? granite[3] : t < 0.65 ? granite[2] : granite[1]);
+        }
+      }
+      // Carved glyphs down the lit face.
+      for (let y = 14; y < 84; y += 3) {
+        if (rand() < 0.75) g.set(7, y, granite[0]);
+        if (rand() < 0.5) g.rect(6, y + 1, 2, 1, granite[0]);
+        if (rand() < 0.4) g.set(9, y, granite[0]);
+      }
+      for (let r = 0; r < 7; r++) g.rect(8 - Math.floor(r / 2), 3 + r, 1 + 2 * Math.floor(r / 2), 1, r < 3 ? '#f0d060' : '#c89a30');
+      g.outline();
+    },
+  },
+  ram_sphinx: {
+    w: 25, h: 20,
+    paint(g) {
+      // A ram-headed sphinx on its plinth: a lion's body lying down with its forepaws out in
+      // front, the ram's head raised, its horn curling round past the ear.
+      const sand = ['#8a7048', '#b0905c', '#ccac74', '#e0c48c'];
+      g.rect(0, 15, 25, 5, STONE[2]);
+      g.rect(0, 15, 25, 1, STONE[3]);
+      g.rect(20, 16, 5, 4, STONE[1]);
+      g.ball(15.5, 11, 8, 4, sand);
+      g.ball(20.5, 10.5, 3.6, 4, sand);
+      g.rect(1, 12, 10, 3, sand[2]);
+      g.rect(1, 12, 10, 1, sand[3]);
+      for (const x of [3, 7]) g.set(x, 14, sand[0]);
+      g.rect(7, 6, 4, 7, sand[1]);
+      g.ball(7, 5.5, 3.6, 4, sand);
+      g.rect(2, 5, 3, 3, sand[2]);
+      g.set(2, 7, sand[0]);
+      // The curled horn.
+      for (const [x, y] of [[8, 2], [9, 2], [10, 3], [10, 4], [10, 5], [9, 6], [8, 6], [7, 5], [8, 4]] as const) g.set(x, y, sand[0]);
+      g.set(5, 4, '#3a2a1c');
+      g.rect(23, 12, 2, 1, sand[1]);
+      g.outline();
+    },
+  },
+  colossal_head: {
+    w: 31, h: 26,
+    paint(g) {
+      // The head of a fallen colossus, half sunk in the sand: a pharaoh's striped headdress,
+      // the calm carved face, the nose long since broken off.
+      const stone = ['#7a5e3e', '#a08058', '#bc9a6c', '#d4b484'];
+      g.ball(15.5, 13, 12, 12, stone);
+      for (let y = 4; y < 22; y += 3) for (let x = 4; x < 28; x++) if (g.get(x, y) && (x < 9 || x > 22)) g.set(x, y, '#3a5a8a');
+      g.rect(10, 9, 11, 13, stone[3]);
+      g.rect(10, 9, 11, 1, stone[2]);
+      g.rect(11, 12, 3, 1, stone[0]);
+      g.rect(17, 12, 3, 1, stone[0]);
+      g.rect(15, 13, 1, 4, stone[1]);
+      g.rect(13, 19, 5, 1, stone[0]);
+      // Sand drifted up round it.
+      for (let y = 20; y < 26; y++) {
+        const hw = 8 + (y - 20) * 3;
+        g.rect(15.5 - hw, y, 2 * hw, 1, y < 22 ? '#e0c890' : '#d4bc84');
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

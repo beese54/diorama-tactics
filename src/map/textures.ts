@@ -54,6 +54,7 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   retaining: ['#7a7c80', '#66686c', '#8e9094', '#44464a'],
   container: ['#a8402e', '#7e2e22', '#c45a44', '#2a2a2e'],
   hull: ['#1e2a3a', '#16202e', '#2c3a4e', '#6a3a26'],
+  sandstone: ['#c0a068', '#a88a58', '#d4b880', '#8a6e46'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
@@ -126,6 +127,7 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
   switch (style) {
     case 'masonry':
     case 'temple':
+    case 'sandstone':
       paintBlocks(put, rand, p, style === 'temple');
       return;
     case 'basalt':
