@@ -494,7 +494,7 @@ The user asked for the four deferred items before units and battles. Order: tech
     - Station Square: rail tracks along the back, raised platforms, the station building, a taxi rank and bus shelter; landmark a preserved steam engine on a plinth in the square. New: `rail` terrain (ballast and sleepers), locomotive, bus_shelter, bike_rack, buffer_stop, station_clock.
     - Suburban Park: houses with gardens behind hedges, a cul-de-sac, a park with a pond and paths; landmark a playground (slide and swings). New: `house_brick` (red-brick `villa` walls, slate roof), `bark`, playground, picnic_table, washing_line, ducks.
     - Canal Quarter: a canal in two pounds joined by a lock, towpaths, brick warehouses and a footbridge; landmark a mill chimney. New: narrowboat ×2 (floats), lock_gate (floats), bollard, mill_chimney.
-    - High Street: shopfronts with awnings along the back, a crossing, a bus stop; landmark the town clock tower. New: `shopfront` building (awning side face), phone_box, post_box, clock_tower.
+    - High Street: shopfronts with awnings along the back, a crossing, a bus stop; landmark the town clock tower. New: `shop_building` and `shop_brick` (a `shop` face: fascia, striped awning, display window and door), `zebra` crossing, phone_box, post_box, belisha, cafe_table ×2, clock_tower.
   - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
   - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle
   - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog

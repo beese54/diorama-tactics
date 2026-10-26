@@ -99,6 +99,11 @@ export const PROPS: Record<PropId, PropDef> = {
   lock_gate:     prop('Lock Gate',     { defense: 0, shadow: 0, floats: true }),
   bollard:       prop('Bollard',       { defense: 5, shadow: 2 }),
   mill_chimney:  prop('Mill Chimney',  { defense: 0, blocks: true, shadow: 8 }),
+  clock_tower:   prop('Clock Tower',   { defense: 0, blocks: true, shadow: 11 }),
+  phone_box:     prop('Phone Box',     { defense: 15, shadow: 5 }),
+  post_box:      prop('Post Box',      { defense: 5, shadow: 3 }),
+  belisha:       prop('Belisha Beacon', { defense: 0, shadow: 2, light: { color: 0xffb040, intensity: 2, distance: 2.5 } }),
+  cafe_table:    prop('Café Table',    { defense: 5, variants: 2, shadow: 7 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

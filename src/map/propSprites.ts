@@ -1526,6 +1526,116 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  clock_tower: {
+    w: 25, h: 92,
+    paint(g, _v, rand) {
+      // The town clock tower: a square shaft of pale stone on an arcaded base, a white clock
+      // face on its belfry stage, and a slate spire topped by a gilded weathervane.
+      const stone = ['#8a8070', '#a89e8a', '#c4baa4', '#dcd4c0'];
+      const slate = ['#2a2e38', '#3a404c', '#4e5664', '#626c7c'];
+      const shaft = (y0: number, y1: number, hw: number) => {
+        for (let y = y0; y < y1; y++) {
+          for (let x = -hw; x <= hw; x++) {
+            const t = (x + hw) / (2 * hw);
+            const course = (y - y0) % 4 === 3 && rand() < 0.7;
+            g.set(12 + x, y, course ? stone[0] : t < 0.25 ? stone[3] : t < 0.62 ? stone[2] : stone[1]);
+          }
+        }
+      };
+      // Base with an open arch, shaft, belfry stage.
+      shaft(70, 92, 10);
+      for (let y = 76; y < 92; y++) {
+        const half = y < 80 ? Math.round(Math.sqrt(Math.max(0, 16 - (80 - y) ** 2))) : 4;
+        g.rect(12 - half, y, 2 * half + 1, 1, '#3a3026');
+      }
+      g.rect(1, 69, 23, 2, stone[3]);
+      shaft(40, 69, 7);
+      for (const y of [48, 58]) g.rect(11, y, 2, 5, '#2a2420');
+      g.rect(3, 38, 19, 2, stone[3]);
+      shaft(22, 38, 8);
+      // The clock: black rim, white dial, gilt hands at four o'clock.
+      g.ball(12.5, 30, 6, 6, ['#16161a', '#24252a', '#3a3c42']);
+      g.ball(12.5, 30, 5, 5, ['#d8d4c8', '#ece8dc', '#faf8f0']);
+      for (const [x, y] of [[12, 26], [16, 30], [12, 34], [8, 30]]) g.set(x, y, '#24252a');
+      g.line(12, 30, 12, 26, '#a07a20');
+      g.line(12, 30, 15, 32, '#a07a20');
+      g.rect(3, 21, 19, 1, stone[0]);
+      // The spire, and the weathervane on its tip.
+      for (let r = 0; r < 18; r++) {
+        const hw = Math.round(((r + 1) / 18) * 9);
+        for (let x = -hw; x <= hw; x++) g.set(12 + x, 3 + r, x < -hw / 3 ? slate[3] : x > hw / 3 ? slate[0] : slate[1 + (r & 1)]);
+      }
+      g.rect(12, 0, 1, 4, '#d8b040');
+      g.rect(10, 1, 5, 1, '#d8b040');
+      g.outline();
+    },
+  },
+  phone_box: {
+    w: 11, h: 24,
+    paint(g) {
+      // A red telephone kiosk: domed roof, a white TELEPHONE strip, and windows of small panes.
+      const red = ['#6a1210', '#9a1c18', '#c42a22', '#e04a3a'];
+      g.rect(1, 4, 9, 20, red[2]);
+      g.rect(1, 4, 1, 20, red[3]);
+      g.rect(8, 4, 2, 20, red[1]);
+      g.rect(0, 22, 11, 2, red[1]);
+      for (let r = 0; r < 3; r++) g.rect(1 + r, 3 - r, 9 - 2 * r, 1, r ? red[2] : red[3]);
+      g.rect(2, 4, 7, 2, '#f2f0e8');
+      for (let x = 3; x < 8; x += 2) g.set(x, 5, '#24252a');
+      for (let y = 7; y < 20; y++) for (let x = 2; x < 8; x++) g.set(x, y, (y - 7) % 3 === 2 || x === 4 || x === 6 ? red[2] : y < 11 ? '#a6bcc6' : '#7e939c');
+      g.rect(2, 20, 6, 2, red[1]);
+      g.outline();
+    },
+  },
+  post_box: {
+    w: 9, h: 14,
+    paint(g) {
+      // A red pillar box: a domed cap, the letter slot, a black plinth.
+      const red = ['#7a1410', '#a41e18', '#c42a22', '#e04a3a'];
+      g.rect(1, 3, 7, 9, red[2]);
+      g.rect(1, 3, 2, 9, red[3]);
+      g.rect(6, 3, 2, 9, red[1]);
+      g.ball(4.5, 3, 4, 2.4, red);
+      g.rect(0, 3, 9, 1, red[1]);
+      g.rect(3, 5, 3, 1, '#16161a');
+      g.rect(3, 8, 3, 2, '#f2f0e8');
+      g.rect(1, 12, 7, 2, '#24252a');
+      g.outline();
+    },
+  },
+  belisha: {
+    w: 7, h: 24,
+    paint(g) {
+      // A Belisha beacon: an amber globe on a black-and-white striped pole.
+      for (let y = 6; y < 24; y++) g.rect(3, y, 1, 1, Math.floor((y - 6) / 3) % 2 ? '#f2f0e8' : '#24252a');
+      g.ball(3.5, 3, 3, 3, ['#c8701a', '#f0a030', '#ffd070'], true);
+      g.rect(2, 23, 3, 1, '#24252a');
+      g.outline();
+    },
+  },
+  cafe_table: {
+    w: 19, h: 21,
+    paint(g, v) {
+      // A café table on the pavement: a round top, two chairs, a striped parasol over it.
+      const canvas = v ? ['#2e6a3a', '#f2ece0'] : ['#c4302a', '#f2ece0'];
+      g.rect(9, 6, 1, 11, IRON[2]);
+      g.ball(9.5, 14, 5, 1.3, ['#8a8e96', '#c4c8ce', '#e8eaee']);
+      g.rect(9, 15, 1, 6, IRON[1]);
+      g.rect(7, 20, 5, 1, IRON[1]);
+      for (const x of [1, 15]) {
+        g.rect(x, 12, 1, 5, IRON[1]);
+        g.rect(x, 16, 4, 1, IRON[1]);
+        g.rect(x + 3, 16, 1, 5, IRON[1]);
+        g.rect(x, 20, 1, 1, IRON[1]);
+      }
+      for (let r = 0; r < 5; r++) {
+        const hw = 3 + r * 1.6;
+        for (let x = -hw; x <= hw; x++) g.set(9.5 + x, 1 + r, Math.floor((x + 12) / 3) % 2 ? canvas[1] : canvas[0]);
+      }
+      g.rect(9, 0, 1, 1, IRON[1]);
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

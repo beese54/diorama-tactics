@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails' | 'zebra'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick',
 ];
 
 /**
@@ -112,6 +112,10 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   // Modern Town themes (M13). Rail palette: [ballast, ballast dark, ballast light, sleeper, sleeper lit, rail head, rail shadow].
   rail:             built({ name: 'Railway',        moveCost: 2, defense: 0,  style: 'rails',       side: 'concrete',  palette: ['#857f74', '#6e695f', '#9c968a', '#4a3a2c', '#5e4a36', '#d4d8dc', '#34363c'] }),
   house_brick:      built({ name: 'Tiled Roof',     moveCost: 1, defense: 10, style: 'tiles',       side: 'villa',     palette: ['#5e626a', '#4e525a', '#363940', '#72767e'] }),
+  shop_building:    built({ name: 'Shops',          moveCost: IMPASSABLE, defense: 0, style: 'slabs', side: 'shop',      palette: ['#8a857e', '#7e7972', '#625e58', '#99948c'] }),
+  shop_brick:       built({ name: 'Shops',          moveCost: IMPASSABLE, defense: 0, style: 'slabs', side: 'shop_brick', palette: ['#86827c', '#7a7671', '#5f5c58', '#94908a'] }),
+  // Zebra palette: asphalt as the road's, then the stripes' white and their worn edge.
+  zebra:            built({ name: 'Zebra Crossing', moveCost: 1, defense: 0,  style: 'zebra',       side: 'concrete',  palette: ['#56585e', '#4d4f55', '#404247', '#66686d', '#ecebe4', '#c8c8c0'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
 

@@ -241,7 +241,19 @@ function railTrack(px: Pixel, p: readonly string[]): string {
   return rakedGravel(px, p);
 }
 
+/**
+ * A zebra crossing over an east-west road: white bars across the carriageway, each running
+ * with the traffic, two pixels deep with two of road between, inside a margin either side.
+ */
+function zebraCrossing(px: Pixel, p: readonly string[]): string {
+  const x = px.gx % TILE_PX;
+  const bar = (px.gy & 3) < 2 && x >= 2 && x < TILE_PX - 2;
+  if (bar) return px.grain < 0.08 ? p[5] : p[4];
+  return PAINTERS.asphalt.base(px, p);
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  zebra: { base: zebraCrossing },
   rails: { base: railTrack },
   gravel: { base: rakedGravel },
   lawn: { base: mownLawn },

@@ -49,10 +49,12 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   ice: ['#8eb8d0', '#5e88a8', '#c4dcea', '#2e4a66'],
   hedge: ['#356430', '#24481f', '#4a7a3c', '#5e9048'],
   villa: ['#b05a40', '#924834', '#d0bca4', '#e8e0d0'],
+  shop: ['#eedcb4', '#dcc69a', '#f8ecd0', '#f4f0e8'],
+  shop_brick: ['#a85038', '#8a4030', '#d0bca4', '#f4f0e8'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
-const FACADES: ReadonlySet<SideStyle> = new Set(['brick', 'plaster', 'shopfront', 'cottage', 'villa']);
+const FACADES: ReadonlySet<SideStyle> = new Set(['brick', 'plaster', 'shopfront', 'cottage', 'villa', 'shop', 'shop_brick']);
 /** House walls that sit under a roof's eave rather than a coping. */
 const EAVED: ReadonlySet<SideStyle> = new Set(['cottage', 'villa']);
 const NEON = ['#ff5fa8', '#4fe3ff', '#ffd84a'];
@@ -141,6 +143,10 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
       return;
     case 'villa':
       paintVilla(put, rand, p, groundFloor, variant);
+      return;
+    case 'shop':
+    case 'shop_brick':
+      paintShop(put, rand, p, groundFloor, variant, style === 'shop_brick');
       return;
     case 'hedge':
       // Clipped box hedge: dense leaves in small clumps, lit on top, darker at the root.
@@ -254,6 +260,48 @@ function paintVilla(put: Put, rand: Rand, [brick, dark, mortar, sill]: readonly 
   for (let y = 2; y < 7; y++) for (let x = 4; x < 12; x++) put(x, y, x === 4 || x === 11 || x === 8 || y === 2 ? white : y === 3 ? '#6c88a0' : '#3c4c60', x === 4 || x === 11 || x === 8 || y === 2 ? undefined : '#ffc870');
   for (let x = 3; x < 13; x++) put(x, 7, sill);
   if (variant & 1) for (let y = 0; y < STEP_PX; y++) put(15, y, '#5a5e64');
+}
+
+/**
+ * A high-street shop: rendered upstairs with tall sash windows; at street level a painted
+ * fascia over a striped awning, the display window and the door. Each face gets its own
+ * colours, so a row of shops reads as a row of different businesses.
+ */
+function paintShop(put: Put, rand: Rand, [wall, shadow, light, white]: readonly string[], groundFloor: boolean, variant: number, brick: boolean): void {
+  for (let y = 0; y < STEP_PX; y++) {
+    for (let x = 0; x < TILE_PX; x++) {
+      // Brick has light mortar courses; render is a plain speckled wall.
+      const joint = brick && (y % 3 === 2 || (x + (Math.floor(y / 3) & 1) * 2) % 4 === 0);
+      put(x, y, joint ? light : rand() < 0.12 ? shadow : !brick && rand() < 0.06 ? light : wall);
+    }
+  }
+  if (!groundFloor) {
+    for (const x0 of [3, 9]) {
+      for (let y = 1; y < 7; y++) for (let x = x0; x < x0 + 4; x++) put(x, y, x === x0 || x === x0 + 3 || y === 1 || y === 4 ? white : y < 4 ? '#6c88a0' : '#3c4c60', x === x0 || x === x0 + 3 || y === 1 || y === 4 ? undefined : '#ffc870');
+      for (let x = x0 - 1; x < x0 + 5; x++) put(x, 7, shadow);
+    }
+    return;
+  }
+  const [awning, fascia] = [['#c4302a', '#2a3440'], ['#2e6a3a', '#3a2a22'], ['#2e4a8a', '#24303c'], ['#d8a838', '#5a1e1a']][variant % 4];
+  // Fascia board with a line of gilt lettering.
+  for (let x = 0; x < TILE_PX; x++) {
+    put(x, 0, fascia);
+    put(x, 1, x > 2 && x < 13 && (x * 7 + variant) % 3 !== 0 ? '#e0c060' : fascia);
+  }
+  // The awning, striped, with a scalloped edge.
+  for (let x = 0; x < TILE_PX; x++) {
+    const stripe = (x >> 1) & 1 ? white : awning;
+    put(x, 2, stripe);
+    if ((x & 1) === 0) put(x, 3, stripe);
+  }
+  // Display window full of goods, and the door.
+  for (let y = 4; y < STEP_PX; y++) {
+    for (let x = 1; x < 10; x++) {
+      const goods = y > 5 && rand() < 0.45;
+      put(x, y, goods ? pick(['#e05a4a', '#f0c84a', '#7ab0d8', '#e8e0d0'], rand) : y === 4 ? '#7f97ad' : '#4c6078', goods ? undefined : '#ffd890');
+    }
+    for (let x = 11; x < 15; x++) put(x, y, x === 11 ? white : y < 6 ? '#6c88a0' : fascia);
+  }
 }
 
 /** A roof's eave over a cottage wall: two rows of the roof's own colours with a shadow line under them. */
