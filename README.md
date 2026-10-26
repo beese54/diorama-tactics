@@ -70,6 +70,10 @@ npm run build    # type-check and production build
 - `bridge`: Bridge Gatehouse
 - `fair`: Village Fair
 - `plaza`: Fountain Plaza
+- `station`: Station Square
+- `suburb`: Suburban Park
+- `canal`: Canal Quarter
+- `highstreet`: High Street
 - `market`: Night Market Alley
 - `jungle`: Jungle Temple
 - `volcano`: Volcanic Caldera

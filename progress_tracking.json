@@ -113,8 +113,8 @@
     {
       "id": "M13",
       "title": "Four Modern Town maps: Station Square, Suburban Park, Canal Quarter, High Street",
-      "status": "in_progress",
-      "commit": null
+      "status": "review",
+      "commit": "6c5c6ea"
     }
   ],
   "backlog": [

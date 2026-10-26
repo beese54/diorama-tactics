@@ -490,7 +490,7 @@ The user asked for the four deferred items before units and battles. Order: tech
 - [ ] **M11–M16: 24 more themes**, one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
   - [x] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor (approved 2026-10-26: "looks good, no changes")
   - [x] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair (approved 2026-10-26: "go with M13")
-  - [ ] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street (in progress)
+  - [x] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street (in review)
     - Station Square: rail tracks along the back, raised platforms, the station building, a taxi rank and bus shelter; landmark a preserved steam engine on a plinth in the square. New: `rail` terrain (ballast and sleepers), locomotive, bus_shelter, bike_rack, buffer_stop, station_clock.
     - Suburban Park: houses with gardens behind hedges, a cul-de-sac, a park with a pond and paths; landmark a playground (slide and swings). New: `house_brick` (red-brick `villa` walls, slate roof), `bark`, playground, picnic_table, washing_line, ducks.
     - Canal Quarter: a canal in two pounds joined by a lock, towpaths, brick warehouses and a footbridge; landmark a mill chimney. New: narrowboat ×2 (floats), lock_gate (floats), bollard, mill_chimney.
@@ -541,3 +541,16 @@ Not needed for the agreed bar; pick up if circumstances change.
 - check.mjs: the file-load check waits up to 20 s for the loaded board (async since M9). That was the intermittent failure seen in M11.
 - Heavy tests in BoardWorkers.test.ts get 30 s.
 - Tests: 983; check.mjs 70/70; 38 captures in the identity set.
+
+### M13 review (2026-10-26): four Modern Town maps
+- Commits:
+  - Station Square (efe5091);
+  - Suburban Park (31cfde0);
+  - Canal Quarter (c25698d);
+  - High Street (6c5c6ea).
+- New terrains: rail (`rails` painter), house_brick (`villa` face), bark, shop_building and shop_brick (`shop` face), zebra (`zebra` painter).
+- New props: locomotive, bus_shelter, bike_rack, buffer_stop, station_clock, playground, picnic_table, washing_line, ducks (floats), narrowboat ×2 (floats), lock_gate (floats), bollard, mill_chimney, clock_tower, phone_box, post_box, belisha (glows), cafe_table ×2.
+- Fix: `Panorama.rooftops` drew its gables upside down. Village Fair's backdrop band changed (rows 388-442 of the capture), nothing else.
+- check.mjs: the size-picker and R checks wait up to 30 s for a 48×48 board (10 s timed out once on a busy machine).
+- Tooling: tasks/perf/sheet.mjs builds the four-map sheet.
+- Tests: 1017; check.mjs 74/74; 46 captures in the identity set.

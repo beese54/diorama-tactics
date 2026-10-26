@@ -383,6 +383,29 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Natural ground needs restraint. Leaves, cracks and heather looked busy at first, so they were thinned to drifts that come and go with broad noise.
   - Pixel-perfect checks catch more than regressions. A single changed pixel led to a real UV bug that had been there since M2b.
 
+### M13: Four more Modern Town maps
+![Station Square, Suburban Park, Canal Quarter and High Street](land/m13-modern/four-modern.png)
+
+| Station Square: the steam engine | Suburban Park: the playground |
+|---|---|
+| ![](land/m13-modern/station/close-focus.png) | ![](land/m13-modern/suburb/close-focus.png) |
+
+| Canal Quarter: the mill chimney | High Street: the clock tower |
+|---|---|
+| ![](land/m13-modern/canal/close-focus.png) | ![](land/m13-modern/highstreet/close-focus.png) |
+
+- **What changed:**
+  - **Station Square** (`?map=station`): a terminus, with two tracks ending at buffer stops between raised platforms and a platform clock. In the forecourt are a taxi lane, a bus shelter, cycle racks and a preserved steam engine on a plinth. Rail is new ground: steel rails on sleepers in ballast, slow to cross.
+  - **Suburban Park** (`?map=suburb`): red-brick houses with slate roofs and hedged front gardens, with washing out on the lines. A street bends round a park with a playground on bark chippings, a round duck pond, picnic tables and a small hill. The houses get a new wall: brick, white windows, a bay window and a front door in a different colour on each face.
+  - **Canal Quarter** (`?map=canal`): a canal basin by the warehouses and a lock where the canal and the land step down a level. The lock has timber gates with balance beams and a towpath ramping down beside it. Narrowboats are moored along the water, a stone bridge and a footbridge are the only crossings, and the mill chimney towers over the wharf.
+  - **High Street** (`?map=highstreet`): rows of shops, brick and cream in turn, each with a fascia, a striped awning and a display window. The town clock tower stands on a raised square. Around it are a red phone box and post boxes, café tables, a zebra crossing between Belisha beacons, a bus stop and market stalls.
+- **Fixed:** the backdrop's gabled roofs were drawn upside down. Village Fair's distant village had them too; only that band of its backdrop changed.
+- **Decisions:** none new; built as planned and reviewed one map at a time.
+- **Learned:**
+  - Wall colour can't vary per face. Each step of a wall picks its texture variant on its own, so a colour per variant would stripe a house floor by floor. Rows of different shops come from alternating two terrains instead.
+  - A level change can carry a feature. Stepping the land down with the canal makes the lock read at a glance, and the natural towpath turns into a ramp by itself.
+  - Pixel-checking every older map after each new one paid off again. It confirmed the roof fix touched only Village Fair's backdrop band, and that every other map stayed identical.
+
 ### M12: Four more Kingdom maps
 ![Harbour Town, Royal Gardens, Bridge Gatehouse and Village Fair](land/m12-kingdom/four-kingdom.png)
 

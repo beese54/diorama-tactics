@@ -176,6 +176,14 @@
       "image": "m12-kingdom/four-kingdom.png",
       "title": "M12 · Four more Kingdom maps",
       "note": "Harbour Town, Royal Gardens, Bridge Gatehouse and Village Fair."
+    },
+    {
+      "id": "m13",
+      "date": "2026-10-26",
+      "commit": "6c5c6ea",
+      "image": "m13-modern/four-modern.png",
+      "title": "M13 · Four more Modern Town maps",
+      "note": "Station Square, Suburban Park, Canal Quarter and High Street."
     }
   ]
 }
