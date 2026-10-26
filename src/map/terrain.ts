@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails' | 'zebra' | 'lanes' | 'roofing'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails' | 'zebra' | 'lanes' | 'roofing' | 'containers' | 'deckplate'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick' | 'retaining';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick' | 'retaining' | 'container' | 'hull';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick', 'retaining',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick', 'retaining', 'container', 'hull',
 ];
 
 /**
@@ -123,6 +123,10 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   roof_deck:        built({ name: 'Rooftop',        moveCost: 1, defense: 0,  style: 'roofing',     side: 'shopfront', palette: ['#4a4652', '#423e4a', '#2c2a32', '#5a5662', '#6a6672'] }),
   roof_plant:       built({ name: 'Plant Room Roof', moveCost: 1, defense: 10, style: 'roofing',    side: 'concrete',  palette: ['#5a5862', '#524f5a', '#36343c', '#6a6872', '#7a7882'] }),
   turf:             built({ name: 'Artificial Turf', moveCost: 1, defense: 0, style: 'lawn',        side: 'concrete',  palette: ['#2e9a52', '#268a48', '#36a85c', '#48b86a'] }),
+  // Container palette: four liveries as [colour, its shadow] pairs: rust red, blue, green, orange.
+  container:        built({ name: 'Containers',     moveCost: 1, defense: 10, style: 'containers', side: 'container', palette: ['#a8402e', '#7e2e22', '#2e5a9a', '#22447a', '#3a7a4a', '#2a5a36', '#d88a2a', '#a8681e'] }),
+  // Deck palette: [paint, paint dark, weld seam, tread].
+  ship_deck:        built({ name: 'Ship\'s Deck',   moveCost: 1, defense: 0,  style: 'deckplate',   side: 'hull',      palette: ['#4e5a52', '#46524a', '#2e3630', '#5e6a62'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
 

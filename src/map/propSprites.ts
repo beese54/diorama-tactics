@@ -1841,6 +1841,68 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline(0.55);
     },
   },
+  gantry_crane: {
+    w: 76, h: 124,
+    paint(g) {
+      // A ship-to-shore container crane: a portal frame on four legs straddling the quay, the
+      // long boom reaching out over the ship with its trolley and spreader, the A-frame apex
+      // with its stays, the driver's cab, and red warning lights at the top.
+      const blue = ['#1a3a6a', '#24508c', '#3a6aaa', '#5a8ac8'];
+      // Legs and the sill beams on the rails.
+      for (const x of [16, 52]) {
+        g.rect(x, 44, 4, 78, blue[1]);
+        g.rect(x, 44, 1, 78, blue[3]);
+        g.rect(x + 3, 44, 1, 78, blue[0]);
+      }
+      g.rect(12, 120, 46, 4, blue[0]);
+      g.rect(12, 120, 46, 1, blue[2]);
+      for (let y = 56; y < 116; y += 20) {
+        g.line(20, y, 52, y + 12, blue[0]);
+        g.line(52, y, 20, y + 12, blue[0]);
+      }
+      g.rect(14, 76, 44, 3, blue[2]);
+      // The boom along the top, out to the left over the ship, with its trolley and cab.
+      g.rect(0, 38, 76, 4, blue[2]);
+      g.rect(0, 38, 76, 1, blue[3]);
+      g.rect(0, 42, 76, 2, blue[0]);
+      for (let x = 2; x < 76; x += 6) g.line(x, 38, x + 3, 43, blue[1]);
+      g.rect(8, 44, 8, 4, '#d8d4c8');
+      g.rect(10, 48, 1, 14, IRON[2]);
+      g.rect(14, 48, 1, 14, IRON[2]);
+      g.rect(7, 62, 11, 2, '#f0c040');
+      g.rect(30, 44, 9, 7, '#e8e4d8');
+      g.rect(31, 46, 7, 3, '#ffe2a0', true);
+      // The apex frame and its stays out to the boom tips.
+      g.line(18, 38, 30, 6, blue[1]);
+      g.line(54, 38, 42, 6, blue[1]);
+      g.rect(29, 4, 14, 3, blue[2]);
+      g.line(30, 6, 0, 38, IRON[1]);
+      g.line(42, 6, 75, 38, IRON[1]);
+      g.line(33, 6, 6, 38, IRON[1]);
+      for (const x of [29, 42]) g.rect(x, 1, 2, 2, '#ff3a2a', true);
+      g.rect(0, 36, 2, 2, '#ff3a2a', true);
+      g.outline(0.5);
+    },
+  },
+  floodlight: {
+    w: 13, h: 62,
+    paint(g) {
+      // A floodlight mast: a tall tapering steel pole with a ladder, crowned by a bank of lamps.
+      for (let y = 8; y < 60; y++) {
+        const hw = y < 30 ? 1 : 2;
+        g.rect(6 - hw, y, 2 * hw, 1, '#6a6c72');
+        g.set(6 - hw, y, '#8a8c92');
+      }
+      for (let y = 10; y < 58; y += 3) g.set(8, y, '#3a3c42');
+      g.rect(3, 59, 7, 3, '#3a3c42');
+      g.rect(0, 2, 13, 6, '#3a3c42');
+      for (let x = 1; x < 12; x += 3) {
+        g.rect(x, 3, 2, 2, '#fff8e8', true);
+        g.rect(x, 5, 2, 2, '#ffe8c0', true);
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

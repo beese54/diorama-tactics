@@ -52,6 +52,8 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   shop: ['#eedcb4', '#dcc69a', '#f8ecd0', '#f4f0e8'],
   shop_brick: ['#a85038', '#8a4030', '#d0bca4', '#f4f0e8'],
   retaining: ['#7a7c80', '#66686c', '#8e9094', '#44464a'],
+  container: ['#a8402e', '#7e2e22', '#c45a44', '#2a2a2e'],
+  hull: ['#1e2a3a', '#16202e', '#2c3a4e', '#6a3a26'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
@@ -135,6 +137,33 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
       return;
     case 'timber':
       for (let x = 0; x < TILE_PX; x++) for (let y = 0; y < STEP_PX; y++) put(x, y, x % 4 === 0 ? accent : rand() < 0.25 ? dark : x % 4 === 1 ? light : base);
+      return;
+    case 'container':
+      // The corrugated side of a container, one box per step: its own livery, vertical ribs,
+      // top and bottom rails, a corner post. Stacks come out mixed, as on any quay.
+      {
+        const [paint, shadow, light] = [['#a8402e', '#7e2e22', '#c45a44'], ['#2e5a9a', '#22447a', '#4a78b8'], ['#3a7a4a', '#2a5a36', '#52965e'], ['#d88a2a', '#a8681e', '#eeaa4a']][variant];
+        for (let x = 0; x < TILE_PX; x++) {
+          for (let y = 0; y < STEP_PX; y++) {
+            const rail = y === 0 || y === STEP_PX - 1;
+            put(x, y, rail || x === 0 ? accent : y === 1 ? light : x % 2 ? shadow : paint);
+          }
+        }
+        if (variant & 1) for (let y = 2; y < 6; y++) put(9, y, '#d8d4c8');
+      }
+      return;
+    case 'hull':
+      // A ship's hull: dark painted plates in strakes, rust weeping from the seams.
+      for (let x = 0; x < TILE_PX; x++) {
+        for (let y = 0; y < STEP_PX; y++) {
+          const seam = y === 3 || x === (variant * 5) % 16;
+          put(x, y, seam ? dark : rand() < 0.1 ? light : base);
+        }
+      }
+      for (let i = 0; i < 2; i++) {
+        const x = int(rand, TILE_PX);
+        for (let y = 4; y < 4 + int(rand, 4); y++) put(x, y, accent);
+      }
       return;
     case 'retaining':
       // Cast concrete panels holding up the expressway: joints between panels, rust and rain

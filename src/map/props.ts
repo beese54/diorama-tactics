@@ -113,6 +113,8 @@ export const PROPS: Record<PropId, PropDef> = {
   claw_machine:  prop('Claw Machine',  { defense: 15, shadow: 5, light: { color: 0xff7ad0, intensity: 1.5, distance: 2 } }),
   water_tank:    prop('Water Tank',    { defense: 0, blocks: true, shadow: 8 }),
   ac_unit:       prop('Air Conditioner', { defense: 20, shadow: 6 }),
+  gantry_crane:  prop('Gantry Crane',  { defense: 0, blocks: true, shadow: 16, light: { color: 0xffe0b0, intensity: 4, distance: 7 } }),
+  floodlight:    prop('Floodlight Mast', { defense: 0, shadow: 3, light: { color: 0xfff0d8, intensity: 5, distance: 7 } }),
   string_lights: prop('String Lights', { defense: 0, shadow: 2, sway: 0.02, light: { color: 0xffd890, intensity: 2, distance: 3.5 } }),
 };
 

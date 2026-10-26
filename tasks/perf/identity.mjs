@@ -30,6 +30,7 @@ const CASES = [
   ['highstreet', 'map=highstreet'],
   ['overpass', 'map=overpass'],
   ['rooftop', 'map=rooftop'],
+  ['port', 'map=port'],
   ['w32-clear-day', 'map=world&seed=4242&weather=clear&time=day'],
   ['w32-storm-night', 'map=world&seed=4242&weather=storm&time=night'],
   ['w32-snow-dusk', 'map=world&seed=4242&weather=snow&time=dusk'],

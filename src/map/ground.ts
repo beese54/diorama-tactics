@@ -33,6 +33,12 @@ export const LIQUID_ALPHA = 250;
 export const ROOF_ALPHA = 252;
 const ROOF_STYLES: readonly PaintStyle[] = ['thatch', 'tiles'];
 
+/** A hex colour darkened (k < 1) or lightened (k > 1). */
+function shade(hex: string, k: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  return '#' + [n >> 16, (n >> 8) & 255, n & 255].map((c) => Math.min(255, Math.round(c * k)).toString(16).padStart(2, '0')).join('');
+}
+
 type Rand = () => number;
 /** Draws one detail pixel at tile-local (x, y); it may spill into neighbouring tiles of the same terrain. */
 type Put = (x: number, y: number, color: string) => void;
@@ -274,7 +280,30 @@ function roofing(px: Pixel, p: readonly string[]): string {
   return px.patch + (px.dither - 0.5) * 0.4 > 0.55 ? p[0] : p[1];
 }
 
+/**
+ * The tops of stacked shipping containers, seen from above: each box two tiles long and one
+ * wide, in its own livery, its roof corrugated across and edged with a dark rail.
+ */
+function containerRoofs(px: Pixel, p: readonly string[]): string {
+  const box = Math.floor(hash(0x6c0e, px.gx >> 5, px.gy >> 4) * 4);
+  const [paint, shadow] = [p[box * 2], p[box * 2 + 1]];
+  const x = px.gx & 31;
+  const y = px.gy & 15;
+  if (x === 0 || x === 31 || y === 0 || y === 15) return shadow;
+  if (px.grain < 0.04) return shade(paint, 0.8);
+  return (x & 1) === 0 ? shadow : paint;
+}
+
+/** A ship's steel deck: painted plates welded in a grid, with patches of raised tread. */
+function deckPlate(px: Pixel, p: readonly string[]): string {
+  if (px.gx % 16 === 0 || px.gy % 8 === 0) return p[2];
+  if (hash(0xdec4, px.gx >> 4, px.gy >> 3) < 0.2 && (px.gx + px.gy) % 3 === 0) return p[3];
+  return px.patch + (px.grain - 0.5) * 0.3 > 0.5 ? p[0] : p[1];
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  containers: { base: containerRoofs },
+  deckplate: { base: deckPlate },
   roofing: { base: roofing },
   lanes: { base: expressway },
   zebra: { base: zebraCrossing },
