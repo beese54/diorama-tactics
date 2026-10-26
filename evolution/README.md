@@ -383,6 +383,28 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Natural ground needs restraint. Leaves, cracks and heather looked busy at first, so they were thinned to drifts that come and go with broad noise.
   - Pixel-perfect checks catch more than regressions. A single changed pixel led to a real UV bug that had been there since M2b.
 
+### M12: Four more Kingdom maps
+![Harbour Town, Royal Gardens, Bridge Gatehouse and Village Fair](land/m12-kingdom/four-kingdom.png)
+
+| Harbour Town: the lighthouse | Royal Gardens: the gazebo |
+|---|---|
+| ![](land/m12-kingdom/harbour/close-focus.png) | ![](land/m12-kingdom/gardens/close-focus.png) |
+
+| Bridge Gatehouse: the gate over the bridge | Village Fair: the maypole |
+|---|---|
+| ![](land/m12-kingdom/bridge/close-focus.png) | ![](land/m12-kingdom/fair/close-focus.png) |
+
+- **What changed:**
+  - **Harbour Town** (`?map=harbour`): a stone quay above the water, timber piers with moored boats, and a stone mole out to a red-banded lighthouse. Behind is a market square with small cottages and warehouses. Props can now float, so boats sit on the water.
+  - **Royal Gardens** (`?map=gardens`): a gazebo on the palace lawn, a fountain circle lined with topiary, a hedge maze with a statue at its heart, and flower parterres. Hedges are cover, not walls: slow to cross, +20 defence.
+  - **Bridge Gatehouse** (`?map=bridge`): a river crossed by a stone bridge into a twin-towered gatehouse, with ramparts along the moat and open meadow and woods on the far bank. The gatehouse is walkable cover, so the bridge is a choke point.
+  - **Village Fair** (`?map=fair`): a maypole on the village green, striped fair tents, bunting, stalls and a well, ringed by strip fields, thatched cottages and an orchard.
+- **Decisions:** none new; built as planned and reviewed one map at a time.
+- **Learned:**
+  - Ambient effects scale per tile. The chimney rule gives every roof tile a stack, so big houses smoked like factories. Keeping houses one tile deep fixed it without touching generated villages.
+  - The atlas fix needed both halves: the clamp keeps a face inside its cell, and a tiny inset keeps samples exactly on the edge from rounding into the next row. Each new map now leaves every older one pixel for pixel.
+  - Since M9, boards load asynchronously, so a check that waits on a fixed short timeout will flake. Wait for the state you need, with a generous limit.
+
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
 ![Forest](land/comparisons/forest-m2-vs-m2d.png)

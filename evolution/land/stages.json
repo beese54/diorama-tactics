@@ -168,6 +168,14 @@
       "image": "m11-wilds/four-wilds.png",
       "title": "M11 · Four more Wilds maps",
       "note": "Autumn Ridge, Desert Mesa Oasis, Frozen Lake and Highland Moor."
+    },
+    {
+      "id": "m12",
+      "date": "2026-10-26",
+      "commit": "83d3c51",
+      "image": "m12-kingdom/four-kingdom.png",
+      "title": "M12 · Four more Kingdom maps",
+      "note": "Harbour Town, Royal Gardens, Bridge Gatehouse and Village Fair."
     }
   ]
 }

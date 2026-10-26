@@ -65,6 +65,10 @@ npm run build    # type-check and production build
 - `frozen`: Frozen Lake
 - `moor`: Highland Moor
 - `courtyard`: Castle Courtyard
+- `harbour`: Harbour Town
+- `gardens`: Royal Gardens
+- `bridge`: Bridge Gatehouse
+- `fair`: Village Fair
 - `plaza`: Fountain Plaza
 - `market`: Night Market Alley
 - `jungle`: Jungle Temple

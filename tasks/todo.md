@@ -489,7 +489,7 @@ The user asked for the four deferred items before units and battles. Order: tech
   - M10c done: the shadow map is redrawn only when the sun or board changes; one texture per water frame (no re-uploads); zoomed-out samples rounded (3×3 at 0.31). Intel GPU ms at 64×64: 5.6 → 2.4 at default zoom (2.4×), 14.4 → 7.2 fully zoomed out. Chunked culling not needed. Details are in perf_log.md.
 - [ ] **M11–M16: 24 more themes**, one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
   - [x] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor (approved 2026-10-26: "looks good, no changes")
-  - [ ] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair
+  - [x] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair (in review)
   - [ ] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street
   - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
   - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle
@@ -524,3 +524,16 @@ Not needed for the agreed bar; pick up if circumstances change.
   - check.mjs counts the themes.
 - One check.mjs run had a single unexplained failure; the next five runs passed in full. Watch for it.
 - Tests: 951; check.mjs 66/66; 30 captures in the identity set.
+
+### M12 review (2026-10-26): four Kingdom maps
+- Commits:
+  - Harbour Town (d2626db);
+  - Royal Gardens (13df780);
+  - Bridge Gatehouse (04c058a);
+  - Village Fair (83d3c51).
+- New terrains: gravel (`gravel` painter), lawn (`lawn`, mown stripes), hedge (built, `hedge` painter and cliff face, moveCost 3, +20 defence), flowerbed.
+- New props: boat ×2 (floats), lighthouse, net_rack, gazebo, topiary ×2, statue ×2, gatehouse (walkable cover), maypole, fair_tent ×3, bunting. PropDef.floats lets a prop sit on water; the theme test enforces it.
+- Atlas: cliff cells are inset 0.02 texel at top and bottom, on top of the M11 clamp. Rows are now fully independent (proven by removing rows: 0 px change). A one-time shift of scattered single texels came with it, so the baseline was re-saved.
+- check.mjs: the file-load check waits up to 20 s for the loaded board (async since M9). That was the intermittent failure seen in M11.
+- Heavy tests in BoardWorkers.test.ts get 30 s.
+- Tests: 983; check.mjs 70/70; 38 captures in the identity set.
