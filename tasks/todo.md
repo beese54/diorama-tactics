@@ -500,7 +500,11 @@ The user asked for the four deferred items before units and battles. Order: tech
     - Rooftop Arcade: the board is a rooftop, with towers around it; arcade cabinets and a claw machine, a rooftop pool, a turf lounge under string lights, plant rooms; landmark a big neon ARCADE sign. New: `roof_deck`, `roof_plant`, `turf`, neon_sign, arcade_cabinet ×2, claw_machine, water_tank, ac_unit, string_lights.
     - Container Port: stacked shipping containers as walkable terrain, a quay, and a container ship along the back edge at full size, as terrain (no miniature vehicles; see lessons.md); a gangway tower aboard; landmark a ship-to-shore gantry crane. New: `container` (`containers` painter, `container` face), `ship_deck` (`deckplate` painter, `hull` face), gantry_crane, floodlight.
     - Shrine Steps: stone steps climbing to a shrine above the city, a run of vermilion torii gates, stone lanterns, cherry trees; landmark the shrine hall. New: `moss`, torii, stone_lantern, sakura ×2, shrine.
-  - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle
+  - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle (in progress)
+    - Desert Pyramid: a pyramid bigger than the board in the back corner (walkable steps), a causeway lined with ram sphinxes; landmark an obelisk. New: `pyramid`, `sand_paving` (`sandstone` face), obelisk, ram_sphinx, colossal_head; `Panorama.pyramids`. Its check.mjs run was killed overnight for low memory; it passed 79/79 when rerun.
+    - Sunken Temple: a flooded temple, platforms and a broken causeway out of wadeable shallows, columns, lilies; landmark a colossal stone face. New: column ×2, stone_idol, lilies (floats).
+    - Overgrown Colosseum: a curve of the stands along the back edges, an arena floor of sand, grass and fallen stones; landmark a bronze gladiator statue.
+    - Stone Circle: a henge bank and ditch round a ring of trilithons on a misty plain, barrows; landmark the great trilithon.
   - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog
 
 ## Deferred (map phase)

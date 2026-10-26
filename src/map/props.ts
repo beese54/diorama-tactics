@@ -121,6 +121,9 @@ export const PROPS: Record<PropId, PropDef> = {
   obelisk:       prop('Obelisk',       { defense: 0, blocks: true, shadow: 5 }),
   ram_sphinx:    prop('Ram Sphinx',    { defense: 20, shadow: 8 }),
   colossal_head: prop('Colossal Head', { defense: 25, shadow: 10 }),
+  column:        prop('Column',        { defense: 25, variants: 2, shadow: 4 }),
+  stone_idol:    prop('Stone Face',    { defense: 0, blocks: true, shadow: 14 }),
+  lilies:        prop('Water Lilies',  { defense: 0, variants: 2, shadow: 0, sway: 0.01, floats: true }),
   floodlight:    prop('Floodlight Mast', { defense: 0, shadow: 3, light: { color: 0xfff0d8, intensity: 5, distance: 7 } }),
   string_lights: prop('String Lights', { defense: 0, shadow: 2, sway: 0.02, light: { color: 0xffd890, intensity: 2, distance: 3.5 } }),
 };

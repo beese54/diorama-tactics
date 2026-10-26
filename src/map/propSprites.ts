@@ -2089,6 +2089,100 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  column: {
+    w: 13, h: 42,
+    paint(g, v, rand) {
+      // A temple column: a fluted shaft on a moulded base, under a carved capital, streaked
+      // with moss. The second has lost its top, broken off jagged.
+      const stone = ['#6a6a5a', '#8a8a76', '#a8a690', '#c4c2aa'];
+      const top = v ? 16 : 5;
+      g.rect(0, 38, 13, 4, stone[2]);
+      g.rect(0, 38, 13, 1, stone[3]);
+      g.rect(1, 36, 11, 2, stone[1]);
+      for (let y = top + 3; y < 36; y++) {
+        for (let x = 2; x < 11; x++) g.set(x, y, x % 2 ? (x < 6 ? stone[3] : stone[1]) : x < 6 ? stone[2] : stone[0]);
+      }
+      if (v) {
+        for (let x = 2; x < 11; x++) for (let y = top + 3 - Math.floor(rand() * 4); y < top + 3; y++) g.set(x, y, stone[2]);
+      } else {
+        g.rect(0, top, 13, 3, stone[2]);
+        g.rect(0, top, 13, 1, stone[3]);
+        g.rect(1, top - 3, 11, 3, stone[1]);
+        g.rect(1, top - 3, 11, 1, stone[3]);
+      }
+      for (let i = 0; i < 10; i++) {
+        const x = 2 + Math.floor(rand() * 9);
+        const y = top + 4 + Math.floor(rand() * 26);
+        g.rect(x, y, 1, 1 + Math.floor(rand() * 3), rand() < 0.5 ? '#4e6a34' : '#6a8a42');
+      }
+      g.outline();
+    },
+  },
+  stone_idol: {
+    w: 60, h: 65,
+    paint(g, _v, rand) {
+      // Drawn on a 46x50 layout and scaled up by K, so the face dwarfs the columns around it.
+      const K = 1.3;
+      const k = (v: number) => Math.round(v * K);
+      // A colossal stone face rising from the sanctuary: a serene carved face with closed eyes
+      // and a faint smile under a tiered crown, the stone mossy and hung with vines.
+      const stone = ['#5a5a4a', '#7a7a64', '#9a987e', '#b8b498'];
+      // Stepped base.
+      g.rect(k(1), k(44), k(44), k(6), stone[1]);
+      g.rect(k(1), k(44), k(44), k(1), stone[3]);
+      g.rect(k(5), k(40), k(36), k(4), stone[2]);
+      g.rect(k(5), k(40), k(36), k(1), stone[3]);
+      // The head: broad and rounded, lit from the upper left.
+      g.ball(k(23), k(26), k(16), k(16), stone);
+      g.rect(k(9), k(26), k(28), k(14), stone[2]);
+      for (let y = k(26); y < k(40); y++) for (let x = k(27); x < k(37); x++) if (g.get(x, y)) g.set(x, y, stone[1]);
+      // Tiered crown.
+      for (let r = 0; r < 4; r++) g.rect(k(14 + r * 2), k(2 + r * 3), k(18 - r * 4), k(3), r & 1 ? stone[2] : stone[3]);
+      g.rect(k(10), k(12), k(26), k(2), stone[0]);
+      // Face: brows, closed eyes, broad nose, smiling lips.
+      g.rect(k(13), k(20), k(7), k(1), stone[0]);
+      g.rect(k(26), k(20), k(7), k(1), stone[0]);
+      g.rect(k(14), k(23), k(5), k(1), stone[0]);
+      g.rect(k(27), k(23), k(5), k(1), stone[0]);
+      g.rect(k(21), k(22), k(4), k(9), stone[3]);
+      g.rect(k(20), k(30), k(6), k(2), stone[1]);
+      g.rect(k(17), k(34), k(12), k(1), stone[0]);
+      g.set(k(16), k(33), stone[0]);
+      g.set(k(29), k(33), stone[0]);
+      g.rect(k(18), k(35), k(10), k(1), stone[3]);
+      // Ears with long lobes.
+      g.rect(k(6), k(20), k(3), k(12), stone[1]);
+      g.rect(k(37), k(20), k(3), k(12), stone[0]);
+      // Moss and hanging vines.
+      for (let i = 0; i < 46; i++) {
+        const x = k(6) + Math.floor(rand() * k(34));
+        const y = k(8) + Math.floor(rand() * k(34));
+        if (g.get(x, y)) g.set(x, y, rand() < 0.5 ? '#4e6a34' : '#6a8a42');
+      }
+      for (const x of [9, 12, 35, 38]) {
+        const len = k(8 + Math.floor(rand() * 14));
+        for (let y = k(12); y < k(12) + len; y++) g.set(k(x) + (y % 5 === 0 ? 1 : 0), y, y % 3 ? '#3e5a2c' : '#5e8a3a');
+      }
+      g.outline();
+    },
+  },
+  lilies: {
+    w: 17, h: 8,
+    paint(g, v) {
+      // Water lilies: round pads with their notch, and a flower open on one.
+      const pads = ['#2e5a2a', '#3e7434', '#56903e'];
+      g.ball(5, 4, 4.5, 2.2, pads);
+      g.ball(12.5, 5, 3.6, 1.8, pads);
+      g.set(5, 4, '#1e3a1c');
+      g.set(6, 3, '#1e3a1c');
+      if (v) g.ball(13.5, 3.5, 3, 1.6, pads);
+      const petal = v ? ['#e8a0c0', '#f8d0e0'] : ['#f0f0e8', '#ffffff'];
+      g.rect(4, 1, 3, 2, petal[0]);
+      g.set(5, 0, petal[1]);
+      g.set(5, 2, '#f0d040');
+      g.outline(0.6);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {
