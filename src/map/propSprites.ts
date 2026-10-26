@@ -1325,6 +1325,102 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  playground: {
+    w: 46, h: 34,
+    paint(g) {
+      // A playground: a red A-frame swing set with two seats on the left, and on the right a
+      // little tower with a green roof, a ladder up and a yellow slide down.
+      const red = ['#6a1a16', '#a42e24', '#d04a36'];
+      const chain = '#8a8e96';
+      // Swing frame: two A-legs and the top bar.
+      for (const x0 of [2, 20]) {
+        g.line(x0, 33, x0 + 3, 6, red[1]);
+        g.line(x0 + 6, 33, x0 + 3, 6, red[0]);
+      }
+      g.rect(4, 5, 19, 2, red[1]);
+      g.rect(4, 5, 19, 1, red[2]);
+      // The tower: posts, a deck, a pitched green roof.
+      const wood = ['#5a3e26', '#7a5636', '#9c7448'];
+      g.rect(28, 12, 2, 22, wood[1]);
+      g.rect(38, 12, 2, 22, wood[0]);
+      g.rect(27, 20, 14, 2, wood[2]);
+      g.rect(27, 22, 14, 1, wood[0]);
+      for (let x = 30; x < 38; x += 2) g.rect(x, 15, 1, 5, wood[1]);
+      for (let r = 0; r < 7; r++) g.rect(34 - r - 1, 6 + r, 2 * r + 3, 1, r < 2 ? '#5e9a48' : r & 1 ? '#3e7430' : '#4a8838');
+      // The slide, curving down to the right, and the ladder on the left of the tower.
+      for (let i = 0; i <= 12; i++) {
+        const x = 40 + i * 0.45;
+        const y = 21 + i;
+        g.rect(x, y, 3, 1, i < 2 ? '#f8d850' : '#e8b828');
+        g.set(x + 3, y, '#b88a18');
+      }
+      g.rect(45, 33, 1, 1, '#b88a18');
+      for (let y = 22; y < 34; y += 3) g.rect(25, y, 3, 1, wood[2]);
+      g.rect(24, 21, 1, 13, wood[1]);
+      g.rect(27, 21, 1, 13, wood[0]);
+      g.outline();
+      // The swings go on after the outline, so it doesn't fill the gaps between their chains.
+      for (const x of [8, 15]) {
+        g.rect(x, 7, 1, 17, chain);
+        g.rect(x + 4, 7, 1, 17, chain);
+        g.rect(x - 1, 24, 7, 2, '#24252a');
+        g.rect(x - 1, 24, 7, 1, '#3a5ab0');
+      }
+    },
+  },
+  picnic_table: {
+    w: 17, h: 11,
+    paint(g) {
+      // A wooden picnic table with a bench along each side.
+      const wood = ['#5a3e26', '#7a5636', '#9c7448', '#b48c5a'];
+      g.rect(2, 2, 13, 3, wood[2]);
+      g.rect(2, 2, 13, 1, wood[3]);
+      g.rect(0, 6, 17, 2, wood[2]);
+      g.rect(0, 6, 17, 1, wood[3]);
+      for (const x of [3, 13]) {
+        g.line(x, 5, x - 1, 10, wood[0]);
+        g.line(x, 5, x + 1, 10, wood[1]);
+      }
+      g.outline();
+    },
+  },
+  washing_line: {
+    w: 21, h: 26,
+    paint(g) {
+      // A rotary washing line: a steel pole, the lines strung out from its arms, and a load of
+      // laundry pegged out to dry.
+      const steel = ['#55585f', '#8a8e96', '#c4c8ce'];
+      g.rect(10, 4, 1, 22, steel[1]);
+      g.rect(11, 4, 1, 22, steel[0]);
+      g.line(10, 4, 1, 8, steel[1]);
+      g.line(11, 4, 20, 8, steel[0]);
+      g.line(1, 8, 20, 8, steel[2]);
+      g.line(4, 6, 17, 6, steel[2]);
+      const clothes: [number, number, number, number, string][] = [[2, 9, 3, 5, '#e85a48'], [6, 9, 4, 3, '#f4f0e8'], [13, 9, 3, 6, '#4a7ac8'], [17, 9, 3, 4, '#f0c84a'], [6, 7, 3, 4, '#5aa858'], [13, 7, 2, 3, '#f4f0e8']];
+      for (const [x, y, w, h, c] of clothes) {
+        g.rect(x, y, w, h, c);
+        g.rect(x, y, w, 1, '#f8f8f4');
+      }
+      g.rect(9, 25, 4, 1, steel[0]);
+      g.outline(0.55);
+    },
+  },
+  ducks: {
+    w: 15, h: 7,
+    paint(g) {
+      // A mallard drake and a brown duck paddling, a ripple behind each.
+      g.ball(4.5, 4, 3.4, 2, ['#5a4632', '#7a6448', '#9a8460']);
+      g.rect(6, 1, 2, 2, '#2e6a3a');
+      g.set(8, 2, '#e0b030');
+      g.set(6, 3, '#f4f0e8');
+      g.ball(11.5, 4.5, 3, 1.8, ['#6a5034', '#8a6a44', '#a88a5e']);
+      g.rect(12, 2, 2, 2, '#7a5c3a');
+      g.set(14, 3, '#d8a030');
+      g.rect(0, 6, 3, 1, '#c8e0ec');
+      g.rect(8, 6, 2, 1, '#c8e0ec');
+      g.outline(0.6);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

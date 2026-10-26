@@ -91,6 +91,10 @@ export const PROPS: Record<PropId, PropDef> = {
   bike_rack:     prop('Bike Rack',     { defense: 5, shadow: 6 }),
   buffer_stop:   prop('Buffer Stop',   { defense: 20, shadow: 6 }),
   station_clock: prop('Platform Clock', { defense: 0, shadow: 2 }),
+  playground:    prop('Playground',    { defense: 0, blocks: true, shadow: 14 }),
+  picnic_table:  prop('Picnic Table',  { defense: 10, shadow: 6 }),
+  washing_line:  prop('Washing Line',  { defense: 5, shadow: 3, sway: 0.03 }),
+  ducks:         prop('Ducks',         { defense: 0, shadow: 0, sway: 0.01, floats: true }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

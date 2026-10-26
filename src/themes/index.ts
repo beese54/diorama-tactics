@@ -13,12 +13,13 @@ import { meadow } from './meadow';
 import { moor } from './moor';
 import { plaza } from './plaza';
 import { station } from './station';
+import { suburb } from './suburb';
 import type { Theme } from './types';
 import { volcano } from './volcano';
 import { randomSeed, seedFromUrl, sizeFromUrl, worldTheme } from './world';
 
 /** Every map theme, in menu order. The first is the default. */
-export const THEMES: readonly Theme[] = [meadow, alpine, autumn, desert, frozen, moor, courtyard, harbour, gardens, bridge, fair, plaza, station, market, jungle, volcano];
+export const THEMES: readonly Theme[] = [meadow, alpine, autumn, desert, frozen, moor, courtyard, harbour, gardens, bridge, fair, plaza, station, suburb, market, jungle, volcano];
 
 /**
  * The theme named by `?map=<id>`, or the default. `?map=world` (or just `?seed=N`) grows a

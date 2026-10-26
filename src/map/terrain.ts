@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa',
 ];
 
 /**
@@ -111,6 +111,8 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
 
   // Modern Town themes (M13). Rail palette: [ballast, ballast dark, ballast light, sleeper, sleeper lit, rail head, rail shadow].
   rail:             built({ name: 'Railway',        moveCost: 2, defense: 0,  style: 'rails',       side: 'concrete',  palette: ['#857f74', '#6e695f', '#9c968a', '#4a3a2c', '#5e4a36', '#d4d8dc', '#34363c'] }),
+  house_brick:      built({ name: 'Tiled Roof',     moveCost: 1, defense: 10, style: 'tiles',       side: 'villa',     palette: ['#5e626a', '#4e525a', '#363940', '#72767e'] }),
+  bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

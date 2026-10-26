@@ -48,10 +48,13 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   cottage: ['#e2d6bc', '#cbbd9f', '#efe6d0', '#5a3e26'],
   ice: ['#8eb8d0', '#5e88a8', '#c4dcea', '#2e4a66'],
   hedge: ['#356430', '#24481f', '#4a7a3c', '#5e9048'],
+  villa: ['#b05a40', '#924834', '#d0bca4', '#e8e0d0'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
-const FACADES: ReadonlySet<SideStyle> = new Set(['brick', 'plaster', 'shopfront', 'cottage']);
+const FACADES: ReadonlySet<SideStyle> = new Set(['brick', 'plaster', 'shopfront', 'cottage', 'villa']);
+/** House walls that sit under a roof's eave rather than a coping. */
+const EAVED: ReadonlySet<SideStyle> = new Set(['cottage', 'villa']);
 const NEON = ['#ff5fa8', '#4fe3ff', '#ffd84a'];
 const GLASS = ['#3c4c60', '#4c6078', '#7f97ad'];
 
@@ -135,6 +138,9 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
       return;
     case 'cottage':
       paintCottage(put, rand, p, groundFloor, variant);
+      return;
+    case 'villa':
+      paintVilla(put, rand, p, groundFloor, variant);
       return;
     case 'hedge':
       // Clipped box hedge: dense leaves in small clumps, lit on top, darker at the root.
@@ -224,6 +230,32 @@ function paintCottage(put: Put, rand: Rand, [base, dark, light, beam]: readonly 
   if (!groundFloor) for (let k = 0; k < 4; k++) put(1 + k, STEP_PX - 1 - k, beam);
 }
 
+/**
+ * A suburban house in red brick with white-framed windows; at street level a bay window and
+ * a front door painted a different colour on each face.
+ */
+function paintVilla(put: Put, rand: Rand, [brick, dark, mortar, sill]: readonly string[], groundFloor: boolean, variant: number): void {
+  const white = '#f4f0e8';
+  for (let y = 0; y < STEP_PX; y++) {
+    for (let x = 0; x < TILE_PX; x++) {
+      const joint = y % 3 === 2 || (x + (Math.floor(y / 3) & 1) * 2) % 4 === 0;
+      put(x, y, joint ? mortar : rand() < 0.2 ? dark : brick);
+    }
+  }
+  if (groundFloor) {
+    // The bay window, lit at night; the door with its fanlight and brass knob.
+    for (let y = 1; y < 7; y++) for (let x = 1; x < 8; x++) put(x, y, y === 1 || x === 1 || x === 7 || x === 4 ? white : y === 2 ? '#6c88a0' : '#3c4c60', y === 1 || x === 1 || x === 7 || x === 4 ? undefined : '#ffc870');
+    const door = ['#2e4a7a', '#8a2a24', '#2e5a3a', '#d8a838'][variant % 4];
+    for (let y = 1; y < STEP_PX; y++) for (let x = 10; x < 15; x++) put(x, y, x === 10 || x === 14 || y === 1 ? white : y === 2 ? '#8ea4b4' : door);
+    put(13, 5, '#e0c050');
+    return;
+  }
+  // A window with a white frame and a cross bar over a stone sill; a downpipe at the corner of every other face.
+  for (let y = 2; y < 7; y++) for (let x = 4; x < 12; x++) put(x, y, x === 4 || x === 11 || x === 8 || y === 2 ? white : y === 3 ? '#6c88a0' : '#3c4c60', x === 4 || x === 11 || x === 8 || y === 2 ? undefined : '#ffc870');
+  for (let x = 3; x < 13; x++) put(x, 7, sill);
+  if (variant & 1) for (let y = 0; y < STEP_PX; y++) put(15, y, '#5a5e64');
+}
+
 /** A roof's eave over a cottage wall: two rows of the roof's own colours with a shadow line under them. */
 function paintEave(put: Put, roof: readonly string[]): void {
   for (let x = 0; x < TILE_PX; x++) {
@@ -292,7 +324,7 @@ export function buildTerrainAtlas(): TerrainAtlas {
       const put = cell(v * TILE_PX, row * STEP_PX);
       const rand = mulberry32(row * 977 + v * 31 + 5);
       paintSide(put, rand, def.side, false, v);
-      if (def.side === 'cottage') paintEave(put, def.palette);
+      if (EAVED.has(def.side)) paintEave(put, def.palette);
       else if (def.shape === 'built') paintCoping(put, def.side);
       else paintLip(put, rand, def.palette);
     }
