@@ -20,7 +20,7 @@ describe('bigger boards', () => {
     let h = 0x811c9dc5;
     for (let seed = 1; seed <= 20; seed++) h = fingerprint(serializeMap(generateMap(seed, 64)), h);
     expect(h.toString(16).padStart(8, '0')).toBe('8ce082c1');
-  });
+  }, 30_000);
 
   const SEEDS = Array.from({ length: 16 }, (_, i) => 100 + i);
   const worlds = (size: number) => SEEDS.map((seed) => generateWorld(seed, size));

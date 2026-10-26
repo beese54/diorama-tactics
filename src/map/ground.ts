@@ -150,7 +150,20 @@ function bond(w: number, h: number) {
   };
 }
 
+/**
+ * Grass under fallen leaves: leaves lie two pixels wide, in drifts that thicken where the
+ * patch noise runs high (under the trees), each leaf one of the palette's four colours.
+ * Worked out per world pixel, so drifts run on across tiles.
+ */
+function fallenLeaves(px: Pixel, p: readonly string[]): string {
+  const leaf = hash(0x1eaf, px.gx >> 1, px.gy);
+  const drift = Math.max(0, px.patch - 0.35) / 0.65;
+  if (leaf < 0.025 + 0.3 * drift * drift) return p[4 + Math.floor(hash(0x1eb0, px.gx >> 1, px.gy) * 4)];
+  return ramp(1, 0, 2)(px, p);
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  leaves: { base: fallenLeaves, details: (put, rand, p) => tufts(put, rand, p[3], 4) },
   grass: { base: ramp(1, 0, 2), details: (put, rand, p) => tufts(put, rand, p[3], 6) },
   flowers: {
     base: ramp(1, 0, 2),

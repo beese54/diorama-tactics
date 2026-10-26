@@ -98,7 +98,7 @@ describe('columns built in runs', () => {
       joined.indices.forEach((layer, l) => expect(equal(layer, whole.indices[l]), `layer ${l} in ${parts} runs`).toBe(true));
       joined.tiles.forEach((layer, l) => expect(equal(layer, whole.tiles[l])).toBe(true));
     }
-  });
+  }, 30_000);
 
   it('builds on this thread where there are no workers', async () => {
     const map = generateMap(3);

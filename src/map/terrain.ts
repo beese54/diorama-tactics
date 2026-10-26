@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -91,6 +91,9 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   house_tile:       built({ name: 'Tiled Roof',     moveCost: 1, defense: 10, style: 'tiles',       side: 'cottage',   palette: ['#a4553c', '#8a4430', '#5e2c20', '#bc6a4a'] }),
   rampart:          built({ name: 'Rampart',        moveCost: 1, defense: 20, style: 'blocks',      side: 'masonry',   palette: ['#8f8a80', '#817c72', '#5a564f', '#a39e93'] }),
   ruined_wall:      built({ name: 'Ruined Wall',    moveCost: 1, defense: 15, style: 'blocks',      side: 'temple',    palette: ['#8e8a78', '#807c6c', '#5c594d', '#a19d8a', '#6f8a4a'] }),
+
+  // Wilds themes (M11). Fallen-leaf palettes: [grass ×3 dark to light, tuft, then leaves: red, orange, gold, brown].
+  autumn_grass:     natural({ name: 'Autumn Grass', moveCost: 1, defense: 0,  style: 'leaves',      side: 'soil',      palette: ['#7a8844', '#6e7c3e', '#86944c', '#9aa456', '#b8482a', '#d0782c', '#dcae3c', '#86502c'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

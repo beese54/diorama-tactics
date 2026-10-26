@@ -5,6 +5,12 @@ import { TERRAIN_IDS, TILE_PX, type TerrainId } from './types';
 export const STEP_PX = 8;
 /** Cliff-face texture variants painted per material, so neighbouring steps don't repeat. */
 export const VARIANTS = 4;
+/**
+ * Rows reserved for terrains and for cliff materials. The atlas keeps a fixed size, so adding
+ * a terrain or a material never moves the faces already in it (or shifts their texels on screen).
+ */
+export const TERRAIN_ROWS = 128;
+export const STYLE_ROWS = 32;
 
 export interface UvRect {
   u0: number;
@@ -33,10 +39,11 @@ export interface AtlasLayout {
 }
 
 export function atlasLayout(): AtlasLayout {
-  const lowerY = TERRAIN_IDS.length * STEP_PX;
-  const groundY = lowerY + SIDE_STYLES.length * STEP_PX;
+  if (TERRAIN_IDS.length > TERRAIN_ROWS || SIDE_STYLES.length > STYLE_ROWS) throw new Error('The cliff atlas is full: raise TERRAIN_ROWS or STYLE_ROWS.');
+  const lowerY = TERRAIN_ROWS * STEP_PX;
+  const groundY = lowerY + STYLE_ROWS * STEP_PX;
   const W = TILE_PX * VARIANTS;
-  const H = groundY + SIDE_STYLES.length * STEP_PX;
+  const H = groundY + STYLE_ROWS * STEP_PX;
   // The atlas is a CanvasTexture, which is flipped: canvas y = 0 is v = 1.
   const rect = (x: number, y: number): UvRect => ({
     u0: x / W,

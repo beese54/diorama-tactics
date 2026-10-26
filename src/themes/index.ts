@@ -1,4 +1,5 @@
 import { alpine } from './alpine';
+import { autumn } from './autumn';
 import { courtyard } from './courtyard';
 import { jungle } from './jungle';
 import { market } from './market';
@@ -9,7 +10,7 @@ import { volcano } from './volcano';
 import { randomSeed, seedFromUrl, sizeFromUrl, worldTheme } from './world';
 
 /** Every map theme, in menu order. The first is the default. */
-export const THEMES: readonly Theme[] = [meadow, alpine, courtyard, plaza, market, jungle, volcano];
+export const THEMES: readonly Theme[] = [meadow, alpine, autumn, courtyard, plaza, market, jungle, volcano];
 
 /**
  * The theme named by `?map=<id>`, or the default. `?map=world` (or just `?seed=N`) grows a

@@ -193,7 +193,8 @@ const selected = await page.$eval('#hud select', (s) => s.value);
 await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.select('#hud select', 'volcano')]);
 await page.waitForFunction(() => window.__map);
 const picked = await page.evaluate(() => ({ theme: window.__map.theme().id, shown: document.querySelector('#hud select').value }));
-check('the map picker offers every map and switches to one', selected === 'world' && offered.includes('world') && offered.length === 8 && picked.theme === 'volcano' && picked.shown === 'volcano', JSON.stringify({ offered, selected, picked }));
+const themeCount = await page.evaluate(() => window.__map.themes().length);
+check('the map picker offers every map and switches to one', selected === 'world' && offered.includes('world') && offered.length === themeCount + 1 && picked.theme === 'volcano' && picked.shown === 'volcano', JSON.stringify({ offered, selected, picked }));
 // Big boards (M9): ?size= grows Wild Lands bigger; the size picker regrows the same seed in place,
 // R keeps the size, the standard size leaves the URL clean, and switching sizes frees the old board.
 errors.length = 0;

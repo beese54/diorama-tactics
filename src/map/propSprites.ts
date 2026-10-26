@@ -611,6 +611,58 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  autumn_tree: {
+    w: 21, h: 30,
+    paint(g, v, rand) {
+      const crowns = [
+        // A red maple: a broad dome, flecked with orange where the sun catches it.
+        { leaves: ['#561a12', '#8a2a1a', '#b84024', '#de6436'], fleck: '#f0985a', bark: [WOOD[0], WOOD[1], WOOD[2]], balls: [[10.5, 12, 9, 6.5], [4.5, 15, 4, 3.5], [16.5, 15, 4, 3.5], [7.5, 6.5, 5.5, 4.5], [13.5, 6.5, 5.5, 4.5]] },
+        // An oak turning orange-brown, its crown lumpier and lower.
+        { leaves: ['#5a2e12', '#86481a', '#b46a28', '#dc943e'], fleck: '#ecb45a', bark: [WOOD[0], WOOD[1], WOOD[2]], balls: [[10.5, 13, 9.5, 6], [3.5, 16, 3.5, 3], [17.5, 16, 3.5, 3], [7, 8, 5, 4], [14.5, 8.5, 5, 4], [10.5, 4.5, 4, 3]] },
+        // A birch gone gold: pale bark, an airy crown with sky showing through.
+        { leaves: ['#665016', '#937620', '#c09e30', '#e6c858'], fleck: '#f6e48a', bark: ['#8c8678', '#d8d2c2', '#f0ebde'], balls: [[10, 12, 8, 6], [4.5, 16, 4, 3.5], [15.5, 15, 4.5, 3.5], [10.5, 6, 5.5, 4.5]] },
+      ][v];
+      const { leaves, bark } = crowns;
+      g.rect(9, 17, 3, 13, bark[1]);
+      g.rect(9, 17, 1, 13, bark[2]);
+      if (v === 2) for (const y of [20, 23, 24, 27]) g.set(y % 2 ? 9 : 10, y, '#3a3630');
+      g.line(11, 21, 15, 16, bark[1]);
+      g.line(9, 20, 5, 16, bark[0]);
+      for (const [cx, cy, rx, ry] of crowns.balls) g.ball(cx, cy, rx, ry, leaves);
+      for (let i = 0; i < 7; i++) g.set(3 + Math.floor(rand() * 15), 3 + Math.floor(rand() * 12), crowns.fleck);
+      if (v === 2) for (let i = 0; i < 6; i++) g.clear(4 + Math.floor(rand() * 13), 6 + Math.floor(rand() * 10));
+      g.outline();
+      // A few leaves already down around the trunk.
+      for (const [x, k] of [[5, 2], [7, 1], [13, 3], [15, 2]]) g.set(x, 29, leaves[k]);
+    },
+  },
+  great_maple: {
+    w: 37, h: 44,
+    paint(g, _v, rand) {
+      // The ridge's old maple: a gnarled trunk on flaring roots under a vast red crown.
+      const leaves = ['#4e1610', '#7e2416', '#aa3820', '#d25630', '#ec8048'];
+      const bark = ['#2e2018', '#4a3426', '#6a4c36', '#86664a'];
+      g.rect(15, 26, 7, 16, bark[1]);
+      g.rect(15, 26, 2, 16, bark[2]);
+      g.rect(20, 26, 2, 16, bark[0]);
+      for (const [x0, x1] of [[11, 15], [22, 26]]) g.line(x0, 43, x1, 38, bark[1]);
+      g.rect(12, 42, 13, 2, bark[1]);
+      g.rect(12, 42, 4, 1, bark[3]);
+      for (const y of [29, 33, 36]) g.set(17 + (y % 3), y, bark[0]);
+      g.line(16, 30, 9, 21, bark[1]);
+      g.line(21, 29, 28, 20, bark[1]);
+      g.line(18, 27, 18, 16, bark[1]);
+      for (const [cx, cy, rx, ry] of [
+        [18.5, 15, 15, 9], [7, 20, 6.5, 4.5], [30, 20, 6.5, 4.5], [11, 9, 8, 6], [26, 9, 8, 6], [18.5, 6, 8, 5.5], [3.5, 15, 3.5, 3], [33.5, 14, 3.5, 3],
+      ]) g.ball(cx, cy, rx, ry, leaves);
+      for (let i = 0; i < 16; i++) g.set(4 + Math.floor(rand() * 29), 2 + Math.floor(rand() * 20), rand() < 0.5 ? '#f4a860' : '#e8c060');
+      for (let i = 0; i < 5; i++) g.clear(6 + Math.floor(rand() * 25), 8 + Math.floor(rand() * 12));
+      g.outline();
+      // Leaves drifting down beside the trunk, and a ring of them on the ground.
+      for (const [x, y, k] of [[6, 27, 3], [31, 29, 2], [9, 33, 4], [28, 35, 3]]) g.set(x, y, leaves[k]);
+      for (const x of [8, 10, 13, 24, 27, 29]) g.set(x, 43, leaves[2 + (x % 3)]);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {
@@ -662,27 +714,40 @@ function nearestTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
 }
 
 /** Paints every prop variant into one sheet (shelf-packed), plus a matching sheet of what glows. */
+/**
+ * The sprite sheet keeps a fixed size and is packed in PROP_IDS order, so a sprite added at
+ * the end never moves the ones before it (or shifts their texels on screen).
+ */
+const SHEET_W = 512;
+const SHEET_H = 1024;
+
+/**
+ * Transparent rows above every shelf of sprites. The snow-cap shader (SpriteField) looks up to
+ * four texels above a pixel for the sprite's top edge, so it must never see the sprite above.
+ */
+const SKY_ROWS = 5;
+
 export function buildPropSheet(): PropSheet {
-  const SHEET_W = 256;
   const PAD = 1;
   const items = PROP_IDS.flatMap((id) => Array.from({ length: PROPS[id].variants }, (_, variant) => ({ id, variant, art: ART[id] })));
   const placed = new Map<string, { x: number; y: number; w: number; h: number }>();
   let x = 0;
-  let y = 0;
+  let y = SKY_ROWS;
   let rowH = 0;
   // Each variant's frames sit side by side in one strip.
   const span = (art: SpriteArt) => (art.frames ?? 1) * (art.w + PAD) - PAD;
-  for (const { id, variant, art } of [...items].sort((a, b) => b.art.h - a.art.h)) {
+  for (const { id, variant, art } of items) {
     if (x + span(art) > SHEET_W) {
       x = 0;
-      y += rowH + PAD;
+      y += rowH + SKY_ROWS;
       rowH = 0;
     }
     placed.set(`${id}/${variant}`, { x, y, w: art.w, h: art.h });
     x += span(art) + PAD;
     rowH = Math.max(rowH, art.h);
   }
-  const height = 2 ** Math.ceil(Math.log2(y + rowH));
+  if (y + rowH > SHEET_H) throw new Error('The prop sprite sheet is full: raise SHEET_H.');
+  const height = SHEET_H;
   const canvas = document.createElement('canvas');
   const glowCanvas = document.createElement('canvas');
   canvas.width = glowCanvas.width = SHEET_W;

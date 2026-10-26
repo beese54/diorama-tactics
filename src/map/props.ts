@@ -64,6 +64,8 @@ export const PROPS: Record<PropId, PropDef> = {
   broadleaf:     prop('Broadleaf Tree', { defense: 15, variants: 3, shadow: 7, sway: 0.04, jitter: true }),
   snag:          prop('Drowned Tree',  { defense: 10, variants: 2, shadow: 4, sway: 0.015, jitter: true }),
   well:          prop('Village Well',  { defense: 0, blocks: true, shadow: 6 }),
+  autumn_tree:   prop('Autumn Tree',   { defense: 15, variants: 3, shadow: 7, sway: 0.04, jitter: true }),
+  great_maple:   prop('Old Maple',     { defense: 0, blocks: true, shadow: 13, sway: 0.025 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */
