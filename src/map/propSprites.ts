@@ -809,6 +809,72 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  bothy: {
+    w: 31, h: 28,
+    paint(g, _v, rand) {
+      // A shepherd's bothy: rough dry-stone walls, a turf-and-slate roof, a chimney with a
+      // wisp of peat smoke, a low door and one small window glowing in the dusk.
+      const stone = ['#4a4840', '#66625a', '#807c72', '#9c988c'];
+      const roof = ['#3a3e3a', '#4c524c', '#5e665e', '#6e785e'];
+      g.rect(3, 13, 25, 13, stone[2]);
+      for (let y = 13; y < 26; y += 3) {
+        for (let x = 3 + ((y / 3) & 1) * 2; x < 28; x += 4 + Math.floor(rand() * 2)) {
+          g.rect(x, y, 3, 2, rand() < 0.3 ? stone[3] : stone[2]);
+          g.set(x + 3, y, stone[0]);
+          g.rect(x, y + 2, 4, 1, stone[1]);
+        }
+      }
+      g.rect(3, 13, 2, 13, stone[3]);
+      g.rect(25, 13, 3, 13, stone[1]);
+      g.rect(9, 17, 5, 9, '#2a2018');
+      g.rect(9, 17, 5, 1, stone[0]);
+      g.rect(18, 17, 3, 3, '#ffc070', true);
+      g.set(18, 17, '#ffe0a8', true);
+      // Roof: slate courses with turf along the ridge.
+      for (let r = 0; r < 7; r++) g.rect(Math.round(15 - r * 2.2), 6 + r, Math.round(r * 4.4 + 2), 1, r === 0 ? roof[3] : r % 2 ? roof[1] : roof[2]);
+      g.rect(1, 12, 29, 1, roof[0]);
+      g.rect(5, 6, 21, 1, roof[3]);
+      // Chimney and smoke.
+      g.rect(21, 2, 3, 6, stone[1]);
+      g.rect(21, 2, 1, 6, stone[3]);
+      for (const [x, y] of [[23, 0], [24, 0], [22, 1]]) g.set(x, y, '#b8b0a8');
+      g.outline();
+    },
+  },
+  sheep: {
+    w: 13, h: 10,
+    paint(g, v) {
+      // A grazing ewe: a fleecy body, dark face and legs; one has her head down in the grass.
+      const fleece = ['#a8a296', '#ccc6b8', '#e6e0d2', '#f6f2e8'];
+      g.rect(3, 7, 1, 3, '#2a2622');
+      g.rect(9, 7, 1, 3, '#2a2622');
+      g.ball(6.5, 5, 5, 3.4, fleece);
+      for (const [x, y] of [[4, 3], [7, 2], [9, 4], [5, 6]]) g.set(x, y, fleece[3]);
+      if (v === 0) {
+        g.rect(10, 3, 3, 3, '#2e2a26');
+        g.set(11, 3, '#4a4440');
+      } else {
+        g.rect(10, 6, 3, 3, '#2e2a26');
+        g.set(12, 9, '#2e2a26');
+      }
+      g.outline(0.55);
+    },
+  },
+  gorse: {
+    w: 15, h: 11,
+    paint(g, v, rand) {
+      // A spiny gorse bush, dark green and spattered with yellow flowers.
+      const leaves = ['#2a3a1e', '#3a4c26', '#4c602e', '#5e7238'];
+      g.ball(7.5, 6.5, 7, 4.6, leaves);
+      if (v) g.ball(11.5, 7.5, 3.5, 3, leaves);
+      for (let i = 0; i < 16; i++) {
+        const x = 1 + Math.floor(rand() * 13);
+        const y = 2 + Math.floor(rand() * 8);
+        if (g.get(x, y)) g.set(x, y, rand() < 0.35 ? '#fff0a0' : '#f4c430');
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

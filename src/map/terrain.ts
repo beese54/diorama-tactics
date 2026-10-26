@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -98,6 +98,10 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   oasis_grass:      natural({ name: 'Oasis',        moveCost: 1, defense: 5,  style: 'grass',       side: 'sand',      palette: ['#6a9a40', '#5e8c3a', '#78a84a', '#92bc5a'] }),
   // Ice palette: [pale, light blue, deep blue, crack white, crack shadow, snow dusting].
   ice:              natural({ name: 'Frozen Lake',  moveCost: 1, defense: -10, style: 'ice',        side: 'ice',       palette: ['#d2e4ee', '#b6d2e2', '#8eb4ca', '#f4f9fc', '#7698b2', '#e8f0f5'] }),
+  // Heather palette: [ground ×3 dark to light, then blossom: dark, mid, light, highlight].
+  heather:          natural({ name: 'Heather',      moveCost: 2, defense: 5,  style: 'heather',     side: 'soil',      palette: ['#5e4a54', '#4e3e48', '#6c5662', '#7a4a78', '#9a5c96', '#bc7cb4', '#d89ccc'] }),
+  moor_grass:       natural({ name: 'Moor Grass',   moveCost: 1, defense: 0,  style: 'grass',       side: 'soil',      palette: ['#8a8a50', '#7c7c48', '#9a985a', '#b0aa68'] }),
+  drystone:         built({ name: 'Dry-Stone Wall', moveCost: 2, defense: 15, style: 'cobblestone', side: 'masonry',   palette: ['#8a887a', '#7a786c', '#4e4d46', '#a09e90'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

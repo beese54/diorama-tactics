@@ -178,7 +178,30 @@ function lakeIce(px: Pixel, p: readonly string[]): string {
   return tone < 0.34 ? p[2] : tone < 0.64 ? p[1] : p[0];
 }
 
+/**
+ * Heather: low dark shrub ground covered in clumps of purple-pink bells, the clumps thick
+ * where the patch noise runs high and thin to bare peat-brown between. Blossom is laid in
+ * three-pixel sprigs (a light bell over two darker), in world pixels, so drifts cross tiles.
+ */
+function heatherBloom(px: Pixel, p: readonly string[]): string {
+  // Sprigs sit on a jittered 3-px lattice: each is a light bell over darker ones.
+  const cx = Math.floor(px.gx / 3);
+  const cy = Math.floor(px.gy / 3);
+  const density = 0.3 + 0.6 * px.patch;
+  if (hash(0x4ea7, cx, cy) < density) {
+    const ox = Math.floor(hash(0x4ea8, cx, cy) * 2);
+    const oy = Math.floor(hash(0x4ea9, cx, cy) * 2);
+    const dx = px.gx - cx * 3 - ox;
+    const dy = px.gy - cy * 3 - oy;
+    if (dx === 0 && dy === 0) return p[hash(0x4eaa, cx, cy) < 0.35 ? 6 : 5];
+    if ((dx === 0 && dy === 1) || (dx === 1 && dy === 1)) return p[4];
+    if (dx === 1 && dy === 0 && px.grain < 0.5) return p[3];
+  }
+  return ramp(1, 0, 2)(px, p);
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  heather: { base: heatherBloom },
   ice: { base: lakeIce },
   leaves: { base: fallenLeaves, details: (put, rand, p) => tufts(put, rand, p[3], 4) },
   grass: { base: ramp(1, 0, 2), details: (put, rand, p) => tufts(put, rand, p[3], 6) },
