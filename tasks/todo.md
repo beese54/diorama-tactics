@@ -495,7 +495,7 @@ The user asked for the four deferred items before units and battles. Order: tech
     - Suburban Park: houses with gardens behind hedges, a cul-de-sac, a park with a pond and paths; landmark a playground (slide and swings). New: `house_brick` (red-brick `villa` walls, slate roof), `bark`, playground, picnic_table, washing_line, ducks.
     - Canal Quarter: a canal in two pounds joined by a lock, towpaths, brick warehouses and a footbridge; landmark a mill chimney. New: lock_gate (floats), bollard, mill_chimney (narrowboats removed in review).
     - High Street: shopfronts with awnings along the back, a crossing, a bus stop; landmark the town clock tower. New: `shop_building` and `shop_brick` (a `shop` face: fascia, striped awning, display window and door), `zebra` crossing, phone_box, post_box, belisha, cafe_table ×2, clock_tower.
-  - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps (in progress; the user asked for M14-M16 back to back overnight, to vet in the morning)
+  - [x] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps (in review; the user asked for M14-M16 back to back overnight, to vet in the morning)
     - Highway Overpass: a three-lane expressway on a concrete embankment across the board, a ramp and steps up to it, night streets either side; landmark a noodle-bar billboard. New: `highway` (lanes painter, `retaining` face), billboard, sign_gantry, jersey_barrier, traffic_cone, highway_lamp.
     - Rooftop Arcade: the board is a rooftop, with towers around it; arcade cabinets and a claw machine, a rooftop pool, a turf lounge under string lights, plant rooms; landmark a big neon ARCADE sign. New: `roof_deck`, `roof_plant`, `turf`, neon_sign, arcade_cabinet ×2, claw_machine, water_tank, ac_unit, string_lights.
     - Container Port: stacked shipping containers as walkable terrain, a quay, and a container ship along the back edge at full size, as terrain (no miniature vehicles; see lessons.md); a gangway tower aboard; landmark a ship-to-shore gantry crane. New: `container` (`containers` painter, `container` face), `ship_deck` (`deckplate` painter, `hull` face), gantry_crane, floodlight.
@@ -559,3 +559,14 @@ Not needed for the agreed bar; pick up if circumstances change.
 - Tooling: tasks/perf/sheet.mjs builds the four-map sheet.
 - Tests: 1017; check.mjs 74/74; 46 captures in the identity set.
 - Round 1 (user: "remove the ships… ships are supposed to be way bigger"): the narrowboats are gone from Canal Quarter, and the sprite with them. Lesson in lessons.md. The clock tower's random brick courses changed slightly, because its sprite seed follows its place in PROP_IDS.
+
+### M14 review (2026-10-27): four Neon City maps
+- Commits:
+  - Highway Overpass (7d37bba);
+  - Rooftop Arcade (0d9fa41);
+  - Container Port (9e48bc3);
+  - Shrine Steps (72497ea).
+- New terrains: highway (`lanes` painter, `retaining` face), roof_deck (`roofing` painter), roof_plant, turf, container (`containers` painter, `container` face), ship_deck (`deckplate` painter, `hull` face), moss.
+- New props: billboard, sign_gantry, jersey_barrier, traffic_cone, highway_lamp, neon_sign, arcade_cabinet ×2, claw_machine, water_tank, ac_unit, string_lights, gantry_crane, floodlight, torii, stone_lantern, sakura ×2, shrine.
+- Scale (lessons.md, after the Canal Quarter review): the container ship is terrain at full size, and the shrine hall was redrawn to dwarf the torii.
+- Tests: 1052; check.mjs 78/78; 54 captures in the identity set.

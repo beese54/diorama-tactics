@@ -184,6 +184,14 @@
       "image": "m13-modern/four-modern.png",
       "title": "M13 · Four more Modern Town maps",
       "note": "Station Square, Suburban Park, Canal Quarter and High Street."
+    },
+    {
+      "id": "m14",
+      "date": "2026-10-27",
+      "commit": "72497ea",
+      "image": "m14-neon/four-neon.png",
+      "title": "M14 · Four more Neon City maps",
+      "note": "Highway Overpass, Rooftop Arcade, Container Port and Shrine Steps."
     }
   ]
 }

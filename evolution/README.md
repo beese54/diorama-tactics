@@ -383,6 +383,28 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Natural ground needs restraint. Leaves, cracks and heather looked busy at first, so they were thinned to drifts that come and go with broad noise.
   - Pixel-perfect checks catch more than regressions. A single changed pixel led to a real UV bug that had been there since M2b.
 
+### M14: Four more Neon City maps
+![Highway Overpass, Rooftop Arcade, Container Port and Shrine Steps](land/m14-neon/four-neon.png)
+
+| Highway Overpass: the billboard | Rooftop Arcade: the neon sign |
+|---|---|
+| ![](land/m14-neon/overpass/close-focus.png) | ![](land/m14-neon/rooftop/close-focus.png) |
+
+| Container Port: the gantry crane | Shrine Steps: the torii |
+|---|---|
+| ![](land/m14-neon/port/close-focus.png) | ![](land/m14-neon/shrine/close-focus.png) |
+
+- **What changed:** built overnight, back to back, as the user asked.
+  - **Highway Overpass** (`?map=overpass`): a three-lane expressway on a concrete embankment five steps up. On the deck are lane lines, a sign gantry, lamps, and road works whose barriers and cones are cover on the high ground. A ramp at one end and steps on the south side lead up to it. Night streets lie below, with noodle stalls, and a giant glowing billboard is the landmark.
+  - **Rooftop Arcade** (`?map=rooftop`): the board is a rooftop with lit facades for sides, among taller towers. It has a neon ARCADE sign on a scaffold, arcade cabinets and claw machines, a plant room with a water tank, air conditioners, a turf lounge under festoon lights, and a sunken pool.
+  - **Container Port** (`?map=port`): stacked shipping containers, one to three boxes high, make a maze of walkable high ground. A container ship lies along the back edge at full scale as terrain: only a slice fits, and it runs off both sides. A gangway leads aboard, and a ship-to-shore gantry crane stands on the quay.
+  - **Shrine Steps** (`?map=shrine`): stone steps climb a hill above the city through five torii, between stone lanterns and cherry trees in bloom, to a gravel precinct and the shrine hall.
+- **Decisions:** after the Canal Quarter review ("ships are supposed to be way bigger"), vehicles and buildings are drawn at true scale or left out. The container ship became terrain, and the shrine hall was redrawn to dwarf the torii.
+- **Learned:**
+  - Terrain can carry things too big for a sprite. A ship, an embankment and a roof become walkable ground at their real size, which also gives the battle map its high ground.
+  - The face-per-step variant that ruled out painted shopfronts in M13 suits containers exactly: every step is one box, so stacks come out mixed for free.
+  - Night maps live on their light sources. Each needed its own: sodium lamps, neon, floodlights, lanterns.
+
 ### M13: Four more Modern Town maps
 ![Station Square, Suburban Park, Canal Quarter and High Street](land/m13-modern/four-modern.png)
 

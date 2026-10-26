@@ -75,6 +75,10 @@ npm run build    # type-check and production build
 - `canal`: Canal Quarter
 - `highstreet`: High Street
 - `market`: Night Market Alley
+- `overpass`: Highway Overpass
+- `rooftop`: Rooftop Arcade
+- `port`: Container Port
+- `shrine`: Shrine Steps
 - `jungle`: Jungle Temple
 - `volcano`: Volcanic Caldera
 
