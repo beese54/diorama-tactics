@@ -2420,6 +2420,75 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  sky_shrine: {
+    w: 42, h: 66, frames: 4, fps: 3,
+    paint(g, _v, _rand, frame) {
+      // The sky shrine: a great ring of white stone standing on a stepped pedestal, a golden
+      // crystal floating at its heart, bobbing a pixel up and down, and shards of rock drifting
+      // round it.
+      const stone = ['#8a8a92', '#b0b0b8', '#d4d4da', '#f0f0f4'];
+      g.rect(3, 60, 36, 6, stone[1]);
+      g.rect(3, 60, 36, 1, stone[3]);
+      g.rect(30, 61, 9, 5, stone[0]);
+      g.rect(9, 56, 24, 4, stone[2]);
+      g.rect(9, 56, 24, 1, stone[3]);
+      // The ring.
+      for (let y = 6; y < 57; y++) {
+        for (let x = 1; x < 41; x++) {
+          const d = Math.hypot((x + 0.5 - 21) / 19, (y + 0.5 - 31) / 25);
+          if (d > 1 || d < 0.78) continue;
+          g.set(x, y, x < 15 ? stone[3] : x < 27 ? stone[2] : stone[1]);
+        }
+      }
+      for (const [x, y] of [[21, 7], [3, 31], [39, 31]] as const) g.rect(x - 1, y - 1, 3, 3, '#d8b040');
+      // The floating crystal, bobbing.
+      const bob = frame === 1 || frame === 2 ? -1 : 0;
+      for (let i = 0; i < 18; i++) {
+        const hw = Math.round(4 * Math.sin((i / 17) * Math.PI));
+        for (let dx = -hw; dx <= hw; dx++) g.set(21 + dx, 22 + i + bob, dx < 0 ? '#fff4c0' : dx === 0 ? '#ffffff' : '#f0c84a', true);
+      }
+      // Drifting shards.
+      for (const [x, y, s] of [[8, 14 + bob, 2], [34, 18 - bob, 2], [12, 48 - bob, 1], [31, 46 + bob, 1]] as const) g.rect(x, y, s + 1, s, stone[1]);
+      g.outline();
+    },
+  },
+  windmill: {
+    w: 36, h: 62, frames: 4, fps: 4,
+    paint(g, _v, _rand, frame) {
+      // An island windmill: a tapering stone tower with a cap of thatch, a door and a window,
+      // and four sails turning in the high wind.
+      const stone = ['#8a8274', '#aaa292', '#c8c0ae', '#e0d8c6'];
+      for (let y = 22; y < 62; y++) {
+        const hw = 6 + Math.round(((y - 22) / 40) * 4);
+        for (let x = -hw; x <= hw; x++) {
+          const t = (x + hw) / (2 * hw);
+          g.set(18 + x, y, t < 0.3 ? stone[3] : t < 0.65 ? stone[2] : stone[1]);
+        }
+      }
+      g.rect(16, 54, 5, 8, WOOD[0]);
+      g.rect(17, 36, 3, 4, '#3c4c60');
+      for (let r = 0; r < 8; r++) g.rect(18 - 7 + Math.round(r * 0.2), 14 + r, 15 - Math.round(r * 0.4), 1, r < 2 ? '#c9a25a' : '#9a763c');
+      g.ball(18, 16, 7, 4, ['#6e5226', '#9a763c', '#b08a48', '#c9a25a']);
+      // The sails: four lattice blades round the hub, a quarter turn every loop.
+      const a0 = (frame / 4) * (Math.PI / 2);
+      for (let k = 0; k < 4; k++) {
+        const a = a0 + (k * Math.PI) / 2;
+        const [cx, cy] = [18, 18];
+        for (let i = 3; i < 17; i++) {
+          const x = cx + Math.cos(a) * i;
+          const y = cy + Math.sin(a) * i;
+          g.set(x, y, WOOD[1]);
+          if (i > 5) {
+            const nx = -Math.sin(a);
+            const ny = Math.cos(a);
+            for (let j = 1; j < 4; j++) g.set(x + nx * j, y + ny * j, (i + j) % 3 ? '#e8e0cc' : WOOD[2]);
+          }
+        }
+      }
+      g.ball(18, 18, 1.6, 1.6, [WOOD[0], WOOD[1], WOOD[2]]);
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

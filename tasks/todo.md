@@ -508,7 +508,7 @@ The user asked for the four deferred items before units and battles. Order: tech
   - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog (in progress)
     - Crystal Cavern: an underground cavern, walls at the back, shelves of rock and crystal seams, a dark pool; landmark a towering crystal spire. New: `cave_floor`, crystal_cluster ×3, crystal_spire, stalagmite ×2, glow_mushroom ×2; `Panorama.stalactites`.
     - Glacier Rift: a glacier split by a deep crevasse, with snow bridges, seracs, spindrift and an aurora; landmark a rune-carved monolith in the ice. New: `glacier`, `crevasse`, frost_monolith, serac ×2; `Panorama.aurora`.
-    - Sky Isles: islands floating over a sea of cloud (a new liquid look), joined by narrow stone spans; landmark a sky shrine with a floating crystal.
+    - Sky Isles: islands floating over a sea of cloud (a new liquid look), joined by narrow stone spans; landmark a sky shrine with a floating crystal. New: `cloud` liquid, `cloud_sea`, `sky_grass`, `sky_span`, sky_shrine (animated), windmill (animated); `Panorama.isles`. The theme test's bank rule skips cloud (it has no banks).
     - Toxic Bog: a poisoned swamp of glowing green sludge (a new liquid look), dead trees, gas vents; landmark a giant toadstool.
 
 ## Deferred (map phase)

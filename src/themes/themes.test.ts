@@ -80,7 +80,8 @@ describe('themes', () => {
 
   it.each(showcases.map((t) => [t.id, t] as const))('%s slopes natural banks down to its liquids', (_, theme) => {
     const map = theme.map();
-    for (const t of map.tiles.filter(isLiquid)) {
+    // A sea of cloud lies far below its islands on purpose: it has no banks.
+    for (const t of map.tiles.filter((t) => isLiquid(t) && TERRAIN[t.terrain].style !== 'cloud')) {
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const n = tileAt(map, t.x + dx, t.y + dy);
         if (n && !isLiquid(n) && !isBuilt(n)) expect(n.height - t.height).toBeLessThanOrEqual(1);

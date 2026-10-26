@@ -39,6 +39,12 @@ export const LIQUIDS: Record<LiquidStyle, LiquidLook> = {
     band: 0.22, wobble: 0.45, wobbleScale: 1.6, drift: 0.3, glows: true,
     crust: { threshold: 0.74, color: '#3a1a12' },
   },
+  // A sea of cloud: bright billows near the islands, deepening to blue-grey shadow, rolling slowly.
+  cloud: {
+    ramp: ['#ffffff', '#edf2f8', '#d8e2f0', '#c2d0e6', '#aec0dc', '#9ab0d2'],
+    glint: ['#ffffff', '#ffffff', '#ffffff', '#f4f8fc', '#e4ecf6', '#d4e0f0'],
+    band: 0.16, wobble: 0.7, wobbleScale: 1.4, drift: 0.16, glows: false,
+  },
 };
 
 /** Water's ramp, kept for tests and callers that only care about water. */

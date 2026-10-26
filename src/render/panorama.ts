@@ -153,6 +153,21 @@ export class Panorama {
     }
   }
 
+  /** Distant floating islands: a grassy top over a rocky underside tapering to a point. */
+  isles(o: { rand: Rand; count: number; minY: number; maxY: number; grass: string; rock: string; shade: string }): void {
+    const [g, r, s] = [o.grass, o.rock, o.shade].map(rgb);
+    for (let k = 0; k < o.count; k++) {
+      const cx = o.rand() * this.width;
+      const cy = o.minY + o.rand() * (o.maxY - o.minY);
+      const half = 6 + o.rand() * 18;
+      const depth = half * (0.9 + o.rand() * 0.6);
+      for (let y = 0; y < depth; y++) {
+        const w = half * (1 - y / depth) ** 0.7;
+        for (let x = Math.round(cx - w); x <= Math.round(cx + w); x++) this.px(x, cy + y, y < 2 ? g : x > cx + w * 0.3 ? s : r);
+      }
+    }
+  }
+
   /** Stalactites hanging from a cave roof across the top, each a jagged spike lit on its left edge. */
   stalactites(o: { rand: Rand; color: string; light: string; maxLength: number; count: number }): void {
     const c = rgb(o.color);

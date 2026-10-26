@@ -9,8 +9,8 @@ export type PaintStyle =
   | LiquidStyle;
 
 /** Liquids are flat, keep their exact shoreline and animate (see liquid.ts). */
-export type LiquidStyle = 'water' | 'lava';
-export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
+export type LiquidStyle = 'water' | 'lava' | 'cloud';
+export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava', 'cloud'];
 
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
@@ -139,6 +139,10 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   // Glacier palettes follow the ice painter: [pale, light blue, deep blue, crack white, crack shadow, snow dusting].
   glacier:          natural({ name: 'Glacier',      moveCost: 2, defense: 0,  style: 'ice',         side: 'ice',       palette: ['#dce8f0', '#c4d8e6', '#9ab8d0', '#f6fafc', '#7a9ab4', '#eef4f8'] }),
   crevasse:         natural({ name: 'Crevasse',     moveCost: IMPASSABLE, defense: 0, style: 'ice', side: 'ice',       palette: ['#1e3a5a', '#18304c', '#10243a', '#2e5070', '#0a1a2c', '#24405e'] }),
+  // A sea of cloud far below the sky isles: animated like a liquid, and nobody walks on it.
+  cloud_sea:        natural({ name: 'Sea of Clouds', moveCost: IMPASSABLE, defense: 0, style: 'cloud', side: 'rock',     palette: ['#f4f8fc', '#dce8f4', '#c4d4e8'] }),
+  sky_grass:        natural({ name: 'Island Grass', moveCost: 1, defense: 0,  style: 'grass',       side: 'rock',      palette: ['#6a9a48', '#5e8c40', '#78a852', '#8cba5e'] }),
+  sky_span:         built({ name: 'Stone Span',     moveCost: 1, defense: 0,  style: 'flagstone',   side: 'arcade',    palette: ['#b8b4a8', '#a8a498', '#7e7a70', '#ccc8bc'] }),
   sand_paving:      built({ name: 'Causeway',       moveCost: 1, defense: 0,  style: 'flagstone',   side: 'sandstone', palette: ['#c4a874', '#b49866', '#8a744c', '#d6bc88'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
