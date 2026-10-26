@@ -488,7 +488,7 @@ The user asked for the four deferred items before units and battles. Order: tech
   - Approved 2026-10-26 ("it looks good").
   - M10c done: the shadow map is redrawn only when the sun or board changes; one texture per water frame (no re-uploads); zoomed-out samples rounded (3×3 at 0.31). Intel GPU ms at 64×64: 5.6 → 2.4 at default zoom (2.4×), 14.4 → 7.2 fully zoomed out. Chunked culling not needed. Details are in perf_log.md.
 - [ ] **M11–M16: 24 more themes**, one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
-  - [x] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor (in review)
+  - [x] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor (approved 2026-10-26: "looks good, no changes")
   - [ ] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair
   - [ ] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street
   - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
