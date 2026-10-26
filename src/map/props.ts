@@ -103,6 +103,11 @@ export const PROPS: Record<PropId, PropDef> = {
   post_box:      prop('Post Box',      { defense: 5, shadow: 3 }),
   belisha:       prop('Belisha Beacon', { defense: 0, shadow: 2, light: { color: 0xffb040, intensity: 2, distance: 2.5 } }),
   cafe_table:    prop('Café Table',    { defense: 5, variants: 2, shadow: 7 }),
+  billboard:     prop('Billboard',     { defense: 0, blocks: true, shadow: 10, light: { color: 0xff6ad0, intensity: 5, distance: 6 } }),
+  sign_gantry:   prop('Sign Gantry',   { defense: 0, shadow: 4 }),
+  jersey_barrier: prop('Road Barrier', { defense: 25, shadow: 6 }),
+  traffic_cone:  prop('Traffic Cones', { defense: 0, shadow: 3 }),
+  highway_lamp:  prop('Highway Lamp',  { defense: 0, shadow: 2, light: { color: 0xffa040, intensity: 3.5, distance: 5 } }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

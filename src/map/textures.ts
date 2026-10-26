@@ -51,6 +51,7 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   villa: ['#b05a40', '#924834', '#d0bca4', '#e8e0d0'],
   shop: ['#eedcb4', '#dcc69a', '#f8ecd0', '#f4f0e8'],
   shop_brick: ['#a85038', '#8a4030', '#d0bca4', '#f4f0e8'],
+  retaining: ['#7a7c80', '#66686c', '#8e9094', '#44464a'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
@@ -134,6 +135,26 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
       return;
     case 'timber':
       for (let x = 0; x < TILE_PX; x++) for (let y = 0; y < STEP_PX; y++) put(x, y, x % 4 === 0 ? accent : rand() < 0.25 ? dark : x % 4 === 1 ? light : base);
+      return;
+    case 'retaining':
+      // Cast concrete panels holding up the expressway: joints between panels, rust and rain
+      // stains running down from them, and on some panels a burst of graffiti.
+      for (let x = 0; x < TILE_PX; x++) {
+        for (let y = 0; y < STEP_PX; y++) {
+          const joint = x === 0 || y === STEP_PX - 1;
+          const stain = (x === 3 || x === 11) && rand() < 0.7;
+          put(x, y, joint ? accent : stain ? dark : rand() < 0.12 ? dark : rand() < 0.08 ? light : base);
+        }
+      }
+      if (variant === 1 || variant === 2) {
+        const tag = variant === 1 ? ['#e84a9a', '#48d0e8'] : ['#f0d040', '#9a5ae0'];
+        for (let i = 0; i < 9; i++) {
+          const x = 3 + int(rand, 10);
+          const y = 1 + int(rand, 5);
+          put(x, y, tag[0]);
+          put(x + 1, y + (rand() < 0.5 ? 1 : 0), tag[i & 1]);
+        }
+      }
       return;
     case 'concrete':
       for (let x = 0; x < TILE_PX; x++) for (let y = 0; y < STEP_PX; y++) put(x, y, y === 7 ? accent : rand() < 0.15 ? dark : rand() < 0.1 ? light : base);

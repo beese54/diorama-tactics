@@ -1597,6 +1597,118 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  billboard: {
+    w: 50, h: 72,
+    paint(g) {
+      // A rooftop-sized billboard on steel legs: a catwalk under the panel, and a glowing advert
+      // for a noodle bar, a steaming bowl with chopsticks and a line of characters on hot pink.
+      for (const x of [13, 35]) {
+        g.rect(x, 30, 3, 42, IRON[1]);
+        g.rect(x, 30, 1, 42, IRON[2]);
+        for (let y = 36; y < 70; y += 8) g.line(x + 3, y, x + 8, y + 6, IRON[0]);
+      }
+      g.rect(2, 30, 46, 2, IRON[2]);
+      g.rect(2, 32, 46, 1, IRON[0]);
+      // The panel: frame, then the advert.
+      g.rect(0, 2, 50, 28, '#14121c');
+      for (let y = 4; y < 28; y++) for (let x = 2; x < 48; x++) g.set(x, y, y < 12 ? '#ff4aa8' : y < 20 ? '#e8308e' : '#c02078', true);
+      g.ball(16, 19, 9, 5, ['#e8e0d0', '#f8f4ea', '#ffffff'], true);
+      g.rect(7, 18, 19, 2, '#f8f4ea', true);
+      g.rect(9, 17, 15, 2, '#f0b040', true);
+      g.line(22, 7, 29, 16, '#3a2a22', true);
+      g.line(24, 7, 30, 15, '#3a2a22', true);
+      for (const x of [12, 16, 20]) {
+        g.set(x, 13, '#ffffff', true);
+        g.set(x + 1, 11, '#ffffff', true);
+        g.set(x, 9, '#ffffff', true);
+      }
+      for (let k = 0; k < 4; k++) {
+        const x0 = 32 + k * 4;
+        g.rect(x0, 8, 3, 1, '#ffe86a', true);
+        g.rect(x0 + 1, 8, 1, 6, '#ffe86a', true);
+        g.rect(x0, 11 + (k & 1), 3, 1, '#ffe86a', true);
+        g.rect(x0, 18, 3, 6, k & 1 ? '#7ff0ff' : '#ffffff', true);
+      }
+      // Lamps on the frame, shining down on it.
+      for (const x of [8, 24, 40]) {
+        g.rect(x, 0, 3, 2, IRON[1]);
+        g.set(x + 1, 1, '#fff4c0', true);
+      }
+      g.outline(0.5);
+    },
+  },
+  sign_gantry: {
+    w: 58, h: 46,
+    paint(g) {
+      // An overhead sign gantry: steel posts either side of the carriageway and a lattice beam
+      // carrying two green direction signs with white arrows and lettering.
+      for (const x of [1, 54]) {
+        g.rect(x, 6, 3, 40, IRON[1]);
+        g.rect(x, 6, 1, 40, IRON[2]);
+        g.rect(x - 1, 44, 5, 2, IRON[0]);
+      }
+      g.rect(0, 4, 58, 2, IRON[2]);
+      g.rect(0, 9, 58, 1, IRON[1]);
+      for (let x = 0; x < 58; x += 4) g.line(x, 5, x + 3, 9, IRON[0]);
+      for (const x0 of [7, 31]) {
+        g.rect(x0, 11, 20, 14, '#1e6a3e');
+        g.rect(x0, 11, 20, 1, '#f2f0e8');
+        g.rect(x0, 24, 20, 1, '#f2f0e8');
+        g.rect(x0, 11, 1, 14, '#f2f0e8');
+        g.rect(x0 + 19, 11, 1, 14, '#f2f0e8');
+        for (let k = 0; k < 3; k++) g.rect(x0 + 3, 14 + k * 3, 9 - k * 2, 1, '#f2f0e8');
+        // The arrow: up for straight on, or bending off to the right for the exit.
+        g.rect(x0 + 15, 14, 1, 8, '#f2f0e8');
+        g.rect(x0 + 14, 15, 3, 1, '#f2f0e8');
+        g.rect(x0 + 13, 16, 5, 1, '#f2f0e8');
+        g.rect(x0 + 15, 10, 1, 1, IRON[1]);
+        g.rect(x0 + 4, 10, 1, 1, IRON[1]);
+      }
+      g.outline(0.5);
+    },
+  },
+  jersey_barrier: {
+    w: 19, h: 9,
+    paint(g) {
+      // Concrete crash barriers set out for road works, a red and white stripe along the top.
+      const concrete = ['#7a7c80', '#9a9ca0', '#b8bac0', '#d0d2d6'];
+      for (let y = 0; y < 9; y++) {
+        const inset = y < 5 ? 1 : 0;
+        g.rect(inset, y, 19 - 2 * inset, 1, y < 2 ? concrete[3] : y < 5 ? concrete[2] : concrete[1]);
+      }
+      for (let x = 1; x < 18; x++) g.set(x, 2, Math.floor((x - 1) / 3) % 2 ? '#f2f0e8' : '#d0302a');
+      g.rect(9, 0, 1, 9, concrete[0]);
+      g.outline();
+    },
+  },
+  traffic_cone: {
+    w: 13, h: 9,
+    paint(g) {
+      // A pair of traffic cones, orange with white reflective bands, on black bases.
+      for (const cx of [3, 9]) {
+        for (let y = 0; y < 7; y++) {
+          const hw = Math.floor(y / 2);
+          g.rect(cx - hw, y, 2 * hw + 1, 1, y === 3 || y === 4 ? '#f2f0e8' : y < 2 ? '#ff8a3a' : '#e8601e');
+        }
+        g.rect(cx - 3, 7, 7, 2, '#24252a');
+      }
+      g.outline();
+    },
+  },
+  highway_lamp: {
+    w: 13, h: 36,
+    paint(g) {
+      // A tall highway lamp: a grey pole curving over into a sodium lamp that glows orange.
+      g.rect(2, 6, 2, 30, '#6a6c72');
+      g.rect(2, 6, 1, 30, '#8a8c92');
+      g.line(3, 6, 6, 2, '#6a6c72');
+      g.rect(6, 1, 6, 2, '#55585f');
+      g.rect(6, 3, 6, 2, '#ffb050', true);
+      g.rect(7, 3, 4, 1, '#ffe0a0', true);
+      g.rect(1, 34, 4, 2, '#3a3c42');
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

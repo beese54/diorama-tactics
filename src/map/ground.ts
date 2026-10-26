@@ -252,7 +252,19 @@ function zebraCrossing(px: Pixel, p: readonly string[]): string {
   return PAINTERS.asphalt.base(px, p);
 }
 
+/**
+ * An expressway running east-west, one lane per row of tiles: a dashed white line between
+ * lanes and darker tyre tracks worn into each lane.
+ */
+function expressway(px: Pixel, p: readonly string[]): string {
+  const y = px.gy % TILE_PX;
+  if (y === 0 && px.gx % 16 < 9) return px.grain < 0.1 ? p[3] : p[4];
+  if ((y === 4 || y === 5 || y === 11 || y === 12) && px.grain > 0.25) return p[5];
+  return PAINTERS.asphalt.base(px, p);
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  lanes: { base: expressway },
   zebra: { base: zebraCrossing },
   rails: { base: railTrack },
   gravel: { base: rakedGravel },

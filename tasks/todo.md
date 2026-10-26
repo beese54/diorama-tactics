@@ -495,7 +495,11 @@ The user asked for the four deferred items before units and battles. Order: tech
     - Suburban Park: houses with gardens behind hedges, a cul-de-sac, a park with a pond and paths; landmark a playground (slide and swings). New: `house_brick` (red-brick `villa` walls, slate roof), `bark`, playground, picnic_table, washing_line, ducks.
     - Canal Quarter: a canal in two pounds joined by a lock, towpaths, brick warehouses and a footbridge; landmark a mill chimney. New: lock_gate (floats), bollard, mill_chimney (narrowboats removed in review).
     - High Street: shopfronts with awnings along the back, a crossing, a bus stop; landmark the town clock tower. New: `shop_building` and `shop_brick` (a `shop` face: fascia, striped awning, display window and door), `zebra` crossing, phone_box, post_box, belisha, cafe_table ×2, clock_tower.
-  - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
+  - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps (in progress; the user asked for M14-M16 back to back overnight, to vet in the morning)
+    - Highway Overpass: a three-lane expressway on a concrete embankment across the board, a ramp and steps up to it, night streets either side; landmark a noodle-bar billboard. New: `highway` (lanes painter, `retaining` face), billboard, sign_gantry, jersey_barrier, traffic_cone, highway_lamp.
+    - Rooftop Arcade: the board is a rooftop, with towers around it; arcade cabinets and a claw machine, a rooftop pool, a turf lounge under string lights, plant rooms; landmark a big neon ARCADE sign. New: `roof_deck`, `roof_plant`, `turf`, neon_sign, arcade_cabinet ×2, claw_machine, water_tank, ac_unit, string_lights.
+    - Container Port: stacked shipping containers as walkable terrain, a quay, and a container ship moored along the front at full size, as terrain (no miniature vehicles; see lessons.md); landmark a ship-to-shore gantry crane.
+    - Shrine Steps: stone steps climbing to a shrine above the city, a run of vermilion torii gates, stone lanterns, cherry trees; landmark the shrine hall.
   - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle
   - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog
 

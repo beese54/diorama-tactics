@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails' | 'zebra'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice' | 'heather' | 'gravel' | 'lawn' | 'hedge' | 'rails' | 'zebra' | 'lanes'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice' | 'hedge' | 'villa' | 'shop' | 'shop_brick' | 'retaining';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice', 'hedge', 'villa', 'shop', 'shop_brick', 'retaining',
 ];
 
 /**
@@ -116,6 +116,9 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   shop_brick:       built({ name: 'Shops',          moveCost: IMPASSABLE, defense: 0, style: 'slabs', side: 'shop_brick', palette: ['#86827c', '#7a7671', '#5f5c58', '#94908a'] }),
   // Zebra palette: asphalt as the road's, then the stripes' white and their worn edge.
   zebra:            built({ name: 'Zebra Crossing', moveCost: 1, defense: 0,  style: 'zebra',       side: 'concrete',  palette: ['#56585e', '#4d4f55', '#404247', '#66686d', '#ecebe4', '#c8c8c0'] }),
+
+  // Neon City themes (M14). Highway palette: asphalt ×4 as the road's, then lane paint and tyre wear.
+  highway:          built({ name: 'Expressway',     moveCost: 1, defense: 0,  style: 'lanes',       side: 'retaining', palette: ['#4a4c54', '#42444c', '#383a40', '#56585e', '#d8d8d0', '#3a3c42'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
 
