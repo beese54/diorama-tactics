@@ -343,6 +343,20 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Two tweaks that looked faster (fewer noise hashes, fewer allocations) were within measurement noise, so they were reverted.
   - Web Workers now paint the ground and the 12 water frames while the main thread builds the mesh. Two Chrome surprises: a worker can't start while the main thread is busy, and the last job sent to a worker waits until the main thread yields. So the board waits for the workers to start, sends the jobs, yields once, and only then builds the mesh.
 
+### M10: Tech pass
+![A 64×64 board zoomed all the way out, before and after supersampling](land/m10-tech/zoom-out-64-before-after.png)
+
+![A slow pan across it: before shimmers, after holds steady](land/m10-tech/pan-64-before-after.gif)
+
+- **What changed:**
+  - **M10a:** boards load 16–20% faster. Worker threads build the terrain mesh as well as painting the ground. A board now appears as soon as its first water frame is painted, and the other eleven frames follow a moment later. Roads are found with a priority queue. Nothing looks different.
+  - **M10b:** the camera can zoom out until the whole board fits, so 64×64 boards zoom to about 0.31; 32×32 boards keep their limit of 0.5. Below zoom 0.5 each screen pixel averages up to 4×4 samples. Distant ground, cliffs and trees blend into clean colours instead of shimmering as the camera moves. At zoom 0.5 and above nothing changes, pixel for pixel. Points (snow, fireflies, smoke, splashes) and the backdrop keep their size.
+- **Decisions:** *"Let's do the remaining four first"*: faster loading, zoom-out without shimmer, GPU headroom, then the 24 themes.
+- **Learned:**
+  - Ordinary mipmaps would have softened today's views. With the camera tilted, the GPU already picks a smaller mip level at zoom 1 along the foreshortened axis. Supersampling only when zoomed out leaves every existing view untouched.
+  - More threads isn't always faster. Past about six workers, this laptop throttled and its slower cores joined in, and loading got slower.
+  - Background syncing (OneDrive) made timings drift by 50%. Alternating the old and new builds on every load cancels that out.
+
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)
 ![Forest](land/comparisons/forest-m2-vs-m2d.png)

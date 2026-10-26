@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PixelPipeline } from './render/PixelPipeline';
+import { PixelPipeline, samplesFor } from './render/PixelPipeline';
 import { CameraRig } from './render/CameraRig';
 import { disposeTree } from './render/dispose';
 import { columnShape, MapMesh, type MapShape } from './map/MapMesh';
@@ -149,6 +149,7 @@ async function main(): Promise<void> {
 
   const canvas = pipeline.renderer.domElement;
   const rig = new CameraRig(canvas, board.map.width / 2);
+  rig.fitBoard(Math.max(board.map.width, board.map.height));
   rig.setPose(45, 60, theme.zoom);
   const ui = document.getElementById('ui')!;
   const tileInfo = new TileInfo(ui);
@@ -175,6 +176,7 @@ async function main(): Promise<void> {
     board = buildBoard(next);
     void next.rest();
     rig.panLimit = Math.max(map.width, map.height) / 2;
+    rig.fitBoard(Math.max(map.width, map.height));
     hovered = cursorTile = null;
     cursor.setTarget(null);
     hud.setTitle(theme.name, theme.seed === undefined ? undefined : map.seed);
@@ -278,6 +280,8 @@ async function main(): Promise<void> {
   let lastElapsed = 0;
   /** How dark it is now (0 day to 1 night), for checks. */
   let nightNow = 0;
+  /** Off only for before/after captures (dev hooks): zoomed out, draw at one sample per pixel. */
+  let supersampling = true;
   /** CPU milliseconds spent in each recent frame (for scripts/bench.mjs). */
   const frameCpu: number[] = [];
   pipeline.renderer.setAnimationLoop((time) => {
@@ -316,7 +320,7 @@ async function main(): Promise<void> {
     cursor.update(elapsed);
     tileInfo.show(hovered);
 
-    pipeline.render(scene, rig.camera);
+    pipeline.render(scene, rig.camera, supersampling ? samplesFor(rig.camera.zoom) : 1);
     if (import.meta.env.DEV && frameCpu.push(performance.now() - started) > 2000) frameCpu.splice(0, 1000);
   });
 
@@ -345,6 +349,8 @@ async function main(): Promise<void> {
         seed: () => board.map.seed,
         newMap: (seed?: number) => newMap(seed),
         setSize: (size: number) => pickSize(String(size)),
+        setSupersampling: (on: boolean) => (supersampling = on),
+        minZoom: () => rig.controls.minZoom,
         exportJson: () => serializeMap(board.map),
         loadJson: loadText,
         hudText: () => document.getElementById('hud')?.textContent ?? '',

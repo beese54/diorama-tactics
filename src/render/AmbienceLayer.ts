@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { pixelScale } from './PixelPipeline';
 import { mulberry32 } from '../util/rng';
 import { isLiquid } from '../map/surface';
 import type { MapFile, Tile } from '../map/types';
@@ -103,8 +104,9 @@ export class AmbienceLayer {
 /** Fireflies: single yellow-green pixels that wander in small loops and pulse on and off. */
 function fireflyMaterial(time: { value: number }): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
-    uniforms: { uTime: time, uAmount: { value: 0 } },
+    uniforms: { pixelScale, uTime: time, uAmount: { value: 0 } },
     vertexShader: /* glsl */ `
+      uniform float pixelScale;
       uniform float uTime, uAmount;
       attribute vec3 aInfo;
       varying float vGlow;
@@ -118,7 +120,7 @@ function fireflyMaterial(time: { value: number }): THREE.ShaderMaterial {
         vGlow = step(fract(uTime / 2.0 + aInfo.z), 0.55);
         if (aInfo.x >= uAmount || vGlow < 0.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
         gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
-        gl_PointSize = aInfo.z < 0.2 ? 2.0 : 1.0;
+        gl_PointSize = (aInfo.z < 0.2 ? 2.0 : 1.0) * pixelScale;
       }
     `,
     fragmentShader: /* glsl */ `
@@ -133,10 +135,12 @@ function fireflyMaterial(time: { value: number }): THREE.ShaderMaterial {
 /** A chimney stack: a 2x4 px brick block standing on the roof, its cap dark. */
 function chimneyMaterial(): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
+    uniforms: { pixelScale },
     vertexShader: /* glsl */ `
+      uniform float pixelScale;
       void main() {
         gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
-        gl_PointSize = 4.0;
+        gl_PointSize = 4.0 * pixelScale;
       }
     `,
     fragmentShader: /* glsl */ `
@@ -158,8 +162,9 @@ function smokeMaterial(time: { value: number }): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
-    uniforms: { uTime: time, uWind: { value: new THREE.Vector2() }, uColor: { value: new THREE.Color() } },
+    uniforms: { pixelScale, uTime: time, uWind: { value: new THREE.Vector2() }, uColor: { value: new THREE.Color() } },
     vertexShader: /* glsl */ `
+      uniform float pixelScale;
       uniform float uTime;
       uniform vec2 uWind;
       attribute vec2 aInfo;
@@ -169,7 +174,7 @@ function smokeMaterial(time: { value: number }): THREE.ShaderMaterial {
         vec3 p = position + vec3(uWind.x * vAge * vAge, ${SMOKE_RISE.toFixed(2)} * vAge, uWind.y * vAge * vAge);
         p.x += 0.06 * sin(vAge * 12.0 + aInfo.y * 6.28);
         gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
-        gl_PointSize = floor(3.0 + 5.0 * vAge);
+        gl_PointSize = floor(3.0 + 5.0 * vAge) * pixelScale;
       }
     `,
     fragmentShader: /* glsl */ `

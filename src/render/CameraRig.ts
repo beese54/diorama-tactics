@@ -6,6 +6,17 @@ import { BASE_HEIGHT, BASE_WIDTH } from './PixelPipeline';
 const PIXELS_PER_UNIT = 16;
 
 export const ZOOM_RANGE = { min: 0.5, max: 3 } as const;
+
+/**
+ * The zoom at which a board of `size` tiles fits on screen in the opening view (corner to
+ * corner across the width, front to back with room for its columns down the height), or
+ * ZOOM_RANGE.min if that is further out: boards up to 32×32 keep the standard limit.
+ */
+export function fitZoom(size: number): number {
+  const across = (BASE_WIDTH / PIXELS_PER_UNIT) / (1.5 * size);
+  const down = (BASE_HEIGHT / PIXELS_PER_UNIT) / (0.75 * size + 4);
+  return Math.min(ZOOM_RANGE.min, across, down);
+}
 /** Polar angle from straight down-the-vertical, in degrees. */
 export const POLAR_RANGE_DEG = { min: 25, max: 75 } as const;
 
@@ -60,6 +71,11 @@ export class CameraRig {
       t.add(shift);
       this.camera.position.add(shift);
     }
+  }
+
+  /** Lets the camera zoom out until a board of `size` tiles fits on screen. */
+  fitBoard(size: number): void {
+    this.controls.minZoom = fitZoom(size);
   }
 
   /** Jump to an orbit pose (azimuth from +z toward +x), optionally re-centred on a ground point. */

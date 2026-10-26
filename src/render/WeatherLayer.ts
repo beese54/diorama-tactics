@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { pixelScale } from './PixelPipeline';
 import { mulberry32 } from '../util/rng';
 import { isLiquid } from '../map/surface';
 import type { MapFile, Tile } from '../map/types';
@@ -250,11 +251,13 @@ function fallMaterial(time: { value: number }, color: THREE.Color, wind: THREE.V
     transparent: rain,
     depthWrite: !rain,
     uniforms: {
+      pixelScale,
       uOpacity: { value: rain ? RAIN_OPACITY : 1 },
       uTime: time, uAmount: { value: 0 }, uSpeed: { value: 1 }, uHeight: { value: rain ? TOP - BOTTOM : SNOW_BAND },
       uWind: { value: wind.clone() }, uLength: { value: DROP_LENGTH }, uColor: { value: color },
     },
     vertexShader: /* glsl */ `
+      uniform float pixelScale;
       uniform float uTime, uAmount, uSpeed, uHeight, uLength;
       uniform vec2 uWind;
       attribute float aRank, aSize, aEnd, aBottom;
@@ -266,7 +269,7 @@ function fallMaterial(time: { value: number }, color: THREE.Color, wind: THREE.V
         p.xz += uWind * (aBottom + uHeight - y);
         ${rain ? 'p += aEnd * uLength * vec3(-uWind.x, 1.0, -uWind.y);' : 'p.x += 0.22 * sin(6.2831853 * (uTime / 2.0 + aSize)); p.z += 0.22 * cos(6.2831853 * (uTime / 4.0 + aSize));'}
         gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
-        gl_PointSize = aSize < 0.35 ? 2.0 : 1.0;
+        gl_PointSize = (aSize < 0.35 ? 2.0 : 1.0) * pixelScale;
       }
     `,
     fragmentShader: /* glsl */ `
@@ -285,8 +288,9 @@ function splashMaterial(time: { value: number }): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
-    uniforms: { uTime: time, uAmount: { value: 0 }, uColor: { value: SPLASH_COLOR } },
+    uniforms: { pixelScale, uTime: time, uAmount: { value: 0 }, uColor: { value: SPLASH_COLOR } },
     vertexShader: /* glsl */ `
+      uniform float pixelScale;
       uniform float uTime, uAmount;
       attribute vec3 aInfo;
       varying float vWater;
@@ -296,7 +300,7 @@ function splashMaterial(time: { value: number }): THREE.ShaderMaterial {
         if (aInfo.x >= uAmount || vAge > 0.3) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
         vWater = aInfo.z;
         gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
-        gl_PointSize = aInfo.z > 0.5 ? 5.0 : 3.0;
+        gl_PointSize = (aInfo.z > 0.5 ? 5.0 : 3.0) * pixelScale;
       }
     `,
     fragmentShader: /* glsl */ `
