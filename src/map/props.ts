@@ -83,6 +83,9 @@ export const PROPS: Record<PropId, PropDef> = {
   topiary:       prop('Topiary',       { defense: 15, variants: 2, shadow: 5 }),
   statue:        prop('Statue',        { defense: 20, variants: 2, shadow: 5 }),
   gatehouse:     prop('Gatehouse',     { defense: 25, shadow: 14 }),
+  maypole:       prop('Maypole',       { defense: 0, blocks: true, shadow: 6, sway: 0.01 }),
+  fair_tent:     prop('Fair Tent',     { defense: 0, blocks: true, variants: 3, shadow: 11 }),
+  bunting:       prop('Bunting',       { defense: 0, shadow: 2, sway: 0.03 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

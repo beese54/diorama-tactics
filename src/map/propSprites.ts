@@ -1084,6 +1084,89 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  maypole: {
+    w: 27, h: 56,
+    paint(g, _v, rand) {
+      // The maypole: a tall white pole under a crown of flowers, its ribbons wound halfway down
+      // in a spiral and the loose ends pegged out to the ground, as if the dance has just stopped.
+      const ribbons = ['#d83a3a', '#f0c030', '#3a7ad8', '#f4f0e8', '#4aa84a'];
+      g.rect(12, 6, 3, 50, '#e8e4d8');
+      g.rect(12, 6, 1, 50, '#f8f6f0');
+      g.rect(14, 6, 1, 50, '#b8b2a4');
+      for (let y = 10; y < 32; y++) {
+        const k = Math.floor((y - 10) / 2) % ribbons.length;
+        g.rect(12 + ((y >> 1) & 1), y, 2, 1, ribbons[k]);
+      }
+      g.ball(13.5, 6, 6, 3.4, ['#2e5a26', '#3e7430', '#56903e', '#6aa64a']);
+      for (let i = 0; i < 12; i++) g.set(8 + Math.floor(rand() * 12), 3 + Math.floor(rand() * 6), ribbons[i % 4]);
+      g.rect(13, 0, 1, 3, '#d8b040');
+      // Loose ribbon ends fanning out from the crown to pegs on the ground.
+      for (const [x1, k] of [[0, 0], [5, 1], [22, 2], [26, 4]] as const) {
+        for (let i = 0; i <= 20; i++) {
+          const t = i / 20;
+          const x = 13 + (x1 - 13) * t;
+          const y = 9 + 46 * t - 6 * Math.sin(t * Math.PI);
+          g.set(x, y, ribbons[k]);
+        }
+        g.rect(x1 - 1 + (x1 === 0 ? 1 : 0), 54, 2, 2, WOOD[1]);
+      }
+      g.outline(0.5);
+    },
+  },
+  fair_tent: {
+    w: 31, h: 32,
+    paint(g, v) {
+      // A striped fair tent: a peaked canvas roof over walls with the front flap tied open,
+      // a pennant on the king pole. Red and white, blue and yellow, or green and cream.
+      const [a, b] = [['#b8302a', '#f2ece0'], ['#2e5aa8', '#f0c84a'], ['#3e8a44', '#efe6c8']][v];
+      const shade = (c: string, k: number) => {
+        const n = parseInt(c.slice(1), 16);
+        const ch = [n >> 16, (n >> 8) & 255, n & 255].map((x) => Math.round(x * k).toString(16).padStart(2, '0'));
+        return '#' + ch.join('');
+      };
+      // Walls.
+      for (let y = 16; y < 31; y++) for (let x = 2; x < 29; x++) g.set(x, y, Math.floor((x - 2) / 3) % 2 ? shade(b, x > 20 ? 0.82 : 1) : shade(a, x > 20 ? 0.82 : 1));
+      g.rect(2, 30, 27, 1, '#5a4a3a');
+      // The open flap: dark inside, the canvas tied back.
+      for (let y = 20; y < 30; y++) {
+        const w = Math.round((y - 20) * 0.45);
+        g.rect(15 - w, y, 2 * w + 1, 1, '#3a2a22');
+      }
+      // Peaked roof with a scalloped valance.
+      for (let r = 0; r < 12; r++) {
+        const hw = Math.round(((r + 1) / 12) * 15);
+        for (let x = -hw; x <= hw; x++) {
+          const stripe = Math.floor((x + 30) / 3) % 2 ? b : a;
+          g.set(15 + x, 4 + r, shade(stripe, x > hw * 0.4 ? 0.8 : x < -hw * 0.4 ? 1.08 : 0.95));
+        }
+      }
+      for (let x = 0; x < 31; x += 3) g.rect(x, 16, 2, 1, x % 6 ? a : b);
+      g.rect(15, 0, 1, 5, WOOD[0]);
+      g.rect(16, 0, 4, 2, a);
+      g.outline();
+    },
+  },
+  bunting: {
+    w: 33, h: 20,
+    paint(g) {
+      // A string of bunting between two poles: little triangular flags along a sagging line.
+      const flags = ['#d83a3a', '#f0c030', '#3a7ad8', '#f4f0e8', '#4aa84a'];
+      g.rect(1, 2, 2, 18, WOOD[1]);
+      g.rect(30, 2, 2, 18, WOOD[1]);
+      g.rect(1, 2, 1, 18, WOOD[2]);
+      for (let x = 3; x < 30; x++) {
+        const y = 3 + Math.round(Math.sin(((x - 3) / 27) * Math.PI) * 4);
+        g.set(x, y, '#e8e0cc');
+        if ((x - 3) % 4 === 1) {
+          const c = flags[((x - 3) >> 2) % flags.length];
+          g.rect(x, y + 1, 3, 1, c);
+          g.rect(x, y + 2, 2, 1, c);
+          g.set(x, y + 3, c);
+        }
+      }
+      g.outline(0.55);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

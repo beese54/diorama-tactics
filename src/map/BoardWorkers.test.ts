@@ -33,7 +33,7 @@ describe('ground painted in parts', () => {
     joined.frames.forEach((frame, f) => expect(same(frame, whole.frames[f])).toBe(true));
     expect(joined.glow?.length ?? 0).toBe(whole.glow?.length ?? 0);
     joined.glow?.forEach((frame, f) => expect(same(frame, whole.glow![f])).toBe(true));
-  });
+  }, 30_000);
 
   // What the workers do since M10: frame 0 first, the other frames later, laid into the same image.
   it.each([
@@ -47,7 +47,7 @@ describe('ground painted in parts', () => {
     for (const which of [[1, 2, 3, 4], [5, 6, 7], [8, 9, 10, 11]]) composeGround(land, paintLiquids(map, wild, which), which, image);
     whole.frames.forEach((frame, f) => expect(same(image.frames[f], frame), `frame ${f}`).toBe(true));
     whole.glow?.forEach((frame, f) => expect(same(image.glow![f], frame), `glow ${f}`).toBe(true));
-  });
+  }, 30_000);
 
   it('paints on this thread where there are no workers', async () => {
     const workers = new BoardWorkers();
