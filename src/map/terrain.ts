@@ -127,6 +127,7 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   container:        built({ name: 'Containers',     moveCost: 1, defense: 10, style: 'containers', side: 'container', palette: ['#a8402e', '#7e2e22', '#2e5a9a', '#22447a', '#3a7a4a', '#2a5a36', '#d88a2a', '#a8681e'] }),
   // Deck palette: [paint, paint dark, weld seam, tread].
   ship_deck:        built({ name: 'Ship\'s Deck',   moveCost: 1, defense: 0,  style: 'deckplate',   side: 'hull',      palette: ['#4e5a52', '#46524a', '#2e3630', '#5e6a62'] }),
+  moss:             natural({ name: 'Mossy Slope',    moveCost: 2, defense: 5,  style: 'grass',       side: 'rock',      palette: ['#3e5a34', '#34502e', '#4a683c', '#5e7e48'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };
 

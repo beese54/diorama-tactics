@@ -1903,6 +1903,119 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  torii: {
+    w: 33, h: 36,
+    paint(g) {
+      // A vermilion torii: two round pillars on black footings, the tie beam through them, and
+      // the black-capped top beam sweeping up at its ends, a name plaque between.
+      const red = ['#8a1e14', '#b82a1c', '#e0442a', '#f0684a'];
+      for (const x of [6, 24]) {
+        g.rect(x, 8, 3, 25, red[1]);
+        g.rect(x, 8, 1, 25, red[3]);
+        g.rect(x + 2, 8, 1, 25, red[0]);
+        g.rect(x - 1, 32, 5, 4, '#1e1a1a');
+      }
+      g.rect(3, 12, 27, 2, red[2]);
+      g.rect(3, 14, 27, 1, red[0]);
+      for (let x = 0; x < 33; x++) {
+        const lift = Math.round(Math.pow(Math.abs(x - 16) / 16, 2.5) * 3);
+        g.rect(x, 3 - lift, 1, 2, '#1e1a1a');
+        g.rect(x, 5 - lift, 1, 2, red[2]);
+      }
+      g.rect(14, 7, 5, 5, '#1e1a1a');
+      g.rect(15, 8, 3, 3, '#d8b040');
+      g.outline(0.5);
+    },
+  },
+  stone_lantern: {
+    w: 11, h: 19,
+    paint(g) {
+      // A stone lantern: a footing and post, the firebox with its light glowing through, and a
+      // broad cap with a little finial.
+      g.rect(2, 16, 7, 3, STONE[1]);
+      g.rect(2, 16, 7, 1, STONE[2]);
+      g.rect(4, 10, 3, 6, STONE[2]);
+      g.rect(4, 10, 1, 6, STONE[3]);
+      g.rect(2, 9, 7, 1, STONE[1]);
+      g.rect(3, 5, 5, 4, STONE[2]);
+      g.rect(4, 6, 3, 2, '#ffc060', true);
+      g.set(5, 6, '#fff0b0', true);
+      for (let r = 0; r < 3; r++) g.rect(r, 4 - r, 11 - 2 * r, 1, r ? STONE[2] : STONE[1]);
+      g.rect(5, 0, 1, 2, STONE[3]);
+      g.outline();
+    },
+  },
+  sakura: {
+    w: 27, h: 30,
+    paint(g, v, rand) {
+      // A cherry tree in bloom: a dark, twisting trunk under clouds of pink blossom, petals
+      // drifting down.
+      const bloom = v ? ['#c86a8a', '#e08aa8', '#f4b0c8', '#ffd8e6'] : ['#c87a9a', '#e698b4', '#f8bcd2', '#ffe2ec'];
+      g.rect(12, 16, 3, 14, '#3a2420');
+      g.rect(12, 16, 1, 14, '#5a3a30');
+      g.line(13, 20, 7, 14, '#3a2420');
+      g.line(14, 18, 20, 12, '#3a2420');
+      const blobs = v ? [[13.5, 9, 9, 6.5], [6, 12, 5.5, 4.5], [21, 12, 5.5, 4.5], [13, 4, 6, 4]] : [[13.5, 10, 10, 6], [5.5, 13, 5, 4], [21.5, 12, 5, 4.5], [14, 5, 6.5, 4.5]];
+      for (const [cx, cy, rx, ry] of blobs) g.ball(cx, cy, rx, ry, bloom);
+      for (let i = 0; i < 6; i++) g.set(2 + Math.floor(rand() * 23), 20 + Math.floor(rand() * 9), bloom[2]);
+      g.outline();
+    },
+  },
+  shrine: {
+    w: 80, h: 72,
+    paint(g) {
+      // The shrine hall, drawn big enough to dwarf the torii: a stone base and steps, a raised
+      // timber floor, vermilion posts with white walls between, and a great sweeping roof of dark
+      // copper with gilded ridge ends. At the front, the straw rope with its paper streamers,
+      // the bell and its rope, the offering box, and two lit lanterns.
+      const red = ['#8a1e14', '#b82a1c', '#e0442a'];
+      const roof = ['#1e2a2a', '#2a3a38', '#3a4e4a', '#4e6660'];
+      g.rect(4, 64, 72, 8, STONE[2]);
+      g.rect(4, 64, 72, 1, STONE[3]);
+      g.rect(62, 65, 14, 7, STONE[1]);
+      g.rect(31, 61, 18, 3, STONE[3]);
+      g.rect(8, 56, 64, 5, WOOD[1]);
+      g.rect(8, 56, 64, 1, WOOD[3]);
+      for (let x = 13; x < 68; x++) for (let y = 30; y < 56; y++) g.set(x, y, x > 56 ? '#d4cebe' : '#ece6d8');
+      g.rect(28, 36, 24, 20, '#2a1c16');
+      for (const x of [11, 26, 52, 66]) {
+        g.rect(x, 28, 3, 28, red[1]);
+        g.rect(x, 28, 1, 28, red[2]);
+      }
+      g.rect(11, 30, 58, 2, red[0]);
+      // The roof, flaring out at the eaves.
+      for (let r = 0; r < 26; r++) {
+        const hw = 16 + Math.round(r * 0.6) + (r > 20 ? Math.round((r - 20) * 1.4) : 0);
+        for (let x = -hw; x <= hw; x++) g.set(40 + x, 3 + r, x < -hw / 2 ? roof[3] : x > hw / 2 ? roof[0] : roof[1 + (r & 1)]);
+      }
+      g.rect(0, 26, 3, 2, roof[3]);
+      g.rect(77, 26, 3, 2, roof[0]);
+      g.rect(16, 1, 48, 3, roof[0]);
+      g.rect(13, 0, 5, 4, '#d8b040');
+      g.rect(62, 0, 5, 4, '#d8b040');
+      // The straw rope and its paper zigzags; the bell, its rope, and the offering box.
+      g.rect(25, 35, 30, 3, '#c8b070');
+      g.rect(25, 35, 30, 1, '#e0cc90');
+      for (const x of [30, 38, 46]) {
+        g.set(x, 38, '#ffffff');
+        g.set(x + 1, 39, '#ffffff');
+        g.set(x, 40, '#ffffff');
+        g.set(x + 1, 41, '#ffffff');
+      }
+      g.ball(40, 39, 2.6, 2, ['#8a6a20', '#c89a30', '#f0d060']);
+      g.rect(39, 41, 2, 11, '#c83a2a');
+      g.rect(32, 51, 16, 5, WOOD[2]);
+      g.rect(32, 51, 16, 1, WOOD[3]);
+      for (let x = 33; x < 47; x += 2) g.set(x, 53, WOOD[0]);
+      for (const x of [19, 60]) {
+        g.rect(x, 32, 1, 3, '#1e1a1a');
+        g.ball(x + 0.5, 40, 3.4, 4.4, ['#c03020', '#ff6a40', '#ffb070'], true);
+        g.rect(x - 1, 35, 3, 1, '#1e1a1a');
+        g.rect(x - 1, 45, 3, 1, '#1e1a1a');
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {
