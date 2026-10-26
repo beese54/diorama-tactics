@@ -875,6 +875,85 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  boat: {
+    w: 27, h: 26,
+    paint(g, v) {
+      // Moored at the quay: a clinker-built rowing boat with its oars shipped, or a small
+      // fishing smack with a furled sail on its mast. Its waterline sits on the sprite's foot.
+      const hull = v ? ['#2c3a52', '#3e5272', '#567094', '#7a94b4'] : ['#4a2c1c', '#6a3e26', '#8a5634', '#a87048'];
+      for (let r = 0; r < 6; r++) {
+        const inset = Math.round(r * r * 0.35);
+        g.rect(1 + inset, 18 + r, 25 - 2 * inset, 1, r === 0 ? hull[3] : r < 3 ? hull[2] : hull[1]);
+      }
+      g.rect(2, 17, 23, 1, hull[0]);
+      for (const x of [6, 12, 18]) g.rect(x, 17, 1, 2, hull[0]);
+      g.rect(3, 24, 21, 1, '#1e3446');
+      g.rect(5, 25, 17, 1, '#2e4c60');
+      if (v === 0) {
+        g.line(7, 16, 1, 22, WOOD[2]);
+        g.line(19, 16, 25, 22, WOOD[2]);
+        g.rect(11, 15, 5, 2, WOOD[1]);
+      } else {
+        g.rect(13, 2, 1, 15, WOOD[1]);
+        g.rect(13, 2, 1, 15, WOOD[2]);
+        g.line(13, 4, 22, 15, '#c8c0a8');
+        for (let y = 5; y < 15; y++) g.rect(14, y, Math.max(1, Math.round((y - 5) * 0.7)), 1, y % 3 ? '#d8cfb4' : '#bfb69c');
+        g.rect(11, 15, 2, 2, '#c84a2a');
+      }
+      g.outline(0.55);
+    },
+  },
+  lighthouse: {
+    w: 19, h: 50,
+    paint(g) {
+      // A harbour lighthouse: a tapering white tower banded in red, a lantern room that glows,
+      // a black cap and a gallery rail; a stone footing where it meets the mole.
+      const white = ['#9aa0a6', '#c8ccd0', '#e6e8ea', '#f6f6f4'];
+      const red = ['#6a1c18', '#962a22', '#b83a2c'];
+      for (let y = 12; y < 46; y++) {
+        const half = 4 + (y - 12) * 0.08;
+        const band = Math.floor((y - 12) / 7) % 2 === 1;
+        for (let x = Math.round(9.5 - half); x <= Math.round(9.5 + half); x++) {
+          const t = (x - (9.5 - half)) / (2 * half);
+          const ramp = band ? red : white;
+          g.set(x, y, t < 0.25 ? ramp[ramp.length - 1] : t < 0.7 ? ramp[ramp.length - 2] : ramp[ramp.length - 3]);
+        }
+      }
+      g.rect(7, 30, 2, 3, '#2a3440');
+      g.rect(10, 20, 2, 3, '#2a3440');
+      // Gallery, lantern and cap.
+      g.rect(3, 11, 14, 1, IRON[2]);
+      g.rect(3, 10, 1, 1, IRON[1]);
+      g.rect(16, 10, 1, 1, IRON[1]);
+      g.rect(6, 5, 8, 6, '#fff0b0', true);
+      g.rect(7, 6, 2, 4, '#ffffe0', true);
+      for (const x of [6, 9, 13]) g.rect(x, 5, 1, 6, IRON[1]);
+      for (let r = 0; r < 4; r++) g.rect(6 - r + 3, 4 - r, 2 + 2 * (r < 3 ? 3 - r : 0) + (r === 3 ? 0 : 0), 1, IRON[0]);
+      g.rect(5, 4, 10, 1, IRON[0]);
+      g.rect(7, 2, 6, 2, IRON[0]);
+      g.rect(9, 0, 2, 2, IRON[1]);
+      g.rect(2, 45, 16, 5, STONE[2]);
+      g.rect(2, 45, 16, 1, STONE[3]);
+      for (const x of [5, 10, 15]) g.rect(x, 46, 1, 4, STONE[1]);
+      g.outline();
+    },
+  },
+  net_rack: {
+    w: 21, h: 17,
+    paint(g, _v, rand) {
+      // Fishing nets hung to dry between two posts, sagging, with cork floats along the top line.
+      g.rect(1, 2, 2, 15, WOOD[1]);
+      g.rect(18, 2, 2, 15, WOOD[1]);
+      g.rect(1, 2, 1, 15, WOOD[2]);
+      g.rect(0, 2, 21, 1, WOOD[0]);
+      for (let x = 3; x < 18; x++) {
+        const sag = Math.round(Math.sin(((x - 3) / 15) * Math.PI) * 2);
+        for (let y = 3; y < 12 + sag; y++) if ((x + y) % 2 === 0 || rand() < 0.15) g.set(x, y, (x + y) % 4 === 0 ? '#8a7a5a' : '#a49470');
+        if (x % 3 === 0) g.set(x, 3, '#d8a040');
+      }
+      g.outline(0.6);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

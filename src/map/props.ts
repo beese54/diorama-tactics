@@ -26,6 +26,8 @@ export interface PropDef {
   jitter: boolean;
   /** Light it casts on its surroundings (lit only on themes that turn prop lights on). */
   light?: PropLight;
+  /** Sits on water rather than ground (boats). Everything else stands on land. */
+  floats?: boolean;
 }
 
 const prop = (name: string, def: Partial<Omit<PropDef, 'name'>> = {}): PropDef => ({
@@ -74,6 +76,9 @@ export const PROPS: Record<PropId, PropDef> = {
   bothy:         prop('Shepherd\'s Bothy', { defense: 0, blocks: true, shadow: 11 }),
   sheep:         prop('Sheep',         { defense: 5, variants: 2, shadow: 3, jitter: true }),
   gorse:         prop('Gorse',         { defense: 10, variants: 2, shadow: 4, sway: 0.02, jitter: true }),
+  boat:          prop('Moored Boat',   { defense: 0, variants: 2, shadow: 0, sway: 0.01, floats: true }),
+  lighthouse:    prop('Lighthouse',    { defense: 0, blocks: true, shadow: 8, light: { color: 0xfff0b0, intensity: 6, distance: 8 } }),
+  net_rack:      prop('Drying Nets',   { defense: 15, shadow: 6 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

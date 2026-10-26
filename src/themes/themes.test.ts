@@ -57,7 +57,8 @@ describe('themes', () => {
       expect(Number.isInteger(t.height) && t.height >= 0 && t.height <= 9).toBe(true);
       if (t.prop) {
         expect(PROP_IDS).toContain(t.prop);
-        expect(isLiquid(t)).toBe(false);
+        // Only floating props (boats) sit on water.
+        expect(isLiquid(t)).toBe(!!PROPS[t.prop].floats);
       }
     }
     expect(JSON.stringify(theme.map())).toBe(JSON.stringify(map));
