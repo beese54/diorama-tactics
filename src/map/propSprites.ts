@@ -1034,6 +1034,56 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  gatehouse: {
+    w: 47, h: 60,
+    paint(g, _v, rand) {
+      // A river gatehouse: two round towers under slate cones, a crenellated wall between them
+      // pierced by an arched gateway with its portcullis raised, arrow slits, and a banner.
+      const stone = ['#4e4a44', '#6a655d', '#857f75', '#a29c90'];
+      const slate = ['#2a2e38', '#3a404c', '#4e5664', '#626c7c'];
+      const tower = (cx: number) => {
+        for (let y = 22; y < 58; y++) {
+          for (let x = cx - 8; x <= cx + 8; x++) {
+            const t = (x - (cx - 8)) / 16;
+            const course = (y - 22) % 5 === 4 || ((x + (Math.floor((y - 22) / 5) & 1) * 3) % 6 === 0 && (y - 22) % 5 !== 0);
+            g.set(x, y, course ? stone[0] : t < 0.2 ? stone[3] : t < 0.65 ? stone[2] : stone[1]);
+          }
+        }
+        // Crenellations, then the conical roof.
+        for (let x = cx - 9; x <= cx + 9; x += 3) g.rect(x, 19, 2, 3, stone[2]);
+        g.rect(cx - 9, 21, 19, 1, stone[0]);
+        for (let r = 0; r < 18; r++) {
+          const hw = Math.round(((r + 1) / 18) * 9);
+          for (let x = -hw; x <= hw; x++) g.set(cx + x, 2 + r, x < -hw / 3 ? slate[3] : x > hw / 3 ? slate[0] : slate[1 + (r & 1)]);
+        }
+        g.rect(cx, 0, 1, 3, IRON[1]);
+        for (const y of [30, 42]) g.rect(cx - 1, y, 2, 5, '#1c1a18');
+      };
+      tower(9);
+      tower(37);
+      // The curtain wall and its arched gateway.
+      for (let y = 26; y < 58; y++) for (let x = 17; x <= 29; x++) g.set(x, y, (y - 26) % 5 === 4 ? stone[0] : x < 20 ? stone[3] : stone[2]);
+      for (let x = 17; x <= 29; x += 3) g.rect(x, 23, 2, 3, stone[2]);
+      for (let y = 38; y < 58; y++) {
+        const arch = y < 43 ? Math.round(Math.sqrt(Math.max(0, 25 - (43 - y) ** 2))) : 5;
+        for (let x = 23 - arch; x <= 23 + arch; x++) g.set(x, y, y < 41 ? '#3a3026' : '#2a221c');
+      }
+      // The portcullis, raised: its spiked foot just shows under the arch.
+      for (let x = 19; x <= 27; x += 2) g.rect(x, 38, 1, 3, IRON[1]);
+      g.rect(18, 40, 11, 1, IRON[0]);
+      for (let x = 19; x <= 27; x += 2) g.set(x, 41, IRON[2]);
+      // A banner over the gate.
+      g.rect(21, 28, 5, 8, '#9a2a24');
+      g.rect(21, 28, 5, 1, '#d8b040');
+      g.rect(23, 31, 1, 3, '#d8b040');
+      for (let i = 0; i < 10; i++) {
+        const x = Math.floor(rand() * 47);
+        const y = 24 + Math.floor(rand() * 33);
+        if (g.get(x, y) && g.get(x, y) !== '#2a221c') g.set(x, y, stone[0]);
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

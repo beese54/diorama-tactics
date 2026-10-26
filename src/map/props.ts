@@ -82,6 +82,7 @@ export const PROPS: Record<PropId, PropDef> = {
   gazebo:        prop('Gazebo',        { defense: 0, blocks: true, shadow: 13 }),
   topiary:       prop('Topiary',       { defense: 15, variants: 2, shadow: 5 }),
   statue:        prop('Statue',        { defense: 20, variants: 2, shadow: 5 }),
+  gatehouse:     prop('Gatehouse',     { defense: 25, shadow: 14 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

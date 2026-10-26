@@ -28,7 +28,7 @@ export const PROP_IDS = [
   'basalt_spire', 'dead_tree', 'ember_rock', 'vent',
   'broadleaf', 'snag', 'well',
   'autumn_tree', 'great_maple', 'palm', 'cactus', 'stone_arch', 'ice_hut', 'snow_rock', 'bothy', 'sheep', 'gorse',
-  'boat', 'lighthouse', 'net_rack', 'gazebo', 'topiary', 'statue',
+  'boat', 'lighthouse', 'net_rack', 'gazebo', 'topiary', 'statue', 'gatehouse',
 ] as const;
 export type PropId = (typeof PROP_IDS)[number];
 

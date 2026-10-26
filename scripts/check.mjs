@@ -186,7 +186,8 @@ const file = join(outDir, 'map-file.json');
 writeFileSync(file, await page.evaluate(() => window.__map.exportJson()).then((t) => t.replace('"peak_snow"', '"forest"')));
 const picker = await page.$('#hud input[type=file]');
 await picker.uploadFile(file);
-await page.waitForFunction(() => window.__map.tile(0, 0).terrain === 'forest', { timeout: 3000 }).catch(() => {});
+// Loading builds the board asynchronously (M9), so allow it time on a slow software renderer.
+await page.waitForFunction(() => window.__map.tile(0, 0).terrain === 'forest' && window.__map.hudText().includes('Loaded'), { timeout: 20000 }).catch(() => {});
 check('Load picks a saved file', (await page.evaluate(() => window.__map.tile(0, 0).terrain)) === 'forest' && (await page.evaluate(() => window.__map.hudText())).includes('Loaded'));
 const offered = await page.$$eval('#hud select:first-of-type option', (os) => os.map((o) => o.value));
 const selected = await page.$eval('#hud select', (s) => s.value);
