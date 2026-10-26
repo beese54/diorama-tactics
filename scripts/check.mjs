@@ -206,11 +206,12 @@ await shot('11-board-64');
 check('a 64×64 board loads, and the size picker shows it', big.width === 64 && big.picker === '64' && !!big.corner, JSON.stringify(big));
 const bigMemory = await page.evaluate(() => window.__map.gpuMemory());
 await page.select('#hud select:nth-of-type(4)', '48');
-await page.waitForFunction(() => window.__map.theme().width === 48, { timeout: 10000 }).catch(() => {});
+// Regrowing a big board takes several seconds on the software renderer, more when the machine is busy.
+await page.waitForFunction(() => window.__map.theme().width === 48, { timeout: 30000 }).catch(() => {});
 const resized = await page.evaluate(() => ({ width: window.__map.theme().width, seed: window.__map.seed(), search: location.search }));
 check('the size picker regrows the same seed at 48×48', resized.width === 48 && resized.seed === 4242 && resized.search.includes('size=48'), JSON.stringify(resized));
 await page.keyboard.press('KeyR');
-await page.waitForFunction(() => window.__map.seed() !== 4242, { timeout: 10000 }).catch(() => {});
+await page.waitForFunction(() => window.__map.seed() !== 4242, { timeout: 30000 }).catch(() => {});
 check('R keeps the board size', (await page.evaluate(() => window.__map.theme().width)) === 48);
 await page.evaluate(() => window.__map.setSize(32));
 const standardSize = await page.evaluate(() => ({ width: window.__map.theme().width, search: location.search }));

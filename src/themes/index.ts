@@ -1,6 +1,7 @@
 import { alpine } from './alpine';
 import { autumn } from './autumn';
 import { bridge } from './bridge';
+import { canal } from './canal';
 import { courtyard } from './courtyard';
 import { desert } from './desert';
 import { fair } from './fair';
@@ -19,7 +20,7 @@ import { volcano } from './volcano';
 import { randomSeed, seedFromUrl, sizeFromUrl, worldTheme } from './world';
 
 /** Every map theme, in menu order. The first is the default. */
-export const THEMES: readonly Theme[] = [meadow, alpine, autumn, desert, frozen, moor, courtyard, harbour, gardens, bridge, fair, plaza, station, suburb, market, jungle, volcano];
+export const THEMES: readonly Theme[] = [meadow, alpine, autumn, desert, frozen, moor, courtyard, harbour, gardens, bridge, fair, plaza, station, suburb, canal, market, jungle, volcano];
 
 /**
  * The theme named by `?map=<id>`, or the default. `?map=world` (or just `?seed=N`) grows a

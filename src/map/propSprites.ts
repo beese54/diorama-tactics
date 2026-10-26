@@ -1421,6 +1421,111 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline(0.6);
     },
   },
+  narrowboat: {
+    w: 44, h: 18,
+    paint(g, v) {
+      // A canal narrowboat, long and low: a painted cabin with brass portholes and a panel of
+      // roses, a stove chimney with brass bands, plant pots on the roof, the tiller at the stern.
+      const [body, trim, panel] = v ? ['#1e3a6a', '#d8a838', '#a42e24'] : ['#7a1e1a', '#2e6a3a', '#e8c040'];
+      // Black hull at the waterline.
+      g.rect(1, 13, 42, 3, '#1a1a1e');
+      g.rect(0, 12, 44, 1, '#3a3c42');
+      g.rect(3, 16, 38, 1, '#1e3446');
+      g.rect(6, 17, 32, 1, '#2e4c60');
+      // The cabin, with a contrasting band along the top and a lighter roof.
+      g.rect(6, 5, 32, 7, body);
+      g.rect(6, 5, 32, 1, trim);
+      g.rect(6, 11, 32, 1, trim);
+      g.rect(5, 4, 34, 1, '#c8c4b8');
+      for (const x of [10, 15, 20, 25]) {
+        g.ball(x + 0.5, 8, 1.4, 1.4, ['#8a6a20', '#c89a30', '#f0d060']);
+        g.set(x, 8, '#2a3440');
+      }
+      // A painted panel of roses on the cabin side, near the stern.
+      g.rect(29, 6, 7, 5, panel);
+      for (const [x, y, c] of [[30, 7, '#f4f0e8'], [32, 8, '#d83a3a'], [34, 7, '#f4f0e8'], [31, 9, '#3e8a44'], [33, 9, '#3e8a44']] as const) g.set(x, y, c);
+      // The stove chimney, plant pots on the roof, and the tiller and rudder at the stern.
+      g.rect(12, 0, 2, 4, '#24252a');
+      g.rect(12, 1, 2, 1, '#d8b040');
+      for (const x of [18, 22]) {
+        g.rect(x, 2, 3, 2, '#a4553c');
+        g.rect(x, 1, 3, 1, '#4e8a3a');
+        g.set(x + 1, 0, '#d83a3a');
+      }
+      g.line(39, 5, 43, 2, WOOD[2]);
+      g.rect(40, 6, 2, 6, '#3a3c42');
+      // The bow, rising and pointed.
+      g.rect(1, 9, 5, 3, body);
+      g.rect(1, 9, 5, 1, trim);
+      g.outline(0.55);
+    },
+  },
+  lock_gate: {
+    w: 24, h: 18,
+    paint(g) {
+      // A canal lock gate: oak planks braced across, a walkway rail along the top, and the long
+      // black-and-white balance beam that swings it open, reaching out over the bank.
+      const oak = ['#3a2a1c', '#4e3826', '#664a32', '#7e5e40'];
+      for (let y = 5; y < 18; y++) for (let x = 6; x < 20; x++) g.set(x, y, x % 4 === 2 ? oak[0] : y < 7 ? oak[3] : y > 14 ? oak[1] : oak[2]);
+      g.line(7, 16, 18, 6, oak[0]);
+      g.rect(6, 15, 14, 3, '#1e3446');
+      g.rect(6, 15, 14, 1, '#4f7f9c');
+      // Walkway rail.
+      g.rect(6, 2, 1, 3, IRON[1]);
+      g.rect(19, 2, 1, 3, IRON[1]);
+      g.rect(6, 2, 14, 1, IRON[2]);
+      // Balance beam, white-tipped.
+      g.rect(0, 4, 20, 2, '#24252a');
+      g.rect(0, 4, 20, 1, '#3a3c42');
+      g.rect(0, 4, 3, 2, '#f4f0e8');
+      g.outline(0.55);
+    },
+  },
+  bollard: {
+    w: 7, h: 8,
+    paint(g) {
+      // A cast-iron mooring bollard, its cap flared to hold a rope.
+      g.rect(2, 3, 3, 5, IRON[1]);
+      g.rect(2, 3, 1, 5, IRON[2]);
+      g.rect(1, 1, 5, 2, IRON[1]);
+      g.rect(1, 1, 5, 1, IRON[2]);
+      g.rect(1, 7, 5, 1, IRON[0]);
+      g.outline();
+    },
+  },
+  mill_chimney: {
+    w: 19, h: 100,
+    paint(g, _v, rand) {
+      // The mill chimney: a tall square shaft of red brick, tapering towards a corbelled cap,
+      // with a band of pale brick near the top and the mill's arched flue door at its foot.
+      const brick = ['#5e2a1e', '#7e3a28', '#a04a34', '#b85e44'];
+      for (let y = 6; y < 94; y++) {
+        const hw = 4 + Math.round(((y - 6) / 88) * 3);
+        for (let x = -hw; x <= hw; x++) {
+          const t = (x + hw) / (2 * hw);
+          let c = t < 0.25 ? brick[3] : t < 0.6 ? brick[2] : t < 0.85 ? brick[1] : brick[0];
+          if (y % 3 === 0 && rand() < 0.5) c = brick[0];
+          if (y >= 16 && y < 20) c = t < 0.5 ? '#e0d4bc' : '#c4b89c';
+          g.set(9 + x, y, c);
+        }
+      }
+      // Corbelled cap, stepping out at the top, sooty at the rim.
+      g.rect(3, 4, 13, 2, brick[2]);
+      g.rect(4, 2, 11, 2, brick[3]);
+      g.rect(4, 1, 11, 1, '#2a2420');
+      g.rect(3, 4, 13, 1, brick[3]);
+      g.rect(5, 0, 9, 1, '#3a3430');
+      // The plinth in dressed stone, with the arched door.
+      g.rect(0, 92, 19, 8, STONE[2]);
+      g.rect(0, 92, 19, 1, STONE[3]);
+      g.rect(14, 93, 5, 7, STONE[1]);
+      for (let y = 94; y < 100; y++) {
+        const w = y < 95 ? 1 : 2;
+        g.rect(9 - w, y, 2 * w + 1, 1, '#2a221c');
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {
