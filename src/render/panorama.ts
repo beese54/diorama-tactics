@@ -133,6 +133,26 @@ export class Panorama {
     for (let y = o.base; y < this.height; y++) for (let x = 0; x < this.width; x++) this.px(x, y, c);
   }
 
+  /**
+   * The aurora: curtains of light hanging across the night sky, folding with slow noise, bright
+   * along their lower hem and fading upward, dithered so the stars show through.
+   */
+  aurora(o: { seed: number; y: number; height: number; colors: [string, string]; alpha: number }): void {
+    const [a, b] = o.colors.map(rgb);
+    for (let x = 0; x < this.width; x++) {
+      const u = x / this.width;
+      const hem = o.y + 26 * loopNoise(o.seed, u * 5, 5) + 8 * loopNoise(o.seed + 1, u * 17, 17);
+      const strength = Math.max(0, loopNoise(o.seed + 2, u * 7, 7) * 1.6 - 0.4);
+      if (strength <= 0) continue;
+      const len = o.height * (0.5 + 0.5 * loopNoise(o.seed + 3, u * 11, 11));
+      const c = mix(a, b, loopNoise(o.seed + 4, u * 3, 3));
+      for (let k = 0; k < len; k++) {
+        const fade = (1 - k / len) * strength;
+        if (bayer(x, Math.round(hem - k)) < fade) this.px(x, hem - k, c, o.alpha * (k < 3 ? 1.4 : 1));
+      }
+    }
+  }
+
   /** Stalactites hanging from a cave roof across the top, each a jagged spike lit on its left edge. */
   stalactites(o: { rand: Rand; color: string; light: string; maxLength: number; count: number }): void {
     const c = rgb(o.color);

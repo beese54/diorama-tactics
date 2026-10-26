@@ -136,6 +136,9 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
 
   // Elemental themes (M16).
   cave_floor:       natural({ name: 'Cave Floor',   moveCost: 1, defense: 5,  style: 'rock',        side: 'rock',      palette: ['#4c4a5c', '#444254', '#2e2c3c', '#5e5c70'] }),
+  // Glacier palettes follow the ice painter: [pale, light blue, deep blue, crack white, crack shadow, snow dusting].
+  glacier:          natural({ name: 'Glacier',      moveCost: 2, defense: 0,  style: 'ice',         side: 'ice',       palette: ['#dce8f0', '#c4d8e6', '#9ab8d0', '#f6fafc', '#7a9ab4', '#eef4f8'] }),
+  crevasse:         natural({ name: 'Crevasse',     moveCost: IMPASSABLE, defense: 0, style: 'ice', side: 'ice',       palette: ['#1e3a5a', '#18304c', '#10243a', '#2e5070', '#0a1a2c', '#24405e'] }),
   sand_paving:      built({ name: 'Causeway',       moveCost: 1, defense: 0,  style: 'flagstone',   side: 'sandstone', palette: ['#c4a874', '#b49866', '#8a744c', '#d6bc88'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };

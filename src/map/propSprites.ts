@@ -2369,6 +2369,57 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline(0.55);
     },
   },
+  frost_monolith: {
+    w: 25, h: 74,
+    paint(g, _v, rand) {
+      // An ancient monolith of dark stone standing in the glacier: taller than the seracs, carved
+      // runes down its face glowing cold blue, the ice climbed round its foot.
+      const stone = ['#16161f', '#22222e', '#323244', '#46465c'];
+      for (let y = 2; y < 70; y++) {
+        const hw = 7 - (y < 9 ? Math.round((9 - y) * 0.7) : 0);
+        for (let x = -hw; x <= hw; x++) g.set(12 + x, y, x < -hw / 3 ? stone[3] : x < hw / 3 ? stone[2] : stone[1]);
+      }
+      for (let y = 10; y < 52; y += 4) {
+        const x = 10 + Math.floor(rand() * 3);
+        g.rect(x, y, 1, 3, '#7ae8ff', true);
+        if (rand() < 0.6) g.set(x + 1, y + 1, '#7ae8ff', true);
+        if (rand() < 0.5) g.set(x - 1, y + 2, '#c8f6ff', true);
+      }
+      // The ice round its foot, glassy, snow on top.
+      for (let y = 56; y < 74; y++) {
+        const hw = 9 + Math.round((y - 56) * 0.15);
+        for (let x = -hw; x <= hw; x++) {
+          if (y < 59 && Math.abs(x) < 8 - (59 - y) * 2 && rand() < 0.5) continue;
+          const t = (x + hw) / (2 * hw);
+          g.set(12 + x, y, (x + y) % 7 === 0 ? '#f4faff' : t < 0.35 ? '#c8e0f0' : t < 0.7 ? '#a4c8e0' : '#80a8c8');
+        }
+      }
+      for (let x = 3; x < 22; x++) g.set(x, 56 + (x % 3 === 0 ? 1 : 0), '#f4f8fc');
+      g.outline();
+    },
+  },
+  serac: {
+    w: 21, h: 30,
+    paint(g, v, rand) {
+      // A serac: a tower of glacier ice broken into jagged points along its cracks, faceted,
+      // blue in its depths, old snow on its peaks.
+      const ice = ['#4e7aa0', '#7aa2c4', '#a8cae2', '#dcecf8'];
+      const facet = (x: number) => (x < 6 ? 3 : x < 10 ? 2 : x < 15 ? 1 : 0);
+      for (let x = 1; x < 20; x++) {
+        const peak = Math.abs(Math.sin(x * 0.75 + v * 1.7)) * 7 + Math.abs(x - 10) * 0.6;
+        const top = Math.round(peak + (v ? 3 : 0));
+        for (let y = top; y < 30; y++) g.set(x, y, y < top + 2 ? '#ffffff' : (x + Math.floor(y / 5)) % 9 === 0 ? ice[0] : ice[facet(x)]);
+      }
+      for (let i = 0; i < 3; i++) {
+        let x = 4 + Math.floor(rand() * 12);
+        for (let y = 12 + i * 5; y < 19 + i * 5; y++) {
+          g.set(x, y, ice[0]);
+          x += rand() < 0.5 ? 1 : -1;
+        }
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {
