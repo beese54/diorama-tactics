@@ -663,6 +663,99 @@ const ART: Record<PropId, SpriteArt> = {
       for (const x of [8, 10, 13, 24, 27, 29]) g.set(x, 43, leaves[2 + (x % 3)]);
     },
   },
+  palm: {
+    w: 25, h: 36,
+    paint(g, v) {
+      // A date palm: a ringed trunk curving up to a burst of drooping fronds, dates under the crown.
+      const lean = v ? -1 : 1;
+      const bark = ['#5a4026', '#7a5a36', '#9a7a4e'];
+      const fronds = ['#2e5a24', '#3e742c', '#56903a', '#74ac4a'];
+      let x = 12 - lean * 3;
+      for (let y = 35; y >= 12; y--) {
+        if ((35 - y) % 5 === 4) x += lean * 0.6;
+        g.rect(Math.round(x) - 1, y, 3, 1, (35 - y) % 3 === 0 ? bark[0] : bark[1]);
+        g.set(Math.round(x) - 1, y, bark[2]);
+      }
+      const cx = Math.round(x);
+      const top = 11;
+      // Each frond arcs out and droops, darker underneath.
+      for (const [dx, dy, len] of [[-11, 3, 11], [-8, -3, 9], [-3, -6, 7], [3, -6, 7], [8, -3, 9], [11, 3, 11], [-6, 5, 8], [6, 5, 8]]) {
+        for (let i = 0; i <= len; i++) {
+          const t = i / len;
+          const fx = cx + dx * t;
+          const fy = top + dy * t + 5 * t * t;
+          g.set(fx, fy, fronds[t < 0.5 ? 3 : 2]);
+          g.set(fx, fy + 1, fronds[1]);
+          if (i % 2 === 0) g.set(fx, fy + 2, fronds[0]);
+        }
+      }
+      g.ball(cx, top + 1, 2.5, 2, fronds);
+      for (const [ddx, ddy] of [[-1, 3], [1, 3], [0, 4], [2, 2]]) g.set(cx + ddx, top + ddy, '#a0582a');
+      g.outline();
+    },
+  },
+  cactus: {
+    w: 13, h: 22,
+    paint(g, v) {
+      const green = ['#2e5230', '#3e6a3c', '#56844c', '#74a060'];
+      if (v === 0) {
+        // A saguaro: a ribbed column with two arms turned up.
+        const column = (x: number, y0: number, y1: number) => {
+          for (let y = y0; y <= y1; y++) {
+            g.set(x - 1, y, green[3]);
+            g.set(x, y, y % 2 ? green[2] : green[1]);
+            g.set(x + 1, y, green[1]);
+            g.set(x + 2, y, green[0]);
+          }
+        };
+        column(5, 3, 21);
+        g.rect(5, 2, 2, 1, green[2]);
+        g.rect(1, 11, 4, 2, green[1]);
+        column(1, 6, 12);
+        g.rect(1, 5, 2, 1, green[2]);
+        g.rect(8, 14, 3, 2, green[1]);
+        column(10, 9, 15);
+        g.rect(10, 8, 2, 1, green[2]);
+        for (const [x, y] of [[5, 6], [6, 10], [5, 15], [1, 9]]) g.set(x, y, '#e8e0c0');
+      } else {
+        // A barrel cactus with a crown of pink flowers.
+        g.ball(6.5, 17, 5.5, 4.6, green);
+        for (const x of [3, 6, 9]) g.line(x, 13, x, 21, green[0]);
+        for (const [x, y, c] of [[5, 12, '#e86aa0'], [7, 12, '#f498c0'], [6, 11, '#f498c0'], [8, 13, '#e86aa0'], [4, 13, '#e86aa0']] as const) g.set(x, y, c);
+      }
+      g.outline();
+    },
+  },
+  stone_arch: {
+    w: 41, h: 46,
+    paint(g, _v, rand) {
+      // A wind-carved sandstone arch: two weathered legs under a span, banded like the mesas.
+      const rock = ['#6e3a24', '#8e4c2e', '#ac643c', '#c88050', '#dc9a64'];
+      const shadeAt = (t: number, y: number) => (y % 7 === 3 ? rock[1] : t < 0.25 ? rock[4] : t < 0.6 ? rock[3] : t < 0.85 ? rock[2] : rock[1]);
+      // Legs: thick, leaning slightly inwards, flaring into talus at the foot.
+      for (let y = 8; y < 46; y++) {
+        const flare = Math.max(0, y - 36) * 0.6;
+        for (const [x0, x1] of [[2, 11], [29, 38]]) {
+          const wobble = Math.round(Math.sin(y * 0.9 + x0) * 0.6);
+          for (let x = Math.round(x0 - flare) + wobble; x <= Math.round(x1 + flare) + wobble; x++) g.set(x, y, shadeAt((x - x0) / (x1 - x0), y));
+        }
+      }
+      // The span: thick at the shoulders, thin at the crown, with a clear opening beneath.
+      for (let x = 2; x <= 38; x++) {
+        const t = (x - 20) / 18;
+        const over = Math.round(1 + 3 * t * t);
+        const under = Math.round(9 + 9 * (1 - t * t));
+        for (let y = over; y <= under; y++) g.set(x, y, y === over ? rock[4] : y === under ? rock[0] : shadeAt(0.4 + 0.3 * t, y));
+      }
+      // Pits and cracks on the rock only, never in the opening.
+      for (let i = 0; i < 18; i++) {
+        const x = 2 + Math.floor(rand() * 37);
+        const y = 2 + Math.floor(rand() * 42);
+        if (g.get(x, y)) g.set(x, y, rock[1]);
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

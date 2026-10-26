@@ -94,6 +94,8 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
 
   // Wilds themes (M11). Fallen-leaf palettes: [grass ×3 dark to light, tuft, then leaves: red, orange, gold, brown].
   autumn_grass:     natural({ name: 'Autumn Grass', moveCost: 1, defense: 0,  style: 'leaves',      side: 'soil',      palette: ['#7a8844', '#6e7c3e', '#86944c', '#9aa456', '#b8482a', '#d0782c', '#dcae3c', '#86502c'] }),
+  red_rock:         natural({ name: 'Red Rock',     moveCost: 2, defense: 10, style: 'rock',        side: 'redrock',   palette: ['#a8643e', '#9a5a38', '#74402a', '#c07a4e'] }),
+  oasis_grass:      natural({ name: 'Oasis',        moveCost: 1, defense: 5,  style: 'grass',       side: 'sand',      palette: ['#6a9a40', '#5e8c3a', '#78a84a', '#92bc5a'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

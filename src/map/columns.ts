@@ -270,7 +270,9 @@ function buildSides(map: MapFile, b: GeometryBuilder, tile: Tile, index: number,
           : step < 0 ? atlas.sideLower('soil', variant)
           : step === nb?.height ? atlas.sideGround(def.side, variant)
           : atlas.sideLower(def.side, variant);
-        const uvAt = (t: number, y: number): Vec2 => [lerp(uv.u0, uv.u1, t), lerp(uv.v0, uv.v1, (y - cLo) / STEP_HEIGHT)];
+        // Clamped to the cell: where a rounded edge dips below it, a corner sits lower than the cell's
+        // foot, and its texture must not reach into the next row of the atlas.
+        const uvAt = (t: number, y: number): Vec2 => [lerp(uv.u0, uv.u1, t), lerp(uv.v0, uv.v1, clamp01((y - cLo) / STEP_HEIGHT))];
         b.quad(
           [[L.x, lt, L.z], [R.x, rt, R.z], [R.x, rb, R.z], [L.x, lb, L.z]],
           side.normal,

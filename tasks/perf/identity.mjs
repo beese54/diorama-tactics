@@ -17,6 +17,7 @@ const CASES = [
   ['market', 'map=market'],
   ['autumn', 'map=autumn'],
   ['autumn-snow', 'map=autumn&weather=snow&time=day'],
+  ['desert', 'map=desert'],
   ['w32-clear-day', 'map=world&seed=4242&weather=clear&time=day'],
   ['w32-storm-night', 'map=world&seed=4242&weather=storm&time=night'],
   ['w32-snow-dusk', 'map=world&seed=4242&weather=snow&time=dusk'],
@@ -39,6 +40,8 @@ for (const [name, query] of CASES) {
   const page = await browser.newPage();
   await page.goto(`http://localhost:5173/?${query}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__map, { timeout: 600000, polling: 50 });
+  // The water's later frames arrive just after the board; a capture before then would show frame 0.
+  await page.waitForFunction(() => window.__map.liquidReady(), { timeout: 600000, polling: 50 });
   await page.evaluate(() => document.getElementById('hud')?.setAttribute('hidden', ''));
   await page.evaluate(() => window.__map.setTime(3));
   await new Promise((r) => setTimeout(r, 800));

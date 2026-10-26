@@ -358,6 +358,7 @@ async function main(): Promise<void> {
         },
         setTime: (seconds: number | null) => (frozenTime = seconds),
         waterFrame: () => board.mesh.waterFrame,
+        liquidReady: () => board.mesh.liquidReady,
         floraCount: () => board.flora.count,
         propCount: () => board.props.count,
         theme: () => ({ id: theme.id, focus: theme.focus, width: board.map.width, zoom: theme.zoom }),

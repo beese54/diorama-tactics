@@ -211,6 +211,11 @@ export class MapMesh {
     this.sides.color.setRGB(1 - 0.3 * wet, 1 - 0.27 * wet, 1 - 0.2 * wet);
   }
 
+  /** Whether every liquid frame has been painted (they follow the first, just after a board appears). */
+  get liquidReady(): boolean {
+    return Array.from({ length: LIQUID_FRAMES }, (_, f) => !!this.ground.frames[f]).every(Boolean);
+  }
+
   /** Index of the liquid frame on screen (for headless checks). */
   get waterFrame(): number {
     return this.frame;

@@ -66,6 +66,9 @@ export const PROPS: Record<PropId, PropDef> = {
   well:          prop('Village Well',  { defense: 0, blocks: true, shadow: 6 }),
   autumn_tree:   prop('Autumn Tree',   { defense: 15, variants: 3, shadow: 7, sway: 0.04, jitter: true }),
   great_maple:   prop('Old Maple',     { defense: 0, blocks: true, shadow: 13, sway: 0.025 }),
+  palm:          prop('Palm',          { defense: 10, variants: 2, shadow: 6, sway: 0.05, jitter: true }),
+  cactus:        prop('Cactus',        { defense: 10, variants: 2, shadow: 3, jitter: true }),
+  stone_arch:    prop('Sandstone Arch', { defense: 0, blocks: true, shadow: 12 }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

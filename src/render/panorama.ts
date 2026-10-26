@@ -106,6 +106,33 @@ export class Panorama {
     }
   }
 
+  /**
+   * Flat-topped mesas and buttes standing on a filled band: steep sides, a lit left face and a
+   * shaded right one, and darker strata running across them.
+   */
+  mesas(o: { rand: Rand; base: number; color: string; shade: string; strata: string; count: number; minH: number; maxH: number }): void {
+    const c = rgb(o.color);
+    const sh = rgb(o.shade);
+    const st = rgb(o.strata);
+    for (let k = 0; k < o.count; k++) {
+      const cx = ((k + 0.2 + 0.6 * o.rand()) * this.width) / o.count;
+      const h = o.minH + o.rand() * (o.maxH - o.minH);
+      const half = h * (0.6 + o.rand() * 1.6);
+      const top = o.base - h;
+      for (let y = Math.round(top); y < o.base; y++) {
+        // Sides flare out towards the foot in a talus slope.
+        const flare = Math.max(0, y - (top + h * 0.6)) * 1.4;
+        const w = half + flare + (hash(k, y, 1) < 0.3 ? 1 : 0);
+        for (let x = Math.round(cx - w); x <= Math.round(cx + w); x++) {
+          const band = (y - Math.round(top)) % 7 === 3 && hash(k, x >> 2, y) < 0.7;
+          const color = x > cx + w * 0.35 ? sh : band ? st : c;
+          this.px(x, y, color);
+        }
+      }
+    }
+    for (let y = o.base; y < this.height; y++) for (let x = 0; x < this.width; x++) this.px(x, y, c);
+  }
+
   /** A row of tree crowns (round or conifer) standing on a filled band. */
   treeline(o: { rand: Rand; base: number; color: string; light?: string; kind: 'round' | 'pine'; size: number }): void {
     const c = rgb(o.color);
