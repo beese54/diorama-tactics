@@ -350,12 +350,15 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
 
 - **What changed:**
   - **M10a:** boards load 16–20% faster. Worker threads build the terrain mesh as well as painting the ground. A board now appears as soon as its first water frame is painted, and the other eleven frames follow a moment later. Roads are found with a priority queue. Nothing looks different.
-  - **M10b:** the camera can zoom out until the whole board fits, so 64×64 boards zoom to about 0.31; 32×32 boards keep their limit of 0.5. Below zoom 0.5 each screen pixel averages up to 4×4 samples. Distant ground, cliffs and trees blend into clean colours instead of shimmering as the camera moves. At zoom 0.5 and above nothing changes, pixel for pixel. Points (snow, fireflies, smoke, splashes) and the backdrop keep their size.
+  - **M10b:** the camera can zoom out until the whole board fits, so 64×64 boards zoom to about 0.31; 32×32 boards keep their limit of 0.5. Below zoom 0.5 each screen pixel averages several samples (3×3 at the widest view). Distant ground, cliffs and trees blend into clean colours instead of shimmering as the camera moves. At zoom 0.5 and above nothing changes, pixel for pixel. Points (snow, fireflies, smoke, splashes) and the backdrop keep their size.
+  - **M10c:** on this laptop's built-in Intel graphics, a 64×64 board now takes 2.4 ms of GPU time per frame instead of 5.6 (2.4× faster), and 7.2 ms fully zoomed out. The shadow map is redrawn only when the sun moves; each water frame stays on the GPU instead of being re-uploaded six times a second. Nothing looks different.
 - **Decisions:** *"Let's do the remaining four first"*: faster loading, zoom-out without shimmer, GPU headroom, then the 24 themes.
 - **Learned:**
   - Ordinary mipmaps would have softened today's views. With the camera tilted, the GPU already picks a smaller mip level at zoom 1 along the foreshortened axis. Supersampling only when zoomed out leaves every existing view untouched.
   - More threads isn't always faster. Past about six workers, this laptop throttled and its slower cores joined in, and loading got slower.
   - Background syncing (OneDrive) made timings drift by 50%. Alternating the old and new builds on every load cancels that out.
+  - Measure what the GPU does, layer by layer, before optimising. The planned culling wasn't needed: 60% of the GPU time was the shadow map, redrawn every frame for a board that never moves.
+  - Hitches that come at a steady rate point to something periodic. Here it was the water animation re-uploading a 4 MB texture.
 
 ### Before and after (M2 → M2d)
 ![River](land/comparisons/river-m2-vs-m2d.png)

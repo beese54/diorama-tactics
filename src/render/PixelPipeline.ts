@@ -10,10 +10,12 @@ const MAX_SAMPLES = 4;
 
 /**
  * Samples per pixel along each axis for a camera zoom: 1 from SUPERSAMPLE_BELOW up (drawn
- * straight to the screen, exactly as before), then enough that a texel spans about one sample.
+ * straight to the screen, exactly as before), then about one sample per texel. Rounded, not
+ * rounded up: a 64×64 board's widest view (zoom 0.31) takes 3×3 samples rather than 4×4,
+ * barely more than a texel each, for little more than half the work on a laptop GPU.
  */
 export function samplesFor(zoom: number): number {
-  return zoom >= SUPERSAMPLE_BELOW ? 1 : Math.min(MAX_SAMPLES, Math.ceil(1 / zoom));
+  return zoom >= SUPERSAMPLE_BELOW ? 1 : Math.min(MAX_SAMPLES, Math.max(2, Math.round(1 / zoom)));
 }
 
 /**

@@ -156,7 +156,7 @@
     {
       "id": "m10b",
       "date": "2026-10-26",
-      "commit": "next",
+      "commit": "fcf589f",
       "image": "m10-tech/zoom-out-64-before-after.png",
       "title": "M10b · Zoom out without shimmer",
       "note": "A whole 64×64 board fits on screen; far out, each pixel averages up to 4×4 samples."

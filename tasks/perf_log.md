@@ -113,3 +113,38 @@ What remains:
 - check.mjs 62/62;
 - pixel identity 20/20;
 - the water animates once the rest frames land (check.mjs water checks).
+
+# M10b: zoom-out (2026-10-26)
+- Supersampling below zoom 0.5 instead of mipmaps. Mipmap level selection follows the foreshortened axis, so with the camera tilted it would have softened views at zoom 1.
+- First cut: ceil(1/zoom) samples, so 4×4 at a 64×64 board's widest view (0.31). That was free on the RTX, but the Intel UHD fell to 61 fps.
+- Changed (in M10c) to round(1/zoom), min 2: 3×3 at 0.31, at most 1.25 texels per sample.
+
+# M10c: GPU headroom at 64×64 on the Intel UHD (2026-10-26)
+**Metric:** GPU ms per frame from `EXT_disjoint_timer_query_webgl2` (dev `GpuTimer`), uncapped, seed 4242. Attribution comes from switching off one layer at a time (`gpu-attribution.mjs`). **Target:** double the Intel frame rate (halve GPU ms) at 64×64.
+
+**Attribution before:**
+
+| View (Intel, 64×64) | Total | Shadow pass | Mesh (main + shadow) | Each other layer |
+|---|---|---|---|---|
+| default zoom, clear day | 5.64 ms | 3.40 (60%) | 4.92 | ≤ 0.53 |
+| default zoom, storm night | 5.59 ms | 3.50 (63%) | 4.92 | ≤ 0.95 |
+| min zoom (4×4 samples), storm night | 14.35 ms | 5.32 | 10.33 | ≤ 0.42 |
+
+| # | Change | Predicted | Measured | Kept? |
+|---|---|---|---|---|
+| 1 | Redraw the shadow map only when the sun moves or the board changes (`shadowMap.autoUpdate = false`). Only the static board casts shadows | −3.4 ms at default zoom | clear day 5.64 → 2.49 ms; captures identical | kept |
+| 2 | Zoomed-out samples: round(1/zoom) instead of ceil, so 3×3 rather than 4×4 at 0.31 | −40% of the supersampled fill | min zoom 78 → 108 fps (`zoomfps.mjs`) | kept |
+| 3 | One texture per liquid frame, uploaded once, swapped by reference. Before, one 4 MB texture was re-uploaded 6×/s, and the slow frames (28 in 5 s) came at exactly the water's rate | the 6/s spikes gone | min zoom: 108 → 136 fps; slow frames 28 → 5 in 5 s (left: first-loop uploads). GPU memory +44 MB at 64×64 | kept |
+
+**After:**
+
+| View | Before | After | Speed-up |
+|---|---|---|---|
+| Intel, default zoom, clear day | 5.64 ms | 2.39 ms | 2.4× |
+| Intel, default zoom, storm night | 5.59 ms | 2.32 ms | 2.4× |
+| Intel, min zoom, clear day | 14.4 ms (4×4) | 7.22 ms (3×3) | 2.0× |
+| RTX, default zoom, clear day | — | 0.24 ms | — |
+
+Not done: chunked meshes with frustum culling. The mesh's main pass is now ~2.1 ms on Intel at default zoom, and the target is met without them.
+
+**Checks:** 907 tests; check.mjs 62/62; 20/20 captures identical.

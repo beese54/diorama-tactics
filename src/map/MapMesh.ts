@@ -113,8 +113,10 @@ export class MapMesh {
   private readonly mesh: THREE.Mesh;
   private readonly bridges: THREE.Group;
   private readonly triangleTile: Uint32Array;
-  private readonly groundTexture: THREE.DataTexture;
-  private readonly glowTexture: THREE.DataTexture | null;
+  /** The tops' material, and one texture per liquid frame (and per glow frame), made as the frames arrive. */
+  private readonly tops: THREE.MeshLambertMaterial;
+  private readonly groundFrames: THREE.DataTexture[] = [];
+  private readonly glowFrames: THREE.DataTexture[] = [];
   private readonly fall: WaterfallImage = paintWaterfall();
   private readonly fallTexture: THREE.DataTexture;
   private readonly sides: THREE.MeshLambertMaterial;
@@ -125,6 +127,8 @@ export class MapMesh {
   private readonly cloud = { value: 0 };
   private readonly time = { value: 0 };
   private frame = 0;
+  private readonly frameTexture: (frame: number) => THREE.DataTexture;
+  private readonly glowTexture: (frame: number) => THREE.DataTexture;
 
   constructor(
     private readonly map: MapFile,
@@ -140,13 +144,16 @@ export class MapMesh {
       tex.needsUpdate = true;
       return tex;
     };
-    this.groundTexture = dataTexture(ground.frames[0]);
-    this.glowTexture = ground.glow && dataTexture(ground.glow[0]);
+    // Each liquid frame gets a texture of its own, uploaded once: re-uploading one texture six
+    // times a second stalled laptop GPUs. They are listed for disposal with the material.
+    this.frameTexture = (frame: number) => (this.groundFrames[frame] ??= dataTexture(ground.frames[frame]));
+    this.glowTexture = (frame: number) => (this.glowFrames[frame] ??= dataTexture(ground.glow![frame]));
     this.fallTexture = dataTexture(this.fall.frames[0], this.fall.width, this.fall.height);
     this.fallTexture.wrapS = this.fallTexture.wrapT = THREE.RepeatWrapping;
     // Emissive maps make lava, lit windows and neon glow whatever the lighting.
     const glowing = (glow: THREE.Texture | null) => (glow ? { emissiveMap: glow, emissive: 0xffffff } : {});
-    const tops = new THREE.MeshLambertMaterial({ map: this.groundTexture, vertexColors: true, ...glowing(this.glowTexture) });
+    const tops = (this.tops = new THREE.MeshLambertMaterial({ map: this.frameTexture(0), vertexColors: true, ...glowing(ground.glow && this.glowTexture(0)) }));
+    tops.userData.textures = [this.groundFrames, this.glowFrames];
     tops.onBeforeCompile = (shader) => {
       shader.uniforms.uWet = this.wet;
       shader.uniforms.uSnow = this.snow;
@@ -180,12 +187,8 @@ export class MapMesh {
     // Until the rest of the loop is painted (just after a board appears), the liquids hold still.
     if (frame === this.frame || !this.ground.frames[frame]) return;
     this.frame = frame;
-    this.groundTexture.image.data = this.ground.frames[frame];
-    this.groundTexture.needsUpdate = true;
-    if (this.glowTexture && this.ground.glow) {
-      this.glowTexture.image.data = this.ground.glow[frame];
-      this.glowTexture.needsUpdate = true;
-    }
+    this.tops.map = this.frameTexture(frame);
+    if (this.ground.glow) this.tops.emissiveMap = this.glowTexture(frame);
     this.fallTexture.image.data = this.fall.frames[frame];
     this.fallTexture.needsUpdate = true;
   }

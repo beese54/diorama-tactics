@@ -7,12 +7,14 @@ describe('zooming out', () => {
     for (const zoom of [SUPERSAMPLE_BELOW, 0.6, 0.85, 1, 2, 3]) expect(samplesFor(zoom)).toBe(1);
   });
 
-  it('supersamples further out, enough that a texel spans about one sample, up to 4', () => {
-    expect(samplesFor(0.45)).toBe(3);
+  it('supersamples further out, about one sample per texel (at least 2, at most 4)', () => {
+    expect(samplesFor(0.49)).toBe(2);
+    expect(samplesFor(0.42)).toBe(2);
     expect(samplesFor(0.34)).toBe(3);
-    expect(samplesFor(0.31)).toBe(4);
+    expect(samplesFor(0.31)).toBe(3);
     expect(samplesFor(0.1)).toBe(4);
-    for (let zoom = 0.1; zoom < SUPERSAMPLE_BELOW; zoom += 0.01) expect(samplesFor(zoom) * zoom).toBeGreaterThanOrEqual(Math.min(1, 4 * zoom) - 1e-9);
+    // A texel never spans more than 1.25 samples down to the widest board view.
+    for (let zoom = 0.3; zoom < SUPERSAMPLE_BELOW; zoom += 0.01) expect(1 / (zoom * samplesFor(zoom))).toBeLessThan(1.25);
   });
 
   it('keeps the standard zoom limit for boards up to 32×32 and lets bigger boards fit', () => {

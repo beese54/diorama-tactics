@@ -22,6 +22,7 @@ import { LightRig } from './render/LightRig';
 import { dayAt, DayClock, TIME_NAMES, TIMES, type TimeChoice } from './render/daytime';
 import { WEATHER_KINDS, WEATHER_NAMES, weatherForMap, type WeatherKind } from './render/weather';
 import { TileInfo } from './ui/TileInfo';
+import { GpuTimer } from './render/GpuTimer';
 
 /** Map files larger than this are refused unread; a full 64×64 map is well under it. */
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
@@ -62,6 +63,9 @@ async function main(): Promise<void> {
   // Crisp shadows (no blur), as befits pixel art; LightRig keeps them subtle.
   pipeline.renderer.shadowMap.enabled = true;
   pipeline.renderer.shadowMap.type = THREE.BasicShadowMap;
+  // Only the board casts shadows, and it never moves, so the shadow map is redrawn only when
+  // the sun moves or the board changes (see the frame loop), not every frame.
+  pipeline.renderer.shadowMap.autoUpdate = false;
 
   const theme = themeFromUrl(location.search);
   document.title = `${theme.name} · Diorama Tactics`;
@@ -280,6 +284,11 @@ async function main(): Promise<void> {
   let lastElapsed = 0;
   /** How dark it is now (0 day to 1 night), for checks. */
   let nightNow = 0;
+  /** Where the sun stood, and which board was up, when the shadow map was last drawn. */
+  const shadowSun = new THREE.Vector3(NaN, NaN, NaN);
+  let shadowBoard: Board | null = null;
+  /** GPU time per frame, measured in dev builds only. */
+  const gpuTimer = import.meta.env.DEV ? new GpuTimer(pipeline.renderer.getContext() as WebGL2RenderingContext) : null;
   /** Off only for before/after captures (dev hooks): zoomed out, draw at one sample per pixel. */
   let supersampling = true;
   /** CPU milliseconds spent in each recent frame (for scripts/bench.mjs). */
@@ -295,6 +304,11 @@ async function main(): Promise<void> {
     const day = hour === null ? null : dayAt(hour);
     const look = weather.look;
     const { night, fogColor } = lights.apply(day, look, weather.flash);
+    if (!sun.position.equals(shadowSun) || shadowBoard !== board) {
+      shadowSun.copy(sun.position);
+      shadowBoard = board;
+      pipeline.renderer.shadowMap.needsUpdate = true;
+    }
     nightNow = night;
     weather.setLight(day ? 1 - 0.8 * night : Math.min(1, light.sunIntensity / 2.2), fogColor);
     board.mesh.setNightGlow(night);
@@ -320,7 +334,9 @@ async function main(): Promise<void> {
     cursor.update(elapsed);
     tileInfo.show(hovered);
 
+    gpuTimer?.begin();
     pipeline.render(scene, rig.camera, supersampling ? samplesFor(rig.camera.zoom) : 1);
+    gpuTimer?.end();
     if (import.meta.env.DEV && frameCpu.push(performance.now() - started) > 2000) frameCpu.splice(0, 1000);
   });
 
@@ -351,6 +367,15 @@ async function main(): Promise<void> {
         setSize: (size: number) => pickSize(String(size)),
         setSupersampling: (on: boolean) => (supersampling = on),
         minZoom: () => rig.controls.minZoom,
+        /** GPU ms of the frames since the last call (empty without timer queries). */
+        takeGpuTimes: () => gpuTimer?.times.splice(0) ?? [],
+        /** Hides or shows a layer, or the sun's shadows, to see what each costs (tasks/perf/gpu-attribution.mjs). */
+        setLayer(name: string, on: boolean) {
+          if (name === 'shadows') sun.castShadow = on;
+          pipeline.renderer.shadowMap.needsUpdate = true;
+          const group = { mesh: board.mesh.group, flora: board.flora.group, props: board.props.group, weather: weather.group, ambience: ambience.group, backdrop: backdrop.mesh }[name];
+          if (group) group.visible = on;
+        },
         exportJson: () => serializeMap(board.map),
         loadJson: loadText,
         hudText: () => document.getElementById('hud')?.textContent ?? '',
