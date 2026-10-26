@@ -123,7 +123,7 @@ export function paintLiquid(map: MapFile, tilePx: number, style: LiquidStyle, wi
     })),
   );
 
-  // Each frame depends only on its own index, so a subset can be painted apart (see groundWorkers.ts).
+  // Each frame depends only on its own index, so a subset can be painted apart (see BoardWorkers.ts).
   const frames = only.map((f) => {
     /** How far through the loop this frame is, 0..1. */
     const loop = f / LIQUID_FRAMES;

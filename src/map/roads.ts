@@ -56,20 +56,72 @@ function route(map: MapFile, settlements: readonly Settlement[], gates: readonly
   const from = new Array<{ prev: number; over: number } | null>(n).fill(null);
   const done = new Uint8Array(n);
   const gateSet = new Set(settlements.flatMap((s) => s.gates).map(index(map)));
-  for (const g of gates) cost[index(map)(g)] = 0;
-  for (;;) {
-    let c = -1;
-    for (let i = 0; i < n; i++) if (!done[i] && cost[i] < Infinity && (c < 0 || cost[i] < cost[c])) c = i;
-    if (c < 0) break;
+  const queue = new TileQueue(cost);
+  for (const g of gates) {
+    cost[index(map)(g)] = 0;
+    queue.push(index(map)(g));
+  }
+  for (let c = queue.pop(); c >= 0; c = queue.pop()) {
+    if (done[c]) continue;
     done[c] = 1;
     for (const step of steps(map, settlements, gateSet, c)) {
       if (cost[c] + step.cost < cost[step.to]) {
         cost[step.to] = cost[c] + step.cost;
         from[step.to] = { prev: c, over: step.over };
+        queue.push(step.to);
       }
     }
   }
   return { cost, from };
+}
+
+/**
+ * Tiles waiting to be settled, cheapest first and, at equal cost, lowest index first: the
+ * same order as scanning every tile for the cheapest. A tile is pushed again whenever its cost
+ * drops, so an entry whose cost has since dropped further is stale and skipped.
+ */
+class TileQueue {
+  private readonly heap: { cost: number; tile: number }[] = [];
+
+  constructor(private readonly cost: readonly number[]) {}
+
+  push(tile: number): void {
+    const heap = this.heap;
+    heap.push({ cost: this.cost[tile], tile });
+    for (let i = heap.length - 1; i > 0; ) {
+      const parent = (i - 1) >> 1;
+      if (!this.before(heap[i], heap[parent])) break;
+      [heap[i], heap[parent]] = [heap[parent], heap[i]];
+      i = parent;
+    }
+  }
+
+  /** The next tile to settle, or -1 when none is left. */
+  pop(): number {
+    const heap = this.heap;
+    while (heap.length) {
+      const top = heap[0];
+      const last = heap.pop()!;
+      if (heap.length) {
+        heap[0] = last;
+        for (let i = 0; ; ) {
+          const [l, r] = [2 * i + 1, 2 * i + 2];
+          let best = i;
+          if (l < heap.length && this.before(heap[l], heap[best])) best = l;
+          if (r < heap.length && this.before(heap[r], heap[best])) best = r;
+          if (best === i) break;
+          [heap[i], heap[best]] = [heap[best], heap[i]];
+          i = best;
+        }
+      }
+      if (top.cost === this.cost[top.tile]) return top.tile;
+    }
+    return -1;
+  }
+
+  private before(a: { cost: number; tile: number }, b: { cost: number; tile: number }): boolean {
+    return a.cost < b.cost || (a.cost === b.cost && a.tile < b.tile);
+  }
 }
 
 function steps(map: MapFile, settlements: readonly Settlement[], gates: ReadonlySet<number>, i: number): Step[] {

@@ -1,6 +1,6 @@
 import { mulberry32 } from '../util/rng';
 import { LIQUID_FRAMES } from './liquid';
-import { TILE_PX } from './textures';
+import { TILE_PX } from './types';
 
 /** Height of the falling-water pattern in px: it repeats every this many, and slides down by FALL_PX * LIQUID_FRAMES per loop. */
 export const FALL_PATTERN_PX = 24;

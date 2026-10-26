@@ -476,6 +476,21 @@ _(filled in after each step)_
   - `?size` is capped at 64, the agreed size.
 - Approved 2026-10-26. All land milestones (M0–M9) are done.
 
+## Map phase, part 2 (decided 2026-10-26)
+The user asked for the four deferred items before units and battles. Order: tech first, so the new themes benefit, then the themes.
+
+- [ ] **M10: Tech pass.** Each change is measured against a baseline and must keep today's captures pixel-identical, except where noted.
+  - [x] M10a column build on a worker: a three.js-free atlas layout, so `buildColumns` can run off the main thread next to the ground workers. Target: 64×64 load ≤ 0.7 s (from 0.92 s); 32×32 doesn't regress.
+  - [ ] M10b zoom-out without shimmer: crisp pixel-art mipmaps (nearest level, box-filtered, padded atlases so cells don't bleed), used only below zoom ~0.7. The minimum zoom scales with the board, so a 64×64 board fits on screen. Views at zoom ≥ 0.7 stay pixel-identical, including every opening view.
+  - [ ] M10c GPU headroom at 64×64 (user: "headroom at 64 only"; the cap stays 64). Target: double the Intel UHD frame rate at 64×64, measured uncapped by GPU time per frame. Candidates in profile order: re-render the shadow map only when the light moves, then chunked meshes with frustum culling.
+- [ ] **M11–M16: 24 more themes**, one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
+  - [ ] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor
+  - [ ] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair
+  - [ ] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street
+  - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
+  - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle
+  - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog
+
 ## Deferred (map phase)
 Not needed for the agreed bar; pick up if circumstances change.
 - **Theme variations:** 24 of the 30 proposed map themes are not built (M2e built one showcase per category: Alpine Pass, Castle Courtyard, Fountain Plaza, Night Market Alley, Jungle Temple, Volcanic Caldera).

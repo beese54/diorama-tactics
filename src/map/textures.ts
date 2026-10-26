@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../util/rng';
 import { SIDE_STYLES, TERRAIN, type SideStyle } from './terrain';
-import { TERRAIN_IDS, TILE_PX, type TerrainId } from './types';
+import { TERRAIN_IDS, TILE_PX } from './types';
+import { atlasLayout, STEP_PX, VARIANTS, type AtlasLayout } from './atlasLayout';
 
-export { TILE_PX };
-/** One height step is half a tile tall, so its side face is 8 px. */
-export const STEP_PX = 8;
-/** Cliff-face texture variants painted per material, so neighbouring steps don't repeat. */
-export const VARIANTS = 4;
+export { TILE_PX, STEP_PX, VARIANTS };
+export type { UvRect } from './atlasLayout';
 
 type Rand = () => number;
 /**
@@ -226,23 +224,10 @@ function paintCoping(put: Put, style: SideStyle): void {
   }
 }
 
-export interface UvRect {
-  u0: number;
-  v0: number;
-  u1: number;
-  v1: number;
-}
-
-export interface TerrainAtlas {
+export interface TerrainAtlas extends AtlasLayout {
   texture: THREE.CanvasTexture;
   /** Emitted light (lit windows, neon), same layout; black where nothing glows. */
   glow: THREE.CanvasTexture;
-  /** Highest cliff step of a column: material plus the terrain's lip (natural) or coping (built). */
-  sideTop(terrain: TerrainId, variant: number): UvRect;
-  /** Any lower cliff step: bare material. */
-  sideLower(style: SideStyle, variant: number): UvRect;
-  /** The step just above the neighbouring ground: shop windows and doors on building fronts. */
-  sideGround(style: SideStyle, variant: number): UvRect;
 }
 
 /**
@@ -252,11 +237,11 @@ export interface TerrainAtlas {
  * painted map-wide instead (see ground.ts).
  */
 export function buildTerrainAtlas(): TerrainAtlas {
-  const lowerY = TERRAIN_IDS.length * STEP_PX;
-  const groundY = lowerY + SIDE_STYLES.length * STEP_PX;
+  const layout = atlasLayout();
+  const { lowerY, groundY } = layout;
   const canvas = document.createElement('canvas');
-  canvas.width = TILE_PX * VARIANTS;
-  canvas.height = groundY + SIDE_STYLES.length * STEP_PX;
+  canvas.width = layout.width;
+  canvas.height = layout.height;
   const glowCanvas = document.createElement('canvas');
   glowCanvas.width = canvas.width;
   glowCanvas.height = canvas.height;
@@ -291,23 +276,5 @@ export function buildTerrainAtlas(): TerrainAtlas {
     }
   });
 
-  const W = canvas.width;
-  const H = canvas.height;
-  // CanvasTexture is flipped: canvas y = 0 is v = 1.
-  const rect = (x: number, y: number): UvRect => ({
-    u0: x / W,
-    u1: (x + TILE_PX) / W,
-    v0: 1 - (y + STEP_PX) / H,
-    v1: 1 - y / H,
-  });
-  const terrainRow = new Map(TERRAIN_IDS.map((id, i) => [id, i]));
-  const sideRow = new Map(SIDE_STYLES.map((s, i) => [s, i]));
-
-  return {
-    texture: toTexture(canvas),
-    glow: toTexture(glowCanvas),
-    sideTop: (terrain, v) => rect(v * TILE_PX, terrainRow.get(terrain)! * STEP_PX),
-    sideLower: (style, v) => rect(v * TILE_PX, lowerY + sideRow.get(style)! * STEP_PX),
-    sideGround: (style, v) => rect(v * TILE_PX, groundY + sideRow.get(style)! * STEP_PX),
-  };
+  return { ...layout, texture: toTexture(canvas), glow: toTexture(glowCanvas) };
 }

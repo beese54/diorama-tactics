@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import { PixelPipeline } from './render/PixelPipeline';
 import { CameraRig } from './render/CameraRig';
 import { disposeTree } from './render/dispose';
-import { buildColumns, MapMesh, type MapShape } from './map/MapMesh';
+import { columnShape, MapMesh, type MapShape } from './map/MapMesh';
 import { Cursor } from './map/Cursor';
 import { Flora, placeFlora } from './map/Flora';
 import { generateMap, WORLD_SIZE } from './map/generator';
 import type { GroundImage } from './map/ground';
-import { GroundPainter } from './map/GroundPainter';
+import { BoardWorkers } from './map/BoardWorkers';
+import { buildTerrainAtlas } from './map/textures';
 import { parseMap, serializeMap } from './map/mapFile';
 import { PropLayer } from './map/PropLayer';
 import { tileAt, type MapFile, type Tile } from './map/types';
@@ -37,11 +38,12 @@ function createPipeline(stage: HTMLElement): PixelPipeline | null {
   }
 }
 
-/** A map's columns and ground image, built but not yet shown. */
+/** A map's columns and ground image, built but not yet shown; `rest` paints the ground's other frames once it is. */
 interface Prepared {
   map: MapFile;
   shape: MapShape;
   ground: GroundImage;
+  rest: () => Promise<void>;
 }
 
 /** Everything drawn for one map; rebuilt whole when the map changes. */
@@ -100,15 +102,22 @@ async function main(): Promise<void> {
   };
 
   // Workers start loading now, while the first map is generated.
-  const painter = new GroundPainter();
-  /** Workers paint the ground while this thread builds the columns. */
+  const workers = new BoardWorkers();
+  /** Workers paint the ground and build the columns; this thread paints the cliff atlas meanwhile. */
   const prepareBoard = async (map: MapFile): Promise<Prepared> => {
-    await painter.ready;
-    const painting = painter.paint(map, generated);
-    // Chrome passes the last of the workers' jobs on only once this thread yields, so yield before the long build.
+    await workers.ready;
+    const painting = workers.paintGround(map, generated);
+    const building = workers.buildColumns(map);
+    performance.mark('board:posted');
+    // Chrome passes the last of the workers' jobs on only once this thread yields.
     await new Promise((resolve) => setTimeout(resolve));
-    const shape = buildColumns(map);
-    return { map, shape, ground: await painting };
+    const atlas = buildTerrainAtlas();
+    performance.mark('board:atlas');
+    const [{ ground, rest }, columns] = await Promise.all([painting, building]);
+    performance.mark('board:parts');
+    const shape = columnShape(columns, atlas);
+    performance.mark('board:shape');
+    return { map, shape, ground, rest };
   };
   const buildBoard = ({ map, shape, ground }: Prepared): Board => {
     const wild = theme.seed !== undefined;
@@ -128,9 +137,11 @@ async function main(): Promise<void> {
     lights.setBoard(Math.max(map.width, map.height) / 2);
     return { map, mesh, flora, props };
   };
-  let board = buildBoard(await prepareBoard(theme.map()));
+  const first = await prepareBoard(theme.map());
+  let board = buildBoard(first);
   // When the first board was ready, for load-time measurements (works in production builds too).
   performance.mark('board-ready');
+  void first.rest();
   weather.set(weatherFor(board.map), true);
 
   const cursor = new Cursor();
@@ -162,6 +173,7 @@ async function main(): Promise<void> {
       disposeTree(group);
     }
     board = buildBoard(next);
+    void next.rest();
     rig.panLimit = Math.max(map.width, map.height) / 2;
     hovered = cursorTile = null;
     cursor.setTarget(null);
@@ -348,6 +360,11 @@ async function main(): Promise<void> {
         }),
         gpuMemory: () => ({ ...pipeline.renderer.info.memory }),
         renderInfo: () => ({ ...pipeline.renderer.info.render }),
+        /** When each step of building the boards so far ran, in ms since the page opened (see tasks/perf/timeline.mjs). */
+        loadTimeline: () => ({
+          marks: performance.getEntriesByType('mark').filter((m) => m.name.startsWith('board')).map((m) => [m.name, Math.round(m.startTime)]),
+          jobs: workers.timeline.map((j) => ({ ...j, posted: Math.round(j.posted), started: Math.round(j.started), finished: Math.round(j.finished), received: Math.round(j.received) })),
+        }),
         /** Triangles per layer, and how many of them also cast shadows (for scripts/bench.mjs). */
         triangles() {
           const layers = { mesh: board.mesh.group, flora: board.flora.group, props: board.props.group, weather: weather.group, ambience: ambience.group, cursor: cursor.group };

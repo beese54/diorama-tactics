@@ -88,3 +88,28 @@ The 64×64 "after" also generates more settlements and roads than "before".
 - surface 244 ms and MapMesh 129 ms: the column build, now the critical path.
 - native 226 ms; ground composition 72 ms; noise 72 ms; roads 61 ms.
 - The workers finish before the column build does.
+
+# M10a: column build on workers (2026-10-26)
+**Target:** 64×64 load ≤ 0.7 s (from 0.92 s at M9), 32×32 no worse, captures pixel-identical. The user agreed that the liquids may hold still on frame 0 for a moment after a board appears.
+
+**Noise:** this session the machine was much noisier (OneDrive sync in the background). Block-of-10 medians for the M9 code drifted from 0.92 to 1.49 s. So decisions use `loadtime-ab.mjs`, which alternates the two builds load by load (the M9 code runs from a worktree on :5174). They also use `timeline.mjs`: dev-only marks plus the posted/run/received time of each worker job.
+
+| # | Change | Predicted | Measured | Kept? |
+|---|---|---|---|---|
+| 1 | `atlasLayout.ts` (three.js-free UV layout), `columns.ts` (geometry as typed arrays, built in tile runs and joined bit-identically), `BoardWorkers` running column jobs next to the ground jobs | −300 ms (columns ~370 ms off the main thread) | No gain (1140 ms against 1089 ms in block runs). The timeline showed everything in parallel, with 3 liquid jobs (~440 ms each, every one recomputing the shore and flow fields) as the critical path | kept, as the base for #3 |
+| 2 | More jobs: 6 liquid + 4 column, 4+3, 6+3 | −150 ms | Slower each time (1231–1476 ms). Beyond ~6 threads the laptop throttles and its efficiency cores join in | reverted |
+| 3 | Frame 0 first: land, liquids frame 0 and 3 cost-balanced column runs (a rounded tile weighs 6, a flat one 1) before the board appears. The other 11 frames come after, in 3 jobs that also compose in the worker | −300 ms | Board window (posted → ready) ~350 ms against ~560 ms; A/B −12% at 32, −20% at 64, faster in 20/20 pairs | kept |
+| 4 | Road router: binary heap ordered by (cost, tile) instead of scanning every tile per step; same pop order, so roads are identical (32×32 and 64×64 fingerprints pinned) | −50 ms | `roads.ts` 66 → 15 ms in the profile; A/B −16% / −20% (19/20 pairs) | kept |
+
+**Result.** M9 → M10a, alternating pairs: 32×32 532 → 449 ms (−16%) and 64×64 1213 → 965 ms (−20%), under this session's load. Applied to the quiet-machine M9 figure of 0.92 s, that is about 0.74 s: close to, but not under, the 0.7 s target.
+
+What remains:
+- the page floor plus generation before the jobs are posted (~300 ms);
+- the slowest job (liquid frame 0, ~300 ms: 150 ms of fields plus one frame);
+- shader compilation (~140 ms of `program` and `getProgramInfoLog`).
+
+**Checks:**
+- 904 tests pass;
+- check.mjs 62/62;
+- pixel identity 20/20;
+- the water animates once the rest frames land (check.mjs water checks).

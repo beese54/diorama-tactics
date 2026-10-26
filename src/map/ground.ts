@@ -3,7 +3,7 @@ import { mulberry32 } from '../util/rng';
 import { isBuilt, isLiquid } from './surface';
 import { LIQUID_STYLES, TERRAIN, type LiquidStyle, type PaintStyle } from './terrain';
 import { TERRAIN_IDS, TILE_PX, tileAt, type MapFile, type Tile } from './types';
-import { ALL_FRAMES, LIQUID_FRAMES, LIQUIDS, paintLiquid } from './liquid';
+import { ALL_FRAMES, LIQUIDS, paintLiquid } from './liquid';
 import { propPlacement, PROPS } from './props';
 
 /**
@@ -292,7 +292,10 @@ export interface GroundImage {
   height: number;
   /** Per pixel (row 0 = north): index into TERRAIN_IDS of the terrain drawn there. */
   material: Uint8Array;
-  /** RGBA per liquid animation frame (row 0 = north); land pixels are identical in every frame. */
+  /**
+   * RGBA per liquid animation frame (row 0 = north); land pixels are identical in every frame.
+   * A board can be shown with only frame 0 while the others are still being painted: those are missing until then.
+   */
   frames: Uint8Array[];
   /** Emitted light per frame, same layout (lava glows); null when nothing on the map glows. */
   glow: Uint8Array[] | null;
@@ -329,7 +332,7 @@ function rgb(hex: string): [number, number, number] {
  * patches come from world-space noise rather than per-tile variants. Liquids come from
  * liquid.ts, one image per animation frame; `wild` (generated maps) turns water beside
  * swamps murky. Deterministic per map seed. The three steps can also run apart, on
- * workers (see groundWorkers.ts): the result is the same.
+ * workers (see BoardWorkers.ts): the result is the same.
  */
 export function paintGround(map: MapFile, wild = false): GroundImage {
   return composeGround(paintLand(map), paintLiquids(map, wild));
@@ -407,19 +410,22 @@ export function paintLiquids(map: MapFile, wild = false, only: readonly number[]
   });
 }
 
-/** Lays each frame of the liquids over the land. `liquids` hold every frame, in order. */
-export function composeGround(land: LandImage, liquids: LiquidLayer[]): GroundImage {
+/**
+ * Lays the liquids over the land for the frames in `which` (all by default); each liquid's
+ * `frames` hold those frames, in that order. Writes into `into` when given (filling in an image
+ * whose other frames came earlier), else into a new image.
+ */
+export function composeGround(land: LandImage, liquids: LiquidLayer[], which: readonly number[] = ALL_FRAMES, into?: GroundImage): GroundImage {
   const { width, height, material } = land;
   const glowing = liquids.some((l) => LIQUIDS[l.style].glows);
-  const frames: Uint8Array[] = [];
-  const glow: Uint8Array[] = [];
-  for (let f = 0; f < LIQUID_FRAMES; f++) {
+  const image = into ?? { width, height, material, frames: [], glow: glowing ? [] : null };
+  which.forEach((f, k) => {
     const frame = land.rgba.slice();
     const light = glowing ? new Uint8Array(width * height * 4) : null;
     for (const { style, palette, frames: painted } of liquids) {
       const colors = palette.map(rgb);
       const lit = !!light && LIQUIDS[style].glows;
-      const index = painted[f];
+      const index = painted[k];
       for (let i = 0; i < index.length; i++) {
         const c = index[i];
         if (c < 0) continue;
@@ -431,8 +437,8 @@ export function composeGround(land: LandImage, liquids: LiquidLayer[]): GroundIm
         if (lit) light!.set([r, g, b, 255], i * 4);
       }
     }
-    frames.push(frame);
-    if (light) glow.push(light);
-  }
-  return { width, height, material, frames, glow: glowing ? glow : null };
+    image.frames[f] = frame;
+    if (light) image.glow![f] = light;
+  });
+  return image;
 }

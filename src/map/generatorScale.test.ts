@@ -16,6 +16,12 @@ describe('bigger boards', () => {
     expect(h.toString(16).padStart(8, '0')).toBe('8b89b6c7');
   });
 
+  it('leave the 64×64 maps exactly as M9 shipped them', () => {
+    let h = 0x811c9dc5;
+    for (let seed = 1; seed <= 20; seed++) h = fingerprint(serializeMap(generateMap(seed, 64)), h);
+    expect(h.toString(16).padStart(8, '0')).toBe('8ce082c1');
+  });
+
   const SEEDS = Array.from({ length: 16 }, (_, i) => 100 + i);
   const worlds = (size: number) => SEEDS.map((seed) => generateWorld(seed, size));
   const average = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
