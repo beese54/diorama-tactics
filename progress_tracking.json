@@ -91,6 +91,30 @@
       "title": "Performance pass: boards up to 64x64 at 60 fps, ground painted on workers, board size picker, settlements and rivers scale with the board",
       "status": "done",
       "commit": "47a437f"
+    },
+    {
+      "id": "M10",
+      "title": "Tech pass: columns built on workers, supersampled zoom-out to fit 64x64, shadow map redrawn only on change",
+      "status": "done",
+      "commit": "b6e5c7a"
+    },
+    {
+      "id": "M11",
+      "title": "Four Wilds maps: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor",
+      "status": "done",
+      "commit": "1927aff"
+    },
+    {
+      "id": "M12",
+      "title": "Four Kingdom maps: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair",
+      "status": "done",
+      "commit": "9b60d6f"
+    },
+    {
+      "id": "M13",
+      "title": "Four Modern Town maps: Station Square, Suburban Park, Canal Quarter, High Street",
+      "status": "in_progress",
+      "commit": null
     }
   ],
   "backlog": [

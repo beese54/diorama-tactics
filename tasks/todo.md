@@ -489,8 +489,12 @@ The user asked for the four deferred items before units and battles. Order: tech
   - M10c done: the shadow map is redrawn only when the sun or board changes; one texture per water frame (no re-uploads); zoomed-out samples rounded (3×3 at 0.31). Intel GPU ms at 64×64: 5.6 → 2.4 at default zoom (2.4×), 14.4 → 7.2 fully zoomed out. Chunked culling not needed. Details are in perf_log.md.
 - [ ] **M11–M16: 24 more themes**, one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
   - [x] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor (approved 2026-10-26: "looks good, no changes")
-  - [x] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair (in review)
-  - [ ] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street
+  - [x] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair (approved 2026-10-26: "go with M13")
+  - [ ] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street (in progress)
+    - Station Square: rail tracks along the back, raised platforms, the station building, a taxi rank and bus shelter; landmark a preserved steam engine on a plinth in the square. New: `rail` terrain (ballast and sleepers), locomotive, bus_shelter, bike_rack.
+    - Suburban Park: houses with gardens behind hedges, a cul-de-sac, a park with a pond and paths; landmark a playground (slide and swings). New: playground, picnic_table.
+    - Canal Quarter: a canal in two pounds joined by a lock, towpaths, brick warehouses and a footbridge; landmark a mill chimney. New: narrowboat ×2 (floats), lock_gate, bollard, mill_chimney.
+    - High Street: shopfronts with awnings along the back, a crossing, a bus stop; landmark the town clock tower. New: `shopfront` building (awning side face), phone_box, post_box, clock_tower.
   - [ ] M14 Neon City: Highway Overpass, Rooftop Arcade, Container Port, Shrine Steps
   - [ ] M15 Ruins: Desert Pyramid, Sunken Temple, Overgrown Colosseum, Stone Circle
   - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog
