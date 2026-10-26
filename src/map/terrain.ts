@@ -4,7 +4,7 @@ import type { TerrainId, Tile } from './types';
 /** How the ground painter draws a tile top (see ground.ts). */
 export type PaintStyle =
   | 'grass' | 'flowers' | 'rows' | 'cobble' | 'woods' | 'canopy'
-  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves'
+  | 'rock' | 'snow' | 'swamp' | 'sand' | 'crystal' | 'leaves' | 'ice'
   | 'flagstone' | 'cobblestone' | 'blocks' | 'slabs' | 'asphalt' | 'planks' | 'thatch' | 'tiles'
   | LiquidStyle;
 
@@ -15,9 +15,9 @@ export const LIQUID_STYLES: readonly LiquidStyle[] = ['water', 'lava'];
 /** What a column's cliff face is made of below the top lip. */
 export type SideStyle =
   | 'soil' | 'rock' | 'sand' | 'redrock'
-  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage';
+  | 'masonry' | 'concrete' | 'brick' | 'plaster' | 'shopfront' | 'timber' | 'temple' | 'basalt' | 'cottage' | 'ice';
 export const SIDE_STYLES: readonly SideStyle[] = [
-  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage',
+  'soil', 'rock', 'sand', 'redrock', 'masonry', 'concrete', 'brick', 'plaster', 'shopfront', 'timber', 'temple', 'basalt', 'cottage', 'ice',
 ];
 
 /**
@@ -96,6 +96,8 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   autumn_grass:     natural({ name: 'Autumn Grass', moveCost: 1, defense: 0,  style: 'leaves',      side: 'soil',      palette: ['#7a8844', '#6e7c3e', '#86944c', '#9aa456', '#b8482a', '#d0782c', '#dcae3c', '#86502c'] }),
   red_rock:         natural({ name: 'Red Rock',     moveCost: 2, defense: 10, style: 'rock',        side: 'redrock',   palette: ['#a8643e', '#9a5a38', '#74402a', '#c07a4e'] }),
   oasis_grass:      natural({ name: 'Oasis',        moveCost: 1, defense: 5,  style: 'grass',       side: 'sand',      palette: ['#6a9a40', '#5e8c3a', '#78a84a', '#92bc5a'] }),
+  // Ice palette: [pale, light blue, deep blue, crack white, crack shadow, snow dusting].
+  ice:              natural({ name: 'Frozen Lake',  moveCost: 1, defense: -10, style: 'ice',        side: 'ice',       palette: ['#d2e4ee', '#b6d2e2', '#8eb4ca', '#f4f9fc', '#7698b2', '#e8f0f5'] }),
 };
 
 export type BridgeId = 'bridge_wood' | 'bridge_stone';

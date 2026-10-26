@@ -69,6 +69,8 @@ export const PROPS: Record<PropId, PropDef> = {
   palm:          prop('Palm',          { defense: 10, variants: 2, shadow: 6, sway: 0.05, jitter: true }),
   cactus:        prop('Cactus',        { defense: 10, variants: 2, shadow: 3, jitter: true }),
   stone_arch:    prop('Sandstone Arch', { defense: 0, blocks: true, shadow: 12 }),
+  ice_hut:       prop('Fishing Hut',   { defense: 0, blocks: true, shadow: 9 }),
+  snow_rock:     prop('Snowy Rock',    { defense: 20, variants: 2, shadow: 6, jitter: true }),
 };
 
 /** Where on its tile a prop stands (tile-local u, v) and which sprite variant it uses. Deterministic. */

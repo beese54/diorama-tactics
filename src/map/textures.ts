@@ -46,6 +46,7 @@ const SIDE_PALETTES: Record<SideStyle, readonly string[]> = {
   temple: ['#8f896a', '#78735a', '#a29c7c', '#5f7a3e'],
   basalt: ['#3e3938', '#2e2a29', '#4d4746', '#211e1d'],
   cottage: ['#e2d6bc', '#cbbd9f', '#efe6d0', '#5a3e26'],
+  ice: ['#8eb8d0', '#5e88a8', '#c4dcea', '#2e4a66'],
 };
 
 /** Building fronts get windows; their street-level cell gets a shop window or door. */
@@ -133,6 +134,22 @@ function paintSide(put: Put, rand: Rand, style: SideStyle, groundFloor: boolean,
       return;
     case 'cottage':
       paintCottage(put, rand, p, groundFloor, variant);
+      return;
+    case 'ice':
+      // A cut through lake ice: clear and pale near the top, darkening to the cold water beneath,
+      // with streaks of trapped air and the odd hairline crack.
+      for (let y = 0; y < STEP_PX; y++) {
+        for (let x = 0; x < TILE_PX; x++) {
+          const depth = y < 2 ? light : y < 5 ? base : y < 7 ? dark : accent;
+          put(x, y, rand() < 0.06 ? light : depth);
+        }
+      }
+      for (let i = 0; i < 2; i++) {
+        const x = int(rand, TILE_PX - 3);
+        const y = 1 + int(rand, 4);
+        for (let k = 0; k < 3; k++) put(x + k, y, '#e8f4fa');
+      }
+      if (variant & 1) for (let y = 0; y < 6; y++) put(3 + variant * 2 + (y > 2 ? 1 : 0), y, '#e8f4fa');
       return;
   }
   if (FACADES.has(style)) {

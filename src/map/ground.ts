@@ -162,7 +162,24 @@ function fallenLeaves(px: Pixel, p: readonly string[]): string {
   return ramp(1, 0, 2)(px, p);
 }
 
+/**
+ * Lake ice: pale where it is thick, blue where it is clear, a dusting of snow and a few glints.
+ * A few long cracks wander across it: the edges of big jittered plates, shown only where a
+ * broad noise lets them through, so they start and stop instead of tiling the lake. All in
+ * world pixels, so the cracks and tones run on across tiles.
+ */
+function lakeIce(px: Pixel, p: readonly string[]): string {
+  const plate = stoneAt(px.gx + 0.37 * px.gy, px.gy, 44);
+  const cracked = valueNoise(0x1ce, px.gx / 40, px.gy / 40) > 0.52;
+  if (plate.mortar && cracked) return plate.lean < 0 ? p[3] : p[4];
+  if (px.grain > 0.995) return p[3];
+  if (px.patch > 0.7 && px.grain < (px.patch - 0.7) * 1.4) return p[5];
+  const tone = px.patch + (plate.id - 0.5) * 0.15 + (px.dither - 0.5) * 0.25;
+  return tone < 0.34 ? p[2] : tone < 0.64 ? p[1] : p[0];
+}
+
 const PAINTERS: Record<Exclude<PaintStyle, LiquidStyle>, Painter> = {
+  ice: { base: lakeIce },
   leaves: { base: fallenLeaves, details: (put, rand, p) => tufts(put, rand, p[3], 4) },
   grass: { base: ramp(1, 0, 2), details: (put, rand, p) => tufts(put, rand, p[3], 6) },
   flowers: {

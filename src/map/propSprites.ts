@@ -756,6 +756,59 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  ice_hut: {
+    w: 25, h: 29,
+    paint(g) {
+      // A little fishing hut out on the ice: red board walls, a snow-laden roof, a stovepipe,
+      // a lit window, an auger by the wall, and the hole it fishes through, a rod set over it.
+      const walls = ['#5e1e18', '#8a2c20', '#a83a28', '#c4503a'];
+      const snow = ['#c8d6e2', '#e2ecf4', '#f6fafd'];
+      g.rect(4, 12, 17, 13, walls[2]);
+      for (let x = 4; x < 21; x += 3) g.rect(x, 12, 1, 13, walls[1]);
+      g.rect(4, 12, 2, 13, walls[3]);
+      g.rect(18, 12, 3, 13, walls[0]);
+      g.rect(4, 24, 17, 1, walls[0]);
+      // Door and window: the window glows by night.
+      g.rect(8, 16, 5, 9, '#3a2418');
+      g.rect(8, 16, 5, 1, WOOD[2]);
+      g.set(11, 20, '#c9a24a');
+      g.rect(15, 15, 3, 3, '#ffd88a', true);
+      g.rect(15, 15, 3, 1, '#ffeec0', true);
+      // Roof: a ridge with eaves, heaped with snow that overhangs a little.
+      for (let r = 0; r < 7; r++) g.rect(Math.round(12 - r * 1.7 - 1), 5 + r, Math.round(r * 3.4 + 3), 1, r < 5 ? snow[r > 2 ? 1 : 2] : snow[0]);
+      g.rect(1, 11, 23, 1, snow[0]);
+      g.rect(2, 10, 21, 1, snow[1]);
+      for (const x of [3, 9, 15, 21]) g.set(x, 12, snow[1]);
+      g.rect(17, 1, 2, 7, IRON[1]);
+      g.rect(17, 1, 1, 7, IRON[2]);
+      g.rect(16, 1, 4, 1, IRON[0]);
+      // The fishing hole: dark water in a rim of broken ice, a rod propped over it.
+      for (const [x0, x1, y] of [[1, 5, 25], [0, 6, 26], [1, 5, 27]]) g.rect(x0, y, x1 - x0 + 1, 1, '#1c3046');
+      g.rect(2, 26, 2, 1, '#2e4c68');
+      for (const [x, y] of [[0, 25], [6, 25], [0, 27], [6, 27], [3, 24], [3, 28]]) g.set(x, y, '#e8f2f8');
+      g.line(7, 22, 2, 19, WOOD[2]);
+      g.line(2, 19, 2, 26, '#c8d0d8');
+      g.line(22, 14, 23, 25, '#9aa0a8');
+      g.rect(21, 13, 3, 1, '#d4a030');
+      g.outline();
+    },
+  },
+  snow_rock: {
+    w: 15, h: 12,
+    paint(g, v) {
+      // A boulder under a cap of snow, its shaded side showing bare rock.
+      g.ball(7.5, 7, 6.8, 4.8, STONE);
+      if (v) g.ball(12, 9, 2.8, 2.2, STONE);
+      const caps = ['#c8d6e2', '#e2ecf4', '#f6fafd'];
+      for (let x = 1; x < 14; x++) {
+        const depth = Math.round(2.2 - Math.abs(x - 6) * 0.22 + (x % 3 === 0 ? 1 : 0));
+        let top = 0;
+        while (top < 12 && !g.get(x, top)) top++;
+        for (let k = 0; k < depth; k++) g.set(x, top + k, caps[Math.min(2, k + (x < 7 ? 1 : 0))]);
+      }
+      g.outline();
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {
