@@ -28,11 +28,12 @@ import { station } from './station';
 import { suburb } from './suburb';
 import { sunken } from './sunken';
 import type { Theme } from './types';
+import { toxicbog } from './toxicbog';
 import { volcano } from './volcano';
 import { randomSeed, seedFromUrl, sizeFromUrl, worldTheme } from './world';
 
 /** Every map theme, in menu order. The first is the default. */
-export const THEMES: readonly Theme[] = [meadow, alpine, autumn, desert, frozen, moor, courtyard, harbour, gardens, bridge, fair, plaza, station, suburb, canal, highstreet, market, overpass, rooftop, port, shrine, jungle, pyramid, sunken, colosseum, henge, volcano, cavern, glacier, skyisles];
+export const THEMES: readonly Theme[] = [meadow, alpine, autumn, desert, frozen, moor, courtyard, harbour, gardens, bridge, fair, plaza, station, suburb, canal, highstreet, market, overpass, rooftop, port, shrine, jungle, pyramid, sunken, colosseum, henge, volcano, cavern, glacier, skyisles, toxicbog];
 
 /**
  * The theme named by `?map=<id>`, or the default. `?map=world` (or just `?seed=N`) grows a

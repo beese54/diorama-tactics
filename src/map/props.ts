@@ -137,6 +137,9 @@ export const PROPS: Record<PropId, PropDef> = {
   serac:         prop('Serac',         { defense: 25, variants: 2, shadow: 6, jitter: true }),
   sky_shrine:    prop('Sky Shrine',    { defense: 0, blocks: true, shadow: 10, light: { color: 0xfff0a0, intensity: 5, distance: 7 } }),
   windmill:      prop('Windmill',      { defense: 0, blocks: true, shadow: 9 }),
+  toadstool:     prop('Giant Toadstool', { defense: 0, blocks: true, shadow: 13, light: { color: 0x9aff60, intensity: 4, distance: 6 } }),
+  gas_vent:      prop('Gas Vent',      { defense: 0, shadow: 4, light: { color: 0x9aff60, intensity: 2, distance: 3 } }),
+  bones:         prop('Bones',         { defense: 0, variants: 2, shadow: 3, jitter: true }),
   floodlight:    prop('Floodlight Mast', { defense: 0, shadow: 3, light: { color: 0xfff0d8, intensity: 5, distance: 7 } }),
   string_lights: prop('String Lights', { defense: 0, shadow: 2, sway: 0.02, light: { color: 0xffd890, intensity: 2, distance: 3.5 } }),
 };

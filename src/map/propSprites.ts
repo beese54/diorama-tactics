@@ -2489,6 +2489,71 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  toadstool: {
+    w: 46, h: 58,
+    paint(g, _v, rand) {
+      // A giant toadstool, taller than the dead trees: a pale, bulging stalk with a ragged skirt,
+      // under a broad sickly-red cap spotted with glowing green warts. Smaller ones at its foot.
+      const cap = ['#5a1a24', '#82262e', '#a8363a', '#c8504a'];
+      const stalk = ['#a8a088', '#c8c0a4', '#e0dac0', '#f0ecd8'];
+      for (let y = 24; y < 56; y++) {
+        const hw = 5 + Math.round(Math.sin(((y - 24) / 32) * Math.PI) * 2) + (y > 50 ? 3 : 0);
+        for (let x = -hw; x <= hw; x++) {
+          const t = (x + hw) / (2 * hw);
+          g.set(23 + x, y, t < 0.3 ? stalk[3] : t < 0.65 ? stalk[2] : t < 0.85 ? stalk[1] : stalk[0]);
+        }
+      }
+      for (let x = 15; x < 32; x++) g.set(x, 30 + (x % 3), stalk[1]);
+      g.ball(23, 18, 22, 14, cap);
+      for (let x = 1; x < 46; x++) for (let y = 22; y < 33; y++) if (y > 26 + Math.sin(x * 0.8) * 1.5) g.clear(x, y);
+      g.rect(5, 25, 36, 2, '#d8c8a4');
+      for (let i = 0; i < 16; i++) {
+        const x = 6 + Math.floor(rand() * 34);
+        const y = 7 + Math.floor(rand() * 15);
+        if (g.get(x, y)) g.rect(x, y, 2, 2, i % 3 ? '#b8ff70' : '#e8ffb8', true);
+      }
+      for (const [x, s] of [[8, 4], [38, 3], [34, 2]] as const) {
+        g.rect(x, 58 - s * 2, 1, s * 2, stalk[2]);
+        g.ball(x + 0.5, 58 - s * 2, s + 1, s * 0.7, cap);
+        g.set(x, 57 - s * 2, '#b8ff70', true);
+      }
+      g.outline();
+    },
+  },
+  gas_vent: {
+    w: 15, h: 20, frames: 4, fps: 4,
+    paint(g, _v, _rand, frame) {
+      // A gas vent in the mud: a crusted mound, and a glowing bubble swelling, rising and
+      // bursting into a wisp of fume.
+      g.ball(7.5, 17.5, 7, 2.6, ['#2e3418', '#3e4620', '#525a2c']);
+      g.ball(7.5, 16.5, 3, 1.2, ['#5a8a20', '#7ab828', '#a2ec48'], true);
+      const rise = [0, 2, 5, 9][frame];
+      const r = [1.6, 2.4, 2.2, 1.2][frame];
+      g.ball(7.5, 15 - rise, r, r, ['#78c02a', '#a2ec48', '#e0ffa8'], true);
+      if (frame === 3) for (const [x, y] of [[4, 3], [10, 2], [7, 1], [5, 6], [11, 5]] as const) g.set(x, y, '#ccff88', true);
+      g.outline(0.6);
+    },
+  },
+  bones: {
+    w: 15, h: 8,
+    paint(g, v) {
+      // Old bones sunk in the bog: a skull and scattered ribs, or a horned beast's skull.
+      const bone = ['#a8a088', '#d0c8b0', '#ece6d2'];
+      if (v) {
+        g.ball(7.5, 4, 3.6, 3, bone);
+        g.set(6, 4, '#2a2418');
+        g.set(9, 4, '#2a2418');
+        g.line(4, 3, 0, 0, bone[1]);
+        g.line(11, 3, 14, 0, bone[1]);
+      } else {
+        g.ball(4, 4, 3, 2.6, bone);
+        g.set(3, 4, '#2a2418');
+        g.set(5, 4, '#2a2418');
+        for (const x of [9, 11, 13]) g.line(x, 7, x - 1, 2, bone[1]);
+      }
+      g.outline(0.55);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

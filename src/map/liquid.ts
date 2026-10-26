@@ -39,6 +39,13 @@ export const LIQUIDS: Record<LiquidStyle, LiquidLook> = {
     band: 0.22, wobble: 0.45, wobbleScale: 1.6, drift: 0.3, glows: true,
     crust: { threshold: 0.74, color: '#3a1a12' },
   },
+  // Toxic sludge: a sickly glowing green, brightest out in the middle, skinned with dark scum.
+  toxic: {
+    ramp: ['#2a3e16', '#34501a', '#40661e', '#4e7c22', '#5c9228', '#6aa62e'],
+    glint: ['#7ab830', '#8cc83a', '#a0dc4c', '#b4ec60', '#c4f474', '#d4fc88'],
+    band: 0.24, wobble: 0.4, wobbleScale: 1.4, drift: 0.2, glows: true,
+    crust: { threshold: 0.7, color: '#2e3a18' },
+  },
   // A sea of cloud: bright billows near the islands, deepening to blue-grey shadow, rolling slowly.
   cloud: {
     ramp: ['#ffffff', '#edf2f8', '#d8e2f0', '#c2d0e6', '#aec0dc', '#9ab0d2'],
