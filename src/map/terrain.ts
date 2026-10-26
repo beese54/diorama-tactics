@@ -133,6 +133,9 @@ export const TERRAIN: Record<TerrainId, TerrainDef> = {
   pyramid:          built({ name: 'Pyramid Steps',  moveCost: 2, defense: 10, style: 'blocks',      side: 'sandstone', palette: ['#c8a870', '#b89860', '#8a7048', '#dcc088'] }),
   seating:          built({ name: 'Stands',         moveCost: 1, defense: 10, style: 'blocks',      side: 'arcade',    palette: ['#c4b898', '#b4a888', '#8a8068', '#d6ccae', '#6f8a4a'] }),
   arena_sand:       natural({ name: 'Arena Floor',  moveCost: 1, defense: 0,  style: 'sand',        side: 'sand',      palette: ['#d6c49a', '#ccb88e', '#e2d4ae'] }),
+
+  // Elemental themes (M16).
+  cave_floor:       natural({ name: 'Cave Floor',   moveCost: 1, defense: 5,  style: 'rock',        side: 'rock',      palette: ['#4c4a5c', '#444254', '#2e2c3c', '#5e5c70'] }),
   sand_paving:      built({ name: 'Causeway',       moveCost: 1, defense: 0,  style: 'flagstone',   side: 'sandstone', palette: ['#c4a874', '#b49866', '#8a744c', '#d6bc88'] }),
   bark:             natural({ name: 'Bark Chippings', moveCost: 1, defense: 0, style: 'gravel',    side: 'soil',      palette: ['#8a6440', '#76543a', '#5a3e28', '#a87c50'] }),
 };

@@ -129,6 +129,10 @@ export const PROPS: Record<PropId, PropDef> = {
   standing_stone: prop('Standing Stone', { defense: 25, variants: 2, shadow: 5 }),
   trilithon:     prop('Trilithon',     { defense: 0, blocks: true, shadow: 9 }),
   great_trilithon: prop('Great Trilithon', { defense: 0, blocks: true, shadow: 11 }),
+  crystal_cluster: prop('Crystals',    { defense: 20, variants: 3, shadow: 5, light: { color: 0x70d8ff, intensity: 2, distance: 3 } }),
+  crystal_spire: prop('Crystal Spire', { defense: 0, blocks: true, shadow: 10, light: { color: 0xb08aff, intensity: 6, distance: 8 } }),
+  stalagmite:    prop('Stalagmite',    { defense: 20, variants: 2, shadow: 4, jitter: true }),
+  glow_mushroom: prop('Glowcaps',      { defense: 0, variants: 2, shadow: 2, jitter: true, light: { color: 0x60ffb0, intensity: 1.2, distance: 2 } }),
   floodlight:    prop('Floodlight Mast', { defense: 0, shadow: 3, light: { color: 0xfff0d8, intensity: 5, distance: 7 } }),
   string_lights: prop('String Lights', { defense: 0, shadow: 2, sway: 0.02, light: { color: 0xffd890, intensity: 2, distance: 3.5 } }),
 };

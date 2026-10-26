@@ -133,6 +133,22 @@ export class Panorama {
     for (let y = o.base; y < this.height; y++) for (let x = 0; x < this.width; x++) this.px(x, y, c);
   }
 
+  /** Stalactites hanging from a cave roof across the top, each a jagged spike lit on its left edge. */
+  stalactites(o: { rand: Rand; color: string; light: string; maxLength: number; count: number }): void {
+    const c = rgb(o.color);
+    const l = rgb(o.light);
+    for (let x = 0; x < this.width; x++) for (let y = 0; y < 6 + 4 * hash(7, x >> 3, 0); y++) this.px(x, y, c);
+    for (let k = 0; k < o.count; k++) {
+      const cx = o.rand() * this.width;
+      const len = o.maxLength * (0.3 + o.rand() * 0.7);
+      const half = 2 + o.rand() * 6;
+      for (let y = 0; y < len; y++) {
+        const w = half * (1 - y / len);
+        for (let x = Math.round(cx - w); x <= Math.round(cx + w); x++) this.px(x, y, x <= Math.round(cx - w) + 1 ? l : c);
+      }
+    }
+  }
+
   /** Distant pyramids on the horizon: a sunlit left face, a shaded right one, standing on a filled band. */
   pyramids(o: { base: number; color: string; shade: string; at: [number, number][] }): void {
     const c = rgb(o.color);

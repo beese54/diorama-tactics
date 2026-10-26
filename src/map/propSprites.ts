@@ -2292,6 +2292,83 @@ const ART: Record<PropId, SpriteArt> = {
       g.outline();
     },
   },
+  crystal_cluster: {
+    w: 19, h: 24,
+    paint(g, v) {
+      // A cluster of glowing crystals: hexagonal prisms jutting up at angles from a rock base,
+      // each with a lit face, a dark face and a bright tip. Cyan, violet or rose.
+      const ramp = [['#14405a', '#2a8aaa', '#5ad8f0', '#d0faff'], ['#3a1a6a', '#6a3ab0', '#a87ae8', '#ecdcff'], ['#5a1a3a', '#a83a6a', '#e87aa8', '#ffdcec']][v];
+      const prism = (x0: number, y1: number, len: number, w: number, lean: number) => {
+        for (let i = 0; i < len; i++) {
+          const y = y1 - i;
+          const x = x0 + Math.round(i * lean);
+          const tip = i > len - 3;
+          const hw = tip ? Math.max(0, w - (i - (len - 3)) - 1) : w;
+          for (let dx = -hw; dx <= hw; dx++) g.set(x + dx, y, tip ? ramp[3] : dx < 0 ? ramp[2] : dx === 0 ? ramp[3] : ramp[1], true);
+        }
+      };
+      prism(9, 21, 20, 2, 0.05);
+      prism(5, 21, 12, 2, -0.3);
+      prism(14, 21, 13, 2, 0.35);
+      prism(11, 22, 7, 1, 0.6);
+      g.ball(9.5, 21.5, 9, 2.5, ['#1e1c24', '#2c2a34', '#3c3a46']);
+      g.outline(0.5);
+    },
+  },
+  crystal_spire: {
+    w: 38, h: 84,
+    paint(g) {
+      // The crystal spire: a towering violet crystal, taller than any column above, ringed by
+      // lesser shards and bedded in a broken dome of rock, all of it glowing.
+      const ramp = ['#2a1050', '#5a2aa0', '#9a6ae8', '#e8d8ff'];
+      const cyan = ['#14405a', '#2a8aaa', '#5ad8f0', '#d0faff'];
+      const prism = (x0: number, y1: number, len: number, w: number, lean: number, r: string[]) => {
+        for (let i = 0; i < len; i++) {
+          const y = y1 - i;
+          const x = x0 + Math.round(i * lean);
+          const tip = i > len - w - 2;
+          const hw = tip ? Math.max(0, Math.round(w * (len - i) / (w + 2))) : w;
+          for (let dx = -hw; dx <= hw; dx++) g.set(x + dx, y, dx < -hw / 3 ? r[2] : dx <= 0 ? r[3] : dx < hw / 2 ? r[1] : r[0], true);
+        }
+      };
+      prism(19, 76, 76, 5, 0, ramp);
+      prism(10, 76, 40, 3, -0.18, ramp);
+      prism(28, 76, 46, 3, 0.15, ramp);
+      prism(5, 78, 20, 2, -0.4, cyan);
+      prism(33, 78, 24, 2, 0.35, cyan);
+      prism(15, 78, 14, 2, -0.1, cyan);
+      g.ball(19, 79, 18, 5, ['#1a1820', '#262430', '#363442', '#46445a']);
+      g.outline(0.5);
+    },
+  },
+  stalagmite: {
+    w: 11, h: 24,
+    paint(g, v) {
+      // A stalagmite: a tapering cone of wet rock, ribbed with drip lines.
+      const rock = ['#24222c', '#3a3844', '#545260', '#6e6c7a'];
+      const h = v ? 24 : 17;
+      for (let y = 24 - h; y < 24; y++) {
+        const hw = Math.round(((y - (24 - h)) / h) * 4.6) + 0.5;
+        for (let x = -hw; x <= hw; x++) {
+          const t = (x + hw) / (2 * hw + 0.01);
+          g.set(5 + x, y, (x + y) % 4 === 0 ? rock[0] : t < 0.3 ? rock[3] : t < 0.65 ? rock[2] : rock[1]);
+        }
+      }
+      g.outline();
+    },
+  },
+  glow_mushroom: {
+    w: 15, h: 11,
+    paint(g, v) {
+      // A clump of glowcaps: pale stalks under caps that shine in the dark, cyan or green.
+      const cap = v ? ['#1a6a4a', '#3ac88a', '#a0ffd0'] : ['#1a5a6a', '#3ab0d0', '#a8f0ff'];
+      for (const [x, y, r] of [[4, 5, 3], [10, 3, 3.6], [7, 7, 2]] as const) {
+        g.rect(x, y, 1, 11 - y, '#d8d4c4');
+        g.ball(x + 0.5, y, r, r * 0.6, cap, true);
+      }
+      g.outline(0.55);
+    },
+  },
   snag: {
     w: 13, h: 22,
     paint(g, v) {

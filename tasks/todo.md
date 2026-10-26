@@ -505,7 +505,11 @@ The user asked for the four deferred items before units and battles. Order: tech
     - Sunken Temple: a flooded temple, platforms and a broken causeway out of wadeable shallows, columns, lilies; landmark a colossal stone face. New: column ×2, stone_idol, lilies (floats).
     - Overgrown Colosseum: a curve of the stands along the back edges, an arena floor of sand, grass and fallen stones; landmark a bronze gladiator statue. New: `seating` (`arcade` face), `arena_sand`, gladiator, cypress ×2.
     - Stone Circle: a henge bank and ditch round a ring of standing stones and a horseshoe of trilithons on misty downs, barrows; landmark the great trilithon. New: standing_stone ×2, trilithon, great_trilithon.
-  - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog
+  - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog (in progress)
+    - Crystal Cavern: an underground cavern, walls at the back, shelves of rock and crystal seams, a dark pool; landmark a towering crystal spire. New: `cave_floor`, crystal_cluster ×3, crystal_spire, stalagmite ×2, glow_mushroom ×2; `Panorama.stalactites`.
+    - Glacier Rift: a glacier split by a deep crevasse, with ice bridges, seracs and an aurora; landmark a rune-carved monolith in the ice.
+    - Sky Isles: islands floating over a sea of cloud (a new liquid look), joined by narrow stone spans; landmark a sky shrine with a floating crystal.
+    - Toxic Bog: a poisoned swamp of glowing green sludge (a new liquid look), dead trees, gas vents; landmark a giant toadstool.
 
 ## Deferred (map phase)
 Not needed for the agreed bar; pick up if circumstances change.
