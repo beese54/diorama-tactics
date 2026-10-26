@@ -40,7 +40,7 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M8 | Dawn, day, dusk and night with a running cycle; subtle sun and moon shadows; lit windows, fireflies, chimney smoke, cloud shadows | done |
 | M9 | Boards up to 64×64 at 60 fps; loading 45–57% faster (the ground is painted on worker threads); a board-size picker; bigger boards get more rivers and settlements | done |
 | M10 | Tech pass: loading 16–20% faster, zoom out until a whole board fits (supersampled, no shimmer), 2.4× less GPU time on laptop graphics | done |
-| M11–M16 | 24 more themed maps, four per category | in progress |
+| M11–M16 | 24 more themed maps, four per category (30 in all) | built; M13–M16 in review |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
 
@@ -85,6 +85,10 @@ npm run build    # type-check and production build
 - `colosseum`: Overgrown Colosseum
 - `henge`: Stone Circle
 - `volcano`: Volcanic Caldera
+- `cavern`: Crystal Cavern
+- `glacier`: Glacier Rift
+- `skyisles`: Sky Isles
+- `toxicbog`: Toxic Bog
 
 **Generated maps:** `?map=world` grows a random 32×32 map, and `?seed=N` grows the same map for a seed every time. `&size=48` or `&size=64` grows it bigger; rivers and settlements scale with the board. Each seed makes an inland valley, an island or a coast, with one or two rivers that step down the hills in waterfalls and are crossed by wooden or stone bridges. Woods grow in sparse clumps, with rocks on the slopes and drowned trees in the swamps; they give cover but never block a tile. Each map is built around a village, a small castle or old ruins, with roads out to the board's edges; rooftops and ramparts can be stood on. The box in the top-left corner has buttons:
 

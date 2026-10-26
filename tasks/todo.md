@@ -487,7 +487,7 @@ The user asked for the four deferred items before units and battles. Order: tech
   - [x] M10c GPU headroom at 64×64 (user: "headroom at 64 only"; the cap stays 64). Target: double the Intel UHD frame rate at 64×64, measured uncapped by GPU time per frame. Candidates in profile order: re-render the shadow map only when the light moves, then chunked meshes with frustum culling.
   - Approved 2026-10-26 ("it looks good").
   - M10c done: the shadow map is redrawn only when the sun or board changes; one texture per water frame (no re-uploads); zoomed-out samples rounded (3×3 at 0.31). Intel GPU ms at 64×64: 5.6 → 2.4 at default zoom (2.4×), 14.4 → 7.2 fully zoomed out. Chunked culling not needed. Details are in perf_log.md.
-- [ ] **M11–M16: 24 more themes**, one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
+- [x] **M11–M16: 24 more themes** (all built; M13–M16 in review), one category per milestone, each 20×20 and handmade like the M2e showcases, reviewed with screenshots before the next batch. Battle-map rules apply (lessons.md): open lanes, cover in pockets, the grid readable, no clutter over tiles.
   - [x] M11 Wilds: Autumn Ridge, Desert Mesa Oasis, Frozen Lake, Highland Moor (approved 2026-10-26: "looks good, no changes")
   - [x] M12 Kingdom: Harbour Town, Royal Gardens, Bridge Gatehouse, Village Fair (approved 2026-10-26: "go with M13")
   - [x] M13 Modern Town: Station Square, Suburban Park, Canal Quarter, High Street (in review)
@@ -505,7 +505,7 @@ The user asked for the four deferred items before units and battles. Order: tech
     - Sunken Temple: a flooded temple, platforms and a broken causeway out of wadeable shallows, columns, lilies; landmark a colossal stone face. New: column ×2, stone_idol, lilies (floats).
     - Overgrown Colosseum: a curve of the stands along the back edges, an arena floor of sand, grass and fallen stones; landmark a bronze gladiator statue. New: `seating` (`arcade` face), `arena_sand`, gladiator, cypress ×2.
     - Stone Circle: a henge bank and ditch round a ring of standing stones and a horseshoe of trilithons on misty downs, barrows; landmark the great trilithon. New: standing_stone ×2, trilithon, great_trilithon.
-  - [ ] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog (in progress)
+  - [x] M16 Elemental: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog (in review)
     - Crystal Cavern: an underground cavern, walls at the back, shelves of rock and crystal seams, a dark pool; landmark a towering crystal spire. New: `cave_floor`, crystal_cluster ×3, crystal_spire, stalagmite ×2, glow_mushroom ×2; `Panorama.stalactites`.
     - Glacier Rift: a glacier split by a deep crevasse, with snow bridges, seracs, spindrift and an aurora; landmark a rune-carved monolith in the ice. New: `glacier`, `crevasse`, frost_monolith, serac ×2; `Panorama.aurora`.
     - Sky Isles: islands floating over a sea of cloud (a new liquid look), joined by narrow stone spans; landmark a sky shrine with a floating crystal. New: `cloud` liquid, `cloud_sea`, `sky_grass`, `sky_span`, sky_shrine (animated), windmill (animated); `Panorama.isles`. The theme test's bank rule skips cloud (it has no banks).
@@ -513,7 +513,7 @@ The user asked for the four deferred items before units and battles. Order: tech
 
 ## Deferred (map phase)
 Not needed for the agreed bar; pick up if circumstances change.
-- **Theme variations:** 24 of the 30 proposed map themes are not built (M2e built one showcase per category: Alpine Pass, Castle Courtyard, Fountain Plaza, Night Market Alley, Jungle Temple, Volcanic Caldera).
+- ~~**Theme variations:** 24 of the 30 proposed map themes are not built.~~ Built in M11–M16.
 - **Drawing on weaker GPUs or boards past 64×64:** chunked meshes with frustum culling, and a cheaper shadow pass (the mesh is ~99% of triangles and is drawn twice). On the Intel UHD iGPU: 155 fps at 64, 69 at 128 (M9 baseline).
 - **Texel shimmer when zoomed out** (no mipmaps, noted in M1). It is also why zoom stops at 0.5, so a 64×64 board can't be seen whole.
 - **Load:** the column build is now the critical path (~370 ms at 64). It could move to a worker once the atlas layout is free of three.js.
@@ -590,3 +590,16 @@ Not needed for the agreed bar; pick up if circumstances change.
 - New backdrop shape: `Panorama.pyramids`.
 - Memory: overnight, Claude Code stopped a background check run because the machine ran low on memory. It was rerun in the foreground once the user had freed memory (79/79). Checks now run one at a time, in the foreground.
 - Tests: 1084; check.mjs 82/82; 62 captures in the identity set.
+
+### M16 review (2026-10-27): four Elemental maps
+- Commits:
+  - Crystal Cavern (74ca3bb);
+  - Glacier Rift (e983159);
+  - Sky Isles (4ebe66f);
+  - Toxic Bog (8ed5869).
+- New liquid looks: cloud, toxic (glows, scum). New terrains: cave_floor, glacier, crevasse, cloud_sea, sky_grass, sky_span, toxic_sludge.
+- New props: crystal_cluster ×3, crystal_spire, stalagmite ×2, glow_mushroom ×2, frost_monolith, serac ×2, sky_shrine (animated), windmill (animated), toadstool, gas_vent (animated), bones ×2.
+- New backdrop shapes: `Panorama.stalactites`, `aurora`, `isles`.
+- themes.test.ts: the banks rule skips cloud.
+- Tests: 1119; check.mjs 86/86; 70 captures in the identity set.
+- All 30 themes are built (6 showcases + 24). M13–M16 await the user's review.

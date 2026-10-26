@@ -200,6 +200,14 @@
       "image": "m15-ruins/four-ruins.png",
       "title": "M15 · Four more Ruins maps",
       "note": "Desert Pyramid, Sunken Temple, Overgrown Colosseum and Stone Circle."
+    },
+    {
+      "id": "m16",
+      "date": "2026-10-27",
+      "commit": "8ed5869",
+      "image": "m16-elemental/four-elemental.png",
+      "title": "M16 · Four more Elemental maps",
+      "note": "Crystal Cavern, Glacier Rift, Sky Isles and Toxic Bog. All 30 themes built."
     }
   ]
 }

@@ -383,6 +383,28 @@ Six new maps, one per category, rendered with the same engine as M2d. Each shows
   - Natural ground needs restraint. Leaves, cracks and heather looked busy at first, so they were thinned to drifts that come and go with broad noise.
   - Pixel-perfect checks catch more than regressions. A single changed pixel led to a real UV bug that had been there since M2b.
 
+### M16: Four more Elemental maps
+![Crystal Cavern, Glacier Rift, Sky Isles and Toxic Bog](land/m16-elemental/four-elemental.png)
+
+| Crystal Cavern: the crystal spire | Glacier Rift: the rune monolith |
+|---|---|
+| ![](land/m16-elemental/cavern/close-focus.png) | ![](land/m16-elemental/glacier/close-focus.png) |
+
+| Sky Isles: the sky shrine | Toxic Bog: the giant toadstool |
+|---|---|
+| ![](land/m16-elemental/skyisles/close-focus.png) | ![](land/m16-elemental/toxicbog/close-focus.png) |
+
+- **What changed:** the last batch. With it, all 30 proposed themes are built.
+  - **Crystal Cavern** (`?map=cavern`): underground, with the cavern's walls closing the back, shelves of rock with glittering crystal seams, and a dark pool. Glowing crystal clusters give cover, there are stalagmites and glowcaps, and a towering violet crystal spire lights the cavern.
+  - **Glacier Rift** (`?map=glacier`): a glacier under a polar night and an aurora, split by a crevasse crossed by two snow bridges. Seracs give cover, spindrift blows across, and a dark monolith with glowing runes is half swallowed by the ice.
+  - **Sky Isles** (`?map=skyisles`): four islands float over a sea of cloud, joined by stone spans on arches. A windmill turns, and a ring of white stone holds a floating golden crystal.
+  - **Toxic Bog** (`?map=toxicbog`): pools of glowing green sludge, wadeable but exposing, between hummocks of marsh. There are dead and drowned trees, bubbling gas vents and bones, and a giant toadstool with glowing warts.
+- **Decisions:** two new liquid looks, cloud and toxic, painted by the same shoreline-and-ripple painter as water and lava. Cloud lies far below its islands, so the banks rule skips it.
+- **Learned:**
+  - Glow needs restraint, like weather. Both the cavern's darkness and the bog's sludge first drowned the tiles, and both were toned until every tile read.
+  - The checks guard more than pixels: one caught a map with nothing moving on it, and the spindrift fixed it.
+  - A liquid look is a palette plus a few numbers (band width, wobble, drift). The same painter gives water, lava, cloud and sludge.
+
 ### M15: Four more Ruins maps
 ![Desert Pyramid, Sunken Temple, Overgrown Colosseum and Stone Circle](land/m15-ruins/four-ruins.png)
 
