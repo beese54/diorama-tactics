@@ -292,7 +292,8 @@
         "leader": "about 10 per leader: stance, ready, wind-up, slash, follow-through, recover (attack); run, run-2 (run cycle); hurt; fallen; victory",
         "soldier": "fewer than a leader (smaller on screen, seven move at once); set after the leader test",
         "test": "Aria first: ready, recover, run-2 and victory added to the round 2 set, with the code motion, recorded beside round 2 before scaling up"
-      }
+      },
+      "video_generation": "not rejected as a tool: the Veo 3.1 clip kept Aria on model, moved smoothly and held a locked camera. It lost round 2 only for battle sprites, which need sharp key poses, a hit on cue, clean loops, full resolution and exact timing that the rules can drive. Video stays a good fit for things that play once rather than loop: a title or intro, story cutscenes, a special skill's cinematic, animated portraits; and its frames can serve as reference when drawing in-betweens"
     },
     "milestones": [
       "B0 rules core",

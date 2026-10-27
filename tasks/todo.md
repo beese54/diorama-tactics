@@ -654,5 +654,6 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - `scripts/art/anim.py` keys a set at one shared scale with a feet-and-torso anchor per frame (`:loose` drops Flow's ghost swords); `scripts/anim.mjs` records the test frame by frame.
 - Video findings: no real strike (she raises the sword and lifts it again), the end frame does not match the start, 720p (589 px figure, upscaled in battle), softer lines and compression blotches. Smooth, on model, camera locked.
 - Decision (user, 2026-10-27): pose images + smears. "i prefer the pose images + smears too. However, i find the frames too less [...] so that the movement don't look too rigid."
+- Video generation is not ruled out: smooth and on model, it lost only for battle sprites (key-pose hits, loops, resolution, rule-driven timing). Kept in mind for one-off scenes: intro, cutscenes, skill cinematics, animated portraits (`specification.json` → battle_scene.video_generation).
 - Next (B2-anim-r1): four more Aria poses from Flow (ready, recover, run-2, victory, each with leader-f and its neighbour pose as references) and code motion (idle breathing, eased lunges, hit-stop, shake, dust); the wind-up to slash stays a snap. Recorded beside round 2, then the roster.
 
