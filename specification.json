@@ -274,6 +274,14 @@
       "risk": "if Flow art fails the style frame, fall back to code-painted cut-out characters or a licensed art pack",
       "animation": "decided by the round 2 test on one class: pose images (4-6 crisp key poses per clip) vs Flow video clips (Frames to Video, same first and last frame for loops) cut into frames; either way the battle plays sprite clips driven by the rules, never a video",
       "roster": "18 designs: 6 leaders per side (one per class, about 3 female and 3 male each) + 6 soldier designs shared by both sides, recoloured red in code for the enemy (24 if the recolour does not hold up); later 12 leader portraits, backgrounds per theme or category, card art",
+      "leader_looks": {
+        "approved": "2026-10-27",
+        "player": "heroes: each has a signature colour of their own (not just team blue), a silhouette readable at a distance (distinctive hair, cape, scarf or plume, ornate trim) and a signature weapon; a blue team accent (sash or plume) plus the blue banner and HUD mark the side",
+        "enemy": "a rival army with one shared look: darker, heavier armour, closed helms or crowns, crimson and black, sharper angular shapes; each still a unique design",
+        "soldiers": "only soldiers are shared and recoloured red for the enemy; leaders are never recolours",
+        "in_game": "player leaders get a portrait in the battle banner, later a subtle glow or pennant on the map",
+        "timing": "leader art is generated after the round 2 animation test decides how many images each leader needs"
+      },
       "rounds": [
         "round 1: one sword leader, one sword soldier, one meadow background -> still style frame in the engine for approval",
         "round 2: animation test on the sword class, pose images vs video, side by side in the engine",
