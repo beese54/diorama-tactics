@@ -642,3 +642,10 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - Commit 8abc8c6. `?mode=battle`: `src/battle/BattleView.ts` (own renderer, full resolution), `formation.ts`, `preview.ts`; `src/ui/BattleHud.ts`; `scripts/art/key.py`; `scripts/battle.mjs` (full-resolution check).
 - Art round 1 processed into `public/battle/`; the red recolour works, so 18 designs.
 - Waiting for the user's verdict on the look before round 2 (the animation test).
+
+### B2 style frame r1 (2026-10-27): men and women
+- The user asked for women as well as men. Flow made a woman sword leader (golden hair, so she is Aria) and a woman sword soldier; keyed into `public/battle/sword-leader-f*.png`, `sword-soldier-f*.png` with red variants.
+- `SquadArt.soldier` is now a list of designs taken in turn, so a squad mixes men and women. Aria's blue squad meets Roderic's red one (the round 1 man leader).
+- Shots: `evolution/battles/b2-style-frame/r1-mixed-squads/`.
+- Waiting for the user's verdict before round 2.
+

@@ -24,6 +24,22 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 style frame, round 1: men and women
+![Aria's blue squad against Roderic's red one, men and women in both](battles/b2-style-frame/r1-mixed-squads/battle-1920x1080@1x.jpg)
+
+| Close-up at 2× pixel density |
+|---|
+| ![](battles/b2-style-frame/r1-mixed-squads/close-2x.jpg) |
+
+- **What changed:** a woman sword leader and a woman sword soldier from Google Flow. The woman leader has golden hair like Aria's map sprite, so she leads the blue squad; the man from the first frame leads the red one as Roderic. Each squad's soldiers alternate between the two soldier designs.
+- **Feedback:** "give me the prompt to generate the soldier and leader but female version as well. I want to ensure that there are male and females."
+- **Decisions:**
+  - The prompts attached the man's art as a style reference and asked for "a different person", so the woman matches the style without copying his face.
+  - A squad takes a list of soldier designs and hands them out in turn, so mixing needs no extra art: the red variants come from the same recolour.
+- **Learned:**
+  - A reference image carries style and armour across cleanly in Flow; naming a different hair colour and hairstyle is enough to make a new person.
+  - The keyer handled a different green again (this leader's background was darker than the soldier's).
+
 ### B2 style frame: the battle scene at full resolution
 ![A sword squad against its red twin on the meadow](battles/b2-style-frame/battle-1920x1080@1x.jpg)
 

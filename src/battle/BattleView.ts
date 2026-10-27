@@ -8,10 +8,10 @@ const SOLDIER_H = 300;
 /** The head's picture is drawn this much taller than a soldier's: a leader stands out. */
 const HEAD_SCALE = 1.08;
 
-/** Pictures for one side of a battle: the head, one soldier design, and which way they face. */
+/** Pictures for one side of a battle: the head, and the soldier designs its soldiers take in turn. */
 export interface SquadArt {
   head: string;
-  soldier: string;
+  soldier: readonly string[];
   soldiers: number;
 }
 
@@ -98,12 +98,12 @@ export class BattleView {
 
   /** Stands a squad on its side of the field: `left` for the attacker, facing right. */
   async setSquad(side: 'left' | 'right', art: SquadArt): Promise<void> {
-    const [head, soldier] = await Promise.all([this.texture(art.head), this.texture(art.soldier)]);
+    const [head, ...soldier] = await Promise.all([art.head, ...art.soldier].map((url) => this.texture(url)));
     const shadow = shadowTexture();
     const screenW = DESIGN_H * this.aspect;
     const dir = side === 'left' ? -1 : 1;
     for (const place of formation(art.soldiers)) {
-      const tex = place.fighter === 0 ? head : soldier;
+      const tex = place.fighter === 0 ? head : soldier[(place.fighter - 1) % soldier.length];
       const { width, height } = tex.image as { width: number; height: number };
       const h = SOLDIER_H * place.scale * (place.fighter === 0 ? HEAD_SCALE : 1);
       const w = (h * width) / height;
