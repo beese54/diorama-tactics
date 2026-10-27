@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2 15 6 8 10 1 6z' fill='%237a9552'/%3E%3Cpath d='M1 6 8 10v4L1 10z' fill='%236a4c31'/%3E%3Cpath d='M15 6 8 10v4l7-4z' fill='%235a4029'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Silkscreen&family=Source+Sans+3:wght@500;700&display=swap" rel="stylesheet" />
     <style>
       html, body {
         margin: 0;
@@ -151,6 +151,120 @@
         display: block;
         height: 100%;
         background: linear-gradient(#9cf08a, #4aa83a);
+      }
+      /* The battle scene: full resolution and smooth, never pixelated. */
+      #battle {
+        position: fixed;
+        inset: 0;
+        image-rendering: auto;
+      }
+      #battle-hud {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        font-family: 'Source Sans 3', system-ui, sans-serif;
+        color: #f4f1e8;
+        --u: min(1vw, 1.78vh);
+      }
+      #battle-hud .banner {
+        position: absolute;
+        top: calc(var(--u) * 1.6);
+        width: calc(var(--u) * 34);
+        padding: calc(var(--u) * 0.9) calc(var(--u) * 1.4);
+        border-radius: calc(var(--u) * 0.6);
+        border: calc(var(--u) * 0.18) solid rgba(255, 244, 214, 0.85);
+        box-shadow: 0 calc(var(--u) * 0.3) calc(var(--u) * 1.2) rgba(0, 0, 0, 0.35);
+        text-shadow: 0 calc(var(--u) * 0.12) calc(var(--u) * 0.3) rgba(0, 0, 0, 0.6);
+      }
+      #battle-hud .banner.left {
+        left: calc(var(--u) * 1.6);
+        background: linear-gradient(160deg, rgba(40, 72, 160, 0.92), rgba(18, 30, 78, 0.92));
+      }
+      #battle-hud .banner.right {
+        right: calc(var(--u) * 1.6);
+        text-align: right;
+        background: linear-gradient(200deg, rgba(168, 44, 44, 0.92), rgba(78, 16, 20, 0.92));
+      }
+      #battle-hud .who {
+        display: flex;
+        align-items: baseline;
+        gap: calc(var(--u) * 1);
+      }
+      #battle-hud .right .who { flex-direction: row-reverse; }
+      #battle-hud .name {
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: calc(var(--u) * 2.3);
+        letter-spacing: 0.04em;
+      }
+      #battle-hud .cls {
+        font-size: calc(var(--u) * 1.3);
+        color: #ffe7a8;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      #battle-hud .morale {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--u) * 0.8);
+        margin-top: calc(var(--u) * 0.5);
+        font-weight: 700;
+        font-size: calc(var(--u) * 1.3);
+      }
+      #battle-hud .right .morale { flex-direction: row-reverse; }
+      #battle-hud .label { letter-spacing: 0.12em; color: #ffe7a8; }
+      #battle-hud .bar {
+        flex: 1;
+        height: calc(var(--u) * 1.1);
+        border-radius: calc(var(--u) * 0.6);
+        background: rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+        display: flex;
+      }
+      #battle-hud .right .bar { justify-content: flex-end; }
+      #battle-hud .bar span {
+        background: linear-gradient(#b8f59a, #4fae3c);
+        border-radius: inherit;
+      }
+      #battle-hud .value { font-size: calc(var(--u) * 1.6); min-width: calc(var(--u) * 3.4); }
+      #battle-hud .troops {
+        display: flex;
+        gap: calc(var(--u) * 0.45);
+        margin-top: calc(var(--u) * 0.6);
+      }
+      #battle-hud .right .troops { justify-content: flex-end; }
+      #battle-hud .troops i {
+        width: calc(var(--u) * 1.1);
+        height: calc(var(--u) * 1.1);
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.4);
+        border: calc(var(--u) * 0.12) solid rgba(255, 244, 214, 0.6);
+      }
+      #battle-hud .troops i.up { background: #ffe08a; }
+      #battle-hud .vs {
+        position: absolute;
+        top: calc(var(--u) * 3.2);
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: calc(var(--u) * 3.2);
+        color: #fff4d6;
+        text-shadow: 0 0 calc(var(--u) * 0.8) rgba(0, 0, 0, 0.7);
+      }
+      #battle-hud .effect {
+        position: absolute;
+        bottom: calc(var(--u) * 1.8);
+        left: 50%;
+        transform: translateX(-50%);
+        padding: calc(var(--u) * 0.5) calc(var(--u) * 1.8);
+        border-radius: calc(var(--u) * 2);
+        background: rgba(12, 16, 32, 0.72);
+        border: calc(var(--u) * 0.15) solid rgba(255, 244, 214, 0.7);
+        font-weight: 700;
+        font-size: calc(var(--u) * 1.4);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
       }
       #fallback {
         color: #c8c2b0;

@@ -24,6 +24,7 @@ import { WEATHER_KINDS, WEATHER_NAMES, weatherForMap, type WeatherKind } from '.
 import { TileInfo } from './ui/TileInfo';
 import { GpuTimer } from './render/GpuTimer';
 import { Skirmish } from './units/Skirmish';
+import { battlePreview } from './battle/preview';
 
 /** Map files larger than this are refused unread; a full 64×64 map is well under it. */
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
@@ -57,6 +58,8 @@ interface Board {
 }
 
 async function main(): Promise<void> {
+  // The battle scene draws on its own, at full resolution, without the map's pixel pipeline.
+  if (new URLSearchParams(location.search).get('mode') === 'battle') return battlePreview();
   const stage = document.getElementById('stage')!;
   const pipeline = createPipeline(stage);
   if (!pipeline) return;
