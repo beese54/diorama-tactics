@@ -110,6 +110,7 @@ export class SpriteField {
   private readonly bury = { value: 0 };
   /** How much snow lies on the sprites' top edges (0-1). */
   private readonly snowCap = { value: 0 };
+  private readonly geometry: THREE.BufferGeometry;
 
   constructor(sprites: SpriteInstance[], sheet: THREE.Texture, glow?: THREE.Texture) {
     const positions: number[] = [];
@@ -144,7 +145,7 @@ export class SpriteField {
     });
     this.count = sprites.length;
 
-    const geometry = new THREE.BufferGeometry();
+    const geometry = (this.geometry = new THREE.BufferGeometry());
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('corner', new THREE.Float32BufferAttribute(corners, 2));
     geometry.setAttribute('spriteHeight', new THREE.Float32BufferAttribute(heights, 1));
@@ -183,6 +184,27 @@ export class SpriteField {
 
   update(elapsed: number): void {
     this.time.value = elapsed;
+  }
+
+  /**
+   * Moves sprite `i` to stand on `root` showing `rect`, mirrored to face the other way if
+   * asked: for sprites that walk about (units), where the props stay put.
+   */
+  place(i: number, root: THREE.Vector3, rect: SpriteRect, mirrored = false): void {
+    const a = this.geometry.attributes;
+    const [w, h] = [rect.w / PX, rect.h / PX];
+    const [left, right] = mirrored ? [rect.u1, rect.u0] : [rect.u0, rect.u1];
+    const quad = [[-w / 2, 0, left, rect.v0], [w / 2, 0, right, rect.v0], [w / 2, h, right, rect.v1], [-w / 2, h, left, rect.v1]];
+    quad.forEach(([cx, cy, u, v], k) => {
+      const at = 4 * i + k;
+      a.position.setXYZ(at, root.x, root.y, root.z);
+      a.corner.setXY(at, cx, cy);
+      a.spriteHeight.setX(at, h);
+      a.uv.setXY(at, u, v);
+      // Mirrored or not, the next frame sits one stride to the right in the sheet.
+      a.frameInfo.setXYZ(at, rect.frames ?? 1, rect.fps ?? 0, rect.stride ?? 0);
+    });
+    for (const name of ['position', 'corner', 'spriteHeight', 'uv', 'frameInfo']) a[name].needsUpdate = true;
   }
 
   setWind(strength: number): void {

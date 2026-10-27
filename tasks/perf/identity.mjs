@@ -60,7 +60,8 @@ const differ = [];
 let count = 0;
 for (const [name, query] of CASES) {
   const page = await browser.newPage();
-  await page.goto(`http://localhost:5173/?${query}`, { waitUntil: 'load' });
+  // The map viewer: no units on the board, so the maps compare across the phase-2 work.
+  await page.goto(`http://localhost:5173/?${query}&mode=view`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__map, { timeout: 600000, polling: 50 });
   // The water's later frames arrive just after the board; a capture before then would show frame 0.
   await page.waitForFunction(() => window.__map.liquidReady(), { timeout: 600000, polling: 50 });

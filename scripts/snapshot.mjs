@@ -7,7 +7,9 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const outDir = process.argv[2] ?? 'snapshot';
-const url = process.argv[3] ?? 'http://localhost:5173/';
+const given = process.argv[3] ?? 'http://localhost:5173/';
+// The map viewer (no units) unless the url asks for a mode, so map pictures stay comparable.
+const url = /[?&]mode=/.test(given) ? given : `${given}${given.includes('?') ? '&' : '?'}mode=view`;
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 mkdirSync(outDir, { recursive: true });
 

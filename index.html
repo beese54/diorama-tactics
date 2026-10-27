@@ -104,6 +104,54 @@
         margin-top: calc(var(--px) * 3);
         color: #ffb8a8;
       }
+      #unit-info,
+      #turn-info {
+        position: absolute;
+        right: calc(var(--px) * 8);
+        min-width: calc(var(--px) * 108);
+        padding: calc(var(--px) * 4) calc(var(--px) * 6);
+        background: linear-gradient(#34488a, #18224d);
+        border: var(--px) solid #c9d4f0;
+        border-radius: calc(var(--px) * 2);
+        box-shadow: 0 0 0 var(--px) #0a0f24;
+      }
+      #unit-info { bottom: calc(var(--px) * 8); }
+      #turn-info { top: calc(var(--px) * 8); min-width: calc(var(--px) * 84); }
+      #unit-info.enemy,
+      #turn-info.enemy {
+        background: linear-gradient(#8a3434, #4d1818);
+      }
+      #unit-info .head,
+      #turn-info .head {
+        display: flex;
+        justify-content: space-between;
+        gap: calc(var(--px) * 8);
+      }
+      #unit-info .side,
+      #unit-info .stats,
+      #turn-info .mov {
+        color: #ffe27a;
+      }
+      #unit-info .cls,
+      #turn-info .keys {
+        color: #b4e08c;
+      }
+      #unit-info .morale {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--px) * 4);
+      }
+      #unit-info .bar {
+        flex: 1;
+        height: calc(var(--px) * 4);
+        background: #0a0f24;
+        border: var(--px) solid #8fa0d8;
+      }
+      #unit-info .bar span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(#9cf08a, #4aa83a);
+      }
       #fallback {
         color: #c8c2b0;
         font: 16px monospace;

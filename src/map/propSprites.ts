@@ -16,7 +16,7 @@ function toHex([r, g, b]: number[]): string {
 export const shade = (hex: string, k: number) => toHex(rgb(hex).map((c) => c * k));
 
 /** A small pixel canvas for one sprite: colour plus a parallel glow mask. y grows downward, base on the last row. */
-class Gfx {
+export class Gfx {
   readonly color: (string | null)[];
   readonly glow: boolean[];
   constructor(readonly w: number, readonly h: number) {
@@ -2595,7 +2595,7 @@ export interface PropSheet {
   cell(prop: PropId, variant: number): SpriteCell;
 }
 
-function nearestTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
+export function nearestTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.magFilter = THREE.NearestFilter;
   tex.minFilter = THREE.NearestFilter;

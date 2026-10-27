@@ -1,4 +1,5 @@
-// Headless verification against the running dev server (npm run dev).
+// Headless verification against the running dev server (npm run dev). The map checks run in
+// the map viewer (mode=view); the skirmish checks at the end run with units on the board.
 // Usage: node scripts/check.mjs [outDir] [url]
 // Writes screenshots to outDir and exits non-zero if any check fails.
 import puppeteer from 'puppeteer-core';
@@ -22,7 +23,7 @@ page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('response', (r) => r.status() >= 400 && errors.push(`HTTP ${r.status()} ${r.url()}`));
 
-await page.goto(url, { waitUntil: 'networkidle0' });
+await page.goto(`${url}?mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
 await new Promise((r) => setTimeout(r, 500));
 
@@ -135,7 +136,7 @@ check('no console errors', errors.length === 0, errors.join(' | '));
 for (const id of await page.evaluate(() => window.__map.themes())) {
   if (id === 'meadow') continue;
   errors.length = 0;
-  await page.goto(`${url}?map=${id}`, { waitUntil: 'networkidle0' });
+  await page.goto(`${url}?map=${id}&mode=view`, { waitUntil: 'networkidle0' });
   await page.waitForFunction(() => window.__map);
   const info = await page.evaluate(() => ({ theme: window.__map.theme().id, props: window.__map.propCount() }));
   const [a, b] = [await at(0), await at(0.5)];
@@ -147,7 +148,7 @@ for (const id of await page.evaluate(() => window.__map.themes())) {
 // Generated maps: the seed shows and reproduces, R grows a new one without leaking GPU
 // memory, and maps save to JSON and load back (hook, file picker), refusing bad files.
 errors.length = 0;
-await page.goto(`${url}?map=world&seed=1234`, { waitUntil: 'networkidle0' });
+await page.goto(`${url}?map=world&seed=1234&mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
 const tilesNow = () => page.evaluate(() => JSON.stringify(JSON.parse(window.__map.exportJson()).tiles));
 const first = await tilesNow();
@@ -162,7 +163,7 @@ for (let i = 0; i < 4; i++) {
 const shownAsAsked = () => page.waitForFunction(() => location.search.includes(`seed=${window.__map.seed()}`) && window.__map.seed() !== 1234, { timeout: 10000 }).catch(() => {});
 await shownAsAsked();
 const regrown = await page.evaluate(() => ({ seed: window.__map.seed(), search: location.search, memory: window.__map.gpuMemory() }));
-check('R grows a new map and puts its seed in the URL', regrown.seed !== 1234 && regrown.search === `?map=world&seed=${regrown.seed}` && (await tilesNow()) !== first, JSON.stringify(regrown));
+check('R grows a new map and puts its seed in the URL', regrown.seed !== 1234 && regrown.search === `?map=world&seed=${regrown.seed}&mode=view` && (await tilesNow()) !== first, JSON.stringify(regrown));
 // Maps differ in how many bridges they draw, so compare like with like: back on the first seed, nothing piled up.
 await page.evaluate(() => window.__map.newMap(1234));
 await new Promise((r) => setTimeout(r, 300));
@@ -171,7 +172,7 @@ check('regrowing frees the old map', returned.geometries <= memory.geometries &&
 await page.click('#hud button');
 await page.waitForFunction((s) => window.__map.seed() !== s, { timeout: 10000 }, regrown.seed).catch(() => {});
 check('New map button grows another', (await page.evaluate(() => window.__map.seed())) !== regrown.seed);
-await page.goto(`${url}?map=world&seed=1234`, { waitUntil: 'networkidle0' });
+await page.goto(`${url}?map=world&seed=1234&mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
 check('the same seed gives the same map', (await tilesNow()) === first);
 
@@ -199,13 +200,13 @@ check('the map picker offers every map and switches to one', selected === 'world
 // Big boards (M9): ?size= grows Wild Lands bigger; the size picker regrows the same seed in place,
 // R keeps the size, the standard size leaves the URL clean, and switching sizes frees the old board.
 errors.length = 0;
-await page.goto(`${url}?map=world&seed=4242&size=64`, { waitUntil: 'networkidle0' });
+await page.goto(`${url}?map=world&seed=4242&size=64&mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map, { timeout: 30000 });
-const big = await page.evaluate(() => ({ width: window.__map.theme().width, picker: document.querySelector('#hud select:nth-of-type(4)')?.value, corner: window.__map.tile(63, 63)?.terrain }));
+const big = await page.evaluate(() => ({ width: window.__map.theme().width, picker: document.querySelector('#hud select:nth-of-type(5)')?.value, corner: window.__map.tile(63, 63)?.terrain }));
 await shot('11-board-64');
 check('a 64×64 board loads, and the size picker shows it', big.width === 64 && big.picker === '64' && !!big.corner, JSON.stringify(big));
 const bigMemory = await page.evaluate(() => window.__map.gpuMemory());
-await page.select('#hud select:nth-of-type(4)', '48');
+await page.select('#hud select:nth-of-type(5)', '48');
 // Regrowing a big board takes several seconds on the software renderer, more when the machine is busy.
 await page.waitForFunction(() => window.__map.theme().width === 48, { timeout: 30000 }).catch(() => {});
 const resized = await page.evaluate(() => ({ width: window.__map.theme().width, seed: window.__map.seed(), search: location.search }));
@@ -224,7 +225,7 @@ check('big boards: no console errors', errors.length === 0, errors.join(' | '));
 
 // Rivers (M4): bridges can be picked and stand a step above the water; waterfalls exist.
 const bridgeCheck = async (where, wanted) => {
-  await page.goto(`${url}?map=${where}`, { waitUntil: 'networkidle0' });
+  await page.goto(`${url}?map=${where}&mode=view`, { waitUntil: 'networkidle0' });
   await page.waitForFunction(() => window.__map);
   await page.evaluate(() => (document.getElementById('hud').hidden = true));
   const bridge = await page.evaluate(() => {
@@ -258,7 +259,7 @@ const treePanel = await page.evaluate(() => document.querySelector('#tile-info')
 check('world: trees and rocks stand on the map, and the panel names the cover', cover.count >= 15 && onTree?.x === cover.x && onTree?.y === cover.y && treePanel.includes('Broadleaf Tree'), JSON.stringify({ cover, onTree, treePanel }));
 await page.mouse.move(0, 0);
 // Settlements (M6): a village's rooftops can be picked and stood on.
-await page.goto(`${url}?map=world&seed=19`, { waitUntil: 'networkidle0' });
+await page.goto(`${url}?map=world&seed=19&mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
 await page.evaluate(() => (document.getElementById('hud').hidden = true));
 const roof = await page.evaluate(() => {
@@ -277,7 +278,7 @@ await bridgeCheck('market', 'Wooden Bridge');
 // Weather (M7): every weather draws without errors and changes the picture; storms flash;
 // the picker switches it; changing maps in the rain doesn't pile up GPU memory.
 errors.length = 0;
-await page.goto(`${url}?map=world&seed=7`, { waitUntil: 'networkidle0' });
+await page.goto(`${url}?map=world&seed=7&mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
 await page.evaluate(() => (document.getElementById('hud').hidden = true));
 const frameAt = async (kind, t) => {
@@ -298,7 +299,7 @@ await frameAt('storm', 1.12);
 const flash = await page.evaluate(() => window.__map.weather().skyLight);
 check('a storm flashes lightning', flash > dark + 1, JSON.stringify({ dark, flash }));
 await page.evaluate(() => (document.getElementById('hud').hidden = false));
-await page.select('#hud select:nth-of-type(2)', 'snow');
+await page.select('#hud select:nth-of-type(3)', 'snow');
 await new Promise((r) => setTimeout(r, 200));
 const pickedWeather = await page.evaluate(() => ({ kind: window.__map.weather().kind, search: location.search }));
 check('the weather picker switches the weather and keeps it in the URL', pickedWeather.kind === 'snow' && pickedWeather.search.includes('weather=snow'), JSON.stringify(pickedWeather));
@@ -314,7 +315,7 @@ check('weather: no console errors', errors.length === 0, errors.join(' | '));
 // Day and night (M8): every time draws and differs; shadows are on by day and fainter by moonlight;
 // windows glow and fireflies come out at night; the picker and the cycle move the clock.
 errors.length = 0;
-await page.goto(`${url}?map=world&seed=19&weather=clear`, { waitUntil: 'networkidle0' });
+await page.goto(`${url}?map=world&seed=19&weather=clear&mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
 await page.evaluate(() => (document.getElementById('hud').hidden = true));
 const atTime = async (choice) => {
@@ -339,12 +340,52 @@ await new Promise((r) => setTimeout(r, 200));
 const cycleB = await page.evaluate(() => window.__map.daylight().sunAt);
 check('the day-night cycle moves the sun', JSON.stringify(cycleA) !== JSON.stringify(cycleB), JSON.stringify({ cycleA, cycleB }));
 await page.evaluate(() => (document.getElementById('hud').hidden = false));
-await page.select('#hud select:nth-of-type(3)', 'dusk');
+await page.select('#hud select:nth-of-type(4)', 'dusk');
 await new Promise((r) => setTimeout(r, 200));
 const pickedTime = await page.evaluate(() => ({ choice: window.__map.daylight().choice, search: location.search }));
 check('the time picker switches the time and keeps it in the URL', pickedTime.choice === 'dusk' && pickedTime.search.includes('time=dusk'), JSON.stringify(pickedTime));
 check('day and night: no console errors', errors.length === 0, errors.join(' | '));
 check('world: no console errors', errors.length === 0, errors.join(' | '));
+
+// Skirmish: units deploy, a click selects one and marks exactly the rules' range, a click on a
+// marked tile walks it there and spends the pool, it can't move twice, and Enter ends the turn.
+errors.length = 0;
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+const army = await page.evaluate(() => window.__map.units());
+check('skirmish: five a side on the board', army.filter((u) => u.side === 'player').length === 5 && army.filter((u) => u.side === 'enemy').length === 5, JSON.stringify(army));
+const clickTile = async (x, y) => {
+  await page.evaluate((x, y) => window.__map.setPose(45, 55, 1.6, x, y), x, y);
+  await new Promise((r) => setTimeout(r, 300));
+  const pos = await page.evaluate((x, y) => window.__map.tileScreenPos(x, y), x, y);
+  await page.mouse.click(pos.x, pos.y);
+  await new Promise((r) => setTimeout(r, 300));
+};
+const mover = army[0];
+await clickTile(mover.x, mover.y);
+const marks = await page.evaluate(() => ({ selected: window.__map.selected(), marked: window.__map.marked() }));
+check('skirmish: a click selects the unit and marks exactly its range', marks.selected === mover.id && marks.marked.reach > 1 && marks.marked.reach === marks.marked.rules, JSON.stringify(marks));
+await shot('12-skirmish-select');
+const reach = await page.evaluate(() => window.__map.reachable());
+const goal = reach.reduce((a, b) => (b[0] + b[1] < a[0] + a[1] ? b : a));
+await clickTile(goal[0], goal[1]);
+await page.waitForFunction(() => !window.__map.busy(), { timeout: 20000 });
+const after = await page.evaluate(() => ({ units: window.__map.units(), turn: window.__map.turn() }));
+const moved = after.units.find((u) => u.id === mover.id);
+check('skirmish: a click on a marked tile walks there and spends the pool', moved.x === goal[0] && moved.y === goal[1] && after.turn.pool < 12 && after.turn.moved.includes(mover.id), JSON.stringify({ goal, moved, turn: after.turn }));
+await shot('13-skirmish-moved');
+await clickTile(moved.x, moved.y);
+check('skirmish: a unit that has moved gets no range', (await page.evaluate(() => window.__map.marked().reach)) === 0);
+await page.keyboard.press('KeyX');
+await page.keyboard.press('Enter');
+await new Promise((r) => setTimeout(r, 200));
+const turn2 = await page.evaluate(() => window.__map.turn());
+check('skirmish: Enter ends the turn and the pool comes back', turn2.number === 2 && turn2.side === 'player' && turn2.pool === 12 && turn2.moved.length === 0, JSON.stringify(turn2));
+const foe = army.find((u) => u.side === 'enemy');
+await clickTile(foe.x, foe.y);
+const foeMarks = await page.evaluate(() => window.__map.marked());
+check('skirmish: a foe shows its reach in red and cannot be moved', foeMarks.foe > 1 && foeMarks.reach === 0, JSON.stringify(foeMarks));
+check('skirmish: no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.ok ? '' : `  -> ${r.detail}`}`);

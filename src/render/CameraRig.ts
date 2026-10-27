@@ -27,6 +27,8 @@ export const POLAR_RANGE_DEG = { min: 25, max: 75 } as const;
 export class CameraRig {
   readonly camera: THREE.OrthographicCamera;
   readonly controls: OrbitControls;
+  /** A ground point the view is easing towards (a selected unit), or null. */
+  private goal: THREE.Vector3 | null = null;
 
   /** `panLimit`: how far the orbit centre may stray from the middle, in world units (half the board). */
   constructor(domElement: HTMLElement, public panLimit: number) {
@@ -57,6 +59,8 @@ export class CameraRig {
     controls.keyPanSpeed = 12;
     controls.listenToKeyEvents(window);
     controls.addEventListener('change', () => this.clampTarget());
+    // Dragging or panning takes over from an ease in progress.
+    controls.addEventListener('start', () => (this.goal = null));
     controls.update();
     this.controls = controls;
   }
@@ -93,7 +97,20 @@ export class CameraRig {
     this.controls.update();
   }
 
+  /** Eases the view's centre over to a ground point, keeping the angle and zoom. */
+  focusOn(point: THREE.Vector3): void {
+    this.goal = new THREE.Vector3(point.x, 0, point.z);
+  }
+
   update(): void {
+    if (this.goal) {
+      const t = this.controls.target;
+      const step = this.goal.clone().sub(t).multiplyScalar(0.12);
+      if (step.lengthSq() < 1e-6) this.goal = null;
+      t.add(step);
+      this.camera.position.add(step);
+      this.clampTarget();
+    }
     this.controls.update();
   }
 }

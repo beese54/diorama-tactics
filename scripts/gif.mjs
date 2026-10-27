@@ -8,7 +8,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const [out = 'map.gif', az = 45, polar = 60, zoom = 2, x = 16, y = 16, seconds = 4, fps = 12] = process.argv.slice(2);
-const url = process.env.MAP_URL ?? 'http://localhost:5173/';
+const given = process.env.MAP_URL ?? 'http://localhost:5173/';
+// The map viewer (no units) unless the url asks for a mode, so map pictures stay comparable.
+const url = /[?&]mode=/.test(given) ? given : `${given}${given.includes('?') ? '&' : '?'}mode=view`;
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const ffmpeg = process.env.FFMPEG_PATH ?? 'ffmpeg';
 

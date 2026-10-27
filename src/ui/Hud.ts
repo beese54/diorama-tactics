@@ -16,6 +16,10 @@ export interface HudActions {
   sizes?: readonly { id: string; name: string }[];
   size?: string;
   pickSize?: (id: string) => void;
+  /** Skirmish or map viewer, the one on, and what to do on a change. */
+  modes: readonly { id: string; name: string }[];
+  mode: string;
+  pickMode: (id: string) => void;
   /** Grows a new random map; generated themes only. */
   newMap?: () => void;
   save: () => void;
@@ -27,7 +31,7 @@ const NOTICE_MS = 5000;
 
 /**
  * FFT-style box in the top-left corner: the map's name and seed, pickers for the map, the
- * weather, the time of day and (on generated maps) the board size, buttons to grow a new map, save it as JSON or load a saved one, and a line for
+ * mode (skirmish or map viewer), the weather, the time of day and (on generated maps) the board size, buttons to grow a new map, save it as JSON or load a saved one, and a line for
  * short notices.
  */
 export class Hud {
@@ -59,6 +63,7 @@ export class Hud {
       buttons.appendChild(s);
     };
     select('Switch map', actions.maps, actions.current, actions.pick);
+    select('Skirmish or map viewer', actions.modes, actions.mode, actions.pickMode);
     select('Weather', actions.weathers, actions.weather, actions.pickWeather);
     select('Time of day', actions.times, actions.time, actions.pickTime);
     if (actions.sizes && actions.pickSize) select('Board size', actions.sizes, actions.size ?? '', actions.pickSize);

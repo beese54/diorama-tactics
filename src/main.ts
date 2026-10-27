@@ -23,6 +23,7 @@ import { dayAt, DayClock, TIME_NAMES, TIMES, type TimeChoice } from './render/da
 import { WEATHER_KINDS, WEATHER_NAMES, weatherForMap, type WeatherKind } from './render/weather';
 import { TileInfo } from './ui/TileInfo';
 import { GpuTimer } from './render/GpuTimer';
+import { Skirmish } from './units/Skirmish';
 
 /** Map files larger than this are refused unread; a full 64×64 map is well under it. */
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
@@ -68,6 +69,8 @@ async function main(): Promise<void> {
   pipeline.renderer.shadowMap.autoUpdate = false;
 
   const theme = themeFromUrl(location.search);
+  /** The map viewer shows the board alone; otherwise the map opens straight into a skirmish. */
+  const viewer = new URLSearchParams(location.search).get('mode') === 'view';
   document.title = `${theme.name} · Diorama Tactics`;
   const { light } = theme;
   const scene = new THREE.Scene();
@@ -178,6 +181,7 @@ async function main(): Promise<void> {
       disposeTree(group);
     }
     board = buildBoard(next);
+    startSkirmish();
     void next.rest();
     rig.panLimit = Math.max(map.width, map.height) / 2;
     rig.fitBoard(Math.max(map.width, map.height));
@@ -224,9 +228,9 @@ async function main(): Promise<void> {
 
   const maps = [...THEMES, { id: 'world', name: 'Wild Lands (random)' }];
   const pick = (id: string) => {
-    // A new map keeps the weather, time and board size picked for the last one.
+    // A new map keeps the weather, time, board size and mode picked for the last one.
     const params = new URLSearchParams(location.search);
-    const keep = ['weather', 'time', 'size'].filter((k) => params.has(k)).map((k) => `&${k}=${params.get(k)}`).join('');
+    const keep = ['weather', 'time', 'size', 'mode'].filter((k) => params.has(k)).map((k) => `&${k}=${params.get(k)}`).join('');
     location.search = `?map=${id}${keep}`;
   };
   const weathers = [{ id: 'auto', name: 'Weather: the map\'s own' }, ...WEATHER_KINDS.map((k) => ({ id: k, name: WEATHER_NAMES[k] }))];
@@ -247,20 +251,76 @@ async function main(): Promise<void> {
     weather.set(weatherFor(board.map));
   };
   const asked = new URLSearchParams(location.search).get('weather');
+  const modes = [{ id: 'skirmish', name: 'Mode: Skirmish' }, { id: 'view', name: 'Mode: Map viewer' }];
+  const pickMode = (id: string) => {
+    const params = new URLSearchParams(location.search);
+    if (id === 'view') params.set('mode', 'view');
+    else params.delete('mode');
+    location.search = `?${params}`;
+  };
   const askedTime = new URLSearchParams(location.search).get('time');
   const hud = new Hud(ui, {
     maps, current: theme.id, pick, weathers, weather: WEATHER_KINDS.find((k) => k === asked) ?? 'auto', pickWeather,
     times, time: [...TIMES, 'cycle'].find((t) => t === askedTime) ?? 'own', pickTime,
     ...(generated ? { sizes, size: String(board.map.width), pickSize: (id: string) => void pickSize(id) } : {}),
+    modes, mode: viewer ? 'view' : 'skirmish', pickMode,
     newMap: generated ? () => void newMap() : undefined, save, load,
   });
   hud.setTitle(theme.name, theme.seed);
+
+  /** The skirmish on the board (none in the map viewer); a new board starts a new one. */
+  let skirmish: Skirmish | null = null;
+  function startSkirmish(): void {
+    if (skirmish) {
+      scene.remove(skirmish.group);
+      disposeTree(skirmish.group);
+      skirmish.dispose();
+    }
+    skirmish = null;
+    keyTile = null;
+    if (viewer) return;
+    const { mesh } = board;
+    skirmish = new Skirmish(board.map, {
+      surfacePoint: (tile, u, v) => mesh.surfacePoint(tile, u, v),
+      focus: (point) => rig.focusOn(point),
+      say: (text) => hud.say(text),
+    }, ui);
+    scene.add(skirmish.group);
+    // The opening view looks over the allies, as a battle opens on your own army.
+    const allies = skirmish.units.filter((u) => u.side === 'player');
+    const [cx, cy] = [allies.reduce((s, u) => s + u.x, 0) / allies.length, allies.reduce((s, u) => s + u.y, 0) / allies.length];
+    const near = allies.reduce((a, u) => (Math.hypot(u.x - cx, u.y - cy) < Math.hypot(a.x - cx, a.y - cy) ? u : a));
+    rig.setPose(45, 60, theme.zoom, mesh.tileCenter(tileAt(board.map, near.x, near.y)!));
+  }
+  /** The tile the arrow keys have put the cursor on, while the mouse rests. */
+  let keyTile: Tile | null = null;
+  startSkirmish();
 
   window.addEventListener('keydown', (e) => {
     if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'KeyR' && generated) void newMap();
     if (e.code === 'KeyE') save();
+    if (!skirmish) return;
+    if (e.code === 'KeyZ') skirmish.click(keyTile ?? hovered);
+    if (e.code === 'KeyX') skirmish.cancel();
+    if (e.code === 'Enter') skirmish.endTurn();
+    const arrow = ({ ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] } as Record<string, [number, number]>)[e.code];
+    if (arrow) {
+      e.preventDefault();
+      keyTile = stepOnScreen(keyTile ?? hovered ?? (skirmish.selected && tileAt(board.map, skirmish.selected.x, skirmish.selected.y)) ?? tileAt(board.map, skirmish.units[0].x, skirmish.units[0].y)!, arrow);
+      rig.focusOn(board.mesh.tileCenter(keyTile));
+    }
   });
+  /** The neighbour of `tile` lying most nearly in the screen direction `[right, up]`. */
+  function stepOnScreen(tile: Tile, [sx, sy]: [number, number]): Tile {
+    const right = new THREE.Vector3().setFromMatrixColumn(rig.camera.matrixWorld, 0);
+    const up = new THREE.Vector3().setFromMatrixColumn(rig.camera.matrixWorld, 1);
+    // Screen up, laid on the ground, points away from the camera.
+    const want = new THREE.Vector2(right.x * sx + up.x * sy, right.z * sx + up.z * sy);
+    const steps: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const [dx, dy] = steps.reduce((a, b) => (b[0] * want.x + b[1] * want.y > a[0] * want.x + a[1] * want.y ? b : a));
+    return tileAt(board.map, tile.x + dx, tile.y + dy) ?? tile;
+  }
   window.addEventListener('dragover', (e) => e.preventDefault());
   window.addEventListener('drop', (e) => {
     e.preventDefault();
@@ -269,15 +329,30 @@ async function main(): Promise<void> {
   });
 
   const pointer = new THREE.Vector2();
+  const raycaster = new THREE.Raycaster();
   let pointerInside = false;
   canvas.addEventListener('pointermove', (e) => {
     const rect = canvas.getBoundingClientRect();
     pointer.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
     pointerInside = true;
+    keyTile = null;
+  });
+  // A click is a press and release without dragging (a drag turns the camera).
+  let pressedAt: [number, number] | null = null;
+  canvas.addEventListener('pointerdown', (e) => (pressedAt = e.button === 0 ? [e.clientX, e.clientY] : null));
+  canvas.addEventListener('pointerup', (e) => {
+    if (pressedAt && e.button === 0 && Math.hypot(e.clientX - pressedAt[0], e.clientY - pressedAt[1]) < 5 && skirmish) {
+      // Picked from where the click landed, not the last frame's hover: the two can differ on a quick click.
+      const rect = canvas.getBoundingClientRect();
+      const at = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+      raycaster.setFromCamera(at, rig.camera);
+      keyTile = null;
+      skirmish.click(board.mesh.pick(raycaster));
+    }
+    pressedAt = null;
   });
   canvas.addEventListener('pointerleave', () => (pointerInside = false));
 
-  const raycaster = new THREE.Raycaster();
   const timer = new THREE.Timer();
   /** Fixed animation time in seconds, for headless captures; null = real time. */
   let frozenTime: number | null = null;
@@ -320,12 +395,16 @@ async function main(): Promise<void> {
     board.flora.update(elapsed);
     board.props.update(elapsed);
 
-    if (pointerInside) {
+    if (keyTile) {
+      hovered = keyTile;
+    } else if (pointerInside) {
       raycaster.setFromCamera(pointer, rig.camera);
       hovered = board.mesh.pick(raycaster);
     } else {
       hovered = null;
     }
+    skirmish?.hover(hovered);
+    skirmish?.update(elapsed, frozenTime === null ? timer.getDelta() : 1 / 60, rig.camera);
     if (hovered !== cursorTile) {
       const tile = (cursorTile = hovered);
       const { mesh } = board;
@@ -414,6 +493,13 @@ async function main(): Promise<void> {
         },
         /** CPU frame times since the last call, in ms. */
         takeFrameCpu: () => frameCpu.splice(0),
+        /** The skirmish, for checks: units, the turn, the selection and what is marked. */
+        units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, x: u.x, y: u.y, morale: u.morale })) ?? null,
+        turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved] },
+        selected: () => skirmish?.selected?.id ?? null,
+        marked: () => skirmish?.marked() ?? null,
+        busy: () => skirmish?.busy ?? false,
+        reachable: () => skirmish?.reachable() ?? [],
         camera: () => ({
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
           zoom: rig.camera.zoom,
