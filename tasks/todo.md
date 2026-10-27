@@ -606,11 +606,11 @@ Not needed for the agreed bar; pick up if circumstances change.
 
 ---
 
-## 5. PHASE 2: units and battles (spec drafted 2026-10-27, waiting for approval)
+## 5. PHASE 2: units and battles (approved 2026-10-27)
 The user approved M13–M16 and closed the map phase. All question-matrix defaults were accepted, with one change: battle scenes must not be pixelated. They are drawn at full screen resolution with smooth, code-painted cut-out characters, "as clear as possible, like Yggdra Union's battle scenes". Units on the map stay pixel art. Spec: `specification.json` → `phase2`; criteria: `definition_of_done.md` (Phase 2). No code until the spec is approved.
 
 Proposed milestones (each one reviewed with screenshots before the next):
-- [ ] **B0 Rules core** (pure TS, tests only): units, classes, stats, weapon triangle, terrain defence from `TERRAIN`, move range by `moveCost` on a shared MOV pool, Union shapes (`+`/`x`), clash maths, Morale.
+- [x] **B0 Rules core** (pure TS, tests only): units, classes, stats, weapon triangle, terrain defence from `TERRAIN`, move range by `moveCost` on a shared MOV pool, Union shapes (`+`/`x`), clash maths, Morale.
 - [ ] **B1 Units on the map:** procedural pixel units (heads, two sides), idle animation, deployment on any theme, select, move range and path preview, move tween, unit info panel. Shots in `evolution/characters/`.
 - [ ] **B2 Battle scene v0:** first a still style frame at full resolution for approval (the risk point: if code-drawn characters fall short, fall back to a licensed hi-res art pack or supplied art). Then: attack an adjacent enemy, transition to a side view (full resolution, not pixelated) whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
 - [ ] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
@@ -619,3 +619,14 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - [ ] **B6 Card skills:** cut-ins, flash, hit-stop, shake.
 - [ ] **B7 Enemy AI and win/lose:** a full playable skirmish.
 - [ ] **B8 Polish:** transitions, audio, art pass.
+
+- **Art (approved 2026-10-27):** the user generates the battle art in Google Flow from prompts I write. Round 1 is one sword leader, one sword soldier and one meadow background, on flat #00FF00; I key them and build a still style frame in the engine. Round 2 tests animation on the sword class, pose images against Flow video, side by side in the engine. Then the rest: 18 designs (6 leaders per side, 6 shared soldier designs, recoloured for the enemy), portraits, backgrounds, card art. Smears between poses are drawn in code. Sources go in `art/source/`.
+
+### B0 review (2026-10-27): rules core
+- `src/game/`, with no three.js anywhere in what it loads (purity.test.ts follows every import; a positive control with three imported into map/props.ts makes it fail):
+  - `units.ts`: 6 classes (sword, spear, axe, bow, mage, knight with 3 large soldiers); the weapon triangle sword > axe > spear/lance > sword, ±2 edge;
+  - `movement.ts`: Dijkstra move range on the shared pool, by `tileStats().moveCost`; impassable ground, blocking props and enemies bar the way; allies are passed through but not stopped on (`stop: false`); `pathTo`;
+  - `union.ts`: + for a woman, x for a man, clockwise from the top, living allies only; `canAttack` on edge neighbours;
+  - `clash.ts`: `ClashSim` plays charge (TEC vs GEN, a LUK crit panics the defenders), counter (none with a bow either way, none in panic) and melee rounds (ATK duels, LUK flash attacks) one beat at a time, so the stance can change between beats; seeded; `moraleDamage` from POW, the winner's soldiers left, its head, ATK over GEN, cut by the loser's tile defence; `applyResult`.
+- Balance at POW 60 over 400 seeds: a mirror match goes 55–58% to the attacker (the charge strikes first); a triangle advantage wins about 80%; aggressive 73% and passive 45% against an even 58%. A loss costs 50–60 Morale against 130–200, so a unit falls in about three.
+- Tests: 1209 (90 new, among them move-range legality over all 30 themes); build clean.

@@ -1,6 +1,6 @@
 {
-  "phase": "map-terrain",
-  "updated": "2026-10-26",
+  "phase": "units-and-battles",
+  "updated": "2026-10-27",
   "tasks": [
     {
       "id": "M0",
@@ -133,16 +133,22 @@
       "title": "Four Elemental maps: Crystal Cavern, Glacier Rift, Sky Isles, Toxic Bog",
       "status": "done",
       "commit": "8ed5869"
+    },
+    {
+      "id": "B0",
+      "title": "Rules core: units, classes, weapon triangle, shared-MOV move range, Unions, step-by-step clash simulation, Morale",
+      "status": "review",
+      "commit": "pending"
     }
   ],
   "backlog": [
-    "sprite animator",
-    "units",
-    "cards & turns",
-    "battle scene",
-    "skill cut-ins",
-    "unions",
-    "enemy AI",
-    "audio"
+    "B1 units on the map",
+    "B2 battle scene v0 (Flow art round 1 style frame first)",
+    "B3 battle scene v1",
+    "B4 cards and turns",
+    "B5 Unions",
+    "B6 card skills",
+    "B7 enemy AI and win/lose",
+    "B8 polish"
   ]
 }
