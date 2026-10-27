@@ -649,3 +649,10 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - Shots: `evolution/battles/b2-style-frame/r1-mixed-squads/`.
 - Waiting for the user's verdict before round 2.
 
+### B2 round 2 (2026-10-27): the animation test
+- `?mode=anim`: `src/battle/animTest.ts` plays Aria's attack twice on the meadow at her battle size. Left: pose images (stance, wind-up, slash, follow-through) held in turn with a lunge and a smear drawn in a shader. Right: Veo 3.1's clip, frames 36 to 100 at 24 fps.
+- `scripts/art/anim.py` keys a set at one shared scale with a feet-and-torso anchor per frame (`:loose` drops Flow's ghost swords); `scripts/anim.mjs` records the test frame by frame.
+- Video findings: no real strike (she raises the sword and lifts it again), the end frame does not match the start, 720p (589 px figure, upscaled in battle), softer lines and compression blotches. Smooth, on model, camera locked.
+- Decision (user, 2026-10-27): pose images + smears. "i prefer the pose images + smears too. However, i find the frames too less [...] so that the movement don't look too rigid."
+- Next (B2-anim-r1): four more Aria poses from Flow (ready, recover, run-2, victory, each with leader-f and its neighbour pose as references) and code motion (idle breathing, eased lunges, hit-stop, shake, dust); the wind-up to slash stays a snap. Recorded beside round 2, then the roster.
+

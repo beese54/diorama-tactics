@@ -12,10 +12,18 @@
     {
       "id": "b2-style-r1",
       "date": "2026-10-27",
-      "commit": "next",
+      "commit": "fa9c153",
       "image": "b2-style-frame/r1-mixed-squads/battle-1920x1080@1x.jpg",
       "title": "B2 r1 · Men and women",
       "note": "A woman leader and soldier from Flow: Aria leads, and both squads mix men and women."
+    },
+    {
+      "id": "b2-anim",
+      "date": "2026-10-27",
+      "commit": "next",
+      "image": "b2-anim-test/strike.jpg",
+      "title": "B2 · Animation test",
+      "note": "Round 2: Aria's attack from pose images with a code-drawn smear, beside the same attack from a Veo 3.1 clip."
     }
   ]
 }

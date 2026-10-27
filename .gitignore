@@ -6,3 +6,4 @@ shots/
 CLAUDE.local.md
 art/source/*
 !art/source/README.md
+__pycache__/

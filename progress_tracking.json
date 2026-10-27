@@ -156,7 +156,19 @@
       "id": "B2-style-r1",
       "title": "Style frame round 1: woman leader and soldier; squads mix soldier designs",
       "status": "review",
+      "commit": "fa9c153"
+    },
+    {
+      "id": "B2-anim",
+      "title": "Round 2 animation test: pose images + code smears against a Flow video, side by side (?mode=anim)",
+      "status": "done",
       "commit": "next"
+    },
+    {
+      "id": "B2-anim-r1",
+      "title": "More poses for Aria (ready, recover, run-2, victory) and code motion between poses",
+      "status": "todo",
+      "commit": ""
     }
   ],
   "backlog": [

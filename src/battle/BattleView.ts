@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { formation } from './formation';
 
 /** The scene is laid out on a screen this many units tall, whatever the window's real size. */
-const DESIGN_H = 1080;
+export const DESIGN_H = 1080;
 /** How tall a front-rank soldier's picture stands, in design units (its sword tip included). */
-const SOLDIER_H = 300;
+export const SOLDIER_H = 300;
 /** The head's picture is drawn this much taller than a soldier's: a leader stands out. */
-const HEAD_SCALE = 1.08;
+export const HEAD_SCALE = 1.08;
 
 /** Pictures for one side of a battle: the head, and the soldier designs its soldiers take in turn. */
 export interface SquadArt {
@@ -16,7 +16,7 @@ export interface SquadArt {
 }
 
 /** A soft round shadow, dark in the middle and fading out, for under every fighter's feet. */
-function shadowTexture(): THREE.CanvasTexture {
+export function shadowTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const ctx = c.getContext('2d')!;
@@ -59,7 +59,8 @@ export class BattleView {
     window.addEventListener('resize', () => this.resize());
   }
 
-  private texture(url: string): Promise<THREE.Texture> {
+  /** Loads a picture for the scene: smooth filtering with mipmaps, at full quality. */
+  texture(url: string): Promise<THREE.Texture> {
     return this.loader.loadAsync(url).then((t) => {
       t.colorSpace = THREE.SRGBColorSpace;
       t.minFilter = THREE.LinearMipmapLinearFilter;
@@ -128,6 +129,16 @@ export class BattleView {
       foot.renderOrder = Math.round(place.y * 1000);
       this.scene.add(foot, figure);
     }
+  }
+
+  /** The screen's width in design units (its height is always DESIGN_H). */
+  get width(): number {
+    return DESIGN_H * this.aspect;
+  }
+
+  /** Puts objects of the caller's own into the scene (an animation test's figures). */
+  add(...objects: THREE.Object3D[]): void {
+    this.scene.add(...objects);
   }
 
   render(): void {

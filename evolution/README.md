@@ -24,6 +24,24 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 round 2: the animation test
+![Aria's strike: pose images with a smear on the left, the Veo clip on the right](battles/b2-anim-test/strike.jpg)
+
+| The two attacks looping ([MP4](battles/b2-anim-test/compare.mp4)) | The strike on a 2× screen |
+|---|---|
+| ![](battles/b2-anim-test/compare.gif) | ![](battles/b2-anim-test/strike-close.jpg) |
+
+- **What changed:** `?mode=anim` plays Aria's sword attack twice, side by side at her size in battle. On the left, four pose images from Google Flow (stance, wind-up, slash, follow-through), each held for a beat, with a short lunge and a smear drawn in code between the wind-up and the slash. On the right, a Veo 3.1 clip made in Flow from her stance image, played frame by frame at 24 fps.
+- **Feedback:** "im okay with round 2." The poses first came back with ghost copies of the sword, and the first video model ignored the prompt.
+- **Decisions:**
+  - A new processing script keys a whole set at one scale and stands every frame on one anchor (the feet line and the middle of the torso), so the poses don't wobble or change size between frames.
+  - Ghost swords that float free of the body are dropped in processing, so those poses didn't need regenerating.
+  - The smear is a crescent drawn in a shader around the shoulders, from the blade's place in the wind-up to its place in the slash, thick at the blade and fading at the tail.
+  - **Chosen: pose images with smears.** The user picked them over video: "i prefer the pose images + smears too". With four poses the motion is too stiff, so more poses come next (a ready pose before the wind-up, a recovery after the follow-through, a second run pose and a victory pose), plus motion in code between the poses. The jump from wind-up to slash stays a snap, because that's what makes the hit land.
+- **Learned:**
+  - Flow copies the reference image's sword into a new pose as a faint ghost. It hides against the green and only shows once the background is keyed out.
+  - Veo kept Aria on model, with smooth motion and a locked camera, but it didn't strike: she raised the sword overhead and lifted it again. It also ended on a different pose from the one it started on, so the clip doesn't loop. It came out at 720p, so in battle she is upscaled and softer than the pose images.
+
 ### B2 style frame, round 1: men and women
 ![Aria's blue squad against Roderic's red one, men and women in both](battles/b2-style-frame/r1-mixed-squads/battle-1920x1080@1x.jpg)
 

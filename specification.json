@@ -272,7 +272,7 @@
       "hud": "both heads' names and Morale bars, soldiers left, edge icon, stance (from B3), skill gauge (from B3); HTML/CSS overlay at full resolution with a clear font",
       "transition": "map -> battle -> map, back on the same camera view",
       "risk": "if Flow art fails the style frame, fall back to code-painted cut-out characters or a licensed art pack",
-      "animation": "decided by the round 2 test on one class: pose images (4-6 crisp key poses per clip) vs Flow video clips (Frames to Video, same first and last frame for loops) cut into frames; either way the battle plays sprite clips driven by the rules, never a video",
+      "animation": "pose images with smears drawn in code (chosen by the user 2026-10-27 after the round 2 test against a Veo 3.1 clip, which did not strike, did not loop and came out at 720p). Key poses from Flow, keyed at one scale and anchored by scripts/art/anim.py; held in turn with snaps at the strike, smears in a shader, and code motion between poses (idle breathing, eased lunges, hit-stop, screen shake, dust); the battle plays sprite clips driven by the rules, never a video",
       "roster": "18 designs: 6 leaders per side (one per class, about 3 female and 3 male each) + 6 soldier designs shared by both sides, recoloured red in code for the enemy (24 if the recolour does not hold up); later 12 leader portraits, backgrounds per theme or category, card art",
       "leader_looks": {
         "approved": "2026-10-27",
@@ -287,7 +287,12 @@
         "round 2: animation test on the sword class, pose images vs video, side by side in the engine",
         "then: the rest of the roster, portraits, backgrounds, card art"
       ],
-      "naming": "prompts never name Yggdra Union or its artists; README credits Google Flow"
+      "naming": "prompts never name Yggdra Union or its artists; README credits Google Flow",
+      "poses": {
+        "leader": "about 10 per leader: stance, ready, wind-up, slash, follow-through, recover (attack); run, run-2 (run cycle); hurt; fallen; victory",
+        "soldier": "fewer than a leader (smaller on screen, seven move at once); set after the leader test",
+        "test": "Aria first: ready, recover, run-2 and victory added to the round 2 set, with the code motion, recorded beside round 2 before scaling up"
+      }
     },
     "milestones": [
       "B0 rules core",
