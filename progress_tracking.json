@@ -138,7 +138,7 @@
       "id": "B0",
       "title": "Rules core: units, classes, weapon triangle, shared-MOV move range, Unions, step-by-step clash simulation, Morale",
       "status": "review",
-      "commit": "pending"
+      "commit": "3df296f"
     }
   ],
   "backlog": [
