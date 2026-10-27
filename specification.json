@@ -15,8 +15,14 @@
       "Free-orbit orthographic camera, tile hover/select with info panel"
     ],
     "out_parked_in_backlog": [
-      "Units/characters", "Sprite animator for units", "Cards", "Turn flow",
-      "Battle scene", "Unions", "Enemy AI", "Audio"
+      "Units/characters",
+      "Sprite animator for units",
+      "Cards",
+      "Turn flow",
+      "Battle scene",
+      "Unions",
+      "Enemy AI",
+      "Audio"
     ]
   },
   "stack": {
@@ -40,7 +46,10 @@
     ]
   },
   "rendering": {
-    "internal_resolution": [480, 270],
+    "internal_resolution": [
+      480,
+      270
+    ],
     "upscale": "largest integer scale that fits the window; letterbox remainder",
     "texture_filter": "NearestFilter, no mipmaps",
     "antialias": false,
@@ -50,15 +59,24 @@
       "rotate": "left-drag",
       "pan": "right-drag or WASD",
       "zoom": "wheel, ortho zoom clamped 0.5..3",
-      "polar_angle_deg": [25, 75],
+      "polar_angle_deg": [
+        25,
+        75
+      ],
       "note": "Free orbit means pixels re-sample as the view turns; accepted trade-off of the free-orbit choice"
     },
     "lighting": "one directional sun + hemisphere ambient; parameters driven by time-of-day and weather"
   },
   "world": {
     "units": "1 world unit = 1 tile width; 1 height step = 0.5 units",
-    "size": [32, 32],
-    "height_range": [0, 8],
+    "size": [
+      32,
+      32
+    ],
+    "height_range": [
+      0,
+      8
+    ],
     "sea_level": 1,
     "tile_texture_px": 16
   },
@@ -74,12 +92,37 @@
       "seedRand": "float 0..1 (per-tile variation: texture variant, decor placement)"
     },
     "TerrainId": [
-      "plains", "meadow", "farmland", "road", "light_woods", "forest", "pine_forest",
-      "hills", "mountain", "peak_snow", "scree", "cliff", "swamp", "marsh", "bog",
-      "beach", "shallow_water", "deep_water", "badlands", "desert", "ruins", "crystal_field"
+      "plains",
+      "meadow",
+      "farmland",
+      "road",
+      "light_woods",
+      "forest",
+      "pine_forest",
+      "hills",
+      "mountain",
+      "peak_snow",
+      "scree",
+      "cliff",
+      "swamp",
+      "marsh",
+      "bog",
+      "beach",
+      "shallow_water",
+      "deep_water",
+      "badlands",
+      "desert",
+      "ruins",
+      "crystal_field"
     ],
     "FeatureId": [
-      "village", "castle", "watchtower", "bridge_stone", "bridge_wood", "ancient_tree", "oasis"
+      "village",
+      "castle",
+      "watchtower",
+      "bridge_stone",
+      "bridge_wood",
+      "ancient_tree",
+      "oasis"
     ],
     "TerrainDef": {
       "id": "TerrainId",
@@ -90,7 +133,13 @@
     },
     "MapFile": {
       "format": "json",
-      "fields": { "version": 1, "seed": "uint32", "width": 32, "height": 32, "tiles": "Tile[] row-major" }
+      "fields": {
+        "version": 1,
+        "seed": "uint32",
+        "width": 32,
+        "height": 32,
+        "tiles": "Tile[] row-major"
+      }
     }
   },
   "generator": {
@@ -108,7 +157,13 @@
     "controls": "the HUD map picker switches to any theme or Wild Lands (reloads with ?map=<id>); R or the New map button = new random seed (written to the URL); seed shown in HUD; ?seed=N URL param; E or Save downloads the map JSON (S is taken by WASD panning); Load button or dropping a file opens a saved map, validated by parseMap"
   },
   "weather": {
-    "states": ["clear", "rain", "storm", "snow", "fog"],
+    "states": [
+      "clear",
+      "rain",
+      "storm",
+      "snow",
+      "fog"
+    ],
     "wind": "strength multiplier (1 = breeze; storm 3): rain slant, plant/banner sway",
     "ground": "wet darkens land and cliffs; snow settles on upward tops per ground pixel, never on liquid (alpha mask), and buries flowers",
     "choice": "HUD weather picker (auto = map's own: weatherForMap(seed) on Wild Lands, clear on themes), kept in the URL as weather=<kind>",
@@ -142,5 +197,96 @@
     "src/decor/": "billboard decor",
     "src/weather/": "rain/snow/fog/storm",
     "src/ui/": "tile info, HUD"
+  },
+  "phase2": {
+    "phase": "units-and-battles",
+    "version": "0.2.0-draft",
+    "approved_answers": "2026-10-27: all question-matrix defaults accepted; battle scenes must not be pixelated (clear, like Yggdra Union's battle scenes)",
+    "scope": {
+      "in": [
+        "Pure-TS rules core: units, classes, stats, weapon triangle, terrain defence, shared MOV pool, Unions, clash maths, Morale",
+        "Pixel units on every map (matching the map props), select/move/path preview",
+        "Side-view battle scene at full screen resolution, not pixelated",
+        "Cards and turn flow, Unions, card skills, enemy AI, win/lose"
+      ],
+      "out": [
+        "Story, dialogue, campaign, save games",
+        "Title screen (until B8)",
+        "Audio (until B8)",
+        "Online play",
+        "Original Yggdra Union names, art or music"
+      ]
+    },
+    "rules": {
+      "sides": "player (blue) vs enemy (red), 5 units each [ASSUMED: 5]",
+      "stats": "morale (HP, max 100-200 by class), atk, tec, gen, luk; integers 1-20 except morale",
+      "classes": {
+        "sword": "weapon sword; balanced",
+        "spear": "weapon spear",
+        "axe": "weapon axe; high atk, low tec",
+        "bow": "weapon bow; cannot counter, and a unit it attacks cannot counter",
+        "mage": "weapon staff; high tec, low gen",
+        "knight": "weapon lance; large: 1 head + 3 large soldiers; high gen"
+      },
+      "weapon_triangle": "sword > axe > spear(lance) > sword: +2 edge to the winner of the pair; bow and staff are outside the triangle [ASSUMED]",
+      "gender": "every head has one; Union shape: female leader = + (4 orthogonal neighbours), male leader = x (4 diagonal neighbours); max 5 units",
+      "movement": {
+        "pool": "one MOV pool per turn shared by all of a side's units (B1: fixed 12 [ASSUMED]; from B4: the card's MOV)",
+        "cost": "tileStats(tile).moveCost per tile entered; IMPASSABLE and blocking props cannot be entered; no height limit and no climb cost (the maps guarantee reachability on that basis)",
+        "occupancy": "a unit cannot end on or pass through an enemy; it may pass through allies but not end on them",
+        "once": "each unit moves at most once per turn"
+      },
+      "terrain_defence": "the defender's tileStats().defense percent reduces the Morale damage it takes",
+      "clash": {
+        "squads": "head + 7 soldiers (knight: head + 3 large)",
+        "edge": "integer effectiveness = weapon triangle (+2/-2) + stance (aggressive +2, passive -2) + card/skill modifiers; shown as an icon",
+        "phases": [
+          "charge: attacker tec vs defender gen + edge -> defender soldiers lost; a luk crit can down the head (panic: defender loses its counter)",
+          "counter: defender tec vs attacker gen -> attacker soldiers lost; skipped for bows and when attacked by a bow",
+          "melee: one-on-one duels, win chance from atk vs atk + edge, until one side has no fighters; luk gives flash attacks"
+        ],
+        "result": "loser loses Morale = card POW x (0.5 + 0.08 per winning small soldier left, 0.16 per large) + 10 if winner head alive, minus loser terrain defence %; winner loses nothing [ASSUMED: formula shape after Yggdra Union, numbers tuned in play]",
+        "rng": "seeded per battle, so every battle replays exactly in tests",
+        "morale_zero": "the unit is defeated and leaves the map"
+      },
+      "cards": "POW, MOV, ACE (weapon needed to fire the skill, or All), skill; a hand of 8 per battle [ASSUMED]; each card used once per battle; one card per turn",
+      "turn": "pick card -> move units (shared pool) -> at most one attack -> end turn -> enemy turn",
+      "win_lose": "win: every enemy defeated; lose: every player unit defeated [ASSUMED: no leader-death rule yet]"
+    },
+    "map_units": {
+      "art": "procedural pixel art drawn in code like the props, rendered through the map's pixel pipeline; about one tile tall (~28 px)",
+      "animation": "idle loop, walk, hop on height steps; facing follows movement",
+      "deployment": "auto-placed on walkable, reachable, prop-free tiles: player near the front edge (nearest the opening camera), enemy near the back",
+      "interaction": "mouse click or arrows + Z select; move range highlight; path preview on hover; Z/click confirm; X cancel; Enter end turn; camera eases to the selected unit; unit panel shows name, class, Morale, stats, tile defence",
+      "viewer_mode": "the map viewer (no units) stays available from the menu"
+    },
+    "battle_scene": {
+      "look": "side-on, two squads facing each other across a wide horizon, HUD on top; reference: Yggdra Union's battle scenes",
+      "resolution": "drawn at the canvas's full device resolution (CSS size x devicePixelRatio), antialiased; NOT through the 480x270 pixel pipeline; textures smooth (linear filtering, mipmaps)",
+      "art": "characters built from layered parts (body, head, arms, legs, weapon) painted in code with Canvas 2D vector paths, cel shading and a dark outline, at 2x their largest on-screen size; animated by moving the parts (cut-out animation), not by drawing pixel frames",
+      "clips": "idle, run, attack, hit, fall, cheer; heads have a distinct look per class and side",
+      "backdrop": "painted at full resolution with smooth paths in the theme's colours: sky, two parallax silhouette layers chosen by the theme's category, ground from the two fighters' tile palettes (each side stands on its own tile's ground)",
+      "sides": "attacker enters from the left [ASSUMED]",
+      "hud": "both heads' names and Morale bars, soldiers left, edge icon, stance (from B3), skill gauge (from B3); HTML/CSS overlay at full resolution with a clear font",
+      "transition": "map -> battle -> map, back on the same camera view",
+      "risk": "procedural character art may not reach the Yggdra bar; B2 starts with a still style frame for approval, and if code-drawn art falls short the fallback is a licensed hi-res art pack or art you supply"
+    },
+    "milestones": [
+      "B0 rules core",
+      "B1 units on the map",
+      "B2 battle scene v0 (style frame first, then scripted animation)",
+      "B3 battle scene v1",
+      "B4 cards and turns",
+      "B5 Unions",
+      "B6 card skills",
+      "B7 enemy AI and win/lose",
+      "B8 polish"
+    ],
+    "file_layout": {
+      "src/game/": "pure rules core, no three.js (units, movement, union, clash, cards, turn, ai)",
+      "src/units/": "map unit sprites and layer",
+      "src/battle/": "battle scene: renderer path, rig/parts, painter, director, backdrop",
+      "src/ui/": "unit panel, battle HUD, card hand"
+    }
   }
 }

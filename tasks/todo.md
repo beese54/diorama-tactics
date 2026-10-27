@@ -606,13 +606,13 @@ Not needed for the agreed bar; pick up if circumstances change.
 
 ---
 
-## 5. PHASE 2: units and battles (PROPOSED 2026-10-27, waiting for answers)
-The user approved M13–M16 and closed the map phase. Status: question matrix sent; no code until the answers are in and the spec is approved.
+## 5. PHASE 2: units and battles (spec drafted 2026-10-27, waiting for approval)
+The user approved M13–M16 and closed the map phase. All question-matrix defaults were accepted, with one change: battle scenes must not be pixelated. They are drawn at full screen resolution with smooth, code-painted cut-out characters, "as clear as possible, like Yggdra Union's battle scenes". Units on the map stay pixel art. Spec: `specification.json` → `phase2`; criteria: `definition_of_done.md` (Phase 2). No code until the spec is approved.
 
 Proposed milestones (each one reviewed with screenshots before the next):
 - [ ] **B0 Rules core** (pure TS, tests only): units, classes, stats, weapon triangle, terrain defence from `TERRAIN`, move range by `moveCost` on a shared MOV pool, Union shapes (`+`/`x`), clash maths, Morale.
 - [ ] **B1 Units on the map:** procedural pixel units (heads, two sides), idle animation, deployment on any theme, select, move range and path preview, move tween, unit info panel. Shots in `evolution/characters/`.
-- [ ] **B2 Battle scene v0:** attack an adjacent enemy, transition to a side view whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
+- [ ] **B2 Battle scene v0:** first a still style frame at full resolution for approval (the risk point: if code-drawn characters fall short, fall back to a licensed hi-res art pack or supplied art). Then: attack an adjacent enemy, transition to a side view (full resolution, not pixelated) whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
 - [ ] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
 - [ ] **B4 Cards and turns:** card hand (POW, MOV, ACE, skill), one card per turn, one attack per turn, end turn.
 - [ ] **B5 Unions:** shape detection and highlight, chained clashes.
