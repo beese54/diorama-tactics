@@ -4,3 +4,5 @@ dist/
 shots/
 .claude/
 CLAUDE.local.md
+art/source/*
+!art/source/README.md
