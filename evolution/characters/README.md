@@ -1,8 +1,5 @@
 # Characters: visual history
 
-Not started yet. Unit sprites come after the world map phase.
+Units on the map, drawn as pixel art like the props. Stages are listed in [stages.json](stages.json) and play in order in [timeline.gif](timeline.gif). The notes for each stage are in [../README.md](../README.md#characters).
 
-Each version will get its own folder here (for example `c1-first-sprite/`). It will hold:
-- stills from the same poses every time;
-- a GIF of the idle and walk loops;
-- a section in [../README.md](../README.md) saying what changed, the feedback behind it, and what was learned.
+Shots come from `node scripts/units.mjs evolution/characters/<id-name> <map ids...>`: the opening view, a unit selected with its range, the path preview, the unit after its move, a close-up, and a GIF of the walk. `node scripts/unitsheet.mjs <out.png>` draws every unit's sprite magnified.

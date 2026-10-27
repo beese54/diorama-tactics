@@ -611,7 +611,7 @@ The user approved M13–M16 and closed the map phase. All question-matrix defaul
 
 Proposed milestones (each one reviewed with screenshots before the next):
 - [x] **B0 Rules core** (pure TS, tests only): units, classes, stats, weapon triangle, terrain defence from `TERRAIN`, move range by `moveCost` on a shared MOV pool, Union shapes (`+`/`x`), clash maths, Morale.
-- [ ] **B1 Units on the map:** procedural pixel units (heads, two sides), idle animation, deployment on any theme, select, move range and path preview, move tween, unit info panel. Shots in `evolution/characters/`.
+- [x] **B1 Units on the map:** procedural pixel units (heads, two sides), idle animation, deployment on any theme, select, move range and path preview, move tween, unit info panel. Shots in `evolution/characters/`.
 - [ ] **B2 Battle scene v0:** first a still style frame at full resolution for approval (the risk point: if code-drawn characters fall short, fall back to a licensed hi-res art pack or supplied art). Then: attack an adjacent enemy, transition to a side view (full resolution, not pixelated) whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
 - [ ] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
 - [ ] **B4 Cards and turns:** card hand (POW, MOV, ACE, skill), one card per turn, one attack per turn, end turn.
@@ -630,3 +630,15 @@ Proposed milestones (each one reviewed with screenshots before the next):
   - `clash.ts`: `ClashSim` plays charge (TEC vs GEN, a LUK crit panics the defenders), counter (none with a bow either way, none in panic) and melee rounds (ATK duels, LUK flash attacks) one beat at a time, so the stance can change between beats; seeded; `moraleDamage` from POW, the winner's soldiers left, its head, ATK over GEN, cut by the loser's tile defence; `applyResult`.
 - Balance at POW 60 over 400 seeds: a mirror match goes 55–58% to the attacker (the charge strikes first); a triangle advantage wins about 80%; aggressive 73% and passive 45% against an even 58%. A loss costs 50–60 Morale against 130–200, so a unit falls in about three.
 - Tests: 1209 (90 new, among them move-range legality over all 30 themes); build clean.
+
+### B1 review (2026-10-27): units on the map
+- Commit 622c005. `src/game/deploy.ts` (roster, deployment), `src/game/turn.ts` (shared pool, one move a unit, next turn); `src/units/` (unitSprites, UnitLayer, RangeLayer, Skirmish); `src/ui/UnitPanel.ts`, `TurnBox.ts`; `CameraRig.focusOn`; `SpriteField.place` for moving sprites.
+- `mode=view` keeps the map viewer; check.mjs, snapshot.mjs, gif.mjs and identity.mjs use it. Identity 70/70 against a baseline saved before B1.
+- Tests 1316; check.mjs all pass with 7 new skirmish checks (deploy, select marks exactly the rules' range, walk and pool, no second move, end turn, foe reach).
+- Shots: `evolution/characters/b1-units/` (scripts/units.mjs, scripts/unitsheet.mjs).
+- Open: the roster's sword leader is a woman (Aria) but the Flow sword leader came out a man; settle names and genders as the designs arrive.
+
+### B2 style frame (2026-10-27)
+- Commit 8abc8c6. `?mode=battle`: `src/battle/BattleView.ts` (own renderer, full resolution), `formation.ts`, `preview.ts`; `src/ui/BattleHud.ts`; `scripts/art/key.py`; `scripts/battle.mjs` (full-resolution check).
+- Art round 1 processed into `public/battle/`; the red recolour works, so 18 designs.
+- Waiting for the user's verdict on the look before round 2 (the animation test).

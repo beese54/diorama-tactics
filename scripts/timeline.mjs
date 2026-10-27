@@ -1,15 +1,17 @@
-// Rebuilds evolution/land/timeline.gif from evolution/land/stages.json: one captioned frame per
-// visual stage (milestones, review rounds and fixes), oldest first, so the whole history plays
-// as one loop. Run it whenever a stage is added. Needs ffmpeg on PATH (or FFMPEG_PATH).
-// Usage: node scripts/timeline.mjs [seconds per stage]
+// Rebuilds evolution/<track>/timeline.gif from evolution/<track>/stages.json: one captioned
+// frame per visual stage (milestones, review rounds and fixes), oldest first, so the whole
+// history plays as one loop. Run it whenever a stage is added. Needs ffmpeg on PATH (or FFMPEG_PATH).
+// Usage: node scripts/timeline.mjs [seconds per stage] [track: land | characters | battles]
 import puppeteer from 'puppeteer-core';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const [hold = '1.6'] = process.argv.slice(2);
-const root = 'evolution/land';
+const [hold = '1.6', track = 'land'] = process.argv.slice(2);
+const root = `evolution/${track}`;
+// Land and unit pictures are pixel art, kept crisp; battle pictures are full resolution, scaled smoothly.
+const rendering = track === 'battles' ? 'auto' : 'pixelated';
 const stages = JSON.parse(readFileSync(join(root, 'stages.json'), 'utf8')).stages;
 const chrome = process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const ffmpeg = process.env.FFMPEG_PATH ?? 'ffmpeg';
@@ -24,7 +26,7 @@ for (const [k, stage] of stages.entries()) {
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
 <style>
   body { margin: 0; width: 960px; height: 540px; overflow: hidden; background: #0b0d14; font: 18px 'Silkscreen', monospace; }
-  img { position: absolute; inset: 0; width: 960px; height: 540px; object-fit: contain; image-rendering: pixelated; }
+  img { position: absolute; inset: 0; width: 960px; height: 540px; object-fit: contain; image-rendering: ${rendering}; }
   .bar { position: absolute; left: 16px; right: 16px; bottom: 16px; padding: 8px 14px; color: #ffe27a;
          background: linear-gradient(#34488a, #18224d); border: 2px solid #c9d4f0; border-radius: 4px; }
   .note { color: #e8eefc; font-size: 14px; margin-top: 4px; }

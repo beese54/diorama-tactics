@@ -1,9 +1,11 @@
 // Photographs units on the map for the visual history in evolution/characters/: the opening
 // view, a unit selected with its move range, the path preview, the unit after its move, and
-// a close-up. Needs the dev server (npm run dev).
+// a close-up, plus walk.gif of the move. Needs the dev server (npm run dev) and ffmpeg.
 // Usage: node scripts/units.mjs <outDir> [map ids...]
 import puppeteer from 'puppeteer-core';
-import { mkdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const [outDir, ...ids] = process.argv.slice(2);
@@ -51,8 +53,19 @@ for (const id of maps) {
   await settle(500);
   await page.screenshot({ path: join(dir, 'path.png') });
 
+  // Record the walk, a frame every ~70 ms until the unit arrives, then a beat after.
+  const frames = mkdtempSync(join(tmpdir(), 'walk-'));
   await page.mouse.click(at.x, at.y);
-  await settle(200);
+  let n = 0;
+  for (let after = 0; after < 8 && n < 120; n++) {
+    await page.screenshot({ path: join(frames, `f${String(n).padStart(3, '0')}.png`) });
+    if (!(await page.evaluate(() => window.__map.busy()))) after++;
+  }
+  execFileSync(process.env.FFMPEG_PATH ?? 'ffmpeg', [
+    '-y', '-loglevel', 'error', '-framerate', '14', '-i', join(frames, 'f%03d.png'),
+    '-vf', 'scale=480:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=none', '-loop', '0', join(dir, 'walk.gif'),
+  ]);
+  rmSync(frames, { recursive: true, force: true });
   await idle();
   await settle(900);
   await page.screenshot({ path: join(dir, 'moved.png') });

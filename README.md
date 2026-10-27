@@ -41,6 +41,9 @@ The current phase is the **world map terrain**. Battles and units come later.
 | M9 | Boards up to 64×64 at 60 fps; loading 45–57% faster (the ground is painted on worker threads); a board-size picker; bigger boards get more rivers and settlements | done |
 | M10 | Tech pass: loading 16–20% faster, zoom out until a whole board fits (supersampled, no shimmer), 2.4× less GPU time on laptop graphics | done |
 | M11–M16 | 24 more themed maps, four per category (30 in all) | done |
+| B0 | Rules core: classes, weapon triangle, shared-MOV movement, Unions, seeded battle simulation | in review |
+| B1 | Units on the map: select, move range, path preview, walking (`?map=<id>`; `mode=view` for the map alone) | in review |
+| B2 | Battle scene at full resolution with Google Flow art (`?mode=battle` style frame) | style frame in review |
 
 The full plan is in [tasks/todo.md](tasks/todo.md). The progress ledger is [progress_tracking.json](progress_tracking.json).
 

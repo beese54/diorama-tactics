@@ -1,0 +1,13 @@
+{
+  "about": "Every visual stage of the battles, oldest first: milestones, review rounds and fixes. scripts/timeline.mjs (track \"battles\") turns this into timeline.gif. Add a stage with every visual commit; never overwrite a stage's picture. A commit cannot name itself, so the newest stage says \"next\" until the following commit fills in its hash.",
+  "stages": [
+    {
+      "id": "b2-style",
+      "date": "2026-10-27",
+      "commit": "8abc8c6",
+      "image": "b2-style-frame/battle-1920x1080@1x.jpg",
+      "title": "B2 · Style frame",
+      "note": "Google Flow art at full resolution: a sword squad against its red twin on the meadow."
+    }
+  ]
+}

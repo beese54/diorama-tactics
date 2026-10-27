@@ -1,0 +1,13 @@
+{
+  "about": "Every visual stage of the characters, oldest first: milestones, review rounds and fixes. scripts/timeline.mjs (track \"characters\") turns this into timeline.gif. Add a stage with every visual commit; never overwrite a stage's picture. A commit cannot name itself, so the newest stage says \"next\" until the following commit fills in its hash.",
+  "stages": [
+    {
+      "id": "b1",
+      "date": "2026-10-27",
+      "commit": "622c005",
+      "image": "b1-units/meadow/path.png",
+      "title": "B1 · Units on the map",
+      "note": "Five pixel units a side; select, move range, path preview, walk, shared MOV pool."
+    }
+  ]
+}

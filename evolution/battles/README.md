@@ -1,7 +1,5 @@
 # Battles: visual history
 
-Not started yet. Battle scenes come after the world map and characters.
+The side-view battle scene, drawn at full screen resolution (never pixelated), with art generated in Google Flow from prompts written for the project. Stages are listed in [stages.json](stages.json) and play in order in [timeline.gif](timeline.gif). The notes for each stage are in [../README.md](../README.md#battles).
 
-Each version will get its own folder here (for example `b1-first-clash/`). It will hold:
-- GIFs of the same clash every time;
-- a section in [../README.md](../README.md) saying what changed, the feedback behind it, and what was learned.
+Shots come from `node scripts/battle.mjs evolution/battles/<id-name> [width height dpr]...`, which also checks that the scene is drawn at the screen's full resolution.

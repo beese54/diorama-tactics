@@ -139,6 +139,18 @@
       "title": "Rules core: units, classes, weapon triangle, shared-MOV move range, Unions, step-by-step clash simulation, Morale",
       "status": "review",
       "commit": "3df296f"
+    },
+    {
+      "id": "B1",
+      "title": "Units on the map: deployment, select, move range, path preview, walk, shared MOV pool, turn",
+      "status": "review",
+      "commit": "622c005"
+    },
+    {
+      "id": "B2-style",
+      "title": "Battle style frame at full resolution from Google Flow art round 1",
+      "status": "review",
+      "commit": "8abc8c6"
     }
   ],
   "backlog": [

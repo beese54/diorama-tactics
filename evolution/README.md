@@ -4,9 +4,9 @@ This folder shows how the game's look has improved over time, one version after 
 
 | Folder | What it covers | Status |
 |---|---|---|
-| [land/](#land) | The world map terrain | M0 to M8 done |
-| [characters/](characters/README.md) | Unit sprites and animation | not started |
-| [battles/](battles/README.md) | Battle scenes | not started |
+| [land/](#land) | The world map terrain | M0 to M16 done |
+| [characters/](#characters) | Units on the map | B1 in review |
+| [battles/](#battles) | Battle scenes | B2 style frame in review |
 
 **How the pictures are made.** Every version is rendered from its own git commit, using the same camera views each time, so the pictures can be compared side by side. The script is `scripts/snapshot.mjs`. Animated versions also get a GIF from `scripts/gif.mjs`.
 
@@ -19,6 +19,52 @@ This folder shows how the game's look has improved over time, one version after 
 Each version records three things: what changed, the feedback that caused the change, and what I learned. The rules I took from each correction are in [tasks/lessons.md](../tasks/lessons.md).
 
 ---
+
+## Battles
+
+![Timeline of every battle version](battles/timeline.gif)
+
+### B2 style frame: the battle scene at full resolution
+![A sword squad against its red twin on the meadow](battles/b2-style-frame/battle-1920x1080@1x.jpg)
+
+| Close-up at 2× pixel density |
+|---|
+| ![](battles/b2-style-frame/close-2x.jpg) |
+
+- **What changed:** the first battle scene, as one still frame (`?mode=battle`). A squad is a leader and seven soldiers in three staggered ranks, the leader in front; the attacker stands on the left. The art is the first round from Google Flow: a sword leader, a sword soldier and a meadow backdrop. The enemy is the same art recoloured red in code. The HUD shows each side's name, class, Morale and troops, and the matchup's effectiveness.
+- **Feedback:** "for the battle scenes, i do not want it to be pixelated, it should be as clear as possible, like how the battle scenes are in Yggdra's Union." Then the offer to generate the art in Google Flow, which beats drawing characters in code.
+- **Decisions:**
+  - The battle has its own canvas and renderer: antialiased, at the device pixel ratio, with smooth mipmapped textures. It never goes through the map's 480×270 pipeline. `scripts/battle.mjs` checks the drawing buffer is the page size times the pixel ratio (1920×1080 and 3840×2160 here).
+  - `scripts/art/key.py` processes Flow's images: it samples the background green from each image's border (Flow's two images used different greens), keys it out, pulls the green halo back, trims a pixel of JPEG fringe, crops to the feet and scales. It also bakes the red enemy variant by turning blue cloth crimson, leaving steel, skin, hair and leather alone.
+  - Prompts never name the game that inspired the look or its artists.
+- **Learned:**
+  - Recolouring holds up: blue cloth turns a convincing red without touching the steel. Enemy soldiers can share the player's designs, so the roster is 18 designs, not 24.
+  - A shadow drawn only under the feet hides behind them. It has to be wider than the stance and sit a little below it to read.
+
+## Characters
+
+![Timeline of every character version](characters/timeline.gif)
+
+### B1: Units on the map
+![Aria selected: her move range in blue, the path to a tile in gold](characters/b1-units/meadow/path.png)
+
+| The walk | All ten sprites (idle, walk, resting) |
+|---|---|
+| ![](characters/b1-units/meadow/walk.gif) | ![](characters/b1-units/sprites.png) |
+
+| Castle Courtyard: selected | After the move |
+|---|---|
+| ![](characters/b1-units/courtyard/select.png) | ![](characters/b1-units/courtyard/moved.png) |
+
+- **What changed:** maps now open into a skirmish. Five units a side deploy: the allies near the front corner, the foes near the back, on easy dry ground that joins up. A click (or Z) selects a unit and marks where it can go, hovering a tile previews the path, and a click on a marked tile walks it there, hopping up and down steps. Every unit draws on one shared MOV pool (12 a turn until cards arrive). A unit that has moved dims. A foe shows its reach in red. X cancels and Enter ends the turn. Panels show the unit (name, class, Union shape, Morale, stats) and the turn (MOV left). The map viewer stays in the menu (`mode=view`).
+- **Feedback:** "M13 to M16 approved, move on to units and battles." The question matrix's defaults were accepted: small pixel units about a tile tall, drawn in code like the props, so the map stays one style.
+- **Decisions:**
+  - The rules (B0) decide everything: the marked tiles are exactly the rules' move range, and a move is refused unless the rules allow it.
+  - Sprites face a direction on the ground and mirror whenever it points left on screen, so they keep facing the right way as the camera turns.
+  - Map checks, snapshots, GIFs and pixel-identity captures run in the map viewer, so the land history stays comparable: all 70 captures matched a baseline saved before B1.
+- **Learned:**
+  - A click has to pick its tile from where it landed. The hover from the last frame lags a quick click.
+  - Deployment needs "easy ground" relative to the map: a glacier or a bog has no ground costing 1 MOV, and a desert's sand costs 2.
 
 ## Land
 
