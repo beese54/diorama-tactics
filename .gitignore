@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.log
 shots/
+.claude/
+CLAUDE.local.md
