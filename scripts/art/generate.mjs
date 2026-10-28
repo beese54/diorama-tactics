@@ -6,7 +6,7 @@
 // The key comes from .env.local (git ignores it; .env.example shows the names) or the environment.
 // It is sent only in the Authorization header to ARK_BASE_URL and never printed.
 //
-// Usage: node scripts/art/generate.mjs <prompts.json> <pose>... [--count N] [--size 2K] [--seed N] [--dry]
+// Usage: node scripts/art/generate.mjs <prompts.json> <pose>... [--count N] [--size 1536x1536|2K] [--seed N] [--dry]
 //   --dry prints what would be sent (without the key or the images' data) and spends nothing.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -26,7 +26,8 @@ function env() {
 }
 
 function args(argv) {
-  const opts = { count: 1, size: '2K', seed: undefined, dry: false, names: [] };
+  // 1536x1536 is the largest size in the cheaper price tier (up to about 2.36 MP), and is plenty for poses.
+  const opts = { count: 1, size: '1536x1536', seed: undefined, dry: false, names: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--count') opts.count = Number(argv[++i]);
