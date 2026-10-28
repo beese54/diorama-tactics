@@ -30,18 +30,26 @@ describe('sample', () => {
     expect(sample(CLIP, 2).body.squash).toBeCloseTo(1.04);
   });
 
+  it('moves at a steady speed when the beat is linear', () => {
+    const clip: Beat[] = [{ pose: 'run', seconds: 1, body: { x: 0 } }, { pose: 'run', seconds: 1, body: { x: 100 }, linear: true }];
+    expect(sample(clip, 1.25).body.x).toBeCloseTo(25);
+    expect(sample(clip, 1.75).body.x).toBeCloseTo(75);
+  });
+
   it('keeps what a key leaves out', () => {
     // The wind-up names only x: the squash stays at rest.
     expect(sample(CLIP, 1.5).body.squash).toBe(1);
     expect(sample(CLIP, 1.5).body.lean).toBe(0);
   });
 
-  it('fires a cue as its beat starts, with how long ago and where', () => {
+  it('fires a cue as its beat starts, with how long ago and where (a snap: where it lands)', () => {
     expect(sample(CLIP, 1.9).cues).toEqual([]);
     const [c] = sample(CLIP, 2.25).cues;
     expect(c.cue).toBe('strike');
     expect(c.age).toBeCloseTo(0.25);
-    expect(c.x).toBeCloseTo(-10);
+    expect(c.x).toBeCloseTo(40);
+    const eased: Beat[] = [{ pose: 'a', seconds: 1, body: { x: 5 } }, { pose: 'b', seconds: 1, body: { x: 9 }, cue: 'step' }];
+    expect(sample(eased, 1.5).cues[0].x).toBeCloseTo(5);
   });
 
   it('loops, starting from where it ends', () => {

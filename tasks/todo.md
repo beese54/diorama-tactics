@@ -661,5 +661,6 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - `src/battle/poseClip.ts` (+ tests): a clip is beats, each a pose for a time with a body key (forward, up, squash, lean) eased or snapped to, cues (strike, step) and breathing; poses not drawn yet fall back to a neighbour.
 - `?mode=anim` scenes: `motion` (round 2 beside the attack with motion: dip, eased lunges, stretch and lean into the slash, 0.08 s hit-stop, shake, dust), `win` (attack, then a hop into victory), `lose` (a hit with a white flash and shake, the stagger, the fall with dust, held; the loop fades), `video` (round 2's comparison). `BattleView.nudge` for the shake.
 - Flow's first `ready` and `recover` copied the stance, and `run-2` had two swords; prompts reworked to attach only the neighbour pose. `victory` kept.
-- Next: the redone ready, recover and run-2, then the run cycle.
+- run-2 (Flow, second try) kept with its floating sword dropped; `charge` scene: the run cycle at a steady speed (`linear` beats), dust at each footfall, the skid, the attack, the win. The shadow follows the body along the ground.
+- Flow's second ready (sword upside down) and recover (a copy of the follow-through) failed: next try is Seedream through ModelArk (`scripts/art/generate.mjs`, key in `.env.local`).
 

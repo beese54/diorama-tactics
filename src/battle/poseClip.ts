@@ -25,6 +25,8 @@ export interface Beat {
   body?: Partial<Body>;
   /** Jump to `body` at once instead of easing there. */
   snap?: boolean;
+  /** Move to `body` at a steady speed (a run's stride) instead of easing in and out. */
+  linear?: boolean;
   cue?: Cue;
   /** Breathe while the beat holds: a slow rise and fall, for poses held still. */
   breathe?: boolean;
@@ -35,7 +37,7 @@ export const REST: Body = { x: 0, y: 0, squash: 1, lean: 0 };
 export interface Sample {
   pose: string;
   body: Body;
-  /** Cues fired so far this loop: how long ago, and where the body stood then (x). */
+  /** Cues fired so far this loop: how long ago, and where the body stood then (x; for a snap, where it landed). */
   cues: { cue: Cue; age: number; x: number }[];
 }
 
@@ -57,9 +59,9 @@ export function sample(clip: readonly Beat[], seconds: number, has: (pose: strin
   const cues: Sample['cues'] = [];
   for (const beat of clip) {
     const to: Body = { ...from, ...beat.body };
-    if (beat.cue) cues.push({ cue: beat.cue, age: t - start, x: from.x });
+    if (beat.cue) cues.push({ cue: beat.cue, age: t - start, x: beat.snap ? to.x : from.x });
     if (t < start + beat.seconds) {
-      const k = beat.snap ? 1 : smooth((t - start) / beat.seconds);
+      const k = beat.snap ? 1 : beat.linear ? (t - start) / beat.seconds : smooth((t - start) / beat.seconds);
       const body = {
         x: from.x + (to.x - from.x) * k,
         y: from.y + (to.y - from.y) * k,

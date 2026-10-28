@@ -58,6 +58,7 @@ class Figure {
   readonly group = new THREE.Group();
   readonly body = new THREE.Group();
   private readonly mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  private readonly shadow: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
 
   constructor(readonly k: number) {
     this.mesh = new THREE.Mesh(
@@ -65,15 +66,14 @@ class Figure {
       new THREE.MeshBasicMaterial({ transparent: true, depthTest: false }),
     );
     this.mesh.renderOrder = 2;
-    const shadow = new THREE.Mesh(
+    this.shadow = new THREE.Mesh(
       new THREE.PlaneGeometry(1, 1),
       new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthTest: false }),
     );
-    shadow.scale.set(STAND_H * 0.85, STAND_H * 0.12, 1);
-    shadow.position.set(-STAND_H * 0.05, -STAND_H * 0.012, 0);
-    shadow.renderOrder = 1;
+    this.shadow.scale.set(STAND_H * 0.85, STAND_H * 0.12, 1);
+    this.shadow.renderOrder = 1;
     this.body.add(this.mesh);
-    this.group.add(shadow, this.body);
+    this.group.add(this.shadow, this.body);
   }
 
   /** Shows `frame` with its anchor on the body's origin, the body placed as `s` says. */
@@ -87,12 +87,15 @@ class Figure {
     // Squash keeps the volume: shorter is wider. A forward lean tips the top to the right.
     this.body.scale.set(1 / Math.sqrt(s.squash), s.squash, 1);
     this.body.rotation.z = -s.lean;
+    // The shadow keeps to the ground under her: it follows her along it, not up off it.
+    this.shadow.position.set(s.x - STAND_H * 0.05, -STAND_H * 0.012, 0);
   }
 
   /** Lights the picture toward white (0 is its own colours), for the blink of a blow landing; `alpha` fades it. */
   tint(flash: number, alpha = 1): void {
     this.mesh.material.color.setScalar(1 + 2.5 * flash);
     this.mesh.material.opacity = alpha;
+    this.shadow.material.opacity = alpha;
   }
 }
 
@@ -266,13 +269,37 @@ const ATTACK: Beat[] = [
 /** When the smear runs on into the follow-through, seconds after the strike. */
 const FOLLOW = { round2: 0.07, attack: 0.13 };
 
-/** The attack, then the win: a small hop into the victory pose, held breathing. */
-const WIN: Beat[] = [
-  ...ATTACK,
+/** The win: a small hop into the victory pose, held breathing. */
+const VICTORY: Beat[] = [
   { pose: 'victory', seconds: 0.12, body: { y: 16, squash: 1.03 } },
   { pose: 'victory', seconds: 0.14, body: { y: 0, squash: 0.97 } },
   { pose: 'victory', seconds: 1.5, body: { squash: 1 }, breathe: true },
-  { pose: 'stance', seconds: 0.35 },
+];
+/** The attack, then the win. */
+const WIN: Beat[] = [...ATTACK, ...VICTORY, { pose: 'stance', seconds: 0.35 }];
+
+/** The run's stride: seconds per pose, how many poses, and how far back the run starts (design units). */
+const STRIDE = 0.1;
+const STRIDES = 8;
+const RUN_FROM = -640;
+/**
+ * The charge: she runs in from the left, the two run poses in turn at a steady speed, the body
+ * bobbing up in the airborne pose with dust at each footfall; she skids into her stance, attacks
+ * and wins. The loop fades her out and back in at the start of the run.
+ */
+const CHARGE: Beat[] = [
+  { pose: 'run', seconds: 0.01, body: { x: RUN_FROM, y: 0, squash: 1, lean: 0.05 }, snap: true },
+  ...Array.from({ length: STRIDES }, (_, i): Beat => ({
+    pose: i % 2 ? 'run-2' : 'run',
+    seconds: STRIDE,
+    linear: true,
+    body: { x: RUN_FROM * (1 - (i + 1) / STRIDES), y: i % 2 ? 0 : 10 },
+    ...(i % 2 ? { cue: 'step' as const } : {}),
+  })),
+  { pose: 'stance', seconds: 0.2, body: { x: 0, y: 0, squash: 0.96, lean: -0.03 }, cue: 'step' },
+  { pose: 'stance', seconds: 0.3, body: { squash: 1, lean: 0 }, breathe: true },
+  ...ATTACK.slice(1),
+  ...VICTORY,
 ];
 
 /**
@@ -315,6 +342,7 @@ const SCENES: Record<string, Actor[]> = {
   ],
   win: [{ label: 'Attack, then victory', at: -0.05, clip: WIN, effects: true, follow: FOLLOW.attack }],
   lose: [{ label: 'Hit, then defeat', at: -0.05, clip: LOSE, effects: true, fade: true }],
+  charge: [{ label: 'Charge, attack, victory', at: 0.05, clip: CHARGE, effects: true, follow: FOLLOW.attack, fade: true }],
   video: [
     { label: 'Pose images + smears', at: -0.2, clip: ROUND2, follow: FOLLOW.round2 },
     { label: 'Flow video (Veo 3.1)', at: 0.2 },
@@ -324,7 +352,7 @@ const SCENES: Record<string, Actor[]> = {
 /**
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
- * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat) or `video` (round 2: pose images against Flow's
+ * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat), `charge` (run in, attack, win) or `video` (round 2: pose images against Flow's
  * video). Everything loops.
  */
 export async function animTest(): Promise<void> {
@@ -377,11 +405,13 @@ export async function animTest(): Promise<void> {
       }
       const s = sample(a.clip, seconds, has);
       figure.show(poses.frames.get(s.pose)!, s.body);
-      const cue = (name: string) => s.cues.find((c) => c.cue === name);
+      // The latest of each cue this loop (a run fires a step at every footfall).
+      const cue = (name: string) => s.cues.filter((c) => c.cue === name).pop();
       const [strike, hit, step] = [cue('strike'), cue('hit'), cue('step')];
       smear!.update(strike?.age ?? -1, a.follow ?? 0);
-      // Dust from the latest stamp: the front foot at a strike, under the body when it falls.
-      if (dust) dust.update(step?.age ?? strike?.age ?? -1, s.body.x + (step ? 0 : FRONT_FOOT));
+      // Dust from the latest stamp: at the front foot for a strike, under the body for a step or a fall.
+      const stamp = [strike, step].filter((c) => c).sort((p, q) => p!.age - q!.age)[0];
+      if (dust) dust.update(stamp?.age ?? -1, (stamp?.x ?? s.body.x) + (stamp === strike ? FRONT_FOOT : 0));
       // The shake: sharp at the blow, gone in a fifth of a second.
       const blow = strike ?? hit;
       if (a.effects && blow && blow.age < 0.2) shake = Math.max(shake, 7 * (1 - blow.age / 0.2));

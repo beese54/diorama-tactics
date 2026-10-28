@@ -31,13 +31,18 @@ Each version records three things: what changed, the feedback that caused the ch
 |---|---|---|
 | ![](battles/b2-anim-test/r1-motion/motion.gif) | ![](battles/b2-anim-test/r1-motion/victory.jpg) | ![](battles/b2-anim-test/r1-motion/defeat.jpg) |
 
-- **What changed:** the same pose images, now moved in code. She breathes while she stands and dips to gather strength. She eases back into the wind-up, snaps into the slash stretched and leaning in, and holds for a hit-stop while the screen shakes and dust kicks up at her front foot. Then she settles through the follow-through and steps back. A victory pose plays after the attack, with a small hop. A defeat plays the hurt and fallen poses: the blow lands with a white flash, a shake and a short freeze, she staggers back and collapses with dust, and stays down.
+| The charge: run in, attack, win ([MP4](battles/b2-anim-test/r1-motion/charge.mp4)) |
+|---|
+| ![](battles/b2-anim-test/r1-motion/charge.jpg) |
+
+- **What changed:** the same pose images, now moved in code. She breathes while she stands and dips to gather strength. She eases back into the wind-up, snaps into the slash stretched and leaning in, and holds for a hit-stop while the screen shakes and dust kicks up at her front foot. Then she settles through the follow-through and steps back. A victory pose plays after the attack, with a small hop. A defeat plays the hurt and fallen poses: the blow lands with a white flash, a shake and a short freeze, she staggers back and collapses with dust, and stays down. The charge runs her in on a two-pose run cycle (`run` and `run-2`) at a steady speed. She bobs up in the airborne pose, kicks up dust at each footfall and skids into her stance before the attack and the win.
 - **Feedback:** "i find the frames too less and we perhaps could have more photos to show different actions so that the movement don't look too rigid."
 - **Decisions:**
   - The stiffness had two causes: too few poses for the big movements, and nothing moving while a pose is held. More poses fix the first, and code motion fixes the second without spending credits.
   - The jump from wind-up to slash stays instant. That snap, with the smear and the hit-stop, is what makes the blow land.
   - A clip is plain data (`src/battle/poseClip.ts`, tested): beats of a pose, a time and where the body goes. B3's battles will use the same clips.
 - **Learned:**
+  - Even with only the neighbouring pose attached, Flow's second `recover` copied the follow-through, and its `ready` held the sword upside down. Its `run-2` worked once its floating second sword was erased. Seedream through the BytePlus ModelArk API (`scripts/art/generate.mjs`) is the next try for those two poses.
   - When a new pose is close to the reference's own pose, Flow copies the reference. Attaching only the neighbouring pose, and describing the new pose more strongly, is the fix for the next try.
 
 ### B2 round 2: the animation test
