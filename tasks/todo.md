@@ -663,4 +663,5 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - Flow's first `ready` and `recover` copied the stance, and `run-2` had two swords; prompts reworked to attach only the neighbour pose. `victory` kept.
 - run-2 (Flow, second try) kept with its floating sword dropped; `charge` scene: the run cycle at a steady speed (`linear` beats), dust at each footfall, the skid, the attack, the win. The shadow follows the body along the ground.
 - Flow's second ready (sword upside down) and recover (a copy of the follow-through) failed: next try is Seedream through ModelArk (`scripts/art/generate.mjs`, key in `.env.local`).
+- Seedream 5.0 Pro (`dola-seedream-5-0-pro-260628`) made ready and recover right first time; they are in Aria's set (sources in `art/source/candidates/`). Seedance's ID is `dreamina-seedance-2-5-260628`. Model IDs are the console's names lowercased, with hyphens and a version date; a request with a bad parameter checks an ID for free.
 

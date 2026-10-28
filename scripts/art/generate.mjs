@@ -76,7 +76,6 @@ for (const name of opts.names) {
     prompt: prompts.base.replace('{pose}', pose.pose),
     image: refs.length === 1 ? dataUri(refs[0]) : refs.map(dataUri),
     size: opts.size,
-    sequential_image_generation: 'disabled',
     response_format: 'b64_json',
     watermark: false,
     ...(opts.seed === undefined ? {} : { seed: opts.seed }),
@@ -112,4 +111,5 @@ for (const name of opts.names) {
     }
   }
 }
-process.exit(failed ? 1 : 0);
+// exitCode rather than exit(): exiting while fetch's sockets close trips a libuv assertion on Windows.
+process.exitCode = failed ? 1 : 0;

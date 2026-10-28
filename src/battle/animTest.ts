@@ -257,7 +257,8 @@ const ROUND2: Beat[] = [
  */
 const ATTACK: Beat[] = [
   { pose: 'stance', seconds: 0.55, body: { x: 0, y: 0, squash: 1, lean: 0 }, breathe: true },
-  { pose: ['ready', 'stance'], seconds: 0.2, body: { x: -12, squash: 0.965, lean: -0.03 } },
+  // The ready pose is a crouch of its own, so the body only shifts back here.
+  { pose: ['ready', 'stance'], seconds: 0.22, body: { x: -12, squash: 1, lean: -0.02 } },
   { pose: 'wind-up', seconds: 0.24, body: { x: -18, squash: 1, lean: -0.05 } },
   { pose: 'slash', seconds: 0.05, body: { x: 38, squash: 1.03, lean: 0.06 }, snap: true, cue: 'strike' },
   // Hit-stop: the blow lands and everything holds for a moment.
