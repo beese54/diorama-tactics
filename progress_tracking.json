@@ -167,8 +167,8 @@
     {
       "id": "B2-anim-r1",
       "title": "More poses for Aria (ready, recover, run-2, victory) and code motion between poses",
-      "status": "todo",
-      "commit": ""
+      "status": "review",
+      "commit": "next"
     }
   ],
   "backlog": [

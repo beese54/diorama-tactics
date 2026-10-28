@@ -1,15 +1,15 @@
 // Records the round 2 animation test (?mode=anim) frame by frame at 24 fps, for the visual history
 // in evolution/battles/: an MP4 at full resolution, a smaller GIF, and stills of the strike.
 // Needs the dev server (npm run dev) and ffmpeg.
-// Usage: node scripts/anim.mjs <outDir> [seconds]
+// Usage: node scripts/anim.mjs <outDir> [scene] [seconds]   (scene: motion, win or video; default motion)
 import puppeteer from 'puppeteer-core';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const [outDir, secondsArg] = process.argv.slice(2);
-if (!outDir) throw new Error('usage: anim.mjs <outDir> [seconds]');
+const [outDir, scene = 'motion', secondsArg] = process.argv.slice(2);
+if (!outDir) throw new Error('usage: anim.mjs <outDir> [scene] [seconds]');
 mkdirSync(outDir, { recursive: true });
 const FPS = 24;
 const browser = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--hide-scrollbars'] });
@@ -20,15 +20,15 @@ async function open(dpr) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: dpr });
-  await page.goto('http://localhost:5173/?mode=anim', { waitUntil: 'networkidle0' });
+  await page.goto(`http://localhost:5173/?mode=anim&scene=${scene}`, { waitUntil: 'networkidle0' });
   await page.waitForFunction(() => window.__anim?.ready, { timeout: 60000 });
   await page.evaluate(() => document.fonts.ready);
   return { page, errors };
 }
 
 const { page, errors } = await open(1);
-const info = await page.evaluate(() => ({ attack: window.__anim.attackSeconds, video: window.__anim.videoSeconds, strike: window.__anim.strike }));
-const seconds = Number(secondsArg) || 2 * info.video;
+const info = await page.evaluate(() => ({ loop: window.__anim.loopSeconds, strike: window.__anim.strike }));
+const seconds = Number(secondsArg) || 2 * info.loop;
 const tmp = mkdtempSync(join(tmpdir(), 'anim-'));
 const count = Math.round(seconds * FPS);
 for (let i = 0; i < count; i++) {
@@ -50,5 +50,5 @@ await close.page.screenshot({ path: join(outDir, 'strike-2x.png') });
 rmSync(tmp, { recursive: true, force: true });
 await browser.close();
 const all = [...errors, ...close.errors];
-console.log(`${count} frames, ${seconds.toFixed(2)} s (attack ${info.attack.toFixed(2)} s, video ${info.video.toFixed(2)} s)${all.length ? `  errors: ${all.join(' | ')}` : ''}`);
+console.log(`${scene}: ${count} frames, ${seconds.toFixed(2)} s (longest loop ${info.loop.toFixed(2)} s)${all.length ? `  errors: ${all.join(' | ')}` : ''}`);
 process.exit(all.length ? 1 : 0);

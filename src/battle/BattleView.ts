@@ -136,6 +136,11 @@ export class BattleView {
     return DESIGN_H * this.aspect;
   }
 
+  /** Shifts the view by a few design units (a screen shake); (0, 0) puts it back. */
+  nudge(x: number, y: number): void {
+    this.camera.position.set(x, y, 0);
+  }
+
   /** Puts objects of the caller's own into the scene (an animation test's figures). */
   add(...objects: THREE.Object3D[]): void {
     this.scene.add(...objects);

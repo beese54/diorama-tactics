@@ -657,3 +657,9 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - Video generation is not ruled out: smooth and on model, it lost only for battle sprites (key-pose hits, loops, resolution, rule-driven timing). Kept in mind for one-off scenes: intro, cutscenes, skill cinematics, animated portraits (`specification.json` → battle_scene.video_generation).
 - Next (B2-anim-r1): four more Aria poses from Flow (ready, recover, run-2, victory, each with leader-f and its neighbour pose as references) and code motion (idle breathing, eased lunges, hit-stop, shake, dust); the wind-up to slash stays a snap. Recorded beside round 2, then the roster.
 
+### B2 round 2, r1 (2026-10-28): motion between poses
+- `src/battle/poseClip.ts` (+ tests): a clip is beats, each a pose for a time with a body key (forward, up, squash, lean) eased or snapped to, cues (strike, step) and breathing; poses not drawn yet fall back to a neighbour.
+- `?mode=anim` scenes: `motion` (round 2 beside the attack with motion: dip, eased lunges, stretch and lean into the slash, 0.08 s hit-stop, shake, dust), `win` (attack, then a hop into victory), `video` (round 2's comparison). `BattleView.nudge` for the shake.
+- Flow's first `ready` and `recover` copied the stance, and `run-2` had two swords; prompts reworked to attach only the neighbour pose. `victory` kept.
+- Next: the redone ready, recover and run-2, then the run cycle.
+

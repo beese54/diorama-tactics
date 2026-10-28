@@ -24,6 +24,22 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 round 2, r1: motion between the poses
+![The strike with motion: Aria leaning into the slash, dust at her front foot](battles/b2-anim-test/r1-motion/strike.jpg)
+
+| Round 2 beside the motion version ([MP4](battles/b2-anim-test/r1-motion/motion.mp4)) | Victory ([MP4 of attack, then win](battles/b2-anim-test/r1-motion/win.mp4)) |
+|---|---|
+| ![](battles/b2-anim-test/r1-motion/motion.gif) | ![](battles/b2-anim-test/r1-motion/victory.jpg) |
+
+- **What changed:** the same pose images, now moved in code. She breathes while she stands and dips to gather strength. She eases back into the wind-up, snaps into the slash stretched and leaning in, and holds for a hit-stop while the screen shakes and dust kicks up at her front foot. Then she settles through the follow-through and steps back. A victory pose plays after the attack, with a small hop.
+- **Feedback:** "i find the frames too less and we perhaps could have more photos to show different actions so that the movement don't look too rigid."
+- **Decisions:**
+  - The stiffness had two causes: too few poses for the big movements, and nothing moving while a pose is held. More poses fix the first, and code motion fixes the second without spending credits.
+  - The jump from wind-up to slash stays instant. That snap, with the smear and the hit-stop, is what makes the blow land.
+  - A clip is plain data (`src/battle/poseClip.ts`, tested): beats of a pose, a time and where the body goes. B3's battles will use the same clips.
+- **Learned:**
+  - When a new pose is close to the reference's own pose, Flow copies the reference. Attaching only the neighbouring pose, and describing the new pose more strongly, is the fix for the next try.
+
 ### B2 round 2: the animation test
 ![Aria's strike: pose images with a smear on the left, the Veo clip on the right](battles/b2-anim-test/strike.jpg)
 

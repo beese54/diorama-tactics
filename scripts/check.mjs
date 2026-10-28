@@ -367,7 +367,9 @@ const marks = await page.evaluate(() => ({ selected: window.__map.selected(), ma
 check('skirmish: a click selects the unit and marks exactly its range', marks.selected === mover.id && marks.marked.reach > 1 && marks.marked.reach === marks.marked.rules, JSON.stringify(marks));
 await shot('12-skirmish-select');
 const reach = await page.evaluate(() => window.__map.reachable());
-const goal = reach.reduce((a, b) => (b[0] + b[1] < a[0] + a[1] ? b : a));
+// With nothing selected there is nowhere to go: aim at the unit's own tile, so the walk check
+// below fails with its details instead of the whole run stopping here.
+const goal = reach.length ? reach.reduce((a, b) => (b[0] + b[1] < a[0] + a[1] ? b : a)) : [mover.x, mover.y];
 await clickTile(goal[0], goal[1]);
 await page.waitForFunction(() => !window.__map.busy(), { timeout: 20000 });
 const after = await page.evaluate(() => ({ units: window.__map.units(), turn: window.__map.turn() }));
