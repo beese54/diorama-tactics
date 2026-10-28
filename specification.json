@@ -273,7 +273,7 @@
       "transition": "map -> battle -> map, back on the same camera view",
       "risk": "if Flow art fails the style frame, fall back to code-painted cut-out characters or a licensed art pack",
       "animation": "pose images with smears drawn in code (chosen by the user 2026-10-27 after the round 2 test against a Veo 3.1 clip, which did not strike, did not loop and came out at 720p). Key poses from Flow, keyed at one scale and anchored by scripts/art/anim.py; held in turn with snaps at the strike, smears in a shader, and code motion between poses (idle breathing, eased lunges, hit-stop, screen shake, dust); the battle plays sprite clips driven by the rules, never a video",
-      "roster": "18 designs: 6 leaders per side (one per class, about 3 female and 3 male each) + 6 soldier designs shared by both sides, recoloured red in code for the enemy (24 if the recolour does not hold up); later 12 leader portraits, backgrounds per theme or category, card art",
+      "roster": "12 leaders (one per class per side, 3 women and 3 men a side) + 12 soldier designs (a man and a woman per class), shared by both sides and recoloured red for the enemy. Player heroes: Aria sword F, Bram spear M, Corin axe M, Dela bow F, Ilse mage F, Edric knight M. Rival army: Varek knight M, Sabine sword F, Gorran axe M, Petra spear F, Ulric bow M, Morwen mage F. Knights and knight soldiers ride horses (approved 2026-10-28): the horse changes pose with the rider. The round 1 male sword captain is kept as a story character. Designs and Flow prompts: scripts/art/prompts/standing.md",
       "leader_looks": {
         "approved": "2026-10-27",
         "player": "heroes: each has a signature colour of their own (not just team blue), a silhouette readable at a distance (distinctive hair, cape, scarf or plume, ornate trim) and a signature weapon; a blue team accent (sash or plume) plus the blue banner and HUD mark the side",
@@ -291,9 +291,12 @@
       "poses": {
         "leader": "about 10 per leader: stance, ready, wind-up, slash, follow-through, recover (attack); run, run-2 (run cycle); hurt; fallen; victory",
         "soldier": "fewer than a leader (smaller on screen, seven move at once); set after the leader test",
-        "test": "Aria first: ready, recover, run-2 and victory added to the round 2 set, with the code motion, recorded beside round 2 before scaling up"
+        "test": "Aria first: ready, recover, run-2 and victory added to the round 2 set, with the code motion, recorded beside round 2 before scaling up",
+        "mounted": "about 13 per mounted leader: stand, ready, lance couched (wind-up), thrust, follow-through, recover, a 4-pose gallop, hurt (the horse rears), fallen, victory; about 9 per mounted soldier: stand plus a 4-pose gallop, wind-up, thrust, hurt, fallen"
       },
-      "video_generation": "not rejected as a tool: the Veo 3.1 clip kept Aria on model, moved smoothly and held a locked camera. It lost round 2 only for battle sprites, which need sharp key poses, a hit on cue, clean loops, full resolution and exact timing that the rules can drive. Video stays a good fit for things that play once rather than loop: a title or intro, story cutscenes, a special skill's cinematic, animated portraits; and its frames can serve as reference when drawing in-betweens"
+      "video_generation": "not rejected as a tool: the Veo 3.1 clip kept Aria on model, moved smoothly and held a locked camera. It lost round 2 only for battle sprites, which need sharp key poses, a hit on cue, clean loops, full resolution and exact timing that the rules can drive. Video stays a good fit for things that play once rather than loop: a title or intro, story cutscenes, a special skill's cinematic, animated portraits; and its frames can serve as reference when drawing in-betweens",
+      "art_split": "Google Flow makes each character's standing image (the user's Flow credits); Seedream 5.0 Pro through ModelArk makes the other poses from it (scripts/art/generate.mjs, 1536x1536 or 4:3 for mounted, about $0.045 an image); no green or teal on any character",
+      "budget": "ModelArk budget US$30; estimate about $12-14 for every pose of the roster with retries, the standing images coming from Flow"
     },
     "milestones": [
       "B0 rules core",

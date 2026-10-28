@@ -665,3 +665,9 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - Flow's second ready (sword upside down) and recover (a copy of the follow-through) failed: next try is Seedream through ModelArk (`scripts/art/generate.mjs`, key in `.env.local`).
 - Seedream 5.0 Pro (`dola-seedream-5-0-pro-260628`) made ready and recover right first time; they are in Aria's set (sources in `art/source/candidates/`). Seedance's ID is `dreamina-seedance-2-5-260628`. Model IDs are the console's names lowercased, with hyphens and a version date; a request with a bad parameter checks an ID for free.
 
+### Roster plan (approved 2026-10-28)
+- 12 leaders, 12 soldier designs (a man and a woman per class); knights mounted, the horse posing with the rider; the round 1 sword captain kept as a story character.
+- Flow makes each standing image from `scripts/art/prompts/standing.md`; Seedream makes the poses (about $12-14 of the $30 budget).
+- Bram's green and Dela's teal changed to bronze/charcoal and rose pink/white: green is keyed out with the background.
+- Engine to do for mounted knights: a wider frame (4:3), their own standing height, a 4-pose gallop, a formation for 3 large soldiers.
+
