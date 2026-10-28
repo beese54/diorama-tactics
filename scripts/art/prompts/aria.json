@@ -1,0 +1,21 @@
+{
+  "about": "Pose prompts for Aria, the woman sword leader. {pose} in the base is replaced by a pose's text. Each pose lists its reference images (art/source/) and the file it becomes.",
+  "base": "The exact same character as the reference: same face, golden ponytail, blue and silver armour, blue cape, longsword, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one sword: a single blade in her hands, no second sword, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, sword included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "leader-f-ready",
+      "refs": ["leader-f-wind-up.jpg"],
+      "pose": "a deep low crouch, knees bent sharply, body coiled back; the sword held straight up and down beside her right shoulder, blade pointing at the sky, hilt at shoulder height with both hands, elbows tucked in"
+    },
+    "recover": {
+      "out": "leader-f-recover",
+      "refs": ["leader-f-follow-through.jpg"],
+      "pose": "halfway up out of a deep forward lunge: torso still leaning forward, front knee bent, back leg stretched out behind her; the sword held level in front of her waist in both hands, blade pointing forward"
+    },
+    "run-2": {
+      "out": "leader-f-run-2",
+      "refs": ["leader-f-run.jpg"],
+      "pose": "running to the right with both feet near the ground, one leg passing the other; the sword held in her right hand only, low and trailing behind her, blade pointing back and down; left arm swinging forward, cape trailing"
+    }
+  }
+}

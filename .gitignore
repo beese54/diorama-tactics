@@ -7,3 +7,7 @@ CLAUDE.local.md
 art/source/*
 !art/source/README.md
 __pycache__/
+# Secrets (API keys for art generation): never committed. Only the placeholder example is.
+.env
+.env.*
+!.env.example
