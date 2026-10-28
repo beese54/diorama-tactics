@@ -14,7 +14,8 @@ export interface Body {
   lean: number;
 }
 
-export type Cue = 'strike' | 'step';
+/** strike: the blade lands (smear, hit-stop, shake, dust); hit: a blow lands on this fighter (flash, shake); step: a foot or a body meets the ground (dust). */
+export type Cue = 'strike' | 'hit' | 'step';
 
 export interface Beat {
   /** The pose to show; with a list, the first one the set has (a pose not drawn yet falls back). */

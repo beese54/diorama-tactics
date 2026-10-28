@@ -88,6 +88,12 @@ class Figure {
     this.body.scale.set(1 / Math.sqrt(s.squash), s.squash, 1);
     this.body.rotation.z = -s.lean;
   }
+
+  /** Lights the picture toward white (0 is its own colours), for the blink of a blow landing; `alpha` fades it. */
+  tint(flash: number, alpha = 1): void {
+    this.mesh.material.color.setScalar(1 + 2.5 * flash);
+    this.mesh.material.opacity = alpha;
+  }
 }
 
 /**
@@ -269,6 +275,20 @@ const WIN: Beat[] = [
   { pose: 'stance', seconds: 0.35 },
 ];
 
+/**
+ * Defeat: a blow lands (a white flash, the shake, a hit-stop), she staggers back in the hurt
+ * pose, drops into the fallen pose with dust, and stays down. The loop fades her out and in.
+ */
+const LOSE: Beat[] = [
+  { pose: 'stance', seconds: 0.6, body: { x: 0, y: 0, squash: 1, lean: 0 }, breathe: true },
+  { pose: 'hurt', seconds: 0.05, body: { x: -30, squash: 0.97, lean: -0.08 }, snap: true, cue: 'hit' },
+  { pose: 'hurt', seconds: 0.08 },
+  { pose: 'hurt', seconds: 0.38, body: { x: -52, squash: 1, lean: -0.04 } },
+  { pose: 'fallen', seconds: 0.06, body: { x: -60, squash: 0.94, lean: 0 }, snap: true, cue: 'step' },
+  { pose: 'fallen', seconds: 0.16, body: { squash: 1 } },
+  { pose: 'fallen', seconds: 1.5 },
+];
+
 /** The video's frames, from scripts/art/anim.py: Veo's clip from frame 36 to 100. */
 const VIDEO_FIRST = 36;
 const VIDEO_LAST = 100;
@@ -283,6 +303,8 @@ interface Actor {
   /** Effects at the strike: the hit-stop's shake and the dust. */
   effects?: boolean;
   follow?: number;
+  /** Fade out at the end of the loop and back in at its start (for a clip that doesn't end where it began). */
+  fade?: boolean;
 }
 
 /** The test's scenes, by `?scene=`: the default sets round 2 beside the attack with motion. */
@@ -292,6 +314,7 @@ const SCENES: Record<string, Actor[]> = {
     { label: 'With motion + effects', at: 0.2, clip: ATTACK, effects: true, follow: FOLLOW.attack },
   ],
   win: [{ label: 'Attack, then victory', at: -0.05, clip: WIN, effects: true, follow: FOLLOW.attack }],
+  lose: [{ label: 'Hit, then defeat', at: -0.05, clip: LOSE, effects: true, fade: true }],
   video: [
     { label: 'Pose images + smears', at: -0.2, clip: ROUND2, follow: FOLLOW.round2 },
     { label: 'Flow video (Veo 3.1)', at: 0.2 },
@@ -301,7 +324,7 @@ const SCENES: Record<string, Actor[]> = {
 /**
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
- * the poses), `win` (the attack, then victory) or `video` (round 2: pose images against Flow's
+ * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat) or `video` (round 2: pose images against Flow's
  * video). Everything loops.
  */
 export async function animTest(): Promise<void> {
@@ -354,11 +377,18 @@ export async function animTest(): Promise<void> {
       }
       const s = sample(a.clip, seconds, has);
       figure.show(poses.frames.get(s.pose)!, s.body);
-      const strike = s.cues.find((c) => c.cue === 'strike');
+      const cue = (name: string) => s.cues.find((c) => c.cue === name);
+      const [strike, hit, step] = [cue('strike'), cue('hit'), cue('step')];
       smear!.update(strike?.age ?? -1, a.follow ?? 0);
-      if (dust) dust.update(strike?.age ?? -1, s.body.x + FRONT_FOOT);
+      // Dust from the latest stamp: the front foot at a strike, under the body when it falls.
+      if (dust) dust.update(step?.age ?? strike?.age ?? -1, s.body.x + (step ? 0 : FRONT_FOOT));
       // The shake: sharp at the blow, gone in a fifth of a second.
-      if (a.effects && strike && strike.age < 0.2) shake = Math.max(shake, 7 * (1 - strike.age / 0.2));
+      const blow = strike ?? hit;
+      if (a.effects && blow && blow.age < 0.2) shake = Math.max(shake, 7 * (1 - blow.age / 0.2));
+      const loop = clipSeconds(a.clip);
+      const t = seconds % loop;
+      const alpha = a.fade ? Math.min(1, t / 0.25, (loop - t) / 0.35) : 1;
+      figure.tint(hit && hit.age < 0.12 ? 1 - hit.age / 0.12 : 0, alpha);
     }
     view.nudge(shake * Math.sin(seconds * 97), shake * 0.6 * Math.sin(seconds * 131));
     view.render();

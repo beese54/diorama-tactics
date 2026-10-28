@@ -659,7 +659,7 @@ Proposed milestones (each one reviewed with screenshots before the next):
 
 ### B2 round 2, r1 (2026-10-28): motion between poses
 - `src/battle/poseClip.ts` (+ tests): a clip is beats, each a pose for a time with a body key (forward, up, squash, lean) eased or snapped to, cues (strike, step) and breathing; poses not drawn yet fall back to a neighbour.
-- `?mode=anim` scenes: `motion` (round 2 beside the attack with motion: dip, eased lunges, stretch and lean into the slash, 0.08 s hit-stop, shake, dust), `win` (attack, then a hop into victory), `video` (round 2's comparison). `BattleView.nudge` for the shake.
+- `?mode=anim` scenes: `motion` (round 2 beside the attack with motion: dip, eased lunges, stretch and lean into the slash, 0.08 s hit-stop, shake, dust), `win` (attack, then a hop into victory), `lose` (a hit with a white flash and shake, the stagger, the fall with dust, held; the loop fades), `video` (round 2's comparison). `BattleView.nudge` for the shake.
 - Flow's first `ready` and `recover` copied the stance, and `run-2` had two swords; prompts reworked to attach only the neighbour pose. `victory` kept.
 - Next: the redone ready, recover and run-2, then the run cycle.
 

@@ -27,11 +27,11 @@ Each version records three things: what changed, the feedback that caused the ch
 ### B2 round 2, r1: motion between the poses
 ![The strike with motion: Aria leaning into the slash, dust at her front foot](battles/b2-anim-test/r1-motion/strike.jpg)
 
-| Round 2 beside the motion version ([MP4](battles/b2-anim-test/r1-motion/motion.mp4)) | Victory ([MP4 of attack, then win](battles/b2-anim-test/r1-motion/win.mp4)) |
-|---|---|
-| ![](battles/b2-anim-test/r1-motion/motion.gif) | ![](battles/b2-anim-test/r1-motion/victory.jpg) |
+| Round 2 beside the motion version ([MP4](battles/b2-anim-test/r1-motion/motion.mp4)) | Victory ([MP4 of attack, then win](battles/b2-anim-test/r1-motion/win.mp4)) | Defeat ([MP4 of hit, then defeat](battles/b2-anim-test/r1-motion/lose.mp4)) |
+|---|---|---|
+| ![](battles/b2-anim-test/r1-motion/motion.gif) | ![](battles/b2-anim-test/r1-motion/victory.jpg) | ![](battles/b2-anim-test/r1-motion/defeat.jpg) |
 
-- **What changed:** the same pose images, now moved in code. She breathes while she stands and dips to gather strength. She eases back into the wind-up, snaps into the slash stretched and leaning in, and holds for a hit-stop while the screen shakes and dust kicks up at her front foot. Then she settles through the follow-through and steps back. A victory pose plays after the attack, with a small hop.
+- **What changed:** the same pose images, now moved in code. She breathes while she stands and dips to gather strength. She eases back into the wind-up, snaps into the slash stretched and leaning in, and holds for a hit-stop while the screen shakes and dust kicks up at her front foot. Then she settles through the follow-through and steps back. A victory pose plays after the attack, with a small hop. A defeat plays the hurt and fallen poses: the blow lands with a white flash, a shake and a short freeze, she staggers back and collapses with dust, and stays down.
 - **Feedback:** "i find the frames too less and we perhaps could have more photos to show different actions so that the movement don't look too rigid."
 - **Decisions:**
   - The stiffness had two causes: too few poses for the big movements, and nothing moving while a pose is held. More poses fix the first, and code motion fixes the second without spending credits.
