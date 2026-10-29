@@ -26,8 +26,8 @@ function env() {
 }
 
 function args(argv) {
-  // 1536x1536 is the largest size in the cheaper price tier (up to about 2.36 MP), and is plenty for poses.
-  const opts = { count: 1, size: '1536x1536', seed: undefined, dry: false, names: [] };
+  // Sizes stay in the cheaper price tier (up to about 2.36 MP): 1536x1536, or 1664x1248 (4:3) for riders.
+  const opts = { count: 1, size: undefined, seed: undefined, dry: false, names: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--count') opts.count = Number(argv[++i]);
@@ -58,6 +58,8 @@ const [promptsFile, ...rest] = process.argv.slice(2);
 const opts = args(rest);
 if (!promptsFile || !opts.names.length) throw new Error('usage: generate.mjs <prompts.json> <pose>... [--count N] [--size 2K] [--seed N] [--dry]');
 const prompts = JSON.parse(readFileSync(promptsFile, 'utf8'));
+// The size: --size, else the prompts file's own (4:3 for riders), else 1536x1536.
+opts.size ??= prompts.size ?? '1536x1536';
 const vars = env();
 const base = (vars.ARK_BASE_URL || 'https://ark.ap-southeast.bytepluses.com/api/v3').replace(/\/$/, '');
 if (!opts.dry) {

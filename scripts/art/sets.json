@@ -1,0 +1,47 @@
+{
+  "about": "Every character's pose set: where each pose comes from in art/source/, for `python scripts/art/anim.py set <name>`, which writes public/battle/anim/<name>-poses/. The first pose is the stance and sets the scale. A source ending :loose drops pieces floating free of the figure (Flow's ghost swords); *<factor> resizes a pose a generator drew smaller or larger than the rest.",
+  "stand": 768,
+  "sets": {
+    "aria": {
+      "stance": "leader-f.jpg",
+      "run": "leader-f-run.jpg",
+      "wind-up": "leader-f-wind-up.jpg:loose",
+      "slash": "leader-f-slash.jpg",
+      "follow": "leader-f-follow-through.jpg",
+      "hurt": "leader-f-hurt.jpg:loose",
+      "fallen": "leader-f-fallen.jpg",
+      "victory": "leader-f-victory.jpg",
+      "run-2": "leader-f-run-2.jpg:loose",
+      "ready": "candidates/leader-f-ready-1.jpg:loose",
+      "recover": "candidates/leader-f-recover-1.jpg:loose"
+    },
+    "bram": {
+      "stance": "bram-stand.jpg",
+      "ready": "candidates/bram-ready-1.jpg",
+      "wind-up": "candidates/bram-wind-up-1.jpg",
+      "slash": "candidates/bram-thrust-1.jpg",
+      "follow": "candidates/bram-follow-through-1.jpg",
+      "recover": "candidates/bram-recover-1.jpg",
+      "run": "candidates/bram-run-1.jpg",
+      "run-2": "candidates/bram-run-2-1.jpg",
+      "hurt": "candidates/bram-hurt-1.jpg",
+      "fallen": "candidates/bram-fallen-1.jpg",
+      "victory": "candidates/bram-victory-1.jpg*1.3"
+    },
+    "edric": {
+      "stance": "edric-stand.jpg",
+      "ready": "candidates/edric-ready-1.jpg",
+      "wind-up": "candidates/edric-wind-up-1.jpg",
+      "slash": "candidates/edric-thrust-1.jpg",
+      "follow": "candidates/edric-follow-through-1.jpg",
+      "recover": "candidates/edric-recover-1.jpg*1.12",
+      "gallop-1": "candidates/edric-gallop-1-1.jpg",
+      "gallop-2": "candidates/edric-gallop-2-1.jpg",
+      "gallop-3": "candidates/edric-gallop-3-1.jpg",
+      "gallop-4": "candidates/edric-gallop-4-1.jpg",
+      "hurt": "candidates/edric-hurt-1.jpg*1.12",
+      "fallen": "candidates/edric-fallen-1.jpg*0.92",
+      "victory": "candidates/edric-victory-1.jpg*1.15"
+    }
+  }
+}

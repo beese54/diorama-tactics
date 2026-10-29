@@ -36,10 +36,18 @@
     {
       "id": "b2-roster-bram",
       "date": "2026-10-29",
-      "commit": "next",
+      "commit": "cc376e1",
       "image": "b2-roster/bram/thrust.jpg",
       "title": "B2 · Bram, the first new leader",
       "note": "Standing image from Google Flow, 10 poses from Seedream; a spear thrust with a straight streak."
+    },
+    {
+      "id": "b2-roster-edric",
+      "date": "2026-10-29",
+      "commit": "next",
+      "image": "b2-roster/edric/thrust.jpg",
+      "title": "B2 · Edric, the first rider",
+      "note": "A mounted knight: horse and rider pose together, a four-pose gallop, a lance charge."
     }
   ]
 }

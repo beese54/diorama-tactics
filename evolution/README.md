@@ -24,6 +24,32 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 roster: Edric, the first rider
+![Edric's lance charge: the horse at full stretch, the lance driven forward with a streak](battles/b2-roster/edric/thrust.jpg)
+
+| All 13 poses | The charge on a 2× screen |
+|---|---|
+| ![](battles/b2-roster/edric/poses.jpg) | ![](battles/b2-roster/edric/thrust-2x.jpg) |
+
+[MP4: the gallop in, the charge and victory, then his defeat](battles/b2-roster/edric/edric.mp4)
+
+- **What changed:** Edric, the player's knight, rides a white warhorse, and the horse poses with him. His standing image comes from Google Flow at 4:3, so horse and rider fit. Seedream made 12 more poses (`scripts/art/prompts/edric.json`):
+  - the lance charge: ready, couching the lance, the thrust, the follow-through, reining back;
+  - a four-pose gallop: stretched, gathered, landing, leading;
+  - the hurt (the horse rears), the fall (the horse goes down on its knees) and the victory (rearing, lance raised).
+- **In the game:**
+  - he stands 1.7 times a soldier's height, and his moves carry 2.2 times further;
+  - the gallop plays its four poses at a steady speed, riding high in the gathered pose, with dust as the hooves land;
+  - the lance leaves the same kind of streak as Bram's spear.
+- **Feedback:** "the knights should ride horses, i want them mounted on horses", and "the horses have to change poses too."
+- **Decisions:**
+  - Each character's height, reach, dust position and run cycle are its own settings in the animation test, so a rider plays the same clips as someone on foot.
+  - Every pose set is now WebP, built from one manifest (`scripts/art/sets.json`, rebuilt with `python scripts/art/anim.py set <name>`). Aria's set went from 3.6 MB to 1.4 MB, Bram's from 4.5 to 1.0 and Edric's from 9.7 to 2.2.
+- **Learned:**
+  - Seedream kept the horse's barding, tassels and plume across all 12 poses.
+  - Rearing poses came out about 12% small, and the fall about 8% large. Per-pose factors in the manifest fix that.
+  - Twelve poses cost about 54¢.
+
 ### B2 roster: Bram, the first new leader
 ![Bram's thrust: the spear driven forward, a white streak behind its tip](battles/b2-roster/bram/thrust.jpg)
 

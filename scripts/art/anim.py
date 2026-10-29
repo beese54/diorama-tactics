@@ -7,12 +7,13 @@ same spot. Pose images come from separate generations, each framed a little diff
 each pose finds its own anchor; video frames share the first frame's anchor (the camera is
 locked, so the figure's own movement is kept).
 
-Writes <out>/<name>.png per frame and <out>/frames.json: [{file, w, h, ax, ay}], plus the
+Writes <out>/<name>.webp per frame (WebP keeps the alpha at a sixth of PNG's size) and <out>/frames.json: [{file, w, h, ax, ay}], plus the
 standing figure's height in pixels ("stand", from the first frame) so the engine can size
 the set against the other art.
 
 Usage:
-  python scripts/art/anim.py poses <out_dir> <stand_height> <name=in.jpg[:loose]>...
+  python scripts/art/anim.py set <name>   (a character from scripts/art/sets.json, into public/battle/anim/<name>-poses/)
+  python scripts/art/anim.py poses <out_dir> <stand_height> <name=in.jpg[:loose][*factor]>...
   python scripts/art/anim.py video <out_dir> <stand_height> <in.mp4> <first> <last> <step>
 A pose marked :loose drops pieces not joined to the figure (Flow's ghost copies of a sword).
 A pose ending *<factor> is drawn that much larger (a generator that zoomed out to fit a raised
@@ -71,8 +72,8 @@ def write(frames: list[tuple[str, np.ndarray, float, float, float]], out: str, s
         x0, x1 = max(0, xs.min() - pad), min(rgba.shape[1], xs.max() + 1 + pad)
         img = Image.fromarray(rgba[y0:y1, x0:x1].clip(0, 255).astype(np.uint8), 'RGBA')
         w, h = max(1, round(img.width * k)), max(1, round(img.height * k))
-        img.resize((w, h), Image.LANCZOS).save(os.path.join(out, f'{name}.png'), optimize=True)
-        meta.append({'file': f'{name}.png', 'w': w, 'h': h, 'ax': round((mid - x0) * k, 1), 'ay': round((feet - y0) * k, 1)})
+        img.resize((w, h), Image.LANCZOS).save(os.path.join(out, f'{name}.webp'), 'WEBP', quality=92, method=6)
+        meta.append({'file': f'{name}.webp', 'w': w, 'h': h, 'ax': round((mid - x0) * k, 1), 'ay': round((feet - y0) * k, 1)})
     with open(os.path.join(out, 'frames.json'), 'w', encoding='utf8') as f:
         json.dump({'stand': stand, 'frames': meta}, f, indent=1)
         f.write('\n')
@@ -103,7 +104,21 @@ def video(out: str, stand: int, src: str, first: int, last: int, step: int) -> N
     write(frames, out, min(1.0, stand / h), stand if stand <= h else h)
 
 
+def from_manifest(name: str) -> None:
+    """Rebuilds one character's set from scripts/art/sets.json, clearing the old frames first."""
+    with open(os.path.join(os.path.dirname(__file__), 'sets.json'), encoding='utf8') as f:
+        manifest = json.load(f)
+    out = os.path.join('public', 'battle', 'anim', f'{name}-poses')
+    if os.path.isdir(out):
+        for old in os.listdir(out):
+            os.remove(os.path.join(out, old))
+    poses(out, manifest['stand'], [f'{pose}={os.path.join("art", "source", src)}' for pose, src in manifest['sets'][name].items()])
+
+
 if __name__ == '__main__':
+    if sys.argv[1] == 'set':
+        from_manifest(sys.argv[2])
+        sys.exit(0)
     kind, out, stand, *rest = sys.argv[1:]
     if kind == 'poses':
         poses(out, int(stand), rest)

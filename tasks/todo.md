@@ -676,3 +676,9 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - anim.py: images scaled by resolution against the first (Flow 2048 vs Seedream 1536), and a per-pose `*factor` (victory `*1.3`, where Seedream zoomed out for the raised spear).
 - generate.mjs retries dropped connections. animTest: `?char=` (aria, bram), an `Effect` per character: Aria's arc smear, Bram's thrust streak.
 
+### Edric (2026-10-29)
+- Flow standing image at 4:3 (`edric-stand.jpg`); 12 Seedream poses at 1664x1248 (`scripts/art/prompts/edric.json`, which sets its own size); about $0.54.
+- `scripts/art/sets.json` lists every set's sources and factors; `anim.py set <name>` rebuilds one, in WebP.
+- animTest characters carry height (Edric 1.7x), reach (2.2x), foot (dust) and a run cycle (Edric's four-pose gallop); `charge` is built from the character's cycle.
+- Still to do for knights in real battles: a formation for 3 large riders.
+

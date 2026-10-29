@@ -27,10 +27,11 @@ interface Frame extends FrameInfo {
   tex: THREE.Texture;
 }
 
-async function loadSet(view: BattleView, name: string): Promise<{ k: number; frames: Map<string, Frame> }> {
+/** Loads a set, scaled so its stance stands `height` design units tall. */
+async function loadSet(view: BattleView, name: string, height = STAND_H): Promise<{ k: number; frames: Map<string, Frame> }> {
   const set = (await (await fetch(`${ART}${name}/frames.json`)).json()) as FrameSet;
   const frames = await Promise.all(set.frames.map(async (f) => ({ ...f, tex: await view.texture(`${ART}${name}/${f.file}`) })));
-  return { k: STAND_H / set.stand, frames: new Map(frames.map((f) => [f.file.replace(/\.\w+$/, ''), f])) };
+  return { k: height / set.stand, frames: new Map(frames.map((f) => [f.file.replace(/\.\w+$/, ''), f])) };
 }
 
 /** A soft round puff for dust, pale and earthy. */
@@ -60,7 +61,7 @@ class Figure {
   private readonly mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly shadow: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
 
-  constructor(readonly k: number) {
+  constructor(readonly k: number, private readonly height = STAND_H) {
     this.mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(1, 1).translate(0.5, 0.5, 0),
       new THREE.MeshBasicMaterial({ transparent: true, depthTest: false }),
@@ -70,7 +71,7 @@ class Figure {
       new THREE.PlaneGeometry(1, 1),
       new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthTest: false }),
     );
-    this.shadow.scale.set(STAND_H * 0.85, STAND_H * 0.12, 1);
+    this.shadow.scale.set(height * 0.85, height * 0.12, 1);
     this.shadow.renderOrder = 1;
     this.body.add(this.mesh);
     this.group.add(this.shadow, this.body);
@@ -88,7 +89,7 @@ class Figure {
     this.body.scale.set(1 / Math.sqrt(s.squash), s.squash, 1);
     this.body.rotation.z = -s.lean;
     // The shadow keeps to the ground under her: it follows her along it, not up off it.
-    this.shadow.position.set(s.x - STAND_H * 0.05, -STAND_H * 0.012, 0);
+    this.shadow.position.set(s.x - this.height * 0.05, -this.height * 0.012, 0);
   }
 
   /** Lights the picture toward white (0 is its own colours), for the blink of a blow landing; `alpha` fades it. */
@@ -286,15 +287,45 @@ class Streak implements Effect {
   }
 }
 
-/** The characters the test can play: their pose set, and the trail their weapon leaves. */
-const CHARACTERS: Record<string, { set: string; effect: () => Effect }> = {
-  aria: { set: 'aria-poses', effect: () => new Smear() },
+/** A run cycle: its poses in turn, seconds per pose, how high the body rides in each, and which poses land a foot (dust). */
+interface RunCycle {
+  poses: string[];
+  stride: number;
+  bob: number[];
+  steps: number[];
+}
+const ON_FOOT: RunCycle = { poses: ['run', 'run-2'], stride: 0.1, bob: [10, 0], steps: [1] };
+
+/** A character the test can play. */
+interface Character {
+  set: string;
+  /** The trail its weapon leaves. */
+  effect: () => Effect;
+  /** How tall its stance stands, in design units: a rider stands far taller than a soldier on foot. */
+  height: number;
+  /** How far its moves carry: a horse's lunge covers more ground than a man's. */
+  reach: number;
+  /** Where its front foot (or hoof) lands ahead of the anchor, in design units, for the dust. */
+  foot: number;
+  run: RunCycle;
+}
+
+const CHARACTERS: Record<string, Character> = {
+  aria: { set: 'aria-poses', effect: () => new Smear(), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
   // The spear's tip in Bram's thrust pose, and the shaft pointing a little up from level.
-  bram: { set: 'bram-poses', effect: () => new Streak(new THREE.Vector2(513, 436), new THREE.Vector2(1, 0.1)) },
+  bram: { set: 'bram-poses', effect: () => new Streak(new THREE.Vector2(513, 436), new THREE.Vector2(1, 0.1)), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
+  // Horse and rider: the lance's tip in the thrust pose, the shaft angled up; a four-pose gallop,
+  // riding high in the gathered pose, the hooves landing in the last two.
+  edric: {
+    set: 'edric-poses',
+    effect: () => new Streak(new THREE.Vector2(543, 598), new THREE.Vector2(1, 0.3)),
+    height: STAND_H * 1.7,
+    reach: 2.2,
+    foot: 190,
+    run: { poses: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], stride: 0.085, bob: [4, 16, 6, 0], steps: [2, 3] },
+  },
 };
 
-/** Where the front foot lands, ahead of the anchor, in design units (for the dust). */
-const FRONT_FOOT = 85;
 
 /** Dust kicked up by a stamp: a few puffs spreading low along the ground and fading. */
 class Dust {
@@ -371,24 +402,26 @@ const VICTORY: Beat[] = [
 /** The attack, then the win. */
 const WIN: Beat[] = [...ATTACK, ...VICTORY, { pose: 'stance', seconds: 0.35 }];
 
-/** The run's stride: seconds per pose, how many poses, and how far back the run starts (design units). */
-const STRIDE = 0.1;
+/** How many run poses the charge plays, and how far back it starts (design units, before the character's reach). */
 const STRIDES = 8;
 const RUN_FROM = -640;
 /**
- * The charge: she runs in from the left, the two run poses in turn at a steady speed, the body
- * bobbing up in the airborne pose with dust at each footfall; she skids into her stance, attacks
- * and wins. The loop fades her out and back in at the start of the run.
+ * The charge: the character runs in from the left on its run cycle at a steady speed, the body
+ * bobbing, with dust at each footfall; it skids into its stance, attacks and wins. The loop fades
+ * it out and back in at the start of the run.
  */
-const CHARGE: Beat[] = [
-  { pose: 'run', seconds: 0.01, body: { x: RUN_FROM, y: 0, squash: 1, lean: 0.05 }, snap: true },
-  ...Array.from({ length: STRIDES }, (_, i): Beat => ({
-    pose: i % 2 ? 'run-2' : 'run',
-    seconds: STRIDE,
-    linear: true,
-    body: { x: RUN_FROM * (1 - (i + 1) / STRIDES), y: i % 2 ? 0 : 10 },
-    ...(i % 2 ? { cue: 'step' as const } : {}),
-  })),
+const charge = (run: RunCycle): Beat[] => [
+  { pose: run.poses[0], seconds: 0.01, body: { x: RUN_FROM, y: 0, squash: 1, lean: 0.05 }, snap: true },
+  ...Array.from({ length: STRIDES }, (_, i): Beat => {
+    const n = i % run.poses.length;
+    return {
+      pose: run.poses[n],
+      seconds: run.stride,
+      linear: true,
+      body: { x: RUN_FROM * (1 - (i + 1) / STRIDES), y: run.bob[n] },
+      ...(run.steps.includes(n) ? { cue: 'step' as const } : {}),
+    };
+  }),
   { pose: 'stance', seconds: 0.2, body: { x: 0, y: 0, squash: 0.96, lean: -0.03 }, cue: 'step' },
   { pose: 'stance', seconds: 0.3, body: { squash: 1, lean: 0 }, breathe: true },
   ...ATTACK.slice(1),
@@ -427,16 +460,16 @@ interface Actor {
   fade?: boolean;
 }
 
-/** The test's scenes, by `?scene=`: the default sets round 2 beside the attack with motion. */
-const SCENES: Record<string, Actor[]> = {
-  motion: [
+/** The test's scenes, by `?scene=`, for a character: the default sets round 2 beside the attack with motion. */
+const SCENES: Record<string, (c: Character) => Actor[]> = {
+  motion: () => [
     { label: 'Round 2: poses only', at: -0.2, clip: ROUND2, follow: FOLLOW.round2 },
     { label: 'With motion + effects', at: 0.2, clip: ATTACK, effects: true, follow: FOLLOW.attack },
   ],
-  win: [{ label: 'Attack, then victory', at: -0.05, clip: WIN, effects: true, follow: FOLLOW.attack }],
-  lose: [{ label: 'Hit, then defeat', at: -0.05, clip: LOSE, effects: true, fade: true }],
-  charge: [{ label: 'Charge, attack, victory', at: 0.05, clip: CHARGE, effects: true, follow: FOLLOW.attack, fade: true }],
-  video: [
+  win: () => [{ label: 'Attack, then victory', at: -0.05, clip: WIN, effects: true, follow: FOLLOW.attack }],
+  lose: () => [{ label: 'Hit, then defeat', at: -0.05, clip: LOSE, effects: true, fade: true }],
+  charge: (c) => [{ label: 'Charge, attack, victory', at: 0.05, clip: charge(c.run), effects: true, follow: FOLLOW.attack, fade: true }],
+  video: () => [
     { label: 'Pose images + smears', at: -0.2, clip: ROUND2, follow: FOLLOW.round2 },
     { label: 'Flow video (Veo 3.1)', at: 0.2 },
   ],
@@ -446,25 +479,25 @@ const SCENES: Record<string, Actor[]> = {
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
  * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat), `charge` (run in, attack, win) or `video` (round 2: pose images against Flow's
- * video). `?char=` picks who plays it (aria or bram; the video is always Aria's). Everything loops.
+ * video). `?char=` picks who plays it (aria, bram or edric; the video is always Aria's). Everything loops.
  */
 export async function animTest(): Promise<void> {
   document.title = 'Animation test · Diorama Tactics';
   document.getElementById('stage')!.hidden = true;
   const view = new BattleView(document.body);
-  const name = new URLSearchParams(location.search).get('scene') ?? 'motion';
-  const actors = SCENES[name] ?? SCENES.motion;
-  const who = CHARACTERS[new URLSearchParams(location.search).get('char') ?? 'aria'] ?? CHARACTERS.aria;
+  const params = new URLSearchParams(location.search);
+  const who = CHARACTERS[params.get('char') ?? 'aria'] ?? CHARACTERS.aria;
+  const actors = (SCENES[params.get('scene') ?? 'motion'] ?? SCENES.motion)(who);
   const needsVideo = actors.some((a) => !a.clip);
   const [poses, video] = await Promise.all([
-    loadSet(view, who.set),
+    loadSet(view, who.set, who.height),
     needsVideo ? loadSet(view, 'aria-video') : null,
     view.setBackdrop(`${ART}../meadow.jpg`),
   ]);
   const has = (pose: string) => poses.frames.has(pose);
 
   const figures = actors.map((a) => {
-    const figure = new Figure(a.clip ? poses.k : video!.k);
+    const figure = new Figure(a.clip ? poses.k : video!.k, a.clip ? who.height : STAND_H);
     const smear = a.clip ? who.effect() : null;
     const dust = a.effects ? new Dust() : null;
     if (smear) {
@@ -498,14 +531,15 @@ export async function animTest(): Promise<void> {
         continue;
       }
       const s = sample(a.clip, seconds, has);
-      figure.show(poses.frames.get(s.pose)!, s.body);
+      // The character's reach stretches every move along the ground (a horse covers more of it).
+      figure.show(poses.frames.get(s.pose)!, { ...s.body, x: s.body.x * who.reach });
       // The latest of each cue this loop (a run fires a step at every footfall).
       const cue = (name: string) => s.cues.filter((c) => c.cue === name).pop();
       const [strike, hit, step] = [cue('strike'), cue('hit'), cue('step')];
       smear!.update(strike?.age ?? -1, a.follow ?? 0);
       // Dust from the latest stamp: at the front foot for a strike, under the body for a step or a fall.
       const stamp = [strike, step].filter((c) => c).sort((p, q) => p!.age - q!.age)[0];
-      if (dust) dust.update(stamp?.age ?? -1, (stamp?.x ?? s.body.x) + (stamp === strike ? FRONT_FOOT : 0));
+      if (dust) dust.update(stamp?.age ?? -1, (stamp?.x ?? s.body.x) * who.reach + (stamp === strike ? who.foot : 0));
       // The shake: sharp at the blow, gone in a fifth of a second.
       const blow = strike ?? hit;
       if (a.effects && blow && blow.age < 0.2) shake = Math.max(shake, 7 * (1 - blow.age / 0.2));
