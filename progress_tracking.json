@@ -162,11 +162,17 @@
       "id": "B2-anim",
       "title": "Round 2 animation test: pose images + code smears against a Flow video, side by side (?mode=anim)",
       "status": "done",
-      "commit": "next"
+      "commit": "071c02f"
     },
     {
       "id": "B2-anim-r1",
       "title": "More poses for Aria (ready, recover, run-2, victory) and code motion between poses",
+      "status": "review",
+      "commit": "071c02f"
+    },
+    {
+      "id": "B2-roster-bram",
+      "title": "Bram: Flow standing image, 10 Seedream poses, the thrust streak, ?char= in the animation test",
       "status": "review",
       "commit": "next"
     }

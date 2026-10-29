@@ -86,12 +86,27 @@ for (const name of opts.names) {
     continue;
   }
   for (let i = 0; i < opts.count; i++) {
-    const res = await fetch(`${base}/images/generations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${vars.ARK_API_KEY}` },
-      body: JSON.stringify(body),
-    });
-    const text = await res.text();
+    // A dropped connection (it happens on long generations) is tried twice more, then the pose is
+    // skipped so the rest of the batch still runs.
+    let res;
+    let text;
+    for (let attempt = 1; attempt <= 3 && !res; attempt++) {
+      try {
+        res = await fetch(`${base}/images/generations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${vars.ARK_API_KEY}` },
+          body: JSON.stringify(body),
+        });
+        text = await res.text();
+      } catch (e) {
+        res = undefined;
+        console.error(`${name}: network error (${e.cause?.code ?? e.message}), attempt ${attempt} of 3`);
+      }
+    }
+    if (!res) {
+      failed++;
+      break;
+    }
     if (!res.ok) {
       failed++;
       console.error(`${name}: HTTP ${res.status}: ${text.slice(0, 600)}`);

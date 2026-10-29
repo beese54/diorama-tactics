@@ -1,14 +1,14 @@
 // Records the round 2 animation test (?mode=anim) frame by frame at 24 fps, for the visual history
 // in evolution/battles/: an MP4 at full resolution, a smaller GIF, and stills of the strike.
 // Needs the dev server (npm run dev) and ffmpeg.
-// Usage: node scripts/anim.mjs <outDir> [scene] [seconds]   (scene: motion, win, lose, charge or video; default motion)
+// Usage: node scripts/anim.mjs <outDir> [scene] [seconds] [char]   (scene: motion, win, lose, charge or video; default motion; char: aria or bram)
 import puppeteer from 'puppeteer-core';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const [outDir, scene = 'motion', secondsArg] = process.argv.slice(2);
+const [outDir, scene = 'motion', secondsArg, char = 'aria'] = process.argv.slice(2);
 if (!outDir) throw new Error('usage: anim.mjs <outDir> [scene] [seconds]');
 mkdirSync(outDir, { recursive: true });
 const FPS = 24;
@@ -20,7 +20,7 @@ async function open(dpr) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: dpr });
-  await page.goto(`http://localhost:5173/?mode=anim&scene=${scene}`, { waitUntil: 'networkidle0' });
+  await page.goto(`http://localhost:5173/?mode=anim&scene=${scene}&char=${char}`, { waitUntil: 'networkidle0' });
   await page.waitForFunction(() => window.__anim?.ready, { timeout: 60000 });
   await page.evaluate(() => document.fonts.ready);
   return { page, errors };

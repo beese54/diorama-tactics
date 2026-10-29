@@ -24,6 +24,26 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 roster: Bram, the first new leader
+![Bram's thrust: the spear driven forward, a white streak behind its tip](battles/b2-roster/bram/thrust.jpg)
+
+| All 11 poses | The thrust on a 2× screen |
+|---|---|
+| ![](battles/b2-roster/bram/poses.jpg) | ![](battles/b2-roster/bram/thrust-2x.jpg) |
+
+[MP4: his charge, attack and victory, then his defeat](battles/b2-roster/bram/bram.mp4)
+
+- **What changed:** Bram, the player's spear leader, is the first character made the roster's way: his standing image from Google Flow, from the prompt in `scripts/art/prompts/standing.md`, and his other 10 poses from Seedream 5.0 Pro through ModelArk (`scripts/art/prompts/bram.json`), all from that one image. A spear attacks with a thrust, so his trail is a straight streak back along the shaft with a speed line either side, not Aria's arc. `?mode=anim&scene=charge&char=bram` plays him.
+- **Feedback:** "let's go with bram first." The roster split was the user's call: Flow for the standing image, Seedream for the poses.
+- **Decisions:**
+  - Every pose takes the standing image as its only reference, so one image fixes the character's look.
+  - Bram's colours changed from green to bronze and charcoal, because green on a character is keyed out with the background.
+- **Learned:**
+  - Seedream draws at 1536 and Flow at 2048, so the processing script now scales each image by its resolution against the standing image. Without that, every Seedream pose came out a quarter smaller.
+  - Seedream zoomed out to fit his raised spear in the victory pose. A per-pose size factor (`*1.3` in `scripts/art/anim.py`) brings him back to scale without paying for a regeneration.
+  - One request in ten dropped its connection. The generator now retries it twice and carries on with the rest.
+  - Ten poses cost about 45¢.
+
 ### B2 round 2, r1: motion between the poses
 ![The strike with motion: Aria leaning into the slash, dust at her front foot](battles/b2-anim-test/r1-motion/strike.jpg)
 

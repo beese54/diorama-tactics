@@ -28,10 +28,18 @@
     {
       "id": "b2-anim-r1",
       "date": "2026-10-28",
-      "commit": "next",
+      "commit": "071c02f",
       "image": "b2-anim-test/r1-motion/strike.jpg",
       "title": "B2 r1 · Motion between poses",
       "note": "The same poses with breathing, eased lunges, a hit-stop, screen shake and dust; a victory pose."
+    },
+    {
+      "id": "b2-roster-bram",
+      "date": "2026-10-29",
+      "commit": "next",
+      "image": "b2-roster/bram/thrust.jpg",
+      "title": "B2 · Bram, the first new leader",
+      "note": "Standing image from Google Flow, 10 poses from Seedream; a spear thrust with a straight streak."
     }
   ]
 }

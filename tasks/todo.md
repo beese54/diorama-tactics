@@ -671,3 +671,8 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - Bram's green and Dela's teal changed to bronze/charcoal and rose pink/white: green is keyed out with the background.
 - Engine to do for mounted knights: a wider frame (4:3), their own standing height, a 4-pose gallop, a formation for 3 large soldiers.
 
+### Bram (2026-10-29)
+- Flow standing image `bram-stand.jpg`; Seedream poses from `scripts/art/prompts/bram.json` (10 at 1536, about $0.45); set `public/battle/anim/bram-poses/`.
+- anim.py: images scaled by resolution against the first (Flow 2048 vs Seedream 1536), and a per-pose `*factor` (victory `*1.3`, where Seedream zoomed out for the raised spear).
+- generate.mjs retries dropped connections. animTest: `?char=` (aria, bram), an `Effect` per character: Aria's arc smear, Bram's thrust streak.
+

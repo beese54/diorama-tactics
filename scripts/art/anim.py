@@ -15,6 +15,8 @@ Usage:
   python scripts/art/anim.py poses <out_dir> <stand_height> <name=in.jpg[:loose]>...
   python scripts/art/anim.py video <out_dir> <stand_height> <in.mp4> <first> <last> <step>
 A pose marked :loose drops pieces not joined to the figure (Flow's ghost copies of a sword).
+A pose ending *<factor> is drawn that much larger (a generator that zoomed out to fit a raised
+weapon draws the figure smaller than its other poses).
 """
 import json
 import os
@@ -54,19 +56,23 @@ def anchor(alpha: np.ndarray) -> tuple[float, float, float]:
     return float(feet), float(np.median(xs[band])), float(h)
 
 
-def write(frames: list[tuple[str, np.ndarray, float, float]], out: str, scale: float, stand: float) -> None:
-    """Crops each frame to its figure, scales it, and records where its anchor lands."""
+def write(frames: list[tuple[str, np.ndarray, float, float, float]], out: str, scale: float, stand: float) -> None:
+    """Crops each frame to its figure, scales it, and records where its anchor lands. Frames
+    made at another resolution than the first (Flow at 2048, Seedream at 1536) are scaled by
+    the ratio, so a character drawn at the same share of the frame comes out the same size."""
     os.makedirs(out, exist_ok=True)
     meta = []
-    for name, rgba, feet, mid in frames:
+    width = frames[0][1].shape[1]
+    for name, rgba, feet, mid, factor in frames:
+        k = scale * width / rgba.shape[1] * factor
         ys, xs = np.nonzero(rgba[..., 3] > 8)
         pad = 4
         y0, y1 = max(0, ys.min() - pad), min(rgba.shape[0], ys.max() + 1 + pad)
         x0, x1 = max(0, xs.min() - pad), min(rgba.shape[1], xs.max() + 1 + pad)
         img = Image.fromarray(rgba[y0:y1, x0:x1].clip(0, 255).astype(np.uint8), 'RGBA')
-        w, h = max(1, round(img.width * scale)), max(1, round(img.height * scale))
+        w, h = max(1, round(img.width * k)), max(1, round(img.height * k))
         img.resize((w, h), Image.LANCZOS).save(os.path.join(out, f'{name}.png'), optimize=True)
-        meta.append({'file': f'{name}.png', 'w': w, 'h': h, 'ax': round((mid - x0) * scale, 1), 'ay': round((feet - y0) * scale, 1)})
+        meta.append({'file': f'{name}.png', 'w': w, 'h': h, 'ax': round((mid - x0) * k, 1), 'ay': round((feet - y0) * k, 1)})
     with open(os.path.join(out, 'frames.json'), 'w', encoding='utf8') as f:
         json.dump({'stand': stand, 'frames': meta}, f, indent=1)
         f.write('\n')
@@ -77,12 +83,13 @@ def poses(out: str, stand: int, specs: list[str]) -> None:
     frames, scale = [], None
     for spec in specs:
         name, src = spec.split('=', 1)
+        src, _, factor = src.partition('*')
         loose = src.endswith(':loose')
         rgba = matte(src.removesuffix(':loose'), loose)
         feet, mid, h = anchor(rgba[..., 3])
         # The first pose is the stance: it sets the scale for the whole set.
         scale = scale or stand / h
-        frames.append((name, rgba, feet, mid))
+        frames.append((name, rgba, feet, mid, float(factor or 1)))
     write(frames, out, scale, stand)
 
 
@@ -92,7 +99,7 @@ def video(out: str, stand: int, src: str, first: int, last: int, step: int) -> N
         mattes = [(i, matte(os.path.join(tmp, f'f{i + 1:03d}.png'), False)) for i in range(first, last + 1, step)]
     # The first frame is the stance: its anchor and height hold for every frame.
     feet, mid, h = anchor(mattes[0][1][..., 3])
-    frames = [(f'f{i:03d}', rgba, feet, mid) for i, rgba in mattes]
+    frames = [(f'f{i:03d}', rgba, feet, mid, 1.0) for i, rgba in mattes]
     write(frames, out, min(1.0, stand / h), stand if stand <= h else h)
 
 

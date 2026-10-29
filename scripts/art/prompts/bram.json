@@ -1,0 +1,56 @@
+{
+  "about": "Pose prompts for Bram, the player's spear leader. {pose} in the base is replaced by a pose's text. Every pose takes his standing image (art/source/bram-stand.jpg) as its one reference. A spear attacks with a thrust: ready, wind-up, thrust, follow-through, recover.",
+  "base": "The exact same character as the reference: same face, short dark brown hair, short dark beard, bronze and charcoal grey riveted armour, short white scarf, blue sash across his chest, long spear with a leaf-shaped steel blade, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. He holds exactly one spear: no second spear, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, spear included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "bram-ready",
+      "refs": ["bram-stand.jpg"],
+      "pose": "sinking into a low crouch, knees bent, the spear held level at hip height in both hands with the blade pointing forward, gathering strength"
+    },
+    "wind-up": {
+      "out": "bram-wind-up",
+      "refs": ["bram-stand.jpg"],
+      "pose": "drawing the spear far back for a thrust: his rear hand pulled back past his hip, his front hand forward on the shaft, body twisted back, weight on his back foot, the blade still pointing forward at chest height"
+    },
+    "thrust": {
+      "out": "bram-thrust",
+      "refs": ["bram-stand.jpg"],
+      "pose": "a powerful lunging thrust: front knee deeply bent, back leg straight, body leaning forward, both arms fully extended, the spear driven straight forward at chest height"
+    },
+    "follow-through": {
+      "out": "bram-follow-through",
+      "refs": ["bram-stand.jpg"],
+      "pose": "the end of the thrust: leaning far forward over his front knee, the spear at full reach pointing forward and slightly down, scarf swinging forward"
+    },
+    "recover": {
+      "out": "bram-recover",
+      "refs": ["bram-stand.jpg"],
+      "pose": "pulling back out of the lunge: rising, weight shifting onto his back foot, the spear drawn back toward his body and still pointing forward"
+    },
+    "run": {
+      "out": "bram-run",
+      "refs": ["bram-stand.jpg"],
+      "pose": "running to the right mid-stride, one foot off the ground, the spear held low at his side pointing forward, scarf trailing behind"
+    },
+    "run-2": {
+      "out": "bram-run-2",
+      "refs": ["bram-stand.jpg"],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the spear held low at his side pointing forward, scarf trailing behind"
+    },
+    "hurt": {
+      "out": "bram-hurt",
+      "refs": ["bram-stand.jpg"],
+      "pose": "recoiling backward from a hit, head turned away, eyes shut in pain, one arm raised, the spear lowered, staggering"
+    },
+    "fallen": {
+      "out": "bram-fallen",
+      "refs": ["bram-stand.jpg"],
+      "pose": "fallen to one knee, slumped forward with his head down, defeated, the spear lying on the ground beside him"
+    },
+    "victory": {
+      "out": "bram-victory",
+      "refs": ["bram-stand.jpg"],
+      "pose": "standing tall in triumph, the spear raised high above his head in his right hand, his left fist clenched, a confident shout"
+    }
+  }
+}

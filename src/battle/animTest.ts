@@ -99,12 +99,19 @@ class Figure {
   }
 }
 
+/** A weapon's trail at the strike: drawn on the body, timed from the strike cue. */
+interface Effect {
+  readonly mesh: THREE.Object3D;
+  /** Draws the effect `age` seconds after the strike; `follow` is when the follow-through begins. */
+  update(age: number, follow: number): void;
+}
+
 /**
  * A sword smear, drawn in code: a crescent swept around a pivot from the blade's old place to
  * its new one, thick and bright at the blade, thin and fading at the tail. Angles are radians
  * (counter-clockwise from the right), lengths in the figure's pose pixels.
  */
-class Smear {
+class Smear implements Effect {
   readonly mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
   readonly u = {
     uPivot: { value: new THREE.Vector2() },
@@ -200,6 +207,91 @@ const polar = (tip: THREE.Vector2) => {
   return { a: Math.atan2(d.y, d.x), r: d.length() };
 };
 const SWING_POLAR = { windUp: polar(SWING.windUp), slash: polar(SWING.slash), follow: polar(SWING.follow) };
+
+/**
+ * A thrust's streak, drawn in code: a tapered white streak running back along the spear from its
+ * tip, with two thin speed lines beside it. It flashes out with the thrust, holds through the
+ * hit-stop, then its tail draws in toward the tip as it fades. Lengths in the figure's pose pixels.
+ */
+class Streak implements Effect {
+  readonly mesh = new THREE.Group();
+  private readonly u = { uTail: { value: 0 }, uFade: { value: 0 } };
+
+  /** `tip`: the spear's tip in the thrust pose (y up, from the anchor); `dir`: the way the shaft points. */
+  constructor(tip: THREE.Vector2, dir: THREE.Vector2) {
+    const d = dir.clone().normalize();
+    const n = new THREE.Vector2(-d.y, d.x);
+    const material = new THREE.ShaderMaterial({
+      uniforms: this.u,
+      transparent: true,
+      depthTest: false,
+      side: THREE.DoubleSide,
+      vertexShader: /* glsl */ `
+        attribute float t;
+        attribute float side;
+        varying float vT;
+        varying float vSide;
+        void main() {
+          vT = t;
+          vSide = side;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: /* glsl */ `
+        uniform float uTail, uFade;
+        varying float vT;
+        varying float vSide;
+        void main() {
+          float core = 1.0 - pow(abs(vSide), 3.0);
+          float alpha = smoothstep(uTail, uTail + 0.25, vT) * core * 0.95 * uFade;
+          vec3 colour = mix(vec3(0.62, 0.84, 1.0), vec3(1.0), core);
+          gl_FragColor = vec4(colour, alpha);
+        }`,
+    });
+    // [offset from the shaft, width at the tip, length]: the streak, and a speed line either side.
+    for (const [offset, width, length] of [[0, 40, 440], [52, 7, 300], [-46, 7, 260]]) {
+      const SEG = 24;
+      const position: number[] = [];
+      const t: number[] = [];
+      const side: number[] = [];
+      const index: number[] = [];
+      for (let i = 0; i <= SEG; i++) {
+        const k = i / SEG;
+        const half = (width / 2) * Math.pow(k, 0.6);
+        const c = tip.clone().addScaledVector(d, -length * (1 - k)).addScaledVector(n, offset);
+        for (const s of [-1, 1]) {
+          position.push(c.x + n.x * half * s, c.y + n.y * half * s, 0);
+          t.push(k);
+          side.push(s);
+        }
+        if (i < SEG) index.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+      g.setAttribute('t', new THREE.Float32BufferAttribute(t, 1));
+      g.setAttribute('side', new THREE.Float32BufferAttribute(side, 1));
+      g.setIndex(index);
+      const m = new THREE.Mesh(g, material);
+      m.renderOrder = 3;
+      m.frustumCulled = false;
+      this.mesh.add(m);
+    }
+  }
+
+  update(age: number, follow: number): void {
+    const after = age - follow;
+    this.mesh.visible = age >= 0 && after < 0.3;
+    if (!this.mesh.visible) return;
+    this.u.uTail.value = Math.min(1, Math.max(0, after / 0.25));
+    this.u.uFade.value = 1 - smooth(Math.min(1, Math.max(0, (after - 0.04) / 0.2)));
+  }
+}
+
+/** The characters the test can play: their pose set, and the trail their weapon leaves. */
+const CHARACTERS: Record<string, { set: string; effect: () => Effect }> = {
+  aria: { set: 'aria-poses', effect: () => new Smear() },
+  // The spear's tip in Bram's thrust pose, and the shaft pointing a little up from level.
+  bram: { set: 'bram-poses', effect: () => new Streak(new THREE.Vector2(513, 436), new THREE.Vector2(1, 0.1)) },
+};
 
 /** Where the front foot lands, ahead of the anchor, in design units (for the dust). */
 const FRONT_FOOT = 85;
@@ -354,7 +446,7 @@ const SCENES: Record<string, Actor[]> = {
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
  * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat), `charge` (run in, attack, win) or `video` (round 2: pose images against Flow's
- * video). Everything loops.
+ * video). `?char=` picks who plays it (aria or bram; the video is always Aria's). Everything loops.
  */
 export async function animTest(): Promise<void> {
   document.title = 'Animation test · Diorama Tactics';
@@ -362,9 +454,10 @@ export async function animTest(): Promise<void> {
   const view = new BattleView(document.body);
   const name = new URLSearchParams(location.search).get('scene') ?? 'motion';
   const actors = SCENES[name] ?? SCENES.motion;
+  const who = CHARACTERS[new URLSearchParams(location.search).get('char') ?? 'aria'] ?? CHARACTERS.aria;
   const needsVideo = actors.some((a) => !a.clip);
   const [poses, video] = await Promise.all([
-    loadSet(view, 'aria-poses'),
+    loadSet(view, who.set),
     needsVideo ? loadSet(view, 'aria-video') : null,
     view.setBackdrop(`${ART}../meadow.jpg`),
   ]);
@@ -372,7 +465,7 @@ export async function animTest(): Promise<void> {
 
   const figures = actors.map((a) => {
     const figure = new Figure(a.clip ? poses.k : video!.k);
-    const smear = a.clip ? new Smear() : null;
+    const smear = a.clip ? who.effect() : null;
     const dust = a.effects ? new Dust() : null;
     if (smear) {
       figure.body.add(smear.mesh);
