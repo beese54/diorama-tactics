@@ -42,6 +42,19 @@
       "hurt": "candidates/edric-hurt-1.jpg*1.12",
       "fallen": "candidates/edric-fallen-1.jpg*0.92",
       "victory": "candidates/edric-victory-1.jpg*1.15"
+    },
+    "corin": {
+      "stance": "corin-stand.jpg",
+      "ready": "candidates/corin-ready-1.jpg*0.87",
+      "wind-up": "candidates/corin-wind-up-1.jpg*0.87",
+      "slash": "candidates/corin-slash-1.jpg*0.87",
+      "follow": "candidates/corin-follow-through-1.jpg*0.87",
+      "recover": "candidates/corin-recover-1.jpg*0.87",
+      "run": "candidates/corin-run-1.jpg*0.87",
+      "run-2": "candidates/corin-run-2-1.jpg*0.87",
+      "hurt": "candidates/corin-hurt-1.jpg*0.87",
+      "fallen": "candidates/corin-fallen-1.jpg*0.87",
+      "victory": "candidates/corin-victory-2.jpg*1.05"
     }
   }
 }

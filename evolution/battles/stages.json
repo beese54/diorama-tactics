@@ -44,10 +44,18 @@
     {
       "id": "b2-roster-edric",
       "date": "2026-10-29",
-      "commit": "next",
+      "commit": "90be658",
       "image": "b2-roster/edric/thrust.jpg",
       "title": "B2 · Edric, the first rider",
       "note": "A mounted knight: horse and rider pose together, a four-pose gallop, a lance charge."
+    },
+    {
+      "id": "b2-roster-corin",
+      "date": "2026-10-29",
+      "commit": "next",
+      "image": "b2-roster/corin/chop.jpg",
+      "title": "B2 · Corin, the axe",
+      "note": "An overhead chop with its own arc; one pose regenerated, sizes matched to the stance."
     }
   ]
 }

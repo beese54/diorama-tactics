@@ -114,13 +114,19 @@ interface Effect {
  */
 class Smear implements Effect {
   readonly mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>;
+  private readonly polar: Record<'windUp' | 'slash' | 'follow', { a: number; r: number }>;
   readonly u = {
     uPivot: { value: new THREE.Vector2() },
     uA0: { value: 0 }, uA1: { value: 0 }, uR0: { value: 0 }, uR1: { value: 0 },
     uWidth: { value: 0 }, uTail: { value: 0 }, uFade: { value: 0 },
   };
 
-  constructor() {
+  constructor(private readonly swing: Swing) {
+    const polar = (tip: THREE.Vector2) => {
+      const d = tip.clone().sub(swing.pivot);
+      return { a: Math.atan2(d.y, d.x), r: d.length() };
+    };
+    this.polar = { windUp: polar(swing.windUp), slash: polar(swing.slash), follow: polar(swing.follow) };
     const SEG = 64;
     const t: number[] = [];
     const edge: number[] = [];
@@ -184,30 +190,31 @@ class Smear implements Effect {
     if (!this.mesh.visible) return;
     const run = Math.min(1, Math.max(0, after / 0.08));
     const u = this.u;
-    u.uPivot.value.copy(SWING.pivot);
-    u.uA0.value = SWING_POLAR.windUp.a;
-    u.uR0.value = SWING_POLAR.windUp.r;
-    u.uA1.value = THREE.MathUtils.lerp(SWING_POLAR.slash.a, SWING_POLAR.follow.a, run);
-    u.uR1.value = THREE.MathUtils.lerp(SWING_POLAR.slash.r, SWING_POLAR.follow.r, run);
+    const { windUp, slash, follow: end } = this.polar;
+    u.uPivot.value.copy(this.swing.pivot);
+    u.uA0.value = windUp.a;
+    u.uR0.value = windUp.r;
+    u.uA1.value = THREE.MathUtils.lerp(slash.a, end.a, run);
+    u.uR1.value = THREE.MathUtils.lerp(slash.r, end.r, run);
     u.uWidth.value = 170;
     u.uTail.value = Math.min(1, Math.max(0, after + 0.07) / 0.3);
     u.uFade.value = 1 - smooth(Math.min(1, Math.max(0, (after - 0.05) / 0.22)));
   }
 }
 
-/** The swing in pose pixels (y up, from the anchor): the pivot by the shoulders and the blade tip
- * in the wind-up, slash and follow-through, measured on the keyed poses. */
-const SWING = {
-  pivot: new THREE.Vector2(120, 560),
-  windUp: new THREE.Vector2(-164, 792),
-  slash: new THREE.Vector2(501, 185),
-  follow: new THREE.Vector2(440, 4),
-};
-const polar = (tip: THREE.Vector2) => {
-  const d = tip.clone().sub(SWING.pivot);
-  return { a: Math.atan2(d.y, d.x), r: d.length() };
-};
-const SWING_POLAR = { windUp: polar(SWING.windUp), slash: polar(SWING.slash), follow: polar(SWING.follow) };
+/** A swing in pose pixels (y up, from the anchor): the pivot by the shoulders and the weapon's
+ * outer edge in the wind-up, slash and follow-through, measured on the keyed poses. */
+interface Swing {
+  pivot: THREE.Vector2;
+  windUp: THREE.Vector2;
+  slash: THREE.Vector2;
+  follow: THREE.Vector2;
+}
+const v = (x: number, y: number) => new THREE.Vector2(x, y);
+/** Aria's sword: from over her right shoulder, down to the blade's tip low in front. */
+const ARIA_SWING: Swing = { pivot: v(120, 560), windUp: v(-164, 792), slash: v(501, 185), follow: v(440, 4) };
+/** Corin's great axe: an overhead chop, from the axe head behind his head down to it low in front. */
+const CORIN_SWING: Swing = { pivot: v(80, 470), windUp: v(-202, 631), slash: v(386, 312), follow: v(391, 127) };
 
 /**
  * A thrust's streak, drawn in code: a tapered white streak running back along the spear from its
@@ -311,9 +318,10 @@ interface Character {
 }
 
 const CHARACTERS: Record<string, Character> = {
-  aria: { set: 'aria-poses', effect: () => new Smear(), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
+  aria: { set: 'aria-poses', effect: () => new Smear(ARIA_SWING), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
   // The spear's tip in Bram's thrust pose, and the shaft pointing a little up from level.
   bram: { set: 'bram-poses', effect: () => new Streak(new THREE.Vector2(513, 436), new THREE.Vector2(1, 0.1)), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
+  corin: { set: 'corin-poses', effect: () => new Smear(CORIN_SWING), height: STAND_H, reach: 1, foot: 90, run: ON_FOOT },
   // Horse and rider: the lance's tip in the thrust pose, the shaft angled up; a four-pose gallop,
   // riding high in the gathered pose, the hooves landing in the last two.
   edric: {
@@ -479,7 +487,7 @@ const SCENES: Record<string, (c: Character) => Actor[]> = {
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
  * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat), `charge` (run in, attack, win) or `video` (round 2: pose images against Flow's
- * video). `?char=` picks who plays it (aria, bram or edric; the video is always Aria's). Everything loops.
+ * video). `?char=` picks who plays it (aria, bram, corin or edric; the video is always Aria's). Everything loops.
  */
 export async function animTest(): Promise<void> {
   document.title = 'Animation test · Diorama Tactics';

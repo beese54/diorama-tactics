@@ -180,6 +180,12 @@
       "id": "B2-roster-edric",
       "title": "Edric: Flow standing image (4:3), 12 Seedream poses with the horse, gallop cycle, rider height and reach; sets in WebP from scripts/art/sets.json",
       "status": "review",
+      "commit": "90be658"
+    },
+    {
+      "id": "B2-roster-corin",
+      "title": "Corin: Flow standing image, 10 Seedream poses (victory regenerated), the axe arc",
+      "status": "review",
       "commit": "next"
     }
   ],

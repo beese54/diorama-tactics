@@ -24,6 +24,25 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 roster: Corin, the axe
+![Corin's overhead chop: the axe brought down in front of him, its arc over his head](battles/b2-roster/corin/chop.jpg)
+
+| All 11 poses | The chop on a 2× screen |
+|---|---|
+| ![](battles/b2-roster/corin/poses.jpg) | ![](battles/b2-roster/corin/chop-2x.jpg) |
+
+[MP4: his charge, chop and victory, then his defeat](battles/b2-roster/corin/corin.mp4)
+
+- **What changed:** Corin, the player's axe leader, came from a Flow standing image plus 10 Seedream poses (`scripts/art/prompts/corin.json`). His attack is an overhead chop. Its arc comes from his own measured swing, from the axe head behind his head down to it low in front. The smear now takes each character's swing, so Aria and Corin each have their own.
+- **Feedback:** the roster plan, approved: Flow for the standing image, Seedream for the poses.
+- **Decisions:**
+  - Seedream drew Corin about 15% larger than his Flow stance in every pose, so all of his Seedream poses take `*0.87` in `scripts/art/sets.json`.
+  - The first victory cut his legs off at the frame's edge, because Seedream framed the raised axe. It was regenerated once, with the prompt asking for him to be drawn smaller so everything fits, from the axe's top down to his boots.
+- **Learned:**
+  - The fur mantle keyed cleanly, with no green fringe.
+  - Each generator frames a character a little differently, so every new set needs its stance overlay checked before it goes in.
+  - Eleven images cost about 50¢.
+
 ### B2 roster: Edric, the first rider
 ![Edric's lance charge: the horse at full stretch, the lance driven forward with a streak](battles/b2-roster/edric/thrust.jpg)
 

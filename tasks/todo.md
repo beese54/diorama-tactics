@@ -682,3 +682,8 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - animTest characters carry height (Edric 1.7x), reach (2.2x), foot (dust) and a run cycle (Edric's four-pose gallop); `charge` is built from the character's cycle.
 - Still to do for knights in real battles: a formation for 3 large riders.
 
+### Corin (2026-10-29)
+- Flow `corin-stand.jpg`; Seedream poses from `scripts/art/prompts/corin.json` (victory regenerated: the first cut his legs off); all Seedream poses `*0.87`, the new victory `*1.05`.
+- `Smear` takes a `Swing` per character (ARIA_SWING, CORIN_SWING); `?char=corin`.
+- Habit for every set: overlay each pose on the stance to match sizes before building it.
+
