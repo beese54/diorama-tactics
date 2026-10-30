@@ -709,7 +709,7 @@ Proposed milestones (each one reviewed with screenshots before the next):
 ### B3 plan (approved 2026-10-30): the battle scene, driven by the rules
 B2's unbuilt scripted battle is folded in: the scene plays what `ClashSim` decides from the start.
 - [x] 1. Share the fighter code: `src/battle/cast.ts` (Figure, effects, clips, the 24 characters); animTest keeps its scenes. Strike frame pixel-identical.
-- [ ] 2. Real squads standing on the field (`?mode=battle&a=<class>&d=<class>`): leaders by roster name, soldiers alternating man and woman, knights a head and 3 riders, the enemy's soldiers recoloured red in the shader. Waits for the user's look.
+- [x] 2. Real squads standing on the field (`?mode=battle&a=<class>&d=<class>`): leaders by roster name, soldiers alternating man and woman, knights a head and 3 riders, the enemy's soldiers recoloured red in the shader. Waits for the user's look.
 - [ ] 3. `src/battle/script.ts`: ClashSim events to timed actions (pure); Vitest against `resolveClash` over 50 seeds and every class pair.
 - [ ] 4. `src/battle/Director.ts` plays it; the HUD updates live; Space skips.
 - [ ] 5. Stance (A / S / D, from the next beat) and the skill gauge (`src/game/gauge.ts`); check.mjs stance test.

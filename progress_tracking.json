@@ -204,6 +204,12 @@
       "id": "B2-roster-soldiers",
       "title": "Twelve soldiers (man and woman per class): ten Flow standing images, 124 Seedream poses (3 regenerated), swings, streaks, arrows, azure bolts; generator timeout; keyer drops teal glow fringes",
       "status": "review",
+      "commit": "308dddc"
+    },
+    {
+      "id": "B3-squads",
+      "title": "B3 step 2: real squads in the battle scene (?mode=battle&a=&d=): leaders by roster name, soldiers man and woman in turn, the enemy's soldiers red in the shader, a mounted formation",
+      "status": "review",
       "commit": "next"
     }
   ],

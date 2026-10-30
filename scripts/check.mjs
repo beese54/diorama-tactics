@@ -58,10 +58,14 @@ await shot('02-hover');
 
 // Height-aware picking: from three camera poses, aim at the top of a low tile behind
 // the mountain. The pick must be what you can see — that tile, or a taller column in front.
+/** Waits for the page to draw `n` frames: the map picks the hovered tile and settles the camera in its frame loop,
+ * which runs slowly under software rendering (a big themed map takes several hundred milliseconds a frame). */
+const frames = (n = 2) => page.evaluate((n) => new Promise((r) => { const f = () => (--n > 0 ? requestAnimationFrame(f) : r()); requestAnimationFrame(f); }), n);
 const hoverAt = async (x, y) => {
+  await frames();
   const pos = await page.evaluate((x, y) => window.__map.tileScreenPos(x, y), x, y);
   await page.mouse.move(pos.x, pos.y);
-  await new Promise((r) => setTimeout(r, 150));
+  await frames();
   return page.evaluate(() => {
     const h = window.__map.hovered();
     return h && { x: h.x, y: h.y, height: h.height, terrain: h.terrain };
@@ -356,10 +360,10 @@ const army = await page.evaluate(() => window.__map.units());
 check('skirmish: five a side on the board', army.filter((u) => u.side === 'player').length === 5 && army.filter((u) => u.side === 'enemy').length === 5, JSON.stringify(army));
 const clickTile = async (x, y) => {
   await page.evaluate((x, y) => window.__map.setPose(45, 55, 1.6, x, y), x, y);
-  await new Promise((r) => setTimeout(r, 300));
+  await frames();
   const pos = await page.evaluate((x, y) => window.__map.tileScreenPos(x, y), x, y);
   await page.mouse.click(pos.x, pos.y);
-  await new Promise((r) => setTimeout(r, 300));
+  await frames();
 };
 const mover = army[0];
 await clickTile(mover.x, mover.y);

@@ -58,6 +58,47 @@ export function dustTexture(): THREE.CanvasTexture {
 }
 
 /**
+ * Turns a sprite material's blue cloth crimson, for the enemy's soldiers: the rule of `redden` in
+ * scripts/art/key.py (hues from cyan to violet with real colour in them swing to red, a little
+ * richer and darker), with soft edges so the change doesn't band. Steel, skin, hair and leather
+ * keep their colours.
+ */
+export function redden(material: THREE.MeshBasicMaterial): void {
+  material.customProgramCacheKey = () => 'redden';
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        'void main() {',
+        /* glsl */ `
+        vec3 rgb2hsv(vec3 c) {
+          vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+          vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+          vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+          float d = q.x - min(q.w, q.y);
+          return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-10)), d / (q.x + 1e-10), q.x);
+        }
+        vec3 hsv2rgb(vec3 c) {
+          vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+          return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
+        }
+        void main() {`,
+      )
+      .replace(
+        '#include <map_fragment>',
+        /* glsl */ `#include <map_fragment>
+        {
+          // The rule works on the picture's own (sRGB) colours.
+          vec3 srgb = pow(max(diffuseColor.rgb, 0.0), vec3(1.0 / 2.2));
+          vec3 hsv = rgb2hsv(srgb);
+          float blue = smoothstep(0.50, 0.54, hsv.x) * (1.0 - smoothstep(0.73, 0.77, hsv.x)) * smoothstep(0.22, 0.32, hsv.y);
+          vec3 red = hsv2rgb(vec3(fract(hsv.x - 0.62 + 0.995), min(1.0, hsv.y * 1.05), hsv.z * 0.92));
+          diffuseColor.rgb = pow(mix(srgb, red, blue), vec3(2.2));
+        }`,
+      );
+  };
+}
+
+/**
  * A fighter whose picture changes from frame to frame. The group stands on the ground with its
  * shadow; the body inside it carries the picture (and the smear), and leans and squashes about
  * the feet.
@@ -68,11 +109,14 @@ export class Figure {
   private readonly mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly shadow: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
 
-  constructor(readonly k: number, private readonly height = STAND_H) {
-    this.mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1, 1).translate(0.5, 0.5, 0),
-      new THREE.MeshBasicMaterial({ transparent: true, depthTest: false }),
-    );
+  /** Its own colours' brightness: below 1 for the far ranks, which take a touch of the sky's haze. */
+  shade = 1;
+
+  /** `red`: the enemy's soldiers, their blue cloth turned crimson (see `redden`). */
+  constructor(readonly k: number, private readonly height = STAND_H, red = false) {
+    const material = new THREE.MeshBasicMaterial({ transparent: true, depthTest: false });
+    if (red) redden(material);
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).translate(0.5, 0.5, 0), material);
     this.mesh.renderOrder = 2;
     this.shadow = new THREE.Mesh(
       new THREE.PlaneGeometry(1, 1),
@@ -87,8 +131,10 @@ export class Figure {
   /** Shows `frame` with its anchor on the body's origin, the body placed as `s` says. */
   show(frame: Frame, s: Sample['body'] = { x: 0, y: 0, squash: 1, lean: 0 }): void {
     const { k } = this;
-    this.mesh.material.map = frame.tex;
-    this.mesh.material.needsUpdate = true;
+    if (this.mesh.material.map !== frame.tex) {
+      this.mesh.material.map = frame.tex;
+      this.mesh.material.needsUpdate = true;
+    }
     this.mesh.scale.set(frame.w * k, frame.h * k, 1);
     this.mesh.position.set(-frame.ax * k, -(frame.h - frame.ay) * k, 0);
     this.body.position.set(s.x, s.y, 0);
@@ -101,7 +147,7 @@ export class Figure {
 
   /** Lights the picture toward white (0 is its own colours), for the blink of a blow landing; `alpha` fades it. */
   tint(flash: number, alpha = 1): void {
-    this.mesh.material.color.setScalar(1 + 2.5 * flash);
+    this.mesh.material.color.setScalar(this.shade * (1 + 2.5 * flash));
     this.mesh.material.opacity = alpha;
     this.shadow.material.opacity = alpha;
   }

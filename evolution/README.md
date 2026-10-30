@@ -24,6 +24,22 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B3: the squads take the field
+![Four matchups in the battle scene: sword against axe, spear against knights, bow against mage, knights against knights](battles/b3-battle/squads/matchups.jpg)
+
+| Sword against axe | Knights against knights |
+|---|---|
+| ![](battles/b3-battle/squads/sword-v-axe.jpg) | ![](battles/b3-battle/squads/knight-v-knight.jpg) |
+
+- **What changed:** the battle scene now stands any matchup (`?mode=battle&a=<class>&d=<class>`) with the real cast.
+  - Each side has its class's leader (the roster's names: Aria, Gorran, Varek...) and its soldiers in formation, men and women in turn, all breathing at rest.
+  - The enemy's soldiers wear red: the sprite shader turns blue cloth crimson by the rule the style frame's red images were baked with, so no second set of images is needed. Leaders are never recoloured.
+  - Knights stand as a head and three riders in two looser ranks, a little smaller than a lone rider, so four horses fit a side.
+  - The HUD names the leaders and says who has the weapon triangle's edge.
+- **Feedback:** "start B3", on the plan to drive the battle scene from the rules.
+- **Decisions:** the fighter code moved from the animation test into `src/battle/cast.ts`, so the battle scene and the test share it (the strike frame is pixel-identical). The style frame's still pictures gave way to the animated cast.
+- **Learned:** a lone rider's size crowds a squad of four: the leaders' horses met nose to nose at the centre until the mounted squad stood at about nine tenths of the size.
+
 ### B2 roster: the twelve soldiers
 ![The twelve soldiers at the moment of their attacks, a man and a woman for each class: sword, spear, axe, bow, mage and mounted lancer](battles/b2-roster/soldiers/strikes.jpg)
 
