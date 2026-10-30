@@ -53,16 +53,35 @@ export interface ClashSetup {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const other = (side: ClashSide): ClashSide => (side === 'attacker' ? 'defender' : 'attacker');
 
+/** The soldiers a unit brings to a battle: its class's full count scaled by the Morale it has left, at least one. */
+export function soldiersFor(unit: Unit): number {
+  return Math.max(1, Math.round((CLASSES[unit.cls].soldiers * unit.morale) / unit.maxMorale));
+}
+
 export function makeSquad(unit: Unit, stance: Stance = 'neutral', defense = 0, bonus = 0): Squad {
   const def = CLASSES[unit.cls];
-  const soldiers = Array.from({ length: def.soldiers }, () => ({ head: false, hp: def.large ? 2 : 1, large: def.large }));
+  const soldiers = Array.from({ length: soldiersFor(unit) }, () => ({ head: false, hp: def.large ? 2 : 1, large: def.large }));
   return { unit, fighters: [{ head: true, hp: 1, large: false }, ...soldiers], stance, defense, bonus };
 }
 
-/** The fighters still standing, soldiers first and the head last: the head is reached only once its soldiers thin out. */
+/** The fighters still standing, soldiers first and the head last (the order a squad strikes in). */
 export function standing(squad: Squad): number[] {
   const alive = squad.fighters.map((f, i) => (f.hp > 0 ? i : -1)).filter((i) => i >= 0);
   return [...alive.filter((i) => i > 0), ...alive.filter((i) => i === 0)];
+}
+
+/**
+ * Whom fighter `fighter` strikes in `them` (leaving out `except`): its opposite number, head
+ * against head and soldier n against soldier n, while that one stands. Otherwise a soldier takes
+ * on the soldiers still standing, spread over them by its number, and the head only once no
+ * soldier is left; a head whose opposite has fallen goes for the soldiers first.
+ */
+export function target(fighter: number, them: Squad, except = -1): number | undefined {
+  const up = (i: number) => i !== except && (them.fighters[i]?.hp ?? 0) > 0;
+  if (up(fighter)) return fighter;
+  const soldiers = them.fighters.map((_, i) => i).filter((i) => i > 0 && up(i));
+  if (soldiers.length) return soldiers[fighter === 0 ? 0 : (fighter - 1) % soldiers.length];
+  return up(0) ? 0 : undefined;
 }
 
 /**
@@ -148,18 +167,18 @@ export class ClashSim {
     return all;
   }
 
-  /** A charge or counter: each fighter of `by` standing strikes once, TEC against the other side's GEN. */
+  /** A charge or counter: each fighter of `by` standing strikes its target once, TEC against the other side's GEN. */
   private volley(by: ClashSide, events: ClashEvent[]): void {
     const [me, them] = [this.squad(by), this.squad(other(by))];
     const p = clamp(0.3 + 0.015 * (me.unit.stats.tec - them.unit.stats.gen) + 0.02 * (this.edge(by) - this.edge(other(by))), 0.05, 0.9);
     for (const fighter of standing(me)) {
-      const target = standing(them)[0];
-      if (target === undefined) return;
+      const foe = target(fighter, them);
+      if (foe === undefined) return;
       const hit = this.rand() < p;
       const crit = hit && this.rand() < me.unit.stats.luk / 100;
-      const body = them.fighters[target];
+      const body = them.fighters[foe];
       if (hit) body.hp = crit ? 0 : body.hp - 1;
-      events.push({ kind: 'strike', by, fighter, target, hit, crit, felled: body.hp <= 0 });
+      events.push({ kind: 'strike', by, fighter, target: foe, hit, crit, felled: body.hp <= 0 });
       // A crit in the charge throws the defenders into panic: they won't counter.
       if (crit && by === 'attacker' && !this.panic) {
         this.panic = true;
@@ -168,22 +187,36 @@ export class ClashSim {
     }
   }
 
-  /** One round of the melee: fighters pair off front to back and duel, ATK against ATK; a lucky winner flashes and fells another. */
+  /**
+   * One round of the melee: every fighter standing duels its target, ATK against ATK. A pair
+   * who face each other fight once; a fighter set on by more than one foe fights each of them.
+   * A lucky winner flashes and fells another foe.
+   */
   private round(events: ClashEvent[]): void {
-    const [a, d] = [standing(this.attacker), standing(this.defender)];
     const p = clamp(0.5 + 0.012 * (this.attacker.unit.stats.atk - this.defender.unit.stats.atk) + 0.02 * (this.edge('attacker') - this.edge('defender')), 0.1, 0.9);
-    for (let i = 0; i < Math.min(a.length, d.length); i++) {
-      if (this.attacker.fighters[a[i]].hp <= 0 || this.defender.fighters[d[i]].hp <= 0) continue;
+    // The pairs, [attacker's fighter, defender's fighter], as the round opens.
+    const pairs = new Map<string, [number, number]>();
+    for (const a of standing(this.attacker)) {
+      const d = target(a, this.defender);
+      if (d !== undefined) pairs.set(`${a}:${d}`, [a, d]);
+    }
+    for (const d of standing(this.defender)) {
+      const a = target(d, this.attacker);
+      if (a !== undefined) pairs.set(`${a}:${d}`, [a, d]);
+    }
+    for (const [a, d] of pairs.values()) {
+      if (this.attacker.fighters[a].hp <= 0 || this.defender.fighters[d].hp <= 0) continue;
       const winner: ClashSide = this.rand() < p ? 'attacker' : 'defender';
       const loser = this.squad(other(winner));
-      const body = loser.fighters[winner === 'attacker' ? d[i] : a[i]];
+      const [won, lost] = winner === 'attacker' ? [a, d] : [d, a];
+      const body = loser.fighters[lost];
       body.hp -= 1;
-      events.push({ kind: 'duel', winner, attacker: a[i], defender: d[i], felled: body.hp <= 0 });
+      events.push({ kind: 'duel', winner, attacker: a, defender: d, felled: body.hp <= 0 });
       if (this.rand() < this.squad(winner).unit.stats.luk / 200) {
-        const target = standing(loser)[0];
-        if (target !== undefined) {
-          loser.fighters[target].hp = 0;
-          events.push({ kind: 'flash', by: winner, fighter: winner === 'attacker' ? a[i] : d[i], target });
+        const foe = target(won, loser, lost);
+        if (foe !== undefined) {
+          loser.fighters[foe].hp = 0;
+          events.push({ kind: 'flash', by: winner, fighter: won, target: foe });
         }
       }
       if (!standing(loser).length) return;

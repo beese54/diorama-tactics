@@ -222,6 +222,12 @@
       "id": "B3-director",
       "title": "B3 step 4: the director plays the rules' battle in the scene (src/battle/Director.ts): charge, counter, duels, panic, flashes, falls, cheers; live HUD pips, Morale and callouts; Space skips; check.mjs battle checks; scripts/battlevideo.mjs; 3 battle videos",
       "status": "review",
+      "commit": "bf97030"
+    },
+    {
+      "id": "B3-targets",
+      "title": "B3 step 4 review: fighters take their opposite numbers (head v head, soldier v soldier, then spread over the soldiers left, the head last); soldiers in proportion to Morale; the fallen fade back to their places (clash.ts target(), soldiersFor())",
+      "status": "review",
       "commit": "next"
     }
   ],

@@ -712,6 +712,14 @@ B2's unbuilt scripted battle is folded in: the scene plays what `ClashSim` decid
 - [x] 2. Real squads standing on the field (`?mode=battle&a=<class>&d=<class>`): leaders by roster name, soldiers alternating man and woman, knights a head and 3 riders, the enemy's soldiers recoloured red in the shader. Waits for the user's look.
 - [x] 3. `src/battle/script.ts`: ClashSim events to timed actions (pure); Vitest against `resolveClash` over 50 seeds and every class pair.
 - [x] 4. `src/battle/Director.ts` plays it; the HUD updates live; Space skips.
+- [x] 4b. Review of step 4 (2026-10-31), changing the rules core:
+  - Fighters take on their opposite number: head against head, soldier n against soldier n.
+    - A soldier whose opposite has fallen, or who has none, spreads over the soldiers left (by its number), and goes for the head only once no soldier is left.
+    - A head goes for the soldiers once the other head falls.
+    - In the melee every fighter standing duels its target, so an outnumbered fighter may fight several duels a round.
+  - A unit brings soldiers in proportion to its Morale (at least one), so a wounded unit fights with fewer.
+  - The fallen fall where the blow lands, then fade back to their own formation place, lying.
+  - Tests: targeting, soldiers by Morale, balance re-measured; the script keeps a fighter's duels in a round from overlapping.
 - [ ] 5. Stance (A / S / D, from the next beat) and the skill gauge (`src/game/gauge.ts`); check.mjs stance test.
 - [ ] 6. Attack from the skirmish and back: Morale applied, camera unchanged, a unit at 0 leaves; check.mjs canvas, camera, Morale.
-- Assumptions: POW 60 until B4; the meadow backdrop for every battle; taps not holds; gauge fills per hit and duel won, ×1.5 aggressive, none passive; recolour at runtime; `clash.ts` unchanged.
+- Assumptions: POW 60 until B4; the meadow backdrop for every battle; taps not holds; gauge fills per hit and duel won, ×1.5 aggressive, none passive; recolour at runtime; `clash.ts` unchanged (until 4b: the user asked for opposite-number targeting and Morale-scaled soldiers; balance re-measured at 400 seeds: mirror 58%, triangle about 80%, against half Morale 88%).

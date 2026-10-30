@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyResult, ClashSim, makeSquad, moraleDamage, resolveClash, standing, type ClashSetup } from './clash';
+import { applyResult, ClashSim, makeSquad, moraleDamage, resolveClash, standing, target, type ClashSetup } from './clash';
 import { CLASS_IDS, makeUnit, type ClassId } from './units';
 
 const unit = (cls: ClassId, side: 'player' | 'enemy') => makeUnit({ id: `${side}-${cls}`, name: cls, side, cls, gender: 'female', x: 0, y: 0 });
@@ -62,6 +62,64 @@ describe('resolveClash', () => {
     expect(winRate((s) => setup('axe', 'sword', s))).toBeLessThan(winRate((s) => setup('axe', 'spear', s)));
     expect(winRate((s) => setup('sword', 'sword', s, { attackerStance: 'aggressive' }))).toBeGreaterThan(even + 0.1);
     expect(winRate((s) => setup('sword', 'sword', s, { attackerStance: 'passive' }))).toBeLessThan(even - 0.1);
+  });
+
+  it('pits each fighter against its opposite number while it stands: head against head, soldier against soldier', () => {
+    for (const [a, d] of [['sword', 'axe'], ['spear', 'knight'], ['knight', 'bow'], ['mage', 'sword']] as const) {
+      for (const seed of SEEDS.slice(0, 40)) {
+        const s = setup(a, d, seed);
+        const sizes = { attacker: makeSquad(s.attacker).fighters.length, defender: makeSquad(s.defender).fighters.length };
+        const down = { attacker: new Set<number>(), defender: new Set<number>() };
+        for (const e of resolveClash(s).events) {
+          if (e.kind === 'strike') {
+            const them = e.by === 'attacker' ? 'defender' : 'attacker';
+            const up = (i: number) => i < sizes[them] && !down[them].has(i);
+            const soldiersUp = Array.from({ length: sizes[them] - 1 }, (_, i) => i + 1).some(up);
+            if (up(e.fighter)) expect(e.target).toBe(e.fighter);
+            // The head is struck by its own opposite, or once no soldier of its side stands.
+            if (e.target === 0 && e.fighter !== 0) expect(soldiersUp).toBe(false);
+            if (e.felled) down[them].add(e.target);
+          }
+          if (e.kind === 'duel' && e.felled) (e.winner === 'attacker' ? down.defender : down.attacker).add(e.winner === 'attacker' ? e.defender : e.attacker);
+          if (e.kind === 'flash') (e.by === 'attacker' ? down.defender : down.attacker).add(e.target);
+        }
+      }
+    }
+  });
+
+  it('turns a fighter whose opposite has fallen on the soldiers left, spread by number, and on the head last', () => {
+    const them = makeSquad(unit('sword', 'enemy'));
+    expect(target(3, them)).toBe(3);
+    expect(target(0, them)).toBe(0);
+    them.fighters[3].hp = 0;
+    // Soldiers 1, 2, 4, 5, 6, 7 stand: soldier 3 takes the third of them.
+    expect(target(3, them)).toBe(4);
+    them.fighters[0].hp = 0;
+    expect(target(0, them)).toBe(1);
+    const knights = makeSquad(unit('knight', 'enemy'));
+    // Seven soldiers against three riders: the four without an opposite spread over the riders.
+    expect([4, 5, 6, 7].map((i) => target(i, knights))).toEqual([1, 2, 3, 1]);
+    for (const i of [1, 2, 3]) knights.fighters[i].hp = 0;
+    expect(target(5, knights)).toBe(0);
+    expect(target(5, knights, 0)).toBeUndefined();
+  });
+
+  it('brings soldiers in proportion to Morale, at least one, and a wounded unit loses more often', () => {
+    const at = (cls: ClassId, morale: number) => {
+      const u = unit(cls, 'enemy');
+      u.morale = morale;
+      return makeSquad(u).fighters.length - 1;
+    };
+    expect(at('sword', 160)).toBe(7);
+    expect(at('sword', 80)).toBe(4);
+    expect(at('sword', 10)).toBe(1);
+    expect(at('knight', 100)).toBe(2);
+    const wounded = (seed: number) => {
+      const s = setup('sword', 'sword', seed);
+      s.defender.morale = 60;
+      return s;
+    };
+    expect(winRate(wounded)).toBeGreaterThan(winRate((s) => setup('sword', 'sword', s)) + 0.1);
   });
 
   it('gives knights three large soldiers that take two blows each', () => {

@@ -22,6 +22,10 @@ const HOLD_WIN: Beat[] = [{ pose: 'victory', seconds: 1.6, breathe: true }];
 const RETURN = clipSeconds(SWING.slice(-2));
 /** How close a melee fighter comes to its foe for a swing, and the lines come to each other, in design units (times reach). */
 const CONTACT = { base: 170, reach: 60 };
+/** Seconds a fall takes to bring the fighter down. */
+const DOWN = clipSeconds(FALL.slice(0, -1));
+/** The fallen lie where they fell this long, then fade out, and fade back in at their own place. */
+const LIE = { hold: 0.4, out: 0.25, in: 0.3 };
 const CALLOUT: Record<Phase, string> = { charge: 'Charge!', counter: 'Counter!', melee: 'Melee!', done: '' };
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
@@ -67,8 +71,9 @@ const once = (clip: readonly Beat[], age: number) => sample(clip, Math.min(age, 
  * clock, so a capture at a given second always shows the same picture.
  *
  * A melee fighter dashes to its foe for a swing and goes back to its place; a blow that cuts in
- * leaves it where it was hit, to stagger back (or fall there). Archers and mages shoot from
- * their places, the shot flying to land on the script's beat.
+ * leaves it where it was hit, to stagger back (or fall there; the fallen then fade back to lie
+ * at their own place). Archers and mages shoot from their places, the shot flying to land on
+ * the script's beat.
  */
 export class Director {
   private readonly acts: Timed[] = [];
@@ -155,18 +160,11 @@ export class Director {
     return this.dir(w.side) * (-f.place.x * this.view.width + this.advanced(w.side, until));
   }
 
-  /**
-   * How far a melee swing carries the fighter forward (design units): to its foe in a duel; in a
-   * volley no further than the nearest foe standing, so the charge breaks on the enemy's front
-   * rather than diving through it to a foe in the back.
-   */
+  /** How far a melee swing carries the fighter forward to its foe (design units). */
   private dash(a: Extract<BodyAct, { kind: 'attack' }>): number {
     if (a.ranged) return 0;
-    const from = this.station(a.who, a.start);
-    const gap = (w: Who) => Math.abs(this.station(w, a.start) - from);
-    const foes = this.squads[a.foe.side].fighters.map((_, fighter) => ({ side: a.foe.side, fighter })).filter((w) => (this.fell.get(key(w)) ?? Infinity) > a.start);
-    const reach = a.duel ? gap(a.foe) : Math.min(gap(a.foe), ...foes.map(gap));
-    return Math.max(0, reach - CONTACT.base - CONTACT.reach * this.reach(a.who.side));
+    const gap = Math.abs(this.station(a.foe, a.start) - this.station(a.who, a.start));
+    return Math.max(0, gap - CONTACT.base - CONTACT.reach * this.reach(a.who.side));
   }
 
   /** The fighter's forward offset from its place at `seconds`: a swing's dash, eased out and back, carried through any blow that cuts in. */
@@ -216,10 +214,14 @@ export class Director {
     } else {
       s = sample(IDLE, seconds + w.fighter * 0.37 + (w.side === 'defender' ? 0.2 : 0));
     }
-    const off = this.offset(w, seconds);
+    // The fallen lie a moment where they fell, then fade out and back in, lying at their own place in the formation.
+    const lying = fallen ? seconds - this.fell.get(key(w))! - DOWN - LIE.hold : -Infinity;
+    const home = lying >= LIE.out;
+    const alpha = lying < 0 ? 1 : home ? clamp01((lying - LIE.out) / LIE.in) : 1 - lying / LIE.out;
+    const off = home ? 0 : this.offset(w, seconds);
     const reach = f.character.reach;
     const body: Body = { ...s.body, x: (run?.s ? 0 : s.body.x * reach) * f.scale + off, y: s.body.y * f.scale };
-    f.figure.group.position.x = this.station(w, seconds);
+    f.figure.group.position.x = home ? -this.dir(w.side) * f.place.x * this.view.width : this.station(w, seconds);
     // A fighter mid-swing is drawn over the others at its depth (the sort puts nearer z later).
     f.figure.group.position.z = act?.kind === 'attack' && age < actSeconds(act) ? 1 : 0;
     f.figure.show(f.frames.get(has(s.pose) ? s.pose : 'stance')!, body);
@@ -243,7 +245,7 @@ export class Director {
 
     // A blow landing: the white blink and the shake (harder for a crit).
     const hit = act && isReaction(act) && act.kind !== 'block' ? age : Infinity;
-    f.figure.tint(hit < 0.12 ? 1 - hit / 0.12 : 0);
+    f.figure.tint(hit < 0.12 ? 1 - hit / 0.12 : 0, alpha);
     const crit = swing?.crit ? 2 : 1;
     const shakes = [hit, swing && !swing.ranged ? blow : Infinity].filter((x) => x >= 0 && x < 0.2);
     return shakes.length ? 4 * crit * (1 - Math.min(...shakes) / 0.2) : 0;

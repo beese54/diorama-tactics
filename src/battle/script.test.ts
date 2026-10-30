@@ -96,6 +96,23 @@ describe('BattleScript', () => {
     }
   });
 
+  it('plays a wounded squad with the soldiers its Morale brings', () => {
+    for (const seed of SEEDS.slice(0, 20)) {
+      const s = setup('axe', 'spear', seed);
+      s.attacker.morale = 50;
+      const sim = new ClashSim(s);
+      const sizes = { attacker: sim.attacker.fighters.length, defender: sim.defender.fighters.length };
+      const script = new BattleScript({ attacker: 'axe', defender: 'spear' }, sizes);
+      const acts: Act[] = [];
+      while (sim.phase !== 'done') acts.push(...script.beat(sim.step()).acts);
+      const winner = sim.winner!;
+      const left = sim.squad(winner).fighters.flatMap((f, fighter) => (f.hp > 0 ? [`${winner}:${fighter}`] : []));
+      expect(sizes.attacker).toBe(3);
+      expect(new Set(acts.flatMap((x) => (x.kind === 'cheer' ? [key(x.who)] : [])))).toEqual(new Set(left));
+      for (const x of acts) if ('who' in x) expect(x.who.fighter).toBeLessThan(sizes[x.who.side]);
+    }
+  });
+
   it('gallops knights in faster than a squad runs on foot', () => {
     const run = (cls: ClassId) => play(cls, 'sword', 1)[0].acts.find((x) => x.kind === 'advance')!;
     expect(run('knight').seconds).toBeLessThan(run('spear').seconds);

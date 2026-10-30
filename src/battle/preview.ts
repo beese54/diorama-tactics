@@ -40,20 +40,25 @@ export async function battlePreview(): Promise<void> {
   const hud = new BattleHud(document.body);
   const [a, d] = [pick('a', 'sword'), pick('d', 'axe')];
   const seed = Number(params.get('seed')) || 1;
+  // A gender only shapes a Union on the map; it plays no part in a battle. `?am=` and `?dm=` set
+  // each side's Morale (full by default), and with it the soldiers it brings.
+  const unit = (side: Side, cls: ClassId, morale: string | null) => {
+    const u = makeUnit({ id: `${side}-${cls}`, name: title(LEADERS[side][cls]), side, cls, gender: 'female', x: 0, y: 0 });
+    if (morale) u.morale = Math.min(u.maxMorale, Math.max(1, Number(morale) || u.maxMorale));
+    return u;
+  };
+  const setup: ClashSetup = { attacker: unit('player', a, params.get('am')), defender: unit('enemy', d, params.get('dm')), pow: 60, seed };
+  const sim = new ClashSim(setup);
+  const sizes = { attacker: sim.attacker.fighters.length, defender: sim.defender.fighters.length };
   const [left, right] = await Promise.all([
-    SquadLayer.load(view, 'player', a, 'left'),
-    SquadLayer.load(view, 'enemy', d, 'right'),
+    SquadLayer.load(view, 'player', a, 'left', sizes.attacker - 1),
+    SquadLayer.load(view, 'enemy', d, 'right', sizes.defender - 1),
     view.setBackdrop(`${ART}../meadow.jpg`),
   ]);
   view.add(left.group, right.group);
-
-  // A gender only shapes a Union on the map; it plays no part in a battle.
-  const unit = (side: Side, cls: ClassId) =>
-    makeUnit({ id: `${side}-${cls}`, name: title(LEADERS[side][cls]), side, cls, gender: 'female', x: 0, y: 0 });
-  const setup: ClashSetup = { attacker: unit('player', a), defender: unit('enemy', d), pow: 60, seed };
-  const sim = new ClashSim(setup);
   const names = { attacker: title(LEADERS.player[a]), defender: title(LEADERS.enemy[d]) };
-  const director = new Director(view, { attacker: left, defender: right }, sim, new BattleScript({ attacker: a, defender: d }), hud, names, matchup(a, d));
+  const script = new BattleScript({ attacker: a, defender: d }, sizes);
+  const director = new Director(view, { attacker: left, defender: right }, sim, script, hud, names, matchup(a, d));
 
   const draw = (seconds: number) => {
     director.draw(seconds);

@@ -92,10 +92,18 @@
     {
       "id": "b3-director",
       "date": "2026-10-31",
-      "commit": "next",
+      "commit": "bf97030",
       "image": "b3-battle/director/battle.jpg",
       "title": "B3 · The battle plays out",
       "note": "The rules decide and the scene plays it: the charge, the counter, the duels, panic and flashes, falls, the winners' cheer and the Morale lost; the HUD follows live and Space skips to the result."
+    },
+    {
+      "id": "b3-director-r1-targets",
+      "date": "2026-10-31",
+      "commit": "next",
+      "image": "b3-battle/director/r1-targets/targets.jpg",
+      "title": "B3 r1 · Opposite numbers, and Morale in the ranks",
+      "note": "Head fights head and soldier fights soldier until one falls, then the free fighters spread over the soldiers left and reach the head last; a wounded unit brings fewer soldiers; the fallen fade back to lie at their own places."
     }
   ]
 }

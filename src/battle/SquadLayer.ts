@@ -36,9 +36,9 @@ export class SquadLayer {
     }
   }
 
-  /** Loads the poses for a squad of `cls` on `side` and stands it in formation on the `at` half of the field. */
-  static async load(view: BattleView, side: Side, cls: ClassId, at: 'left' | 'right'): Promise<SquadLayer> {
-    const { soldiers, large } = CLASSES[cls];
+  /** Loads the poses for a squad of `cls` on `side` with `soldiers` behind its head (the full count by default) and stands it in formation on the `at` half of the field. */
+  static async load(view: BattleView, side: Side, cls: ClassId, at: 'left' | 'right', soldiers = CLASSES[cls].soldiers): Promise<SquadLayer> {
+    const { large } = CLASSES[cls];
     const cast = lineup(side, cls, soldiers);
     const ids = [cast.leader, ...cast.soldiers];
     const sets = new Map(

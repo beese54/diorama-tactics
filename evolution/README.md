@@ -24,6 +24,35 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B3 r1: opposite numbers, and Morale in the ranks
+![Aria duels Gorran; the fallen lie back at their places; a wounded Aria (Morale 70) brings three soldiers against Varek's knights](battles/b3-battle/director/r1-targets/targets.jpg)
+
+![Before and after: the fallen stayed in the middle of the field; now they lie at their own places](battles/b3-battle/director/r1-targets/fallen-before-after.jpg)
+
+Whole battles: [Sword against axe](battles/b3-battle/director/r1-targets/sword-v-axe.mp4) · [A wounded Aria against knights](battles/b3-battle/director/r1-targets/wounded-v-knights.mp4) · [Bow against mage](battles/b3-battle/director/r1-targets/bow-v-mage.mp4) (GIFs beside them)
+
+- **What changed:**
+  - **Opposite numbers:** every fighter takes on its own. The head fights the head and soldier n fights soldier n, in the charge, the counter and the melee.
+    - When a soldier's opposite falls (or it has none, like the four extra swordfighters against three riders), it spreads over the enemy soldiers still standing, by its number. It goes for the head only when no soldier is left.
+    - A head whose opposite has fallen goes for the soldiers.
+    - In the melee every fighter standing duels its target, so one set on by several foes fights each of them in turn.
+  - **Morale counts:** a unit brings soldiers in proportion to the Morale it has left (at least one). At 70 of 160, Aria leads three swordfighters instead of seven. `?am=` and `?dm=` set each side's Morale in the battle scene.
+  - **The fallen** go down where the blow lands, lie a moment, then fade back in lying at their own place in the formation, which keeps the middle clear.
+- **Feedback:**
+  - "I want individual attacker to hit their designated opponent. E.g. the leader will fight the leader, soldier will fight soldier."
+  - "if only the leader is left, then attack the leader"
+  - "they should return to their original position in the fallen pose"
+  - "we have to factor their morale as well"
+- **Decisions** (the user chose):
+  - soldiers scale with Morale, rather than a penalty to the edge;
+  - free fighters spread over the soldiers left, rather than ganging up on one;
+  - the fallen fade back to their place, rather than sliding.
+  
+  The weapon triangle stays as it was: sword beats axe, axe beats spear and lance, spear and lance beat sword, and bow and staff stand outside it.
+- **Learned:**
+  - Balance held under the new targeting, over 400 seeds: a mirror match goes 58% to the attacker and a triangle edge wins about 80%. Against a defender at half Morale the attacker now wins 88%.
+  - With duels no longer one per fighter, the script schedules each duel once both its fighters are free, in the rules' order, so a fall never comes before a blow the rules say came first.
+
 ### B3: the battle plays out
 ![Aria's swordfighters against Gorran's axemen: the charge, the charge breaking on the enemy's front with a panic, the melee duels, and the result with Morale −70](battles/b3-battle/director/battle.jpg)
 

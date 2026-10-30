@@ -14,8 +14,8 @@ export type Act =
   | { kind: 'phase'; at: number; phase: Phase }
   /** The side's fighters still standing run to meet the foe: up to the foe's line, or to the middle when both sides run. */
   | { kind: 'advance'; at: number; side: ClashSide; to: 'foe' | 'middle'; seconds: number }
-  /** A fighter strikes `foe`, in a volley or a duel; the blow lands at `lands` (a shot's flight included). */
-  | { kind: 'attack'; at: number; who: Who; foe: Who; lands: number; ranged: boolean; crit: boolean; duel: boolean }
+  /** A fighter strikes `foe`; the blow lands at `lands` (a shot's flight included). */
+  | { kind: 'attack'; at: number; who: Who; foe: Who; lands: number; ranged: boolean; crit: boolean }
   /** A blow lands: the fighter staggers (hurt), goes down (fall) or turns it aside (block). */
   | { kind: 'hurt' | 'fall' | 'block'; at: number; who: Who }
   /** A lucky winner's flash: a burst of light that fells another foe. Light only; the winner's swing carries it. */
@@ -84,7 +84,8 @@ const other = (side: ClashSide): ClashSide => (side === 'attacker' ? 'defender' 
  *   turn; archers and mages shoot from their ranks and the shot flies.
  * - The counter: the defenders strike back the same way (running first only if nobody has come
  *   to them, against a mage's squad).
- * - The melee: whoever hasn't met the foe yet runs in, then the pairs duel one after another:
+ * - The melee: whoever hasn't met the foe yet runs in, then the pairs duel one after another,
+ *   each once both its fighters are free (a fighter set on by several foes takes them in turn):
  *   the loser swings first and is turned aside, then the winner's blow lands. A flash follows.
  * - The end: the winner's fighters still standing cheer, and the Morale loss shows.
  */
@@ -93,7 +94,11 @@ export class BattleScript {
   private met = false;
   private readonly down = new Set<string>();
 
-  constructor(private readonly classes: Record<ClashSide, ClassId>) {}
+  /** `sizes`: each squad's fighters, the head included (fewer soldiers come when Morale is low); full squads by default. */
+  constructor(
+    private readonly classes: Record<ClashSide, ClassId>,
+    private readonly sizes: Record<ClashSide, number> = { attacker: CLASSES[classes.attacker].soldiers + 1, defender: CLASSES[classes.defender].soldiers + 1 },
+  ) {}
 
   private ranged(side: ClashSide): boolean {
     const weapon = CLASSES[this.classes[side]].weapon;
@@ -110,7 +115,10 @@ export class BattleScript {
     // When the blows can start: after any run.
     let start = 0;
     let volley = 0;
-    let duel = 0;
+    // Duels start in the rules' order, each once both its fighters are free.
+    let lastDuel = -Infinity;
+    const free = new Map<string, number>();
+    const freeAt = (w: Who) => free.get(`${w.side}:${w.fighter}`) ?? 0;
     let lastBlow = 0;
     // The winning blow of the last duel, for a flash.
     let lastWin = 0;
@@ -142,7 +150,7 @@ export class BattleScript {
           const at = start + volley++ * STAGGER;
           const lands = at + STRIKE + flight(e.by);
           const foe = { side: other(e.by), fighter: e.target };
-          acts.push({ kind: 'attack', at, who: { side: e.by, fighter: e.fighter }, foe, lands, ranged: this.ranged(e.by), crit: e.crit, duel: false });
+          acts.push({ kind: 'attack', at, who: { side: e.by, fighter: e.fighter }, foe, lands, ranged: this.ranged(e.by), crit: e.crit });
           react(foe, lands, e.hit, e.felled);
           lastBlow = lands;
           break;
@@ -154,14 +162,17 @@ export class BattleScript {
           const a: Who = { side: 'attacker', fighter: e.attacker };
           const d: Who = { side: 'defender', fighter: e.defender };
           const [winner, loser] = e.winner === 'attacker' ? [a, d] : [d, a];
-          const at = start + duel++ * DUEL_STAGGER;
+          const at = Math.max(start, lastDuel + DUEL_STAGGER, freeAt(a), freeAt(d));
+          lastDuel = at;
           const parried = at + STRIKE + flight(loser.side);
-          acts.push({ kind: 'attack', at, who: loser, foe: winner, lands: parried, ranged: this.ranged(loser.side), crit: false, duel: true });
+          acts.push({ kind: 'attack', at, who: loser, foe: winner, lands: parried, ranged: this.ranged(loser.side), crit: false });
           react(winner, parried, false, false);
           const swing = parried + clipSeconds(BLOCK);
           const lands = swing + STRIKE + flight(winner.side);
-          acts.push({ kind: 'attack', at: swing, who: winner, foe: loser, lands, ranged: this.ranged(winner.side), crit: false, duel: true });
+          acts.push({ kind: 'attack', at: swing, who: winner, foe: loser, lands, ranged: this.ranged(winner.side), crit: false });
           react(loser, lands, true, e.felled);
+          free.set(`${winner.side}:${winner.fighter}`, swing + clipSeconds(SWING));
+          free.set(`${loser.side}:${loser.fighter}`, e.felled ? Infinity : lands + clipSeconds(HURT));
           lastWin = lands;
           break;
         }
@@ -174,8 +185,7 @@ export class BattleScript {
         }
         case 'end': {
           const at = Math.max(...acts.map((x) => x.at + actSeconds(x)));
-          const fighters = CLASSES[this.classes[e.winner]].soldiers + 1;
-          for (let fighter = 0; fighter < fighters; fighter++) {
+          for (let fighter = 0; fighter < this.sizes[e.winner]; fighter++) {
             if (!this.down.has(`${e.winner}:${fighter}`)) acts.push({ kind: 'cheer', at, who: { side: e.winner, fighter } });
           }
           acts.push({ kind: 'result', at, winner: e.winner, damage: e.damage });
