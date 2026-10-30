@@ -720,6 +720,6 @@ B2's unbuilt scripted battle is folded in: the scene plays what `ClashSim` decid
   - A unit brings soldiers in proportion to its Morale (at least one), so a wounded unit fights with fewer.
   - The fallen fall where the blow lands, then fade back to their own formation place, lying.
   - Tests: targeting, soldiers by Morale, balance re-measured; the script keeps a fighter's duels in a round from overlapping.
-- [ ] 5. Stance (A / S / D, from the next beat) and the skill gauge (`src/game/gauge.ts`); check.mjs stance test.
+- [x] 5. Stance (A / S / D, from the next beat) and the skill gauge (`src/game/gauge.ts`); check.mjs stance test. The edge shows on each banner; the gauge earns 4 a hit, 6 a duel won (about 35 a neutral battle, 57 aggressive); `?at=` opens a battle still for captures.
 - [ ] 6. Attack from the skirmish and back: Morale applied, camera unchanged, a unit at 0 leaves; check.mjs canvas, camera, Morale.
 - Assumptions: POW 60 until B4; the meadow backdrop for every battle; taps not holds; gauge fills per hit and duel won, ×1.5 aggressive, none passive; recolour at runtime; `clash.ts` unchanged (until 4b: the user asked for opposite-number targeting and Morale-scaled soldiers; balance re-measured at 400 seeds: mirror 58%, triangle about 80%, against half Morale 88%).

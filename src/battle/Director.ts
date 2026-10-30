@@ -1,4 +1,5 @@
 import type { ClashSide, ClashSim, Phase } from '../game/clash';
+import { gain, GAUGE_MAX } from '../game/gauge';
 import { CLASSES } from '../game/units';
 import type { BannerInfo, BattleHud } from '../ui/BattleHud';
 import type { BattleView } from './BattleView';
@@ -80,6 +81,8 @@ export class Director {
   private readonly body = new Map<string, BodyAct[]>();
   private readonly advances: Record<ClashSide, Extract<Timed, { kind: 'advance' }>[]> = { attacker: [], defender: [] };
   private readonly fell = new Map<string, number>();
+  /** What each side's skill gauge earns, and when: as each blow lands, at the stance its beat was fought in. */
+  private readonly gains: Record<ClashSide, { start: number; amount: number }[]> = { attacker: [], defender: [] };
   /** When the beats so far run out. */
   private end = LEAD;
 
@@ -106,7 +109,14 @@ export class Director {
   }
 
   private next(): void {
-    const take = this.script.beat(this.sim.step());
+    const events = this.sim.step();
+    const take = this.script.beat(events);
+    for (const side of ['attacker', 'defender'] as const) {
+      for (const [i, e] of events.entries()) {
+        const amount = gain(e, side, this.sim.squad(side).stance);
+        if (amount) this.gains[side].push({ start: this.end + take.times[i], amount });
+      }
+    }
     for (const a of take.acts) {
       const t = { ...a, start: this.end + a.at } as Timed;
       this.acts.push(t);
@@ -259,7 +269,13 @@ export class Director {
       const total = this.squads[side].fighters.length;
       const down = [...this.fell].filter(([k, t]) => k.startsWith(side) && t <= seconds).length;
       const lost = result && result.winner !== side ? result.damage : 0;
-      return { name: this.names[side], cls: CLASSES[unit.cls].name, morale: Math.max(0, unit.morale - lost), maxMorale: unit.maxMorale, standing: total - down, total };
+      const gauge = Math.min(GAUGE_MAX, this.gains[side].reduce((sum, g) => sum + (g.start <= seconds ? g.amount : 0), 0));
+      // The stance and the edge are as they stand now: a change shows at once, and counts from the next beat.
+      const { stance } = this.sim.squad(side);
+      return {
+        name: this.names[side], cls: CLASSES[unit.cls].name, morale: Math.max(0, unit.morale - lost), maxMorale: unit.maxMorale,
+        standing: total - down, total, stance, edge: this.sim.edge(side), gauge,
+      };
     };
     const line = result ? `${this.names[result.winner]} wins · Morale −${result.damage}` : this.matchup;
     this.hud.show(banner('attacker'), banner('defender'), line);

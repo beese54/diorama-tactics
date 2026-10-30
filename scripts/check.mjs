@@ -420,6 +420,32 @@ await page.keyboard.press('Space');
 await frames(3);
 const skipped = await battleHud();
 check('battle: Space skips to the result', skipped[ld].standing === 0 && skipped[ld].morale === lostMorale, JSON.stringify(skipped));
+// Stance: A, S and D set the player's from the next beat. The edge shown moves with it at once, and
+// the skill gauge fills faster when aggressive and not at all when passive.
+const player = () => page.evaluate(() => {
+  const b = document.querySelector('#battle-hud .banner.left');
+  return { edge: b.querySelector('.edge').textContent, stance: b.querySelector('.stance b.on').dataset.stance, gauge: Number(b.querySelector('.skill .value').textContent) };
+});
+// Opened still (&at=), so no beat is fought before the key.
+const stanceRun = async (key) => {
+  await page.goto(`${battleUrl}&at=0.4`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+  const before = await player();
+  await page.keyboard.press(key);
+  const pressed = await player();
+  await page.evaluate(() => window.__battle.at(window.__battle.length() + 0.5));
+  return { before, pressed, after: await player() };
+};
+const runs = { A: await stanceRun('KeyA'), S: await stanceRun('KeyS'), D: await stanceRun('KeyD') };
+const edgeOf = (text) => Number(text.replace('EDGE ', '').replace('−', '-'));
+check('battle: A, S and D set the stance, and the edge shown moves by its 2',
+  runs.A.pressed.stance === 'aggressive' && runs.S.pressed.stance === 'neutral' && runs.D.pressed.stance === 'passive' &&
+  edgeOf(runs.A.pressed.edge) === edgeOf(runs.A.before.edge) + 2 && edgeOf(runs.S.pressed.edge) === edgeOf(runs.S.before.edge) &&
+  edgeOf(runs.D.pressed.edge) === edgeOf(runs.D.before.edge) - 2,
+  JSON.stringify(runs));
+check('battle: the skill gauge fills faster when aggressive, and not at all when passive',
+  runs.A.before.gauge === 0 && runs.A.after.gauge > runs.S.after.gauge && runs.S.after.gauge > 0 && runs.D.after.gauge === 0,
+  JSON.stringify(Object.fromEntries(Object.entries(runs).map(([k, r]) => [k, r.after.gauge]))));
 check('battle: no console errors', errors.length === 0, errors.join(' | '));
 
 await browser.close();

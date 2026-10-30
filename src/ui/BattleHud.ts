@@ -1,4 +1,7 @@
-/** One side's banner: its head's name and class, Morale, and soldiers standing. */
+import type { Stance } from '../game/clash';
+import { GAUGE_MAX } from '../game/gauge';
+
+/** One side's banner: its head's name and class, Morale, soldiers standing, stance, edge and skill gauge. */
 export interface BannerInfo {
   name: string;
   cls: string;
@@ -7,7 +10,18 @@ export interface BannerInfo {
   /** Fighters standing, the head included, and the squad's full count. */
   standing: number;
   total: number;
+  stance: Stance;
+  /** The side's effectiveness: the weapon triangle, its stance and any card bonus. */
+  edge: number;
+  gauge: number;
 }
+
+/** The stances in the order the chips show them, with the key that picks each on the player's side. */
+const STANCES: { stance: Stance; key: string; label: string }[] = [
+  { stance: 'aggressive', key: 'A', label: 'Aggressive' },
+  { stance: 'neutral', key: 'S', label: 'Neutral' },
+  { stance: 'passive', key: 'D', label: 'Passive' },
+];
 
 /**
  * The battle's heads-up display, drawn sharp over the full-resolution scene: a banner for each
@@ -34,9 +48,13 @@ export class BattleHud {
     const banner = (b: BannerInfo, side: string) => {
       const share = Math.max(0, b.morale / b.maxMorale) * 100;
       const pips = Array.from({ length: b.total }, (_, i) => `<i class="${i < b.standing ? 'up' : ''}"></i>`).join('');
-      return `<div class="banner ${side}"><div class="who"><span class="name"></span><span class="cls"></span></div>` +
+      // Only the player (left) picks a stance, so only its chips show their keys.
+      const chips = STANCES.map((s) => `<b class="${s.stance === b.stance ? 'on' : ''}" data-stance="${s.stance}">${side === 'left' ? `<kbd>${s.key}</kbd>` : ''}${s.label}</b>`).join('');
+      return `<div class="banner ${side}"><div class="who"><span class="name"></span><span class="cls"></span><span class="edge">EDGE ${b.edge > 0 ? '+' : b.edge < 0 ? '−' : ''}${Math.abs(b.edge)}</span></div>` +
         `<div class="morale"><span class="label">MORALE</span><span class="bar"><span style="width:${share.toFixed(1)}%"></span></span><span class="value">${b.morale}</span></div>` +
-        `<div class="troops">${pips}</div></div>`;
+        `<div class="troops">${pips}</div>` +
+        `<div class="stance"><span class="label">STANCE</span>${chips}</div>` +
+        `<div class="morale skill"><span class="label">SKILL</span><span class="bar"><span style="width:${((b.gauge / GAUGE_MAX) * 100).toFixed(1)}%"></span></span><span class="value">${b.gauge}</span></div></div>`;
     };
     this.el.innerHTML = `${banner(left, 'left')}<div class="vs">VS</div>${banner(right, 'right')}<div class="effect"></div>`;
     const [l, r] = this.el.querySelectorAll('.banner');

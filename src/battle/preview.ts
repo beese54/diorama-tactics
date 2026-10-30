@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ClashSim, resolveClash, type ClashSetup } from '../game/clash';
+import { ClashSim, resolveClash, type ClashSetup, type Stance } from '../game/clash';
 import { CLASS_IDS, CLASSES, makeUnit, triangleEdge, type ClassId, type Side } from '../game/units';
 import { BattleHud } from '../ui/BattleHud';
 import { BattleView } from './BattleView';
@@ -28,10 +28,11 @@ function matchup(a: ClassId, d: ClassId): string {
 }
 
 /**
- * The battle scene (`?mode=battle&a=<class>&d=<class>&seed=<n>`): the player's squad of class
- * `a` (on the left) attacks the rival army's squad of class `d`, at full resolution on the
- * meadow. The rules decide the battle (seeded, POW 60) and the director plays it: the charge,
- * the counter, the duels, the falls, and the Morale lost. Space skips to the result.
+ * The battle scene (`?mode=battle&a=<class>&d=<class>&seed=<n>`, with `&am=`/`&dm=` for each
+ * side's Morale and `&at=<seconds>` to open it still): the player's squad of class `a` (on the
+ * left) attacks the rival army's squad of class `d`, at full resolution on the meadow. The rules
+ * decide the battle (seeded, POW 60) and the director plays it: the charge, the counter, the
+ * duels, the falls, and the Morale lost. Space skips to the result; A, S and D set the stance.
  */
 export async function battlePreview(): Promise<void> {
   document.title = 'Battle · Diorama Tactics';
@@ -64,17 +65,26 @@ export async function battlePreview(): Promise<void> {
     director.draw(seconds);
     view.render();
   };
-  // Captures fix the clock with __battle.at(seconds); otherwise it runs in real time, from
-  // `skew` (Space jumps it to the result).
-  let fixed: number | null = null;
+  // Captures fix the clock with __battle.at(seconds), or open with it fixed (`?at=<seconds>`), so
+  // no beat is fought before they ask; otherwise it runs in real time, from `skew` (Space jumps
+  // it to the result).
+  let fixed: number | null = params.has('at') ? Number(params.get('at')) || 0 : null;
   let skew = 0;
   const clock = new THREE.Clock();
   const now = () => clock.getElapsedTime() + skew;
   view.renderer.setAnimationLoop(() => fixed === null && draw(now()));
+  if (fixed !== null) draw(fixed);
+  // Space skips to the result; A, S and D set the player's stance, from the next beat. The enemy
+  // keeps neutral until it has an AI (B7).
+  const STANCE_KEYS: Record<string, Stance> = { KeyA: 'aggressive', KeyS: 'neutral', KeyD: 'passive' };
   window.addEventListener('keydown', (e) => {
-    if (e.code !== 'Space') return;
-    e.preventDefault();
-    skew += Math.max(0, director.length() - now());
+    if (e.code === 'Space') {
+      e.preventDefault();
+      skew += Math.max(0, director.length() - now());
+    } else if (STANCE_KEYS[e.code]) {
+      sim.attacker.stance = STANCE_KEYS[e.code];
+      if (fixed !== null) draw(fixed);
+    }
   });
   if (import.meta.env.DEV) {
     Object.assign(window, {

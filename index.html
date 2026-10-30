@@ -241,6 +241,47 @@
         border: calc(var(--u) * 0.12) solid rgba(255, 244, 214, 0.6);
       }
       #battle-hud .troops i.up { background: #ffe08a; }
+      #battle-hud .morale .label { min-width: calc(var(--u) * 6.4); }
+      #battle-hud .who .edge {
+        margin-left: auto;
+        font-weight: 700;
+        font-size: calc(var(--u) * 1.3);
+        letter-spacing: 0.12em;
+      }
+      #battle-hud .right .who .edge { margin-left: 0; margin-right: auto; }
+      #battle-hud .stance {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--u) * 0.5);
+        margin-top: calc(var(--u) * 0.7);
+        font-weight: 700;
+        font-size: calc(var(--u) * 1.1);
+      }
+      #battle-hud .right .stance { flex-direction: row-reverse; }
+      #battle-hud .stance .label { font-size: calc(var(--u) * 1.3); min-width: calc(var(--u) * 6.4); }
+      #battle-hud .stance b {
+        padding: calc(var(--u) * 0.2) calc(var(--u) * 0.7);
+        border-radius: calc(var(--u) * 0.4);
+        border: calc(var(--u) * 0.12) solid rgba(255, 244, 214, 0.25);
+        background: rgba(0, 0, 0, 0.35);
+        color: rgba(244, 241, 232, 0.55);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      #battle-hud .stance b.on {
+        background: #ffe08a;
+        border-color: #fff4d6;
+        color: #2a1d08;
+        text-shadow: none;
+      }
+      #battle-hud .stance kbd {
+        font: inherit;
+        margin-right: calc(var(--u) * 0.4);
+        padding: 0 calc(var(--u) * 0.3);
+        border-radius: calc(var(--u) * 0.25);
+        border: calc(var(--u) * 0.1) solid currentColor;
+      }
+      #battle-hud .skill .bar span { background: linear-gradient(#fff0b0, #e0a530); }
       #battle-hud .vs {
         position: absolute;
         top: calc(var(--u) * 3.2);

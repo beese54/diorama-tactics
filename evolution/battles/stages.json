@@ -100,10 +100,18 @@
     {
       "id": "b3-director-r1-targets",
       "date": "2026-10-31",
-      "commit": "next",
+      "commit": "de46155",
       "image": "b3-battle/director/r1-targets/targets.jpg",
       "title": "B3 r1 · Opposite numbers, and Morale in the ranks",
       "note": "Head fights head and soldier fights soldier until one falls, then the free fighters spread over the soldiers left and reach the head last; a wounded unit brings fewer soldiers; the fallen fade back to lie at their own places."
+    },
+    {
+      "id": "b3-stance",
+      "date": "2026-10-31",
+      "commit": "next",
+      "image": "b3-battle/stance/switch.jpg",
+      "title": "B3 · Stance and the skill gauge",
+      "note": "A, S and D set the player's stance from the next beat; each banner shows its edge; the skill gauge fills as blows land, half again as fast when aggressive and not at all when passive."
     }
   ]
 }

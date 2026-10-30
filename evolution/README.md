@@ -24,6 +24,25 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B3: stance and the skill gauge
+![One battle, switched mid-way: neutral at the charge, aggressive from 3 s (edge +4, the gauge fills faster), passive from 7 s (edge 0, the gauge holds at 62), and the result](battles/b3-battle/stance/switch.jpg)
+
+![The player's banner just after A, S and D (top), and after the whole battle in each stance (bottom): the gauge ends at 60, 44 and 0](battles/b3-battle/stance/stances.jpg)
+
+Whole battle: [Sword against axe, switching stance at 3 s and 7 s](battles/b3-battle/stance/stance-switch.mp4) (GIF beside it)
+
+- **What changed:**
+  - **Stance keys:** A aggressive, S neutral, D passive. The banner shows the new stance and edge at once; the rules use it from the next beat. The enemy stays neutral until it has an AI (B7).
+  - **The edge** now shows on each banner: the weapon triangle, the stance and any card bonus, the same number the rules fight with.
+  - **The skill gauge** (`src/game/gauge.ts`, pure and tested) fills by 4 for every blow landed in the charge or the counter and by 6 for every duel won. Aggressive fills it half again as fast; passive fills none. It rises in the banner as each blow lands. Spending it comes with the card skills (B6).
+  - `?at=<seconds>` opens a battle still, so captures and checks fight nothing before they ask. `scripts/battlevideo.mjs` can press keys at given seconds.
+- **Decisions:**
+  - The stance shows at once but counts from the next beat: a beat already fought isn't refought.
+  - The gauge is earned at the stance its beat was fought in, so switching to passive mid-battle keeps what was earned.
+- **Learned:**
+  - Over 200 mirror battles a neutral battle fills about 35 of 100 and an aggressive one about 57, so a skill comes every two or three battles. The numbers will be tuned in play.
+  - The real-time clock ran during the page load, so a battle's charge could be fought before a check pressed its key. Opening the battle still fixed it.
+
 ### B3 r1: opposite numbers, and Morale in the ranks
 ![Aria duels Gorran; the fallen lie back at their places; a wounded Aria (Morale 70) brings three soldiers against Varek's knights](battles/b3-battle/director/r1-targets/targets.jpg)
 

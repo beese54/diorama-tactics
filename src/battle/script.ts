@@ -28,6 +28,8 @@ export type Act =
 export interface Take {
   acts: Act[];
   seconds: number;
+  /** When each of the beat's events is seen (a blow as it lands), in the events' order. */
+  times: number[];
 }
 
 /** Seconds from the start of a swing to its blow. */
@@ -112,6 +114,7 @@ export class BattleScript {
   /** The acts for one beat's events, in order; `seconds` runs until every act is done, plus a breath. */
   beat(events: readonly ClashEvent[]): Take {
     const acts: Act[] = [];
+    const times: number[] = [];
     // When the blows can start: after any run.
     let start = 0;
     let volley = 0;
@@ -192,8 +195,10 @@ export class BattleScript {
           break;
         }
       }
+      // Every event ends on an act of its own: a blow on its foe's reaction as it lands.
+      times.push(acts.at(-1)!.at);
     }
     const seconds = acts.length ? Math.max(...acts.map((x) => x.at + actSeconds(x))) + PAUSE : 0;
-    return { acts, seconds };
+    return { acts, seconds, times };
   }
 }

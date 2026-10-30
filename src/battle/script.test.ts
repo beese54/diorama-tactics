@@ -113,6 +113,26 @@ describe('BattleScript', () => {
     }
   });
 
+  it.each(PAIRS)('%s against %s: each event is seen as it happens, a blow as it lands', (a, d) => {
+    for (const seed of SEEDS.slice(0, 10)) {
+      const sim = new ClashSim(setup(a, d, seed));
+      const script = new BattleScript({ attacker: a, defender: d });
+      while (sim.phase !== 'done') {
+        const events = sim.step();
+        const take = script.beat(events);
+        expect(take.times.length).toBe(events.length);
+        for (const [i, e] of events.entries()) {
+          const at = take.times[i];
+          expect(at).toBeGreaterThanOrEqual(0);
+          expect(at).toBeLessThanOrEqual(take.seconds);
+          const hit = (who: Who, kinds: Act['kind'][]) => take.acts.some((x) => kinds.includes(x.kind) && x.at === at && key(body(x)!) === key(who));
+          if (e.kind === 'strike') expect(hit({ side: e.by === 'attacker' ? 'defender' : 'attacker', fighter: e.target }, e.hit ? ['hurt', 'fall'] : ['block'])).toBe(true);
+          if (e.kind === 'duel') expect(hit(e.winner === 'attacker' ? { side: 'defender', fighter: e.defender } : { side: 'attacker', fighter: e.attacker }, ['hurt', 'fall'])).toBe(true);
+        }
+      }
+    }
+  });
+
   it('gallops knights in faster than a squad runs on foot', () => {
     const run = (cls: ClassId) => play(cls, 'sword', 1)[0].acts.find((x) => x.kind === 'advance')!;
     expect(run('knight').seconds).toBeLessThan(run('spear').seconds);

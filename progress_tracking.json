@@ -221,12 +221,18 @@
     {
       "id": "B3-director",
       "title": "B3 step 4: the director plays the rules' battle in the scene (src/battle/Director.ts): charge, counter, duels, panic, flashes, falls, cheers; live HUD pips, Morale and callouts; Space skips; check.mjs battle checks; scripts/battlevideo.mjs; 3 battle videos",
-      "status": "review",
+      "status": "done",
       "commit": "bf97030"
     },
     {
       "id": "B3-targets",
       "title": "B3 step 4 review: fighters take their opposite numbers (head v head, soldier v soldier, then spread over the soldiers left, the head last); soldiers in proportion to Morale; the fallen fade back to their places (clash.ts target(), soldiersFor())",
+      "status": "done",
+      "commit": "de46155"
+    },
+    {
+      "id": "B3-stance",
+      "title": "B3 step 5: stance keys A/S/D (from the next beat), the edge on each banner, the skill gauge (src/game/gauge.ts: 4 a hit, 6 a duel won, x1.5 aggressive, none passive) rising as blows land; ?at= opens a battle still; check.mjs stance and gauge checks",
       "status": "review",
       "commit": "next"
     }
