@@ -209,7 +209,13 @@
     {
       "id": "B3-squads",
       "title": "B3 step 2: real squads in the battle scene (?mode=battle&a=&d=): leaders by roster name, soldiers man and woman in turn, the enemy's soldiers red in the shader, a mounted formation",
-      "status": "review",
+      "status": "done",
+      "commit": "04cf99b"
+    },
+    {
+      "id": "B3-script",
+      "title": "B3 step 3: the battle script (src/battle/script.ts, pure): ClashSim beats to timed acts (runs, swings, shots, hurts, falls, flashes, cheers, the result); clips moved to clips.ts; tested against resolveClash over 50 seeds and all 36 class pairs",
+      "status": "done",
       "commit": "next"
     }
   ],

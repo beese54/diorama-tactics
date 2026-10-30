@@ -16,10 +16,10 @@ function resolve(from: string, spec: string): string {
   return `${parts.join('/')}.ts`;
 }
 
-/** Every module the rules core loads, followed through relative imports, with the packages each one imports. */
-function imports(): Map<string, string[]> {
+/** Every module the `roots` load, followed through relative imports, with the packages each one imports. */
+function imports(roots: string[]): Map<string, string[]> {
   const seen = new Map<string, string[]>();
-  const todo = Object.keys(SOURCES).filter((k) => k.startsWith('game/'));
+  const todo = [...roots];
   while (todo.length) {
     const file = todo.pop()!;
     if (seen.has(file)) continue;
@@ -34,8 +34,14 @@ function imports(): Map<string, string[]> {
 
 describe('rules core', () => {
   it('loads nothing from three.js, not even through the map modules it uses', () => {
-    const all = imports();
+    const all = imports(Object.keys(SOURCES).filter((k) => k.startsWith('game/')));
     expect([...all.keys()]).toContain('map/terrain.ts');
+    for (const [file, packages] of all) expect(packages, file).not.toContain('three');
+  });
+
+  it('keeps the battle script pure too, so it can be tested against the rules', () => {
+    const all = imports(['battle/script.ts']);
+    expect([...all.keys()]).toContain('battle/clips.ts');
     for (const [file, packages] of all) expect(packages, file).not.toContain('three');
   });
 });

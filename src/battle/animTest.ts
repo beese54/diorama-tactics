@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BattleView, DESIGN_H } from './BattleView';
-import { ART, ATTACK, CHARACTERS, charge, Dust, Figure, FOLLOW, LOSE, loadSet, ROUND2, STAND_H, WIN, type Character } from './cast';
+import { ART, CHARACTERS, Dust, Figure, loadSet, STAND_H, type Character } from './cast';
+import { ATTACK, charge, FOLLOW, LOSE, ROUND2, WIN } from './clips';
 import { clipSeconds, sample, type Beat } from './poseClip';
 
 /** Where both test figures stand: their feet, in design units from the screen's middle. */

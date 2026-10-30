@@ -76,3 +76,13 @@ export function sample(clip: readonly Beat[], seconds: number, has: (pose: strin
   }
   throw new Error('unreachable: t is inside the clip');
 }
+
+/** Seconds into a clip when the beat with `cue` starts (the blow lands as it does). */
+export function cueAt(clip: readonly Beat[], cue: Cue): number {
+  let t = 0;
+  for (const beat of clip) {
+    if (beat.cue === cue) return t;
+    t += beat.seconds;
+  }
+  throw new Error(`no ${cue} cue in the clip`);
+}
