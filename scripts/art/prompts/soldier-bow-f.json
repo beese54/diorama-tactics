@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for a rank-and-file archer (woman), a soldier of the player's army (the game recolours soldiers for the enemy). Every pose takes the standing image (art/source/soldier-bow-f-stand.jpg) as its one reference.",
+  "base": "The exact same character as the reference: the same face, a dark ponytail out of the hood, a deep blue hood, a blue quilted gambeson, a blue sash at the waist, a steel shoulder guard, brown leather bracers and boots, a quiver of arrows on the back, a plain wooden longbow, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one bow: no second bow, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, bow included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "soldier-bow-f-ready",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "raising the bow toward the target, an arrow nocked, beginning to draw the string back, weight settling onto her back foot"
+    },
+    "wind-up": {
+      "out": "soldier-bow-f-wind-up",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "at full draw: the bowstring pulled all the way back to her cheek, the arrow aimed straight ahead, her bow arm fully extended, body steady; drawn smaller in the frame so that everything fits, from the top of the raised bow down to her boots, with empty space below her feet"
+    },
+    "slash": {
+      "out": "soldier-bow-f-loose",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "the instant after releasing the arrow: her string hand flung back past her ear with the fingers open, her bow arm still extended forward, no arrow on the bow, the string straight"
+    },
+    "follow-through": {
+      "out": "soldier-bow-f-follow-through",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "holding still after the shot: the bow still raised forward, her string hand resting back by her shoulder, no arrow on the bow and no arrow anywhere in the picture; drawn smaller in the frame so that everything fits, from the top of the raised bow down to her boots, with empty space below her feet"
+    },
+    "recover": {
+      "out": "soldier-bow-f-recover",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "lowering the bow and reaching back over her shoulder to the quiver for the next arrow; drawn smaller in the frame so that everything fits, from the top of the raised bow down to her boots, with empty space below her feet"
+    },
+    "victory": {
+      "out": "soldier-bow-f-victory",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "standing tall, the bow raised high above her head in her left hand, her right fist clenched; drawn smaller in the frame so that everything fits, from the top of the raised bow down to her boots, with empty space below her feet"
+    },
+    "run": {
+      "out": "soldier-bow-f-run",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the bow held low in her left hand, no arrow nocked, tabard flapping"
+    },
+    "run-2": {
+      "out": "soldier-bow-f-run-2",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the bow held low in her left hand, no arrow nocked, tabard flapping"
+    },
+    "hurt": {
+      "out": "soldier-bow-f-hurt",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the bow lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "soldier-bow-f-fallen",
+      "refs": [
+        "soldier-bow-f-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with her head down, defeated, the bow lying on the ground beside her"
+    }
+  }
+}

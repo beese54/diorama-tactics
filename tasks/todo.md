@@ -698,3 +698,10 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - Spend so far about $5.60 of $30.
 - Next: the 12 soldier designs.
 
+### The soldiers (2026-10-30): all 12 done
+- Ten Flow standing images, plus round 1's sword pair (copied to `soldier-sword-<m|f>-stand.jpg`); Seedream poses from `scripts/art/prompts/soldier-<class>-<m|f>.json`. Regenerated: both sword ready poses (kite shield; cut off), the mounted woman's follow-through (two lances). Size factors in `scripts/art/sets.json`.
+- animTest: `SOLDIER_STAND` (front-rank height), the sword and axe swings, spear and lance streaks, arrows, `AZURE` bolts; `GALLOP` shared by every rider.
+- `generate.mjs` times out a hung request after three minutes; `key.py`'s `unglow` drops a glow's teal fringe.
+- Spend so far about $11.60 of $30.
+- Next: B3, the battle itself (formations, three mounted riders per unit, the red recolour for the rival army's soldiers).
+

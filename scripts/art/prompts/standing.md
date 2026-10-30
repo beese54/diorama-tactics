@@ -71,7 +71,7 @@ Reference: `leader-f.jpg`
 
 ## Soldiers (blue; the game recolours them red for the enemy)
 
-Each class has a man and a woman. The sword pair is already done (`soldier-f.jpg` and the round 1 man). For every soldier, attach the class's player leader as the style reference, for example Bram for the spearmen. Then make the woman with the man as a second reference, so the pair match.
+Each class has a man and a woman. The sword pair is already done: the round 1 man (`Full-body_character_art_of_a_2K_...jpg`) and `soldier-f.jpg`, copied to `soldier-sword-m-stand.jpg` and `soldier-sword-f-stand.jpg` for their poses. For every soldier, attach the class's player leader as the style reference, for example Bram for the spearmen. Then make the woman with the man as a second reference, so the pair match.
 
 Shared tail for every soldier prompt (it's already written into each one below): "plainer than a captain. 2D anime fantasy tactics RPG battle character, clean crisp lineart, cel shading, sharp focus, no motion blur. Whole figure in frame with margin, even lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground."
 
@@ -99,4 +99,4 @@ Reference: `edric-stand.jpg`; for the woman, also attach the man
 
 ## Story characters
 
-- **The round 1 sword captain** (`Full-body_character_art_of_a_2K_...jpg`, a young man in blue and silver plate): kept for the story, not a battle leader.
+- **The round 1 sword captain** (`Fantasy_knight_holding_longsword_2K_...jpg`, a young man in blue and silver plate with a blue cape): kept for the story, not a battle leader.

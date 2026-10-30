@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for an apprentice battle mage (woman), a soldier of the player's army (the game recolours soldiers for the enemy). Every pose takes the standing image (art/source/soldier-mage-f-stand.jpg) as its one reference.",
+  "base": "The exact same character as the reference: the same face, long light brown hair, blue hooded robes with white trim over a lavender inner robe, dark trousers and boots, a brown belt with pouches and a scroll, a gnarled wooden staff topped with a small clear crystal. The crystal is plain and not glowing, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one staff: no second staff, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, staff included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "soldier-mage-f-ready",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "gathering power: knees slightly bent, the staff held upright in front in both hands, eyes narrowed in concentration, robes stirring"
+    },
+    "wind-up": {
+      "out": "soldier-mage-f-wind-up",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "drawing the staff back over her right shoulder with the crystal end raised high behind, her left hand thrust forward with the fingers spread, robes swirling"
+    },
+    "slash": {
+      "out": "soldier-mage-f-cast",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "casting: stepping forward and thrusting the staff straight ahead at arm's length, the crystal pointing at the target, her left hand pulled back, robes swept back"
+    },
+    "follow-through": {
+      "out": "soldier-mage-f-follow-through",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "just after the cast: leaning forward, the staff still extended forward and tipped slightly down, sleeves swinging forward"
+    },
+    "recover": {
+      "out": "soldier-mage-f-recover",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "drawing the staff back toward the body and straightening up"
+    },
+    "victory": {
+      "out": "soldier-mage-f-victory",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "standing tall, the staff raised high above her head, her other hand clenched, cheering; drawn smaller in the frame so that everything fits, from the top of the raised staff down to her boots, with empty space below her feet"
+    },
+    "run": {
+      "out": "soldier-mage-f-run",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the staff held upright at her side in her right hand, robes trailing behind"
+    },
+    "run-2": {
+      "out": "soldier-mage-f-run-2",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the staff held upright at her side in her right hand, robes trailing behind"
+    },
+    "hurt": {
+      "out": "soldier-mage-f-hurt",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the staff lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "soldier-mage-f-fallen",
+      "refs": [
+        "soldier-mage-f-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with her head down, defeated, the staff lying on the ground beside her"
+    }
+  }
+}

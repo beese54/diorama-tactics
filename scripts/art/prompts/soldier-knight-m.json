@@ -1,0 +1,91 @@
+{
+  "about": "Pose prompts for a mounted lancer (man), a soldier of the player's army: rider and horse posing together, 4:3, with Edric's poses.",
+  "size": "1664x1248",
+  "base": "The exact same rider and horse as the reference: the same rider with a calm face, steel half-plate armour with a blue surcoat, a steel helm with a blue plume, a small round shield on the left arm and a long lance with a blue shaft; the same brown bay horse with a black mane and tail, wearing a blue cloth caparison with gold trim and blue tassels; same colours, same art style, same size in frame. Strict side view facing right. Pose: {pose}. He holds exactly one lance: no second lance, no afterimage, no ghost or blurred copies. The horse has exactly four legs and one tail. A single sharp still frame: no motion blur, no speed lines, no smear, no dust, no sparks or effects. Horse, rider and lance entirely in frame with margin around them, all four hooves included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the rider or the horse, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "soldier-knight-m-ready",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "gathering for the charge: the horse crouched back on its haunches with its head lowered and neck arched; the rider leaning forward in the saddle, the lance lowered toward level and pointing forward"
+    },
+    "wind-up": {
+      "out": "soldier-knight-m-wind-up",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "couching the lance as the charge begins: the horse rising slightly with its front hooves lifting off the ground; the rider braced forward, the lance level and tucked under his right arm pointing straight ahead, shield raised"
+    },
+    "thrust": {
+      "out": "soldier-knight-m-thrust",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "the charge's impact: the horse lunging forward in full stride with its front legs stretched far forward; the rider standing in the stirrups and driving the lance straight forward at full reach"
+    },
+    "follow-through": {
+      "out": "soldier-knight-m-follow-through",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "just after the impact: the horse's front hooves landing heavily; the rider leaning far forward over its neck, the lance still extended forward and tipped slightly down, surcoat swinging forward"
+    },
+    "recover": {
+      "out": "soldier-knight-m-recover",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "reining back after the strike: the horse stepping back with its head raised and its weight on its hind legs; the rider sitting back upright, the lance swinging back up toward upright"
+    },
+    "gallop-1": {
+      "out": "soldier-knight-m-gallop-1",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "galloping to the right, the stretched phase: the horse's front legs reaching far forward and its hind legs pushing far back, its body long and low; the rider leaning forward with the lance level, pointing ahead, plume and surcoat streaming behind"
+    },
+    "gallop-2": {
+      "out": "soldier-knight-m-gallop-2",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "galloping to the right, the gathered phase: all four of the horse's hooves off the ground and tucked under its body, its back rounded; the rider leaning forward with the lance level, pointing ahead, plume and surcoat streaming behind"
+    },
+    "gallop-3": {
+      "out": "soldier-knight-m-gallop-3",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "galloping to the right, the landing phase: one hind hoof striking the ground, the other hind leg and both front legs folded forward in the air; the rider leaning forward with the lance level, pointing ahead, plume and surcoat streaming behind"
+    },
+    "gallop-4": {
+      "out": "soldier-knight-m-gallop-4",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "galloping to the right, the leading phase: one front hoof planted on the ground under the horse's chest, both hind legs swinging forward under its belly; the rider leaning forward with the lance level, pointing ahead, plume and surcoat streaming behind"
+    },
+    "hurt": {
+      "out": "soldier-knight-m-hurt",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "struck: the horse rearing up in alarm on its hind legs with its front hooves high in the air; the rider recoiling backward in the saddle, shield raised, the lance tilting back"
+    },
+    "fallen": {
+      "out": "soldier-knight-m-fallen",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "defeated: the horse down on its folded front knees with its head low; the rider slumped forward over its neck, head bowed, the lance lying on the ground beside them"
+    },
+    "victory": {
+      "out": "soldier-knight-m-victory",
+      "refs": [
+        "soldier-knight-m-stand.jpg"
+      ],
+      "pose": "triumph: the horse rearing proudly on its hind legs; the rider holding the lance high above his head in his right hand, his shield arm raised, surcoat flowing"
+    }
+  }
+}

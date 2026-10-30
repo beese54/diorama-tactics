@@ -36,6 +36,14 @@ def despill(rgb: np.ndarray, alpha: np.ndarray) -> np.ndarray:
     return out
 
 
+def unglow(rgb: np.ndarray, alpha: np.ndarray) -> np.ndarray:
+    """Drops a soft glow's teal fringe (a glowing crystal mixed with the green), from despilled colours:
+    see-through teal, or dull teal (the crystal itself is pale and bright)."""
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    teal = (g > r + 15) & (np.abs(g - b) < 25) & ((alpha < 0.97) | (np.maximum(g, b) < 170))
+    return np.where(teal, 0, alpha)
+
+
 def erode(alpha: np.ndarray) -> np.ndarray:
     """Shaves one pixel off the edge (a 3x3 minimum), where JPEG fringes live."""
     p = np.pad(alpha, 1, mode='edge')

@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for a rank-and-file sword soldier (woman), a soldier of the player's army (the game recolours soldiers for the enemy). Every pose takes the standing image (art/source/soldier-sword-f-stand.jpg) as its one reference.",
+  "base": "The exact same character as the reference: the same face, a long brown braid, a steel kettle helmet, a chainmail coif, steel pauldrons, a blue tabard with white trim over chainmail, steel greaves, a brown belt with pouches, a small round blue shield with a steel rim (round, not a kite shield) on the left arm, a plain straight sword, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one sword: no second sword, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, sword included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "soldier-sword-f-ready",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "sinking into a low stance behind the same small round blue shield, knees bent, the sword held low and back at her right side with the blade pointing forward, eyes fixed ahead; drawn smaller in the frame so that everything fits, from the top of the raised sword down to her boots, with empty space below her feet"
+    },
+    "wind-up": {
+      "out": "soldier-sword-f-wind-up",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "the sword drawn far back and raised behind her right shoulder for a sweeping slash, her body twisted back, the shield held forward, weight on her back foot"
+    },
+    "slash": {
+      "out": "soldier-sword-f-slash",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "mid-slash: lunging forward, her right arm swept forward and fully extended at shoulder height, the sword held out ahead with its blade pointing forward and away from her body, toward the target, the shield pulled in"
+    },
+    "follow-through": {
+      "out": "soldier-sword-f-follow-through",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "the slash finished: her right arm swept down in front, the sword's blade pointing forward and down ahead, its tip low near the ground in front of her front foot, leaning forward over her front knee"
+    },
+    "recover": {
+      "out": "soldier-sword-f-recover",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "drawing back out of the slash and straightening up, weight shifting back, the shield raised and the sword returning to a guard"
+    },
+    "victory": {
+      "out": "soldier-sword-f-victory",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "standing tall, the sword raised high above her head, the shield lowered at her side, cheering; drawn smaller in the frame so that everything fits, from the top of the raised sword down to her boots, with empty space below her feet"
+    },
+    "run": {
+      "out": "soldier-sword-f-run",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the sword held low at her right side pointing forward, the shield on her left arm, tabard flapping"
+    },
+    "run-2": {
+      "out": "soldier-sword-f-run-2",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the sword held low at her right side pointing forward, the shield on her left arm, tabard flapping"
+    },
+    "hurt": {
+      "out": "soldier-sword-f-hurt",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the sword lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "soldier-sword-f-fallen",
+      "refs": [
+        "soldier-sword-f-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with her head down, defeated, the sword lying on the ground beside her"
+    }
+  }
+}

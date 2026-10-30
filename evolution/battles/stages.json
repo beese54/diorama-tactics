@@ -68,10 +68,18 @@
     {
       "id": "b2-roster-rivals",
       "date": "2026-10-30",
-      "commit": "next",
+      "commit": "cf37184",
       "image": "b2-roster/rivals/strikes.jpg",
       "title": "B2 · The rival army's six leaders",
       "note": "Varek, Sabine, Gorran, Petra, Ulric and Morwen: Flow standing images, Seedream poses, their own swings, streaks, arrow and crimson bolt."
+    },
+    {
+      "id": "b2-roster-soldiers",
+      "date": "2026-10-30",
+      "commit": "next",
+      "image": "b2-roster/soldiers/strikes.jpg",
+      "title": "B2 · The twelve soldiers",
+      "note": "A man and a woman for each class: Flow standing images, Seedream poses, their own swings, streaks, arrows and pale blue bolts; soldiers stand smaller than leaders."
     }
   ]
 }

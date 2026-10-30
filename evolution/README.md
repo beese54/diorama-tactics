@@ -24,6 +24,40 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 roster: the twelve soldiers
+![The twelve soldiers at the moment of their attacks, a man and a woman for each class: sword, spear, axe, bow, mage and mounted lancer](battles/b2-roster/soldiers/strikes.jpg)
+
+| Their Flow standing images | The mounted lancer's charge |
+|---|---|
+| ![](battles/b2-roster/soldiers/stands.jpg) | ![](battles/b2-roster/soldiers/knight-charge.jpg) |
+
+| Class | Man | Woman |
+|---|---|---|
+| Sword | ![](battles/b2-roster/soldiers/sword-m-poses.jpg) | ![](battles/b2-roster/soldiers/sword-f-poses.jpg) |
+| Spear | ![](battles/b2-roster/soldiers/spear-m-poses.jpg) | ![](battles/b2-roster/soldiers/spear-f-poses.jpg) |
+| Axe | ![](battles/b2-roster/soldiers/axe-m-poses.jpg) | ![](battles/b2-roster/soldiers/axe-f-poses.jpg) |
+| Bow | ![](battles/b2-roster/soldiers/bow-m-poses.jpg) | ![](battles/b2-roster/soldiers/bow-f-poses.jpg) |
+| Mage | ![](battles/b2-roster/soldiers/mage-m-poses.jpg) | ![](battles/b2-roster/soldiers/mage-f-poses.jpg) |
+| Knight | ![](battles/b2-roster/soldiers/knight-m-poses.jpg) | ![](battles/b2-roster/soldiers/knight-f-poses.jpg) |
+
+MP4s, one per class (the man's charge and defeat, then the woman's): [Sword](battles/b2-roster/soldiers/sword.mp4) · [Spear](battles/b2-roster/soldiers/spear.mp4) · [Axe](battles/b2-roster/soldiers/axe.mp4) · [Bow](battles/b2-roster/soldiers/bow.mp4) · [Mage](battles/b2-roster/soldiers/mage.mp4) · [Knight](battles/b2-roster/soldiers/knight.mp4)
+
+- **What changed:** the rank-and-file soldiers, a man and a woman for each of the six classes, made the way the leaders were. They stand at the front rank's height, smaller than the leaders. The game will recolour them red for the rival army.
+  - **Sword** and **axe**: their own swings, measured on each soldier's poses.
+  - **Spear** and **mounted lance**: thrust streaks. The riders share Edric's gallop.
+  - **Bow**: arrows with white fletching.
+  - **Mage**: a plainer pale blue bolt (`AZURE`), apart from Ilse's violet.
+- **Feedback:** the roster plan: "12 soldier designs", a man and a woman per class, mounted knights whose horses change pose too.
+- **Decisions:**
+  - The sword pair reuse round 1's images; the other ten came from Flow with the class leader as the style reference.
+  - Each soldier's poses use the class leader's tested wording.
+- **Learned:**
+  - Seedream drew the sword man's shield as a kite shield and the sword woman cut off at the knees in their ready poses, and gave the mounted woman two lances in her follow-through. All three were regenerated (the prompt now says "round, not a kite shield").
+  - The mage man's crystal glowed in Flow, and the key left a teal ring round it. The keyer now drops a glow's teal fringe (`unglow` in `scripts/art/key.py`).
+  - One request hung for eight minutes, so the generator now gives up after three minutes and retries.
+  - Sizes vary a lot from pose to pose, as before; `*factor` in `scripts/art/sets.json` matches each to its stance.
+  - The 134 images cost about $6.
+
 ### B2 roster: the rival army's six leaders
 ![The six rival leaders at the moment of their attacks: Sabine's sabre arc, Gorran's chop, Petra's glaive thrust, Ulric's arrow, Morwen's crimson bolt and Varek's lance](battles/b2-roster/rivals/strikes.jpg)
 

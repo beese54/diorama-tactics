@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for a rank-and-file axe fighter (woman), a soldier of the player's army (the game recolours soldiers for the enemy). Every pose takes the standing image (art/source/soldier-axe-f-stand.jpg) as its one reference.",
+  "base": "The exact same character as the reference: the same face, a red-brown braid, an open steel cap, a blue leather jerkin with crossed brown straps over chainmail, steel pauldrons and knee guards, brown leather bracers and boots, a two-handed double-bitted battle axe, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one axe: no second axe, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, axe included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "soldier-axe-f-ready",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "sinking into a low wide crouch, knees bent, the axe held low across the body in both hands, gathering strength"
+    },
+    "wind-up": {
+      "out": "soldier-axe-f-wind-up",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "the axe raised high behind her head in both hands for an overhead chop, the blade pointing back over her shoulder, back arched, weight on her back foot; drawn smaller in the frame so that everything fits, from the top of the raised axe down to her boots, with empty space below her feet"
+    },
+    "slash": {
+      "out": "soldier-axe-f-slash",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "mid-chop: stepping forward, the axe swung down in front at waist height in both hands, arms fully extended, front knee bent, the blade forward"
+    },
+    "follow-through": {
+      "out": "soldier-axe-f-follow-through",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "the chop finished: bent forward over her front knee, the axe head low near the ground in front of her front foot, both hands on the haft"
+    },
+    "recover": {
+      "out": "soldier-axe-f-recover",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "heaving the axe back up out of the chop: straightening up, weight shifting back, the axe rising in front of her chest in both hands"
+    },
+    "victory": {
+      "out": "soldier-axe-f-victory",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "standing tall, the axe raised high above her head in both hands, cheering; drawn smaller in the frame so that everything fits, from the top of the raised axe down to her boots, with empty space below her feet"
+    },
+    "run": {
+      "out": "soldier-axe-f-run",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the axe held across the body in both hands, tabard flapping"
+    },
+    "run-2": {
+      "out": "soldier-axe-f-run-2",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the axe held across the body in both hands, tabard flapping"
+    },
+    "hurt": {
+      "out": "soldier-axe-f-hurt",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the axe lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "soldier-axe-f-fallen",
+      "refs": [
+        "soldier-axe-f-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with her head down, defeated, the axe lying on the ground beside her"
+    }
+  }
+}

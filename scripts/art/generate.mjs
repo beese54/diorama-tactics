@@ -88,8 +88,8 @@ for (const name of opts.names) {
     continue;
   }
   for (let i = 0; i < opts.count; i++) {
-    // A dropped connection (it happens on long generations) is tried twice more, then the pose is
-    // skipped so the rest of the batch still runs.
+    // A dropped connection (it happens on long generations) or a request hung past three minutes
+    // is tried twice more, then the pose is skipped so the rest of the batch still runs.
     let res;
     let text;
     for (let attempt = 1; attempt <= 3 && !res; attempt++) {
@@ -98,6 +98,7 @@ for (const name of opts.names) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${vars.ARK_API_KEY}` },
           body: JSON.stringify(body),
+          signal: AbortSignal.timeout(180_000),
         });
         text = await res.text();
       } catch (e) {

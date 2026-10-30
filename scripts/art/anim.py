@@ -30,7 +30,7 @@ from PIL import Image
 from scipy import ndimage
 
 sys.path.insert(0, os.path.dirname(__file__))
-from key import despill, erode, key  # noqa: E402
+from key import despill, erode, key, unglow  # noqa: E402
 
 
 def matte(path: str, loose: bool) -> np.ndarray:
@@ -44,7 +44,8 @@ def matte(path: str, loose: bool) -> np.ndarray:
             sizes = ndimage.sum(solid, lab, range(1, n + 1))
             body = ndimage.binary_dilation(lab == 1 + int(np.argmax(sizes)), iterations=2)
             alpha = np.where(body, alpha, 0)
-    return np.dstack([despill(rgb, alpha), alpha * 255])
+    rgb = despill(rgb, alpha)
+    return np.dstack([rgb, unglow(rgb, alpha) * 255])
 
 
 def anchor(alpha: np.ndarray) -> tuple[float, float, float]:

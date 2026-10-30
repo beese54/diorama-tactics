@@ -6,6 +6,8 @@ import { clipSeconds, sample, type Beat, type Sample } from './poseClip';
 const ART = `${import.meta.env.BASE_URL}battle/anim/`;
 /** A leader's standing height in design units, as in the style frame (front rank, scale 1.06). */
 const STAND_H = SOLDIER_H * 1.06 * HEAD_SCALE;
+/** A soldier's standing height: the front rank's, without a leader's larger head. */
+const SOLDIER_STAND = SOLDIER_H * 1.06;
 /** Where both test figures stand: their feet, in design units from the screen's middle. */
 const FEET = DESIGN_H / 2 - 0.86 * DESIGN_H;
 
@@ -219,6 +221,12 @@ const CORIN_SWING: Swing = { pivot: v(80, 470), windUp: v(-202, 631), slash: v(3
 const SABINE_SWING: Swing = { pivot: v(100, 500), windUp: v(-346, 752), slash: v(564, 700), follow: v(439, 15) };
 /** Gorran's cleaver: an overhead chop like Corin's, from the head behind his own down to it by his knees. */
 const GORRAN_SWING: Swing = { pivot: v(80, 480), windUp: v(-186, 584), slash: v(314, 254), follow: v(261, 114) };
+/** The sword soldiers: Sabine's sweep, a level slash at the shoulder and down to the tip by the front foot. */
+const SWORD_M_SWING: Swing = { pivot: v(80, 520), windUp: v(-400, 766), slash: v(380, 590), follow: v(269, 37) };
+const SWORD_F_SWING: Swing = { pivot: v(80, 520), windUp: v(-343, 710), slash: v(522, 591), follow: v(123, 55) };
+/** The axe soldiers: Corin's overhead chop. */
+const AXE_M_SWING: Swing = { pivot: v(80, 470), windUp: v(-308, 733), slash: v(351, 353), follow: v(400, 150) };
+const AXE_F_SWING: Swing = { pivot: v(80, 470), windUp: v(-240, 791), slash: v(357, 382), follow: v(327, 148) };
 
 /**
  * A thrust's streak, drawn in code: a tapered white streak running back along the spear from its
@@ -304,6 +312,8 @@ type Glow = [number, number, number][];
 const VIOLET: Glow = [[226, 204, 255], [160, 100, 255], [110, 60, 230]];
 /** Morwen's magic: blood red. */
 const CRIMSON: Glow = [[255, 200, 190], [235, 50, 50], [150, 0, 20]];
+/** The mage soldiers' magic: a plainer pale blue. */
+const AZURE: Glow = [[215, 235, 255], [90, 150, 255], [40, 80, 220]];
 
 /** A soft round glow for magic, white at the heart and the glow's colour toward the rim. */
 function glowTexture([inner, mid, rim]: Glow): THREE.CanvasTexture {
@@ -418,6 +428,8 @@ interface RunCycle {
   steps: number[];
 }
 const ON_FOOT: RunCycle = { poses: ['run', 'run-2'], stride: 0.1, bob: [10, 0], steps: [1] };
+/** A horse's gallop: four poses, riding high in the gathered one, the hooves landing in the last two. */
+const GALLOP: RunCycle = { poses: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], stride: 0.085, bob: [4, 16, 6, 0], steps: [2, 3] };
 
 /** A character the test can play. */
 interface Character {
@@ -449,15 +461,27 @@ const CHARACTERS: Record<string, Character> = {
   petra: { set: 'petra-poses', effect: () => new Streak(v(680, 498), v(1, 0.26)), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
   ulric: { set: 'ulric-poses', effect: () => new Arrow(v(412, 624), 0x9a1830), height: STAND_H, reach: 0.35, foot: 80, run: ON_FOOT, ranged: true },
   morwen: { set: 'morwen-poses', effect: () => new Bolt(v(431, 620), CRIMSON), height: STAND_H, reach: 0.6, foot: 80, run: ON_FOOT, ranged: true },
-  // Horse and rider: the lance's tip in the thrust pose, the shaft angled up; a four-pose gallop,
-  // riding high in the gathered pose, the hooves landing in the last two.
+  // The soldiers, a man and a woman of each class: smaller than the leaders, made the same way.
+  'soldier-sword-m': { set: 'soldier-sword-m-poses', effect: () => new Smear(SWORD_M_SWING), height: SOLDIER_STAND, reach: 1, foot: 85, run: ON_FOOT },
+  'soldier-sword-f': { set: 'soldier-sword-f-poses', effect: () => new Smear(SWORD_F_SWING), height: SOLDIER_STAND, reach: 1, foot: 85, run: ON_FOOT },
+  'soldier-spear-m': { set: 'soldier-spear-m-poses', effect: () => new Streak(v(569, 466), v(1, 0.1)), height: SOLDIER_STAND, reach: 1, foot: 85, run: ON_FOOT },
+  'soldier-spear-f': { set: 'soldier-spear-f-poses', effect: () => new Streak(v(656, 471), v(1, 0.13)), height: SOLDIER_STAND, reach: 1, foot: 85, run: ON_FOOT },
+  'soldier-axe-m': { set: 'soldier-axe-m-poses', effect: () => new Smear(AXE_M_SWING), height: SOLDIER_STAND, reach: 1, foot: 90, run: ON_FOOT },
+  'soldier-axe-f': { set: 'soldier-axe-f-poses', effect: () => new Smear(AXE_F_SWING), height: SOLDIER_STAND, reach: 1, foot: 90, run: ON_FOOT },
+  'soldier-bow-m': { set: 'soldier-bow-m-poses', effect: () => new Arrow(v(340, 592)), height: SOLDIER_STAND, reach: 0.35, foot: 80, run: ON_FOOT, ranged: true },
+  'soldier-bow-f': { set: 'soldier-bow-f-poses', effect: () => new Arrow(v(328, 557)), height: SOLDIER_STAND, reach: 0.35, foot: 80, run: ON_FOOT, ranged: true },
+  'soldier-mage-m': { set: 'soldier-mage-m-poses', effect: () => new Bolt(v(580, 602), AZURE), height: SOLDIER_STAND, reach: 0.6, foot: 80, run: ON_FOOT, ranged: true },
+  'soldier-mage-f': { set: 'soldier-mage-f-poses', effect: () => new Bolt(v(500, 615), AZURE), height: SOLDIER_STAND, reach: 0.6, foot: 80, run: ON_FOOT, ranged: true },
+  'soldier-knight-m': { set: 'soldier-knight-m-poses', effect: () => new Streak(v(505, 590), v(1, 0.23)), height: SOLDIER_STAND * 1.7, reach: 2.2, foot: 190, run: GALLOP },
+  'soldier-knight-f': { set: 'soldier-knight-f-poses', effect: () => new Streak(v(576, 606), v(1, 0.16)), height: SOLDIER_STAND * 1.7, reach: 2.2, foot: 190, run: GALLOP },
+  // Horse and rider: the lance's tip in the thrust pose, the shaft angled up.
   edric: {
     set: 'edric-poses',
     effect: () => new Streak(new THREE.Vector2(543, 598), new THREE.Vector2(1, 0.3)),
     height: STAND_H * 1.7,
     reach: 2.2,
     foot: 190,
-    run: { poses: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], stride: 0.085, bob: [4, 16, 6, 0], steps: [2, 3] },
+    run: GALLOP,
   },
   varek: {
     set: 'varek-poses',
@@ -465,7 +489,7 @@ const CHARACTERS: Record<string, Character> = {
     height: STAND_H * 1.7,
     reach: 2.2,
     foot: 190,
-    run: { poses: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], stride: 0.085, bob: [4, 16, 6, 0], steps: [2, 3] },
+    run: GALLOP,
   },
 };
 
@@ -622,7 +646,7 @@ const SCENES: Record<string, (c: Character) => Actor[]> = {
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
  * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat), `charge` (run in, attack, win) or `video` (round 2: pose images against Flow's
- * video). `?char=` picks who plays it (aria, bram, corin, dela, ilse, edric, or a rival: sabine, gorran, petra, ulric, morwen, varek; the video is always Aria's). Everything loops.
+ * video). `?char=` picks who plays it (aria, bram, corin, dela, ilse, edric, a rival: sabine, gorran, petra, ulric, morwen, varek, or a soldier: soldier-<sword|spear|axe|bow|mage|knight>-<m|f>; the video is always Aria's). Everything loops.
  */
 export async function animTest(): Promise<void> {
   document.title = 'Animation test · Diorama Tactics';

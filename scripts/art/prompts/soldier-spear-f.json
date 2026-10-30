@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for a rank-and-file spearman (woman), a soldier of the player's army (the game recolours soldiers for the enemy). Every pose takes the standing image (art/source/soldier-spear-f-stand.jpg) as its one reference.",
+  "base": "The exact same character as the reference: the same face, a long brown braid over her shoulder, a wide-brimmed steel kettle helmet, a short white scarf, a blue quilted gambeson with a blue tabard, steel pauldrons, knee guards and greaves, brown gloves, belt and boots, a long spear with a steel leaf-shaped blade, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one spear: no second spear, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, spear included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "soldier-spear-f-ready",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "sinking into a low crouch, knees bent, the spear held level at hip height in both hands with the blade pointing forward, gathering strength"
+    },
+    "wind-up": {
+      "out": "soldier-spear-f-wind-up",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "drawing the spear far back for a thrust: her rear hand pulled back past her hip, her front hand forward on the shaft, body twisted back, weight on her back foot, the blade still pointing forward at chest height"
+    },
+    "thrust": {
+      "out": "soldier-spear-f-thrust",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "a powerful lunging thrust: front knee deeply bent, back leg straight, body leaning forward, both arms fully extended, the spear driven straight forward at chest height; drawn smaller in the frame so that everything fits, from the top of the raised spear down to her boots, with empty space below her feet"
+    },
+    "follow-through": {
+      "out": "soldier-spear-f-follow-through",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "the end of the thrust: leaning far forward over her front knee, the spear at full reach pointing forward and slightly down; drawn smaller in the frame so that everything fits, from the top of the raised spear down to her boots, with empty space below her feet"
+    },
+    "recover": {
+      "out": "soldier-spear-f-recover",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "pulling back out of the lunge: rising, weight shifting onto her back foot, the spear drawn back toward her body and still pointing forward"
+    },
+    "victory": {
+      "out": "soldier-spear-f-victory",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "standing tall, the spear raised high above her head in her right hand, her left fist clenched, cheering; drawn smaller in the frame so that everything fits, from the top of the raised spear down to her boots, with empty space below her feet"
+    },
+    "run": {
+      "out": "soldier-spear-f-run",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the spear held low at her side pointing forward, tabard flapping"
+    },
+    "run-2": {
+      "out": "soldier-spear-f-run-2",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the spear held low at her side pointing forward, tabard flapping"
+    },
+    "hurt": {
+      "out": "soldier-spear-f-hurt",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the spear lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "soldier-spear-f-fallen",
+      "refs": [
+        "soldier-spear-f-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with her head down, defeated, the spear lying on the ground beside her"
+    }
+  }
+}
