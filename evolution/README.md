@@ -24,6 +24,29 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B3: the battle plays out
+![Aria's swordfighters against Gorran's axemen: the charge, the charge breaking on the enemy's front with a panic, the melee duels, and the result with Morale −70](battles/b3-battle/director/battle.jpg)
+
+| Knights charge spearfighters | Archers against mages, in the melee |
+|---|---|
+| ![](battles/b3-battle/director/knights.jpg) | ![](battles/b3-battle/director/ranged.jpg) |
+
+Three whole battles, start to result: [Sword against axe](battles/b3-battle/director/sword-v-axe.mp4) ([GIF](battles/b3-battle/director/sword-v-axe.gif)) · [Knights against spears](battles/b3-battle/director/knight-v-spear.mp4) ([GIF](battles/b3-battle/director/knight-v-spear.gif)) · [Bow against mage](battles/b3-battle/director/bow-v-mage.mp4) ([GIF](battles/b3-battle/director/bow-v-mage.gif))
+
+- **What changed:** the battle scene plays a real battle (`?mode=battle&a=<class>&d=<class>&seed=<n>`), decided by the rules core and played out by the cast.
+  - **Charge:** a melee squad runs at the defenders (knights gallop) and each fighter swings in turn, dashing to the enemy's front and back. Archers and mages shoot from their ranks, and the shot flies to land on its beat.
+  - **Counter:** the defenders strike back, unless a bow is in the battle or a crit threw them into panic.
+  - **Melee:** whoever hasn't met the foe runs in, then the pairs duel. The loser swings first and is turned aside, then the winner's blow lands. A lucky winner's flash fells another.
+  - **The end:** a blow staggers, or fells where it lands. The winners cheer, and the Morale lost shows over the loser.
+  - **The HUD:** the soldier pips drop with each fall, the Morale bar drops at the result, and a word marks each turn of the battle: "Charge!", "Counter!", "Melee!", "Panic!", "Flash!".
+  - **Space** skips to the result.
+- **Feedback:** "go", after the squads: on to the animated battle.
+- **Decisions:**
+  - The scene adds only timing and movement; every blow, fall and result is the rules'. `src/battle/script.ts` turns each beat into timed acts. It is pure and tested against `resolveClash` over 50 seeds and all 36 class pairs, and `Director.ts` draws every fighter from those acts as a pure function of the clock.
+  - The sim is stepped a beat at a time as the battle reaches it, ready for stance changes mid-battle.
+  - Fallen fighters stay where they fell.
+- **Learned:** with each melee strike dashing all the way to its target, the whole charge dived through the enemy's front to a soldier at the back and vanished behind them. A volley strike now stops at the nearest foe standing, while a duel still goes to its own foe. A fighter mid-swing is drawn over the others at its depth.
+
 ### B3: the squads take the field
 ![Four matchups in the battle scene: sword against axe, spear against knights, bow against mage, knights against knights](battles/b3-battle/squads/matchups.jpg)
 

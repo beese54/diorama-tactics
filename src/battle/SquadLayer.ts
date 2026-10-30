@@ -4,10 +4,7 @@ import { DESIGN_H, type BattleView } from './BattleView';
 import { CHARACTERS, Dust, Figure, loadSet, type Character, type Effect, type Frame } from './cast';
 import { formation, type Place } from './formation';
 import { lineup } from './lineup';
-import { sample, type Beat } from './poseClip';
 
-/** The stance held still, breathing. */
-const IDLE: Beat[] = [{ pose: 'stance', seconds: 1.6, breathe: true }];
 /** A place's scale is relative to the head's (1.06): a character's height is its size there. */
 const HEAD_PLACE = 1.06;
 
@@ -68,16 +65,5 @@ export class SquadLayer {
       fighters[place.fighter] = { figure, character, frames, effect, dust, place, scale };
     }
     return new SquadLayer(fighters);
-  }
-
-  /** Everyone at rest, breathing out of step with each other. */
-  idle(seconds: number): void {
-    for (const [i, f] of this.fighters.entries()) {
-      const s = sample(IDLE, seconds + i * 0.37);
-      f.figure.show(f.frames.get(s.pose)!, s.body);
-      f.figure.tint(0);
-      f.effect.update(-1, 0);
-      f.dust.update(-1, 0);
-    }
   }
 }

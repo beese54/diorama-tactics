@@ -216,6 +216,12 @@
       "id": "B3-script",
       "title": "B3 step 3: the battle script (src/battle/script.ts, pure): ClashSim beats to timed acts (runs, swings, shots, hurts, falls, flashes, cheers, the result); clips moved to clips.ts; tested against resolveClash over 50 seeds and all 36 class pairs",
       "status": "done",
+      "commit": "7bc8c35"
+    },
+    {
+      "id": "B3-director",
+      "title": "B3 step 4: the director plays the rules' battle in the scene (src/battle/Director.ts): charge, counter, duels, panic, flashes, falls, cheers; live HUD pips, Morale and callouts; Space skips; check.mjs battle checks; scripts/battlevideo.mjs; 3 battle videos",
+      "status": "review",
       "commit": "next"
     }
   ],

@@ -88,6 +88,14 @@
       "image": "b3-battle/squads/matchups.jpg",
       "title": "B3 · The squads take the field",
       "note": "Any matchup in the battle scene: each side's leader and its soldiers in formation, men and women in turn, the enemy's soldiers recoloured red in the shader; riders in two looser ranks."
+    },
+    {
+      "id": "b3-director",
+      "date": "2026-10-31",
+      "commit": "next",
+      "image": "b3-battle/director/battle.jpg",
+      "title": "B3 · The battle plays out",
+      "note": "The rules decide and the scene plays it: the charge, the counter, the duels, panic and flashes, falls, the winners' cheer and the Morale lost; the HUD follows live and Space skips to the result."
     }
   ]
 }

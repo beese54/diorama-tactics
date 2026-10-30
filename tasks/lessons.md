@@ -53,3 +53,7 @@
 - **What happened:** In Canal Quarter I moored narrowboats in a canal two tiles wide. A tile-sized boat sprite next to warehouses six and seven steps tall looked like a toy, so the user had them removed.
 - **Rule:** Before adding a prop, check its scale against the buildings and terrain around it: a tile is a few metres across, and a building column is a few storeys. Leave out anything that can't be drawn near its true size on one tile (vehicles, ships, large machines) rather than shrink it. Suggest the place with scenery (moorings, bollards, a lock) instead.
 - **Rule:** Apply this to everything still to come in M14–M16 (container ships, cars, trains): no miniature vehicles.
+
+## 2026-10-31: template strings lost to shell quoting (self-caught)
+- **What happened:** Twice I edited TypeScript and check.mjs through `node -e "..."` in bash. Bash expanded the `${...}` inside JavaScript template strings, leaving `page.goto(, ...)` and `className = ;`. tsc caught one; `node --check` would have caught the other.
+- **Rule:** Edit source with the Edit tool. Use `node -e` only for code without backticks or `${`. After any scripted edit, read the changed lines back before running anything.

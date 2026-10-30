@@ -266,6 +266,29 @@
         letter-spacing: 0.14em;
         text-transform: uppercase;
       }
+      #battle-hud .callout,
+      #battle-hud .loss {
+        position: absolute;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        color: #fff4d6;
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 calc(var(--u) * 0.6) rgba(0, 0, 0, 0.8), 0 calc(var(--u) * 0.2) calc(var(--u) * 0.4) rgba(0, 0, 0, 0.6);
+      }
+      #battle-hud .callout {
+        top: 30%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: calc(var(--u) * 5);
+      }
+      #battle-hud .loss {
+        top: 36%;
+        font-size: calc(var(--u) * 6);
+        color: #ffd2c4;
+      }
+      #battle-hud .loss.left { left: 22%; }
+      #battle-hud .loss.right { right: 22%; }
+      #battle-hud [hidden] { display: none; }
       #fallback {
         color: #c8c2b0;
         font: 16px monospace;

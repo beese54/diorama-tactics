@@ -1,13 +1,17 @@
 import * as THREE from 'three';
-import { CLASS_IDS, CLASSES, triangleEdge, type ClassId } from '../game/units';
+import { ClashSim, resolveClash, type ClashSetup } from '../game/clash';
+import { CLASS_IDS, CLASSES, makeUnit, triangleEdge, type ClassId, type Side } from '../game/units';
 import { BattleHud } from '../ui/BattleHud';
 import { BattleView } from './BattleView';
 import { ART, CHARACTERS } from './cast';
+import { Director, LEAD } from './Director';
 import { LEADERS } from './lineup';
+import { BattleScript } from './script';
 import { SquadLayer } from './SquadLayer';
 
+const params = new URLSearchParams(location.search);
 const pick = (name: string, fallback: ClassId): ClassId => {
-  const asked = new URLSearchParams(location.search).get(name);
+  const asked = params.get(name);
   return CLASS_IDS.find((c) => c === asked) ?? fallback;
 };
 
@@ -24,9 +28,10 @@ function matchup(a: ClassId, d: ClassId): string {
 }
 
 /**
- * The battle scene (`?mode=battle&a=<class>&d=<class>`): the player's squad of class `a` (on the
- * left) faces the rival army's squad of class `d`, at full resolution on the meadow. Each side has
- * its leader and its soldiers in formation, the enemy's soldiers in red, all breathing at rest.
+ * The battle scene (`?mode=battle&a=<class>&d=<class>&seed=<n>`): the player's squad of class
+ * `a` (on the left) attacks the rival army's squad of class `d`, at full resolution on the
+ * meadow. The rules decide the battle (seeded, POW 60) and the director plays it: the charge,
+ * the counter, the duels, the falls, and the Morale lost. Space skips to the result.
  */
 export async function battlePreview(): Promise<void> {
   document.title = 'Battle · Diorama Tactics';
@@ -34,27 +39,38 @@ export async function battlePreview(): Promise<void> {
   const view = new BattleView(document.body);
   const hud = new BattleHud(document.body);
   const [a, d] = [pick('a', 'sword'), pick('d', 'axe')];
+  const seed = Number(params.get('seed')) || 1;
   const [left, right] = await Promise.all([
     SquadLayer.load(view, 'player', a, 'left'),
     SquadLayer.load(view, 'enemy', d, 'right'),
     view.setBackdrop(`${ART}../meadow.jpg`),
   ]);
   view.add(left.group, right.group);
-  const banner = (cls: ClassId, leader: string) => {
-    const { name, morale, soldiers } = CLASSES[cls];
-    return { name: title(leader), cls: name, morale, maxMorale: morale, standing: soldiers + 1, total: soldiers + 1 };
-  };
-  hud.show(banner(a, LEADERS.player[a]), banner(d, LEADERS.enemy[d]), matchup(a, d));
+
+  // A gender only shapes a Union on the map; it plays no part in a battle.
+  const unit = (side: Side, cls: ClassId) =>
+    makeUnit({ id: `${side}-${cls}`, name: title(LEADERS[side][cls]), side, cls, gender: 'female', x: 0, y: 0 });
+  const setup: ClashSetup = { attacker: unit('player', a), defender: unit('enemy', d), pow: 60, seed };
+  const sim = new ClashSim(setup);
+  const names = { attacker: title(LEADERS.player[a]), defender: title(LEADERS.enemy[d]) };
+  const director = new Director(view, { attacker: left, defender: right }, sim, new BattleScript({ attacker: a, defender: d }), hud, names, matchup(a, d));
 
   const draw = (seconds: number) => {
-    left.idle(seconds);
-    right.idle(seconds);
+    director.draw(seconds);
     view.render();
   };
-  // Captures fix the clock with __battle.at(seconds); otherwise it runs in real time.
+  // Captures fix the clock with __battle.at(seconds); otherwise it runs in real time, from
+  // `skew` (Space jumps it to the result).
   let fixed: number | null = null;
+  let skew = 0;
   const clock = new THREE.Clock();
-  view.renderer.setAnimationLoop(() => fixed === null && draw(clock.getElapsedTime()));
+  const now = () => clock.getElapsedTime() + skew;
+  view.renderer.setAnimationLoop(() => fixed === null && draw(now()));
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space') return;
+    e.preventDefault();
+    skew += Math.max(0, director.length() - now());
+  });
   if (import.meta.env.DEV) {
     Object.assign(window, {
       __battle: {
@@ -62,6 +78,14 @@ export async function battlePreview(): Promise<void> {
         /** The drawing buffer against the canvas's size on the page, and the pixel ratio. */
         canvas: () => ({ w: view.canvas.width, h: view.canvas.height, cssW: view.canvas.clientWidth, cssH: view.canvas.clientHeight, dpr: window.devicePixelRatio }),
         at: (seconds: number) => draw((fixed = seconds)),
+        /** When the battle opens and when it ends, in seconds. */
+        lead: LEAD,
+        length: () => director.length(),
+        /** The rules' own result for this battle, for checks against what the scene shows. */
+        rules: () => {
+          const { winner, damage } = resolveClash(setup);
+          return { winner, damage, morale: { attacker: setup.attacker.morale, defender: setup.defender.morale } };
+        },
         /** Every character the scene could cast, for checks. */
         characters: Object.keys(CHARACTERS),
       },

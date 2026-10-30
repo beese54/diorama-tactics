@@ -14,8 +14,8 @@ export type Act =
   | { kind: 'phase'; at: number; phase: Phase }
   /** The side's fighters still standing run to meet the foe: up to the foe's line, or to the middle when both sides run. */
   | { kind: 'advance'; at: number; side: ClashSide; to: 'foe' | 'middle'; seconds: number }
-  /** A fighter strikes `foe`; the blow lands at `lands` (a shot's flight included). */
-  | { kind: 'attack'; at: number; who: Who; foe: Who; lands: number; ranged: boolean; crit: boolean }
+  /** A fighter strikes `foe`, in a volley or a duel; the blow lands at `lands` (a shot's flight included). */
+  | { kind: 'attack'; at: number; who: Who; foe: Who; lands: number; ranged: boolean; crit: boolean; duel: boolean }
   /** A blow lands: the fighter staggers (hurt), goes down (fall) or turns it aside (block). */
   | { kind: 'hurt' | 'fall' | 'block'; at: number; who: Who }
   /** A lucky winner's flash: a burst of light that fells another foe. Light only; the winner's swing carries it. */
@@ -142,7 +142,7 @@ export class BattleScript {
           const at = start + volley++ * STAGGER;
           const lands = at + STRIKE + flight(e.by);
           const foe = { side: other(e.by), fighter: e.target };
-          acts.push({ kind: 'attack', at, who: { side: e.by, fighter: e.fighter }, foe, lands, ranged: this.ranged(e.by), crit: e.crit });
+          acts.push({ kind: 'attack', at, who: { side: e.by, fighter: e.fighter }, foe, lands, ranged: this.ranged(e.by), crit: e.crit, duel: false });
           react(foe, lands, e.hit, e.felled);
           lastBlow = lands;
           break;
@@ -156,11 +156,11 @@ export class BattleScript {
           const [winner, loser] = e.winner === 'attacker' ? [a, d] : [d, a];
           const at = start + duel++ * DUEL_STAGGER;
           const parried = at + STRIKE + flight(loser.side);
-          acts.push({ kind: 'attack', at, who: loser, foe: winner, lands: parried, ranged: this.ranged(loser.side), crit: false });
+          acts.push({ kind: 'attack', at, who: loser, foe: winner, lands: parried, ranged: this.ranged(loser.side), crit: false, duel: true });
           react(winner, parried, false, false);
           const swing = parried + clipSeconds(BLOCK);
           const lands = swing + STRIKE + flight(winner.side);
-          acts.push({ kind: 'attack', at: swing, who: winner, foe: loser, lands, ranged: this.ranged(winner.side), crit: false });
+          acts.push({ kind: 'attack', at: swing, who: winner, foe: loser, lands, ranged: this.ranged(winner.side), crit: false, duel: true });
           react(loser, lands, true, e.felled);
           lastWin = lands;
           break;

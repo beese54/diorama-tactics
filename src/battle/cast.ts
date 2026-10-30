@@ -159,6 +159,8 @@ export interface Effect {
   readonly mesh: THREE.Object3D;
   /** Draws the effect `age` seconds after the strike; `follow` is when the follow-through begins. */
   update(age: number, follow: number): void;
+  /** A shot's speed in pose pixels a second (an arrow, a bolt); none for a blade's trail. */
+  readonly speed?: number;
 }
 
 /**
@@ -400,6 +402,7 @@ export function shape(color: number, ...tris: [number, number][][]): THREE.Mesh 
  */
 export class Arrow implements Effect {
   readonly mesh = new THREE.Group();
+  readonly speed = 6500;
   private readonly arrow = new THREE.Group();
 
   /** `from`: where the arrow's tip sits at full draw (pose pixels, y up, from the anchor); `fletching`: its feathers' colour. */
@@ -423,7 +426,7 @@ export class Arrow implements Effect {
 
   update(age: number): void {
     this.mesh.visible = age >= 0 && age < 0.45;
-    if (this.mesh.visible) this.arrow.position.set(this.from.x + 6500 * age, this.from.y, 0);
+    if (this.mesh.visible) this.arrow.position.set(this.from.x + this.speed * age, this.from.y, 0);
   }
 }
 
@@ -433,6 +436,7 @@ export class Arrow implements Effect {
  */
 export class Bolt implements Effect {
   readonly mesh = new THREE.Group();
+  readonly speed = 4200;
   private readonly flash: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly orbs: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
 
@@ -463,7 +467,7 @@ export class Bolt implements Effect {
     this.flash.position.set(this.from.x, this.from.y, 0);
     this.flash.scale.setScalar(120 + 260 * f);
     this.flash.material.opacity = 1 - f;
-    const x = this.from.x + 40 + 4200 * age;
+    const x = this.from.x + 40 + this.speed * age;
     this.orbs.forEach((o, i) => {
       // Sparks trail behind the orb with a little shimmer up and down.
       o.position.set(x - i * 70, this.from.y + (i ? Math.sin(age * 40 + i * 1.7) * 10 : 0), 0);

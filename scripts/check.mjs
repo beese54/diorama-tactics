@@ -393,6 +393,35 @@ const foeMarks = await page.evaluate(() => window.__map.marked());
 check('skirmish: a foe shows its reach in red and cannot be moved', foeMarks.foe > 1 && foeMarks.reach === 0, JSON.stringify(foeMarks));
 check('skirmish: no console errors', errors.length === 0, errors.join(' | '));
 
+// The battle scene: the rules decide, the scene plays it to the same end; Space skips to it.
+errors.length = 0;
+const battleHud = () => page.evaluate(() => [...document.querySelectorAll('#battle-hud .banner')].map((b) => ({
+  morale: Number(b.querySelector('.value').textContent),
+  standing: b.querySelectorAll('.troops i.up').length,
+})).concat([{ loss: document.querySelector('#battle-hud .loss:not([hidden])')?.textContent ?? null }]));
+const battleUrl = `${url}?mode=battle&a=sword&d=axe&seed=7`;
+await page.goto(battleUrl, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+const rules = await page.evaluate(() => window.__battle.rules());
+await page.evaluate(() => window.__battle.at(0.4));
+const opening = await battleHud();
+await page.evaluate(() => window.__battle.at(window.__battle.length() + 0.5));
+const ending = await battleHud();
+// The banners: the attacker's on the left, the defender's on the right.
+const [lw, ld] = rules.winner === 'attacker' ? [0, 1] : [1, 0];
+const lostMorale = rules.morale[rules.winner === 'attacker' ? 'defender' : 'attacker'] - rules.damage;
+check("battle: the scene plays to the rules' result (the loser wiped out, its Morale down by the damage)",
+  opening[0].standing === 8 && opening[1].standing === 8 && ending[ld].standing === 0 && ending[lw].standing > 0 && ending[ld].morale === lostMorale && ending[2].loss === `−${rules.damage}`,
+  JSON.stringify({ rules, opening, ending }));
+await shot('14-battle-result');
+await page.goto(battleUrl, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+await page.keyboard.press('Space');
+await frames(3);
+const skipped = await battleHud();
+check('battle: Space skips to the result', skipped[ld].standing === 0 && skipped[ld].morale === lostMorale, JSON.stringify(skipped));
+check('battle: no console errors', errors.length === 0, errors.join(' | '));
+
 await browser.close();
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.ok ? '' : `  -> ${r.detail}`}`);
 process.exit(results.every((r) => r.ok) ? 0 : 1);
