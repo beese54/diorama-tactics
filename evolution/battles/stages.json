@@ -52,10 +52,18 @@
     {
       "id": "b2-roster-corin",
       "date": "2026-10-29",
-      "commit": "next",
+      "commit": "888ac00",
       "image": "b2-roster/corin/chop.jpg",
       "title": "B2 · Corin, the axe",
       "note": "An overhead chop with its own arc; one pose regenerated, sizes matched to the stance."
+    },
+    {
+      "id": "b2-roster-ranged",
+      "date": "2026-10-30",
+      "commit": "next",
+      "image": "b2-roster/ilse/bolt.jpg",
+      "title": "B2 · Dela and Ilse, the ranged heroes",
+      "note": "An arrow and a magic bolt drawn in code; the six player heroes are done."
     }
   ]
 }

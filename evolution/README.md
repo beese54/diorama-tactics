@@ -24,6 +24,32 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 roster: Dela and Ilse, the ranged heroes
+![Ilse's magic bolt flying from her staff across the meadow](battles/b2-roster/ilse/bolt.jpg)
+
+| Dela's arrow leaving the bow | Ilse's bolt, frame by frame |
+|---|---|
+| ![](battles/b2-roster/dela/shot.jpg) | ![](battles/b2-roster/ilse/cast.jpg) |
+
+| Dela's poses | Ilse's poses |
+|---|---|
+| ![](battles/b2-roster/dela/poses.jpg) | ![](battles/b2-roster/ilse/poses.jpg) |
+
+MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's charge and defeat](battles/b2-roster/ilse/ilse.mp4)
+
+- **What changed:** the last two player heroes, so all six are done. Dela (bow) and Ilse (mage) each came from a Flow standing image plus 10 Seedream poses (`scripts/art/prompts/dela.json`, `ilse.json`). Their attacks are ranged, so code draws the projectile:
+  - **Dela's arrow:** shaft, steel head and white fletching, with a white trail, flying from her full draw across the field.
+  - **Ilse's bolt:** a flash at the crystal, then a violet orb trailing sparks.
+  - **What ranged means:** archers and mages take a short step rather than a lunge. Their release has no screen shake and no stamp of dust, because the blow lands far away.
+- **Feedback:** the roster plan, approved: Flow for the standing image, Seedream for the poses.
+- **Decisions:**
+  - Ilse's poses ask for a plain crystal with no glow, so the magic is drawn in code and timed to the cast.
+  - The bolt is painted over the scene rather than added as light. Added light washed the violet out to white against the bright meadow.
+- **Learned:**
+  - Two of Dela's poses came back with her legs cut off by the frame. Asked again to be drawn smaller so everything fits, Seedream then drew her about a quarter smaller. Every regenerated pose needs its size checked against the stance.
+  - "Watching the arrow fly" made Seedream draw the arrow in mid-air. It floats free of her, so the processing drops it.
+  - The two characters' 22 images cost about $1.
+
 ### B2 roster: Corin, the axe
 ![Corin's overhead chop: the axe brought down in front of him, its arc over his head](battles/b2-roster/corin/chop.jpg)
 

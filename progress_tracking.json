@@ -186,6 +186,12 @@
       "id": "B2-roster-corin",
       "title": "Corin: Flow standing image, 10 Seedream poses (victory regenerated), the axe arc",
       "status": "review",
+      "commit": "888ac00"
+    },
+    {
+      "id": "B2-roster-ranged",
+      "title": "Dela and Ilse: Flow standing images, 22 Seedream poses, Arrow and Bolt effects, ranged characters",
+      "status": "review",
       "commit": "next"
     }
   ],

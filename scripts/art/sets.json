@@ -55,6 +55,32 @@
       "hurt": "candidates/corin-hurt-1.jpg*0.87",
       "fallen": "candidates/corin-fallen-1.jpg*0.87",
       "victory": "candidates/corin-victory-2.jpg*1.05"
+    },
+    "dela": {
+      "stance": "dela-stand.jpg",
+      "ready": "candidates/dela-ready-1.jpg",
+      "wind-up": "candidates/dela-wind-up-2.jpg*1.25",
+      "slash": "candidates/dela-loose-1.jpg",
+      "follow": "candidates/dela-follow-through-2.jpg:loose*1.1",
+      "recover": "candidates/dela-recover-1.jpg",
+      "run": "candidates/dela-run-1.jpg",
+      "run-2": "candidates/dela-run-2-1.jpg",
+      "hurt": "candidates/dela-hurt-1.jpg",
+      "fallen": "candidates/dela-fallen-1.jpg*0.8",
+      "victory": "candidates/dela-victory-1.jpg*1.06"
+    },
+    "ilse": {
+      "stance": "ilse-stand.jpg",
+      "ready": "candidates/ilse-ready-1.jpg",
+      "wind-up": "candidates/ilse-wind-up-1.jpg*1.05",
+      "slash": "candidates/ilse-cast-1.jpg*1.08",
+      "follow": "candidates/ilse-follow-through-1.jpg",
+      "recover": "candidates/ilse-recover-1.jpg",
+      "run": "candidates/ilse-run-1.jpg",
+      "run-2": "candidates/ilse-run-2-1.jpg",
+      "hurt": "candidates/ilse-hurt-1.jpg",
+      "fallen": "candidates/ilse-fallen-1.jpg",
+      "victory": "candidates/ilse-victory-1.jpg*1.2"
     }
   }
 }

@@ -294,6 +294,111 @@ class Streak implements Effect {
   }
 }
 
+/** A soft round glow, white at the heart and violet at the rim, for magic. */
+function glowTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  g.addColorStop(0.22, 'rgba(226, 204, 255, 1)');
+  g.addColorStop(0.5, 'rgba(160, 100, 255, 0.75)');
+  g.addColorStop(1, 'rgba(110, 60, 230, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** A flat shape of triangles in one colour, from [x, y] corners in pose pixels. */
+function shape(color: number, ...tris: [number, number][][]): THREE.Mesh {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(tris.flat().flatMap(([x, y]) => [x, y, 0]), 3));
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false, side: THREE.DoubleSide }));
+  m.renderOrder = 3;
+  m.frustumCulled = false;
+  return m;
+}
+
+/**
+ * An arrow loosed from the bow: drawn in code (shaft, steel head, white fletching) with a white
+ * trail behind it, flying straight ahead from the bow until it leaves the screen.
+ */
+class Arrow implements Effect {
+  readonly mesh = new THREE.Group();
+  private readonly arrow = new THREE.Group();
+
+  /** `from`: where the arrow's tip sits at full draw (pose pixels, y up, from the anchor). */
+  constructor(private readonly from: THREE.Vector2) {
+    const L = 300;
+    const trail = new THREE.BufferGeometry();
+    // A tapered trail behind the fletching, clear at its far end and white at the arrow.
+    trail.setAttribute('position', new THREE.Float32BufferAttribute([-L - 320, 0, 0, -L, -7, 0, -L, 7, 0], 3));
+    trail.setAttribute('color', new THREE.Float32BufferAttribute([1, 1, 1, 0, 1, 1, 1, 0.85, 1, 1, 1, 0.85], 4));
+    const t = new THREE.Mesh(trail, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthTest: false, side: THREE.DoubleSide }));
+    t.renderOrder = 3;
+    t.frustumCulled = false;
+    this.arrow.add(
+      t,
+      shape(0x5a3a22, [[-L, -3], [-40, -3], [-40, 3]], [[-L, -3], [-40, 3], [-L, 3]]),
+      shape(0xdfe4ec, [[-44, -13], [0, 0], [-44, 13]]),
+      shape(0xf4f1e8, [[-L, 3], [-L + 56, 3], [-L - 10, 20]], [[-L, -3], [-L + 56, -3], [-L - 10, -20]]),
+    );
+    this.mesh.add(this.arrow);
+  }
+
+  update(age: number): void {
+    this.mesh.visible = age >= 0 && age < 0.45;
+    if (this.mesh.visible) this.arrow.position.set(this.from.x + 6500 * age, this.from.y, 0);
+  }
+}
+
+/**
+ * A magic bolt from the staff: a flash at the crystal, then a glowing orb with a trail of fading
+ * sparks flying straight ahead until it leaves the screen.
+ */
+class Bolt implements Effect {
+  readonly mesh = new THREE.Group();
+  private readonly flash: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  private readonly orbs: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
+
+  /** `from`: the crystal's tip in the cast pose (pose pixels, y up, from the anchor). */
+  constructor(private readonly from: THREE.Vector2) {
+    const tex = glowTexture();
+    // The flash adds light; the orb and sparks are painted over the scene, so their violet holds
+    // against a bright sky or meadow.
+    const make = (size: number, blending: THREE.Blending = THREE.NormalBlending) => {
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(size, size),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, blending }),
+      );
+      m.renderOrder = 4;
+      m.frustumCulled = false;
+      this.mesh.add(m);
+      return m;
+    };
+    this.flash = make(1, THREE.AdditiveBlending);
+    // The orb, then its trail: each spark smaller and further behind.
+    for (const size of [230, 130, 100, 78, 60, 46]) this.orbs.push(make(size));
+  }
+
+  update(age: number): void {
+    this.mesh.visible = age >= 0 && age < 0.55;
+    if (!this.mesh.visible) return;
+    const f = Math.min(1, age / 0.16);
+    this.flash.position.set(this.from.x, this.from.y, 0);
+    this.flash.scale.setScalar(120 + 260 * f);
+    this.flash.material.opacity = 1 - f;
+    const x = this.from.x + 40 + 4200 * age;
+    this.orbs.forEach((o, i) => {
+      // Sparks trail behind the orb with a little shimmer up and down.
+      o.position.set(x - i * 70, this.from.y + (i ? Math.sin(age * 40 + i * 1.7) * 10 : 0), 0);
+      o.material.opacity = i ? 0.75 - i * 0.1 : 1;
+    });
+  }
+}
+
 /** A run cycle: its poses in turn, seconds per pose, how high the body rides in each, and which poses land a foot (dust). */
 interface RunCycle {
   poses: string[];
@@ -315,6 +420,8 @@ interface Character {
   /** Where its front foot (or hoof) lands ahead of the anchor, in design units, for the dust. */
   foot: number;
   run: RunCycle;
+  /** Shoots from where it stands (bow, magic): no screen shake or stamp of dust at the release; the blow lands far away. */
+  ranged?: boolean;
 }
 
 const CHARACTERS: Record<string, Character> = {
@@ -322,6 +429,9 @@ const CHARACTERS: Record<string, Character> = {
   // The spear's tip in Bram's thrust pose, and the shaft pointing a little up from level.
   bram: { set: 'bram-poses', effect: () => new Streak(new THREE.Vector2(513, 436), new THREE.Vector2(1, 0.1)), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
   corin: { set: 'corin-poses', effect: () => new Smear(CORIN_SWING), height: STAND_H, reach: 1, foot: 90, run: ON_FOOT },
+  // The bow and the staff: a short step rather than a lunge, the arrow or the bolt does the travelling.
+  dela: { set: 'dela-poses', effect: () => new Arrow(v(360, 564)), height: STAND_H, reach: 0.35, foot: 80, run: ON_FOOT, ranged: true },
+  ilse: { set: 'ilse-poses', effect: () => new Bolt(v(551, 533)), height: STAND_H, reach: 0.6, foot: 80, run: ON_FOOT, ranged: true },
   // Horse and rider: the lance's tip in the thrust pose, the shaft angled up; a four-pose gallop,
   // riding high in the gathered pose, the hooves landing in the last two.
   edric: {
@@ -487,7 +597,7 @@ const SCENES: Record<string, (c: Character) => Actor[]> = {
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
  * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat), `charge` (run in, attack, win) or `video` (round 2: pose images against Flow's
- * video). `?char=` picks who plays it (aria, bram, corin or edric; the video is always Aria's). Everything loops.
+ * video). `?char=` picks who plays it (aria, bram, corin, dela, ilse or edric; the video is always Aria's). Everything loops.
  */
 export async function animTest(): Promise<void> {
   document.title = 'Animation test · Diorama Tactics';
@@ -546,10 +656,10 @@ export async function animTest(): Promise<void> {
       const [strike, hit, step] = [cue('strike'), cue('hit'), cue('step')];
       smear!.update(strike?.age ?? -1, a.follow ?? 0);
       // Dust from the latest stamp: at the front foot for a strike, under the body for a step or a fall.
-      const stamp = [strike, step].filter((c) => c).sort((p, q) => p!.age - q!.age)[0];
+      const stamp = [who.ranged ? undefined : strike, step].filter((c) => c).sort((p, q) => p!.age - q!.age)[0];
       if (dust) dust.update(stamp?.age ?? -1, (stamp?.x ?? s.body.x) * who.reach + (stamp === strike ? who.foot : 0));
       // The shake: sharp at the blow, gone in a fifth of a second.
-      const blow = strike ?? hit;
+      const blow = (who.ranged ? undefined : strike) ?? hit;
       if (a.effects && blow && blow.age < 0.2) shake = Math.max(shake, 7 * (1 - blow.age / 0.2));
       const loop = clipSeconds(a.clip);
       const t = seconds % loop;

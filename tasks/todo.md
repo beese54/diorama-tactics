@@ -687,3 +687,8 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - `Smear` takes a `Swing` per character (ARIA_SWING, CORIN_SWING); `?char=corin`.
 - Habit for every set: overlay each pose on the stance to match sizes before building it.
 
+### Dela and Ilse (2026-10-30): the six player heroes are done
+- Flow `dela-stand.jpg`, `ilse-stand.jpg`; Seedream poses (Dela's wind-up and follow-through regenerated: legs cut off). Size factors in `scripts/art/sets.json`.
+- animTest: `Arrow` and `Bolt` effects; `ranged` characters (no shake or dust at the release, reach 0.35 and 0.6).
+- Next: the rival army's six leaders, then the 12 soldier designs.
+

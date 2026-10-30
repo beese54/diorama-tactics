@@ -1,0 +1,56 @@
+{
+  "about": "Pose prompts for Ilse, the player's mage. {pose} in the base is replaced by a pose's text. Every pose takes her standing image (art/source/ilse-stand.jpg) as its one reference. A staff attacks with a cast: ready (gathering power), wind-up (the staff drawn back), slash (the cast, staff thrust forward), follow-through, recover. The crystal stays plain: the magic is drawn in code.",
+  "base": "The exact same character as the reference: same face, long straight silver-white hair, flowing white and violet robes with wide sleeves and gold trim, a short blue capelet, a tall wooden staff topped with a pale crystal, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one staff: no second staff, no afterimage, no ghost or blurred copies. The crystal is clear and not glowing. A single sharp still frame: no motion blur, no speed lines, no magic effects, no glow, no sparks. Whole figure in frame with margin around it, staff included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "ilse-ready",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "gathering power: knees slightly bent, the staff held upright in front of her in both hands, eyes closed in concentration, hair and sleeves stirring"
+    },
+    "wind-up": {
+      "out": "ilse-wind-up",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "drawing the staff back over her right shoulder with the crystal end raised high behind her, her left hand thrust forward with the fingers spread, robes swirling"
+    },
+    "slash": {
+      "out": "ilse-cast",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "casting: stepping forward and thrusting the staff straight ahead at arm's length, the crystal pointing at the target, her left hand pulled back, robes and hair swept back"
+    },
+    "follow-through": {
+      "out": "ilse-follow-through",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "just after the cast: leaning forward, the staff still extended forward and tipped slightly down, sleeves swinging forward"
+    },
+    "recover": {
+      "out": "ilse-recover",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "drawing the staff back toward her body and straightening up, her calm expression returning"
+    },
+    "run": {
+      "out": "ilse-run",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "running to the right mid-stride, one foot off the ground, the staff held upright at her side in her right hand, robes and hair flowing behind"
+    },
+    "run-2": {
+      "out": "ilse-run-2",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the staff held upright at her side in her right hand, robes and hair flowing behind"
+    },
+    "hurt": {
+      "out": "ilse-hurt",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "recoiling backward from a hit, head turned away, eyes shut in pain, one arm raised, the staff lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "ilse-fallen",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "fallen to her knees, slumped forward with her head down, defeated, the staff lying on the ground beside her"
+    },
+    "victory": {
+      "out": "ilse-victory",
+      "refs": ["ilse-stand.jpg"],
+      "pose": "standing tall in triumph, the staff raised high above her head, her other hand on her heart, a serene confident smile; drawn so that everything fits, from the top of the raised staff down to her boots"
+    }
+  }
+}
