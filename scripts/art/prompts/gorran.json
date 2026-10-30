@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for Gorran, the rival army's axe warlord. Every pose takes his standing image (art/source/gorran-stand.jpg) as its one reference. A cleaver-like axe attacks with an overhead chop: ready, wind-up (the axe raised behind his head), slash (the chop), follow-through, recover.",
+  "base": "The exact same character as the reference: same face, a bald scarred head, a thick black beard, a snarling expression, spiked black iron armour with tattered crimson cloth and a tattered crimson cape, brown leather belts, an enormous cleaver-like axe on a long haft, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. He holds exactly one axe: no second axe, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, axe included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "gorran-ready",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "sinking into a low wide crouch, knees bent, the enormous axe held low across his body in both hands, gathering strength, snarling"
+    },
+    "wind-up": {
+      "out": "gorran-wind-up",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "the axe raised high behind his head in both hands for an overhead chop, the blade pointing back over his shoulder, his back arched, weight on his back foot; drawn smaller in the frame so that everything fits, from the top of the axe down to his boots, with empty space below his feet"
+    },
+    "slash": {
+      "out": "gorran-slash",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "mid-chop: stepping forward, the axe swung down in front of him at waist height in both hands, arms fully extended, front knee bent, the blade forward"
+    },
+    "follow-through": {
+      "out": "gorran-follow-through",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "the chop finished: bent forward over his front knee, the axe head low near the ground in front of his front foot, both hands on the haft, cape swinging forward"
+    },
+    "recover": {
+      "out": "gorran-recover",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "heaving the axe back up out of the chop: straightening up, weight shifting back, the axe rising in front of his chest in both hands"
+    },
+    "run": {
+      "out": "gorran-run",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the axe held across his body in both hands, tattered cape trailing behind"
+    },
+    "run-2": {
+      "out": "gorran-run-2",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the axe held across his body in both hands, tattered cape trailing behind"
+    },
+    "hurt": {
+      "out": "gorran-hurt",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the axe lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "gorran-fallen",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with his head down, defeated, the axe lying on the ground beside him"
+    },
+    "victory": {
+      "out": "gorran-victory",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "pose": "standing tall in triumph, the enormous axe raised high above his head in both hands, roaring; drawn smaller in the frame so that everything fits, from the top of the axe down to his boots, with empty space below his feet"
+    }
+  }
+}

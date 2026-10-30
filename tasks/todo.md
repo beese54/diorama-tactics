@@ -692,3 +692,9 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - animTest: `Arrow` and `Bolt` effects; `ranged` characters (no shake or dust at the release, reach 0.35 and 0.6).
 - Next: the rival army's six leaders, then the 12 soldier designs.
 
+### The rival leaders (2026-10-30): all 12 leaders done
+- Flow standing images for Varek, Sabine, Gorran, Petra, Ulric and Morwen; Seedream poses from `scripts/art/prompts/<name>.json`. Regenerated: Sabine's slash and follow-through (blade pointing backward), Ulric's recover (cut off). Size factors in `scripts/art/sets.json`.
+- animTest: `SABINE_SWING`, `GORRAN_SWING`; Petra and Varek streaks; Ulric's `Arrow` with crimson fletching; `Bolt` takes a glow colour (`VIOLET`, `CRIMSON`).
+- Spend so far about $5.60 of $30.
+- Next: the 12 soldier designs.
+

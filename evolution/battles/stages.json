@@ -60,10 +60,18 @@
     {
       "id": "b2-roster-ranged",
       "date": "2026-10-30",
-      "commit": "next",
+      "commit": "5173fae",
       "image": "b2-roster/ilse/bolt.jpg",
       "title": "B2 · Dela and Ilse, the ranged heroes",
       "note": "An arrow and a magic bolt drawn in code; the six player heroes are done."
+    },
+    {
+      "id": "b2-roster-rivals",
+      "date": "2026-10-30",
+      "commit": "next",
+      "image": "b2-roster/rivals/strikes.jpg",
+      "title": "B2 · The rival army's six leaders",
+      "note": "Varek, Sabine, Gorran, Petra, Ulric and Morwen: Flow standing images, Seedream poses, their own swings, streaks, arrow and crimson bolt."
     }
   ]
 }

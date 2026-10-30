@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for Ulric, the rival army's archer. Every pose takes his standing image (art/source/ulric-stand.jpg) as its one reference. A bow attacks with a shot: ready, wind-up (full draw), slash (the loose), follow-through, recover. The arrow in flight is drawn in code.",
+  "base": "The exact same character as the reference: same cold eyes, a deep black hood, a black cloth mask over his lower face, dark leather armour over black chainmail, a quiver of crimson-fletched arrows on his back, a black recurve bow, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. He holds exactly one bow: no second bow, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, bow included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "ulric-ready",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "raising the bow toward his target, an arrow nocked, beginning to draw the string back, weight settling onto his back foot"
+    },
+    "wind-up": {
+      "out": "ulric-wind-up",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "at full draw: the bowstring pulled all the way back to his cheek, the arrow aimed straight ahead, his bow arm fully extended, body steady; drawn smaller in the frame so that everything fits, from the top of the bow down to his boots, with empty space below his feet"
+    },
+    "slash": {
+      "out": "ulric-loose",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "the instant after releasing the arrow: his string hand flung back past his ear with the fingers open, his bow arm still extended forward, no arrow on the bow, the string straight"
+    },
+    "follow-through": {
+      "out": "ulric-follow-through",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "holding still after the shot: the bow still raised forward, his string hand resting back by his shoulder, no arrow on the bow and no arrow anywhere in the picture; drawn smaller in the frame so that everything fits, from the top of the bow down to his boots, with empty space below his feet"
+    },
+    "recover": {
+      "out": "ulric-recover",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "lowering the bow and reaching back over his shoulder to the quiver on his back for the next arrow; drawn smaller in the frame so that his whole body fits, from the top of his hood down to his boots, with empty space below his feet"
+    },
+    "run": {
+      "out": "ulric-run",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the bow held low in his left hand, no arrow nocked, hood and cloak trailing behind"
+    },
+    "run-2": {
+      "out": "ulric-run-2",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the bow held low in his left hand, no arrow nocked, hood and cloak trailing behind"
+    },
+    "hurt": {
+      "out": "ulric-hurt",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the bow lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "ulric-fallen",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with his head down, defeated, the bow lying on the ground beside him"
+    },
+    "victory": {
+      "out": "ulric-victory",
+      "refs": [
+        "ulric-stand.jpg"
+      ],
+      "pose": "standing tall, the bow raised high above his head in his left hand, his right fist clenched; drawn smaller in the frame so that everything fits, from the top of the bow down to his boots, with empty space below his feet"
+    }
+  }
+}

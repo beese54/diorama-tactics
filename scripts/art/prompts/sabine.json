@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for Sabine, the rival army's sword commander. Every pose takes her standing image (art/source/sabine-stand.jpg) as its one reference. A sabre attacks with a sweeping slash: ready, wind-up (the sabre drawn back over her shoulder), slash, follow-through, recover.",
+  "base": "The exact same character as the reference: same face with cold narrow eyes, long black hair in a severe single braid, a thin silver circlet, dark crimson and black half-plate armour with sharp angular pauldrons, a black high collar, a long black cape with a crimson lining, a curved sabre, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one sword: no second sword, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, sword included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "sabine-ready",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "sinking into a low stance, knees bent, the sabre held low and back at her right side with the blade pointing forward, her left hand forward, eyes fixed ahead"
+    },
+    "wind-up": {
+      "out": "sabine-wind-up",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "the sabre drawn far back and raised behind her right shoulder for a sweeping slash, her body twisted back, her left arm reaching forward, weight on her back foot"
+    },
+    "slash": {
+      "out": "sabine-slash",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "mid-slash: lunging forward, her right arm swept forward and fully extended at shoulder height, the sabre held out ahead of her with its blade pointing forward and away from her body, toward the target, cape swinging"
+    },
+    "follow-through": {
+      "out": "sabine-follow-through",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "the slash finished: her right arm swept down in front of her, the sabre's blade pointing forward and down ahead of her, its tip low near the ground in front of her front foot, leaning forward over her front knee, cape swinging forward"
+    },
+    "recover": {
+      "out": "sabine-recover",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "drawing back out of the slash and straightening up, weight shifting back, the sabre raised back to a guard in front of her"
+    },
+    "run": {
+      "out": "sabine-run",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the sabre held low at her right side pointing forward, cape trailing behind"
+    },
+    "run-2": {
+      "out": "sabine-run-2",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the sabre held low at her right side pointing forward, cape trailing behind"
+    },
+    "hurt": {
+      "out": "sabine-hurt",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the sword lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "sabine-fallen",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with her head down, defeated, the sword lying on the ground beside her"
+    },
+    "victory": {
+      "out": "sabine-victory",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "pose": "standing tall and proud, the sabre held upright in front of her face with the blade pointing straight up, her left hand on her hip, a cold thin smile; drawn smaller in the frame so that everything fits, from the top of the sword down to her boots, with empty space below her feet"
+    }
+  }
+}

@@ -215,6 +215,10 @@ const v = (x: number, y: number) => new THREE.Vector2(x, y);
 const ARIA_SWING: Swing = { pivot: v(120, 560), windUp: v(-164, 792), slash: v(501, 185), follow: v(440, 4) };
 /** Corin's great axe: an overhead chop, from the axe head behind his head down to it low in front. */
 const CORIN_SWING: Swing = { pivot: v(80, 470), windUp: v(-202, 631), slash: v(386, 312), follow: v(391, 127) };
+/** Sabine's sabre: from behind her head, over the top to the tip high in front, on down to it low by her front foot. */
+const SABINE_SWING: Swing = { pivot: v(100, 500), windUp: v(-346, 752), slash: v(564, 700), follow: v(439, 15) };
+/** Gorran's cleaver: an overhead chop like Corin's, from the head behind his own down to it by his knees. */
+const GORRAN_SWING: Swing = { pivot: v(80, 480), windUp: v(-186, 584), slash: v(314, 254), follow: v(261, 114) };
 
 /**
  * A thrust's streak, drawn in code: a tapered white streak running back along the spear from its
@@ -294,16 +298,23 @@ class Streak implements Effect {
   }
 }
 
-/** A soft round glow, white at the heart and violet at the rim, for magic. */
-function glowTexture(): THREE.CanvasTexture {
+/** A magic glow's colours, [r, g, b]: just outside its white heart, halfway out, and at its clear rim. */
+type Glow = [number, number, number][];
+/** Ilse's magic: violet. */
+const VIOLET: Glow = [[226, 204, 255], [160, 100, 255], [110, 60, 230]];
+/** Morwen's magic: blood red. */
+const CRIMSON: Glow = [[255, 200, 190], [235, 50, 50], [150, 0, 20]];
+
+/** A soft round glow for magic, white at the heart and the glow's colour toward the rim. */
+function glowTexture([inner, mid, rim]: Glow): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const ctx = c.getContext('2d')!;
   const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
   g.addColorStop(0, 'rgba(255, 255, 255, 1)');
-  g.addColorStop(0.22, 'rgba(226, 204, 255, 1)');
-  g.addColorStop(0.5, 'rgba(160, 100, 255, 0.75)');
-  g.addColorStop(1, 'rgba(110, 60, 230, 0)');
+  g.addColorStop(0.22, `rgba(${inner.join(', ')}, 1)`);
+  g.addColorStop(0.5, `rgba(${mid.join(', ')}, 0.75)`);
+  g.addColorStop(1, `rgba(${rim.join(', ')}, 0)`);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 128, 128);
   const t = new THREE.CanvasTexture(c);
@@ -329,8 +340,8 @@ class Arrow implements Effect {
   readonly mesh = new THREE.Group();
   private readonly arrow = new THREE.Group();
 
-  /** `from`: where the arrow's tip sits at full draw (pose pixels, y up, from the anchor). */
-  constructor(private readonly from: THREE.Vector2) {
+  /** `from`: where the arrow's tip sits at full draw (pose pixels, y up, from the anchor); `fletching`: its feathers' colour. */
+  constructor(private readonly from: THREE.Vector2, fletching = 0xf4f1e8) {
     const L = 300;
     const trail = new THREE.BufferGeometry();
     // A tapered trail behind the fletching, clear at its far end and white at the arrow.
@@ -343,7 +354,7 @@ class Arrow implements Effect {
       t,
       shape(0x5a3a22, [[-L, -3], [-40, -3], [-40, 3]], [[-L, -3], [-40, 3], [-L, 3]]),
       shape(0xdfe4ec, [[-44, -13], [0, 0], [-44, 13]]),
-      shape(0xf4f1e8, [[-L, 3], [-L + 56, 3], [-L - 10, 20]], [[-L, -3], [-L + 56, -3], [-L - 10, -20]]),
+      shape(fletching, [[-L, 3], [-L + 56, 3], [-L - 10, 20]], [[-L, -3], [-L + 56, -3], [-L - 10, -20]]),
     );
     this.mesh.add(this.arrow);
   }
@@ -364,9 +375,9 @@ class Bolt implements Effect {
   private readonly orbs: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
 
   /** `from`: the crystal's tip in the cast pose (pose pixels, y up, from the anchor). */
-  constructor(private readonly from: THREE.Vector2) {
-    const tex = glowTexture();
-    // The flash adds light; the orb and sparks are painted over the scene, so their violet holds
+  constructor(private readonly from: THREE.Vector2, glow: Glow) {
+    const tex = glowTexture(glow);
+    // The flash adds light; the orb and sparks are painted over the scene, so their colour holds
     // against a bright sky or meadow.
     const make = (size: number, blending: THREE.Blending = THREE.NormalBlending) => {
       const m = new THREE.Mesh(
@@ -431,12 +442,26 @@ const CHARACTERS: Record<string, Character> = {
   corin: { set: 'corin-poses', effect: () => new Smear(CORIN_SWING), height: STAND_H, reach: 1, foot: 90, run: ON_FOOT },
   // The bow and the staff: a short step rather than a lunge, the arrow or the bolt does the travelling.
   dela: { set: 'dela-poses', effect: () => new Arrow(v(360, 564)), height: STAND_H, reach: 0.35, foot: 80, run: ON_FOOT, ranged: true },
-  ilse: { set: 'ilse-poses', effect: () => new Bolt(v(551, 533)), height: STAND_H, reach: 0.6, foot: 80, run: ON_FOOT, ranged: true },
+  ilse: { set: 'ilse-poses', effect: () => new Bolt(v(551, 533), VIOLET), height: STAND_H, reach: 0.6, foot: 80, run: ON_FOOT, ranged: true },
+  // The rival army's leaders, made the same way.
+  sabine: { set: 'sabine-poses', effect: () => new Smear(SABINE_SWING), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
+  gorran: { set: 'gorran-poses', effect: () => new Smear(GORRAN_SWING), height: STAND_H, reach: 1, foot: 95, run: ON_FOOT },
+  petra: { set: 'petra-poses', effect: () => new Streak(v(680, 498), v(1, 0.26)), height: STAND_H, reach: 1, foot: 85, run: ON_FOOT },
+  ulric: { set: 'ulric-poses', effect: () => new Arrow(v(412, 624), 0x9a1830), height: STAND_H, reach: 0.35, foot: 80, run: ON_FOOT, ranged: true },
+  morwen: { set: 'morwen-poses', effect: () => new Bolt(v(431, 620), CRIMSON), height: STAND_H, reach: 0.6, foot: 80, run: ON_FOOT, ranged: true },
   // Horse and rider: the lance's tip in the thrust pose, the shaft angled up; a four-pose gallop,
   // riding high in the gathered pose, the hooves landing in the last two.
   edric: {
     set: 'edric-poses',
     effect: () => new Streak(new THREE.Vector2(543, 598), new THREE.Vector2(1, 0.3)),
+    height: STAND_H * 1.7,
+    reach: 2.2,
+    foot: 190,
+    run: { poses: ['gallop-1', 'gallop-2', 'gallop-3', 'gallop-4'], stride: 0.085, bob: [4, 16, 6, 0], steps: [2, 3] },
+  },
+  varek: {
+    set: 'varek-poses',
+    effect: () => new Streak(v(548, 627), v(1, 0.22)),
     height: STAND_H * 1.7,
     reach: 2.2,
     foot: 190,
@@ -597,7 +622,7 @@ const SCENES: Record<string, (c: Character) => Actor[]> = {
  * The animation test (`?mode=anim`): Aria's attack on the meadow at her size in battle, in the
  * scene `?scene=` names: `motion` (round 2's poses beside the same attack with motion between
  * the poses), `win` (the attack, then victory), `lose` (a hit, then defeat), `charge` (run in, attack, win) or `video` (round 2: pose images against Flow's
- * video). `?char=` picks who plays it (aria, bram, corin, dela, ilse or edric; the video is always Aria's). Everything loops.
+ * video). `?char=` picks who plays it (aria, bram, corin, dela, ilse, edric, or a rival: sabine, gorran, petra, ulric, morwen, varek; the video is always Aria's). Everything loops.
  */
 export async function animTest(): Promise<void> {
   document.title = 'Animation test · Diorama Tactics';

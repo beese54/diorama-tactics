@@ -81,6 +81,86 @@
       "hurt": "candidates/ilse-hurt-1.jpg",
       "fallen": "candidates/ilse-fallen-1.jpg",
       "victory": "candidates/ilse-victory-1.jpg*1.2"
+    },
+    "petra": {
+      "stance": "petra-stand.jpg",
+      "ready": "candidates/petra-ready-1.jpg",
+      "wind-up": "candidates/petra-wind-up-1.jpg",
+      "slash": "candidates/petra-thrust-1.jpg*1.3",
+      "follow": "candidates/petra-follow-through-1.jpg*1.25",
+      "recover": "candidates/petra-recover-1.jpg",
+      "run": "candidates/petra-run-1.jpg",
+      "run-2": "candidates/petra-run-2-1.jpg",
+      "hurt": "candidates/petra-hurt-1.jpg",
+      "fallen": "candidates/petra-fallen-1.jpg",
+      "victory": "candidates/petra-victory-1.jpg*1.35"
+    },
+    "ulric": {
+      "stance": "ulric-stand.jpg",
+      "ready": "candidates/ulric-ready-1.jpg*1.12",
+      "wind-up": "candidates/ulric-wind-up-1.jpg*1.12",
+      "slash": "candidates/ulric-loose-1.jpg*1.12",
+      "follow": "candidates/ulric-follow-through-1.jpg*1.12",
+      "recover": "candidates/ulric-recover-2.jpg*1.08",
+      "run": "candidates/ulric-run-1.jpg",
+      "run-2": "candidates/ulric-run-2-1.jpg",
+      "hurt": "candidates/ulric-hurt-1.jpg",
+      "fallen": "candidates/ulric-fallen-1.jpg",
+      "victory": "candidates/ulric-victory-1.jpg*1.2"
+    },
+    "morwen": {
+      "stance": "morwen-stand.jpg",
+      "ready": "candidates/morwen-ready-1.jpg",
+      "wind-up": "candidates/morwen-wind-up-1.jpg",
+      "slash": "candidates/morwen-cast-1.jpg",
+      "follow": "candidates/morwen-follow-through-1.jpg",
+      "recover": "candidates/morwen-recover-1.jpg",
+      "run": "candidates/morwen-run-1.jpg",
+      "run-2": "candidates/morwen-run-2-1.jpg",
+      "hurt": "candidates/morwen-hurt-1.jpg",
+      "fallen": "candidates/morwen-fallen-1.jpg",
+      "victory": "candidates/morwen-victory-1.jpg*1.3"
+    },
+    "varek": {
+      "stance": "varek-stand.jpg",
+      "ready": "candidates/varek-ready-1.jpg",
+      "wind-up": "candidates/varek-wind-up-1.jpg",
+      "slash": "candidates/varek-thrust-1.jpg",
+      "follow": "candidates/varek-follow-through-1.jpg",
+      "recover": "candidates/varek-recover-1.jpg",
+      "gallop-1": "candidates/varek-gallop-1-1.jpg",
+      "gallop-2": "candidates/varek-gallop-2-1.jpg",
+      "gallop-3": "candidates/varek-gallop-3-1.jpg",
+      "gallop-4": "candidates/varek-gallop-4-1.jpg:loose",
+      "hurt": "candidates/varek-hurt-1.jpg",
+      "fallen": "candidates/varek-fallen-1.jpg",
+      "victory": "candidates/varek-victory-1.jpg*1.2"
+    },
+    "sabine": {
+      "stance": "sabine-stand.jpg",
+      "ready": "candidates/sabine-ready-1.jpg",
+      "wind-up": "candidates/sabine-wind-up-1.jpg",
+      "slash": "candidates/sabine-slash-2.jpg",
+      "follow": "candidates/sabine-follow-through-2.jpg",
+      "recover": "candidates/sabine-recover-1.jpg",
+      "run": "candidates/sabine-run-1.jpg",
+      "run-2": "candidates/sabine-run-2-1.jpg",
+      "hurt": "candidates/sabine-hurt-1.jpg",
+      "fallen": "candidates/sabine-fallen-1.jpg",
+      "victory": "candidates/sabine-victory-1.jpg*1.2"
+    },
+    "gorran": {
+      "stance": "gorran-stand.jpg",
+      "ready": "candidates/gorran-ready-1.jpg",
+      "wind-up": "candidates/gorran-wind-up-1.jpg*1.08",
+      "slash": "candidates/gorran-slash-1.jpg",
+      "follow": "candidates/gorran-follow-through-1.jpg",
+      "recover": "candidates/gorran-recover-1.jpg",
+      "run": "candidates/gorran-run-1.jpg",
+      "run-2": "candidates/gorran-run-2-1.jpg",
+      "hurt": "candidates/gorran-hurt-1.jpg",
+      "fallen": "candidates/gorran-fallen-1.jpg",
+      "victory": "candidates/gorran-victory-1.jpg*1.25"
     }
   }
 }

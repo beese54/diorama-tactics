@@ -192,6 +192,12 @@
       "id": "B2-roster-ranged",
       "title": "Dela and Ilse: Flow standing images, 22 Seedream poses, Arrow and Bolt effects, ranged characters",
       "status": "review",
+      "commit": "5173fae"
+    },
+    {
+      "id": "B2-roster-rivals",
+      "title": "Rival leaders: six Flow standing images, 65 Seedream poses (3 regenerated), Sabine and Gorran swings, Petra and Varek streaks, Ulric arrow, Morwen crimson bolt",
+      "status": "review",
       "commit": "next"
     }
   ],

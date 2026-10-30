@@ -1,0 +1,91 @@
+{
+  "about": "Pose prompts for Varek, the rival army's knight commander: a rider and his horse, posing together. Every pose takes his standing image (art/source/varek-stand.jpg) as its one reference. 4:3, like Edric. The lance attacks with a charge: ready, wind-up, thrust, follow-through, recover; the gallop is four poses.",
+  "size": "1664x1248",
+  "base": "The exact same knight and horse as the reference: the same knight in black heavy plate armour with sharp angular edges and crimson trim, a closed horned great helm with a crimson plume, a long crimson cape, a black tower shield on his left arm and a long black lance; the same huge black warhorse wearing black and crimson barding with gold trim, crimson tassels and a spiked steel face plate; same colours, same art style, same size in frame. Strict side view facing right. Pose: {pose}. He holds exactly one lance: no second lance, no afterimage, no ghost or blurred copies. The horse has exactly four legs and one tail. A single sharp still frame: no motion blur, no speed lines, no smear, no dust, no sparks or effects. Horse, rider and lance entirely in frame with margin around them, all four hooves included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the knight or the horse, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "varek-ready",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "gathering for the charge: the horse crouched back on its haunches with its head lowered and neck arched; the knight leaning forward in the saddle, the lance lowered toward level and pointing forward"
+    },
+    "wind-up": {
+      "out": "varek-wind-up",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "couching the lance as the charge begins: the horse rising slightly with its front hooves lifting off the ground; the knight braced forward, the lance level and tucked under his right arm pointing straight ahead, shield raised"
+    },
+    "thrust": {
+      "out": "varek-thrust",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "the charge's impact: the horse lunging forward in full stride with its front legs stretched far forward; the knight standing in the stirrups and driving the lance straight forward at full reach"
+    },
+    "follow-through": {
+      "out": "varek-follow-through",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "just after the impact: the horse's front hooves landing heavily; the knight leaning far forward over its neck, the lance still extended forward and tipped slightly down, cape swinging forward"
+    },
+    "recover": {
+      "out": "varek-recover",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "reining back after the strike: the horse stepping back with its head raised and its weight on its hind legs; the knight sitting back upright, the lance swinging back up toward upright"
+    },
+    "gallop-1": {
+      "out": "varek-gallop-1",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "galloping to the right, the stretched phase: the horse's front legs reaching far forward and its hind legs pushing far back, its body long and low; the knight leaning forward with the lance level, pointing ahead, plume and cape streaming behind"
+    },
+    "gallop-2": {
+      "out": "varek-gallop-2",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "galloping to the right, the gathered phase: all four of the horse's hooves off the ground and tucked under its body, its back rounded; the knight leaning forward with the lance level, pointing ahead, plume and cape streaming behind"
+    },
+    "gallop-3": {
+      "out": "varek-gallop-3",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "galloping to the right, the landing phase: one hind hoof striking the ground, the other hind leg and both front legs folded forward in the air; the knight leaning forward with the lance level, pointing ahead, plume and cape streaming behind"
+    },
+    "gallop-4": {
+      "out": "varek-gallop-4",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "galloping to the right, the leading phase: one front hoof planted on the ground under the horse's chest, both hind legs swinging forward under its belly; the knight leaning forward with the lance level, pointing ahead, plume and cape streaming behind"
+    },
+    "hurt": {
+      "out": "varek-hurt",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "struck: the horse rearing up in alarm on its hind legs with its front hooves high in the air; the knight recoiling backward in the saddle, shield raised, the lance tilting back"
+    },
+    "fallen": {
+      "out": "varek-fallen",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "defeated: the horse down on its folded front knees with its head low; the knight slumped forward over its neck, head bowed, the lance lying on the ground beside them"
+    },
+    "victory": {
+      "out": "varek-victory",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "pose": "triumph: the horse rearing proudly on its hind legs; the knight holding the lance high above his head in his right hand, shield arm raised, cape flowing"
+    }
+  }
+}

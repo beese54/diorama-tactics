@@ -1,0 +1,76 @@
+{
+  "about": "Pose prompts for Petra, the rival army's spear captain. Every pose takes her standing image (art/source/petra-stand.jpg) as its one reference. A glaive attacks with a thrust: ready, wind-up, thrust, follow-through, recover.",
+  "base": "The exact same character as the reference: same face with a stern expression, short ash-blonde hair, a crested helm with a crimson and black crest and the visor raised, black and crimson lamellar armour with gold trim, a crimson cape, a long glaive with a curved steel blade, same colours, same art style, same size in frame. Three-quarter side view facing right. Pose: {pose}. She holds exactly one glaive: no second glaive, no afterimage, no ghost or blurred copies. A single sharp still frame: no motion blur, no speed lines, no smear, no sparks or effects. Whole figure in frame with margin around it, glaive included, even studio lighting, no cast shadow. Plain flat pure green background (#00FF00), no green on the character, no text, no ground.",
+  "poses": {
+    "ready": {
+      "out": "petra-ready",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "sinking into a low crouch, knees bent, the glaive held level at hip height in both hands with the blade pointing forward, gathering strength"
+    },
+    "wind-up": {
+      "out": "petra-wind-up",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "drawing the glaive far back for a thrust: her rear hand pulled back past her hip, her front hand forward on the shaft, body twisted back, weight on her back foot, the blade still pointing forward at chest height"
+    },
+    "slash": {
+      "out": "petra-thrust",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "a powerful lunging thrust: front knee deeply bent, back leg straight, body leaning forward, both arms fully extended, the glaive driven straight forward at chest height; drawn smaller in the frame so that everything fits, from the top of the glaive down to her boots, with empty space below her feet"
+    },
+    "follow-through": {
+      "out": "petra-follow-through",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "the end of the thrust: leaning far forward over her front knee, the glaive at full reach pointing forward and slightly down, cape swinging forward; drawn smaller in the frame so that everything fits, from the top of the glaive down to her boots, with empty space below her feet"
+    },
+    "recover": {
+      "out": "petra-recover",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "pulling back out of the lunge: rising, weight shifting onto her back foot, the glaive drawn back toward her body and still pointing forward"
+    },
+    "run": {
+      "out": "petra-run",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "running to the right mid-stride, one foot off the ground, the glaive held low at her side pointing forward, cape trailing behind"
+    },
+    "run-2": {
+      "out": "petra-run-2",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "running to the right in the passing position: one leg swinging past the other, both feet close to the ground, the glaive held low at her side pointing forward, cape trailing behind"
+    },
+    "hurt": {
+      "out": "petra-hurt",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "recoiling backward from a hit, head turned away, teeth gritted in pain, one arm raised, the glaive lowered in the other hand, staggering"
+    },
+    "fallen": {
+      "out": "petra-fallen",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "fallen to one knee, slumped forward with her head down, defeated, the glaive lying on the ground beside her"
+    },
+    "victory": {
+      "out": "petra-victory",
+      "refs": [
+        "petra-stand.jpg"
+      ],
+      "pose": "standing tall in triumph, the glaive raised high above her head in her right hand, her left fist clenched, a stern proud look; drawn smaller in the frame so that everything fits, from the top of the glaive down to her boots, with empty space below her feet"
+    }
+  }
+}

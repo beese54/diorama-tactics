@@ -1,7 +1,7 @@
 // Records the round 2 animation test (?mode=anim) frame by frame at 24 fps, for the visual history
 // in evolution/battles/: an MP4 at full resolution, a smaller GIF, and stills of the strike.
 // Needs the dev server (npm run dev) and ffmpeg.
-// Usage: node scripts/anim.mjs <outDir> [scene] [seconds] [char]   (scene: motion, win, lose, charge or video; default motion; char: aria, bram, corin, dela, ilse or edric)
+// Usage: node scripts/anim.mjs <outDir> [scene] [seconds] [char]   (scene: motion, win, lose, charge or video; default motion; char: aria, bram, corin, dela, ilse, edric, sabine, gorran, petra, ulric, morwen or varek)
 import puppeteer from 'puppeteer-core';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';

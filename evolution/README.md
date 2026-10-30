@@ -24,6 +24,40 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B2 roster: the rival army's six leaders
+![The six rival leaders at the moment of their attacks: Sabine's sabre arc, Gorran's chop, Petra's glaive thrust, Ulric's arrow, Morwen's crimson bolt and Varek's lance](battles/b2-roster/rivals/strikes.jpg)
+
+| Their Flow standing images | Varek's charge |
+|---|---|
+| ![](battles/b2-roster/rivals/stands.jpg) | ![](battles/b2-roster/rivals/varek-charge.jpg) |
+
+| Sabine | Gorran | Petra |
+|---|---|---|
+| ![](battles/b2-roster/rivals/sabine-poses.jpg) | ![](battles/b2-roster/rivals/gorran-poses.jpg) | ![](battles/b2-roster/rivals/petra-poses.jpg) |
+
+| Ulric | Morwen | Varek |
+|---|---|---|
+| ![](battles/b2-roster/rivals/ulric-poses.jpg) | ![](battles/b2-roster/rivals/morwen-poses.jpg) | ![](battles/b2-roster/rivals/varek-poses.jpg) |
+
+MP4s, each a charge then a defeat: [Sabine](battles/b2-roster/rivals/sabine.mp4) · [Gorran](battles/b2-roster/rivals/gorran.mp4) · [Petra](battles/b2-roster/rivals/petra.mp4) · [Ulric](battles/b2-roster/rivals/ulric.mp4) · [Morwen](battles/b2-roster/rivals/morwen.mp4) · [Varek](battles/b2-roster/rivals/varek.mp4)
+
+- **What changed:** the rival army's six leaders, so all 12 leaders are done. Each came from a Flow standing image plus Seedream poses (`scripts/art/prompts/<name>.json`). They're made the way the heroes were, with the army's darker crimson-and-black look:
+  - **Sabine** (sword): her own sweeping arc, from behind her head over to the sabre's tip.
+  - **Gorran** (axe): an overhead chop, like Corin's.
+  - **Petra** (glaive): a thrust streak.
+  - **Varek** (mounted knight): a lance streak and a four-pose gallop.
+  - **Ulric** (bow): an arrow with crimson fletching.
+  - **Morwen** (mage): a crimson bolt. The magic glow now takes a colour, violet for Ilse and crimson for Morwen.
+- **Feedback:** the roster plan, approved: Flow for the standing image, Seedream for the poses.
+- **Decisions:**
+  - Morwen's prompt asks for a dark orb that doesn't glow, so her spell is drawn in code, timed to the cast (the rule from Ilse).
+  - Varek's poses reuse Edric's pose wording, with his own look.
+- **Learned:**
+  - Sabine's first slash and follow-through held the sabre pointing backward, behind her. They were regenerated with the blade "pointing forward and away from her body, toward the target".
+  - Ulric's first recover came back as a close-up cut off at the waist. It was regenerated with the "drawn smaller so everything fits" wording.
+  - The "drawn smaller" wording overshoots, as it did for Dela. Petra's thrust and follow-through, and most of the victories, needed `*1.2`–`*1.35` to match the stance.
+  - The 65 images cost about $2.90.
+
 ### B2 roster: Dela and Ilse, the ranged heroes
 ![Ilse's magic bolt flying from her staff across the meadow](battles/b2-roster/ilse/bolt.jpg)
 
