@@ -257,8 +257,8 @@
     {
       "id": "B4-turn",
       "title": "B4 step 3: one battle a turn and the foes' turn (the battle's POW is the card's; coming back from it ends the turn; the foes' turn shows for 1.5 s in a red box with their card, taking no orders, then the next turn opens on the hand; the board's clock no longer counts the time spent in a battle); check.mjs flow checks; a video of one full turn; 70/70 map identity",
-      "status": "review",
-      "commit": "next"
+      "status": "done",
+      "commit": "192be59"
     }
   ],
   "backlog": [

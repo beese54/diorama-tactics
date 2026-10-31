@@ -132,7 +132,7 @@
     {
       "id": "b4-turn",
       "date": "2026-10-31",
-      "commit": "next",
+      "commit": "192be59",
       "image": "b4-cards/turn/turn.jpg",
       "title": "B4 · One battle a turn, and the foes' turn",
       "note": "The battle fights at the card's POW and ends the turn. The foes' turn shows for 1.5 s in a red box with the card they play, then the next turn opens on the hand."
