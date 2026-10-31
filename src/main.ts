@@ -26,6 +26,7 @@ import { GpuTimer } from './render/GpuTimer';
 import { Skirmish } from './units/Skirmish';
 import { animTest } from './battle/animTest';
 import { battlePreview } from './battle/preview';
+import { BattleScene } from './battle/BattleScene';
 
 /** Map files larger than this are refused unread; a full 64×64 map is well under it. */
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
@@ -276,6 +277,8 @@ async function main(): Promise<void> {
 
   /** The skirmish on the board (none in the map viewer); a new board starts a new one. */
   let skirmish: Skirmish | null = null;
+  /** Whether a battle is open over the board: the map neither draws nor takes keys meanwhile. */
+  let battling = false;
   function startSkirmish(): void {
     if (skirmish) {
       scene.remove(skirmish.group);
@@ -290,6 +293,17 @@ async function main(): Promise<void> {
       surfacePoint: (tile, u, v) => mesh.surfacePoint(tile, u, v),
       focus: (point) => rig.focusOn(point),
       say: (text) => hud.say(text),
+      battle: (setup) => {
+        battling = true;
+        return new Promise((resolve) => {
+          void BattleScene.open(setup, {
+            onLeave: (outcome) => {
+              battling = false;
+              resolve(outcome);
+            },
+          });
+        });
+      },
     }, ui);
     scene.add(skirmish.group);
     // The opening view looks over the allies, as a battle opens on your own army.
@@ -303,7 +317,7 @@ async function main(): Promise<void> {
   startSkirmish();
 
   window.addEventListener('keydown', (e) => {
-    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (battling || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'KeyR' && generated) void newMap();
     if (e.code === 'KeyE') save();
     if (!skirmish) return;
@@ -375,6 +389,8 @@ async function main(): Promise<void> {
   /** CPU milliseconds spent in each recent frame (for scripts/bench.mjs). */
   const frameCpu: number[] = [];
   pipeline.renderer.setAnimationLoop((time) => {
+    // A battle has the screen: the board waits, camera and all, exactly as it was left.
+    if (battling) return;
     const started = performance.now();
     timer.update(time);
     const elapsed = frozenTime ?? timer.getElapsed();
@@ -510,7 +526,15 @@ async function main(): Promise<void> {
           polarDeg: THREE.MathUtils.radToDeg(rig.controls.getPolarAngle()),
           zoom: rig.camera.zoom,
           target: rig.controls.target.toArray(),
+          matrix: rig.camera.matrixWorld.toArray(),
         }),
+        /** Whether a battle is open over the board. */
+        battling: () => battling,
+        /** Moves a unit or sets its Morale, for checks (a foe next to a unit, a battle that leaves one at 0). */
+        setUnit(id: string, changes: { x?: number; y?: number; morale?: number }) {
+          const unit = skirmish?.units.find((u) => u.id === id);
+          if (unit) Object.assign(unit, changes);
+        },
       },
     });
   }

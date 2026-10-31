@@ -448,6 +448,93 @@ check('battle: the skill gauge fills faster when aggressive, and not at all when
   JSON.stringify(Object.fromEntries(Object.entries(runs).map(([k, r]) => [k, r.after.gauge]))));
 check('battle: no console errors', errors.length === 0, errors.join(' | '));
 
+// From the map and back: a foe on the next tile is marked; a click on it opens the battle over
+// the board at full resolution while the board stops drawing; once it is over, Space comes back
+// to the board as it was, with the loser's Morale down by the rules' damage. At 0 it leaves.
+errors.length = 0;
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+const mapUnits = () => page.evaluate(() => window.__map.units());
+/** Puts `foe` on a free tile next to the first of `heroes` that has one; returns the pair as they now stand. */
+const besides = async (heroes, foe) => {
+  const taken = new Set((await mapUnits()).filter((u) => u.morale > 0).map((u) => `${u.x},${u.y}`));
+  for (const hero of heroes) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const [x, y] = [hero.x + dx, hero.y + dy];
+      if (!taken.has(`${x},${y}`) && (await page.evaluate((x, y) => !!window.__map.tile(x, y), x, y))) {
+        await page.evaluate((id, x, y) => window.__map.setUnit(id, { x, y }), foe.id, x, y);
+        return [hero, { ...foe, x, y }];
+      }
+    }
+  }
+  throw new Error('no player unit has a free tile beside it');
+};
+/** Waits until the camera stops moving (a selection eases it over), and returns its matrix. */
+const stillCamera = async () => {
+  let last = null;
+  for (let i = 0; i < 60; i++) {
+    const m = JSON.stringify((await page.evaluate(() => window.__map.camera())).matrix);
+    if (m === last) return m;
+    last = m;
+    await frames(5);
+  }
+  return last;
+};
+/** Clicks a tile without moving the camera. */
+const clickInPlace = async (x, y) => {
+  const pos = await page.evaluate((x, y) => window.__map.tileScreenPos(x, y), x, y);
+  await page.mouse.click(pos.x, pos.y);
+};
+/** Skips a battle that is open to its result, and goes back to the board. */
+const finishBattle = async () => {
+  await page.keyboard.press('Space');
+  await frames(3);
+  await page.keyboard.press('Space');
+  await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
+  await frames(3);
+};
+const allies = army.filter((u) => u.side === 'player');
+const foes = army.filter((u) => u.side === 'enemy');
+const [hero, foe1] = await besides(allies, foes[0]);
+await clickTile(hero.x, hero.y);
+check('attack: a foe on the next tile is marked as a target', (await page.evaluate(() => window.__map.marked().target)) === 1);
+await page.evaluate((x, y) => window.__map.setPose(45, 55, 1.6, x, y), foe1.x, foe1.y);
+const cameraBefore = await stillCamera();
+await clickInPlace(foe1.x, foe1.y);
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+const fight = await page.evaluate(() => ({ canvas: window.__battle.canvas(), rules: window.__battle.rules(), drawn: window.__map.renderInfo().frame }));
+await frames(10);
+const drawnLater = await page.evaluate(() => window.__map.renderInfo().frame);
+const { canvas: bc } = fight;
+check('attack: the battle opens over the board at full resolution, and the board stops drawing',
+  bc.w === Math.round(bc.cssW * bc.dpr) && bc.h === Math.round(bc.cssH * bc.dpr) && bc.cssW === 1920 && bc.cssH === 1080 && drawnLater === fight.drawn,
+  JSON.stringify({ ...fight, drawnLater }));
+await shot('15-attack-battle');
+await finishBattle();
+const back = await mapUnits();
+const loser = fight.rules.winner === 'attacker' ? foe1 : hero;
+const loserNow = back.find((u) => u.id === loser.id);
+check("attack: back on the board, the loser's Morale is down by the rules' damage",
+  loserNow.morale === loser.morale - fight.rules.damage && back.find((u) => u.id === (loser === hero ? foe1 : hero).id).morale === (loser === hero ? foe1 : hero).morale,
+  JSON.stringify({ rules: fight.rules, loser: loserNow }));
+check('attack: the camera is where it was, and the battle is gone from the page',
+  (await stillCamera()) === cameraBefore && (await page.evaluate(() => !document.getElementById('battle') && !document.getElementById('battle-hud') && !window.__battle)));
+check('attack: the attacker has spent its turn', (await page.evaluate(() => window.__map.turn().moved)).includes(hero.id));
+await shot('16-attack-back');
+// A battle between two units at 5 Morale: the loser drops to 0 and leaves the board.
+const [hero2, foe3] = await besides(allies.filter((u) => u.id !== hero.id), foes[1]);
+for (const u of [hero2, foe3]) await page.evaluate((id) => window.__map.setUnit(id, { morale: 5 }), u.id);
+await clickTile(hero2.x, hero2.y);
+await clickInPlace(foe3.x, foe3.y);
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+const rules2 = await page.evaluate(() => window.__battle.rules());
+await finishBattle();
+const gone = rules2.winner === 'attacker' ? foe3 : hero2;
+await clickTile(gone.x, gone.y);
+const left = await page.evaluate((id) => ({ morale: window.__map.units().find((u) => u.id === id).morale, selected: window.__map.selected() }), gone.id);
+check('attack: a unit at 0 Morale leaves the board', left.morale === 0 && left.selected === null, JSON.stringify({ rules2, left }));
+check('attack: no console errors', errors.length === 0, errors.join(' | '));
+
 await browser.close();
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.ok ? '' : `  -> ${r.detail}`}`);
 process.exit(results.every((r) => r.ok) ? 0 : 1);

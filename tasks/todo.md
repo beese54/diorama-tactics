@@ -721,5 +721,9 @@ B2's unbuilt scripted battle is folded in: the scene plays what `ClashSim` decid
   - The fallen fall where the blow lands, then fade back to their own formation place, lying.
   - Tests: targeting, soldiers by Morale, balance re-measured; the script keeps a fighter's duels in a round from overlapping.
 - [x] 5. Stance (A / S / D, from the next beat) and the skill gauge (`src/game/gauge.ts`); check.mjs stance test. The edge shows on each banner; the gauge earns 4 a hit, 6 a duel won (about 35 a neutral battle, 57 aggressive); `?at=` opens a battle still for captures.
-- [ ] 6. Attack from the skirmish and back: Morale applied, camera unchanged, a unit at 0 leaves; check.mjs canvas, camera, Morale.
+- [x] 6. Attack from the skirmish and back: Morale applied, camera unchanged, a unit at 0 leaves; check.mjs canvas, camera, Morale.
+  - A unit may attack a foe on the next tile once a turn, after moving but not before (`canAttack`, `attackWith` in `turn.ts`); attackable foes are marked in bold red, and a unit that walks up to a foe stays selected.
+  - `src/battle/BattleScene.ts` opens a battle over whatever is behind it; `?mode=battle` uses it too. Once over, Space, Enter, Z or a click goes back.
+  - The battle takes each unit's tile defence (`tileStats`), as the rules allow; POW is `FIXED_POW` (60) until B4.
+  - Verified: check.mjs 105/105 (canvas at full resolution, the board stops drawing, Morale down by the rules' damage, camera matrix unchanged, a unit at 0 leaves), 70/70 map identity in viewer mode.
 - Assumptions: POW 60 until B4; the meadow backdrop for every battle; taps not holds; gauge fills per hit and duel won, ×1.5 aggressive, none passive; recolour at runtime; `clash.ts` unchanged (until 4b: the user asked for opposite-number targeting and Morale-scaled soldiers; balance re-measured at 400 seeds: mirror 58%, triangle about 80%, against half Morale 88%).

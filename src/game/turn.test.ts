@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { moveRange } from './movement';
 import { board } from './testBoard';
-import { canMove, FIXED_POOL, moveUnit, nextTurn, startTurn } from './turn';
+import { attackWith, canAttack, canMove, FIXED_POOL, moveUnit, nextTurn, startTurn } from './turn';
 import { makeUnit } from './units';
 
 const setup = () => {
@@ -54,5 +54,33 @@ describe('turns', () => {
     const back = nextTurn(enemy);
     expect([back.side, back.number]).toEqual(['player', 2]);
     expect(canMove(back, a)).toBe(true);
+  });
+
+  it('lets a unit attack a foe on the next tile once a turn, after moving but not before', () => {
+    const { map, a, b, foe, units } = setup();
+    const turn = startTurn('player', 1);
+    expect(canAttack(turn, b, foe)).toBe(false);
+    // Up to the foe's side, then the attack.
+    expect(moveUnit(turn, map, units, b, 2 * 6 + 4)).not.toBeNull();
+    expect(canAttack(turn, b, foe)).toBe(true);
+    expect(canAttack(turn, b, a)).toBe(false);
+    expect(attackWith(turn, b, foe)).toBe(true);
+    expect(attackWith(turn, b, foe)).toBe(false);
+    expect(canMove(turn, b)).toBe(false);
+    // An attack first spends the move as well.
+    a.x = 5;
+    a.y = 1;
+    expect(attackWith(turn, a, foe)).toBe(true);
+    expect(moveUnit(turn, map, units, a, 0)).toBeNull();
+    // Not on the foe's turn, not diagonally, and nobody fallen.
+    const next = nextTurn(turn);
+    expect(canAttack(next, b, foe)).toBe(false);
+    expect(canAttack(next, foe, b)).toBe(true);
+    foe.x = 3;
+    foe.y = 1;
+    expect(canAttack(next, foe, b)).toBe(false);
+    foe.x = 4;
+    b.morale = 0;
+    expect(canAttack(next, foe, b)).toBe(false);
   });
 });

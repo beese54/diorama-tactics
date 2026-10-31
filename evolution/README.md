@@ -24,6 +24,25 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B3: from the map and back
+![Aria is selected and Varek, on the next tile, is marked to attack; the battle; Aria wins and Varek loses 44; back on the board in the same view, Varek's Morale shows 156](battles/b3-battle/from-map/attack.jpg)
+
+![Before and after a battle between two units at Morale 6: Aria loses, drops to 0 and leaves the field](battles/b3-battle/from-map/leaves.jpg)
+
+The whole loop: [map, battle, map](battles/b3-battle/from-map/attack-from-map.mp4) (GIF beside it)
+
+- **What changed:**
+  - **Attacking:** select a unit, and any foe on the next tile is marked in bold red. Click it (or Z on it) to attack. A unit may move and then attack, once a turn, but can't attack and then move. A unit that walks up to a foe stays selected, ready to attack.
+  - **The battle opens over the board,** at full resolution, while the board stops drawing. It fights on each unit's tile defence (the DEF in the tile panel), and POW 60 until cards arrive (B4).
+  - **Going back:** once the battle is over, Space, Enter, Z or a click returns to the board, in the same view. The loser's Morale drops by the battle's damage, the menu box says who won, and a unit at 0 Morale leaves the field.
+  - The battle scene is one piece (`BattleScene`) shared by the map and `?mode=battle`; leaving the battle frees its renderer and pictures.
+- **Decisions:**
+  - Move then attack, not attack then move, as in most tactics games.
+  - The Morale drops when the player leaves the result, not while it shows, so the board never changes behind the battle.
+- **Learned:**
+  - The map viewer is pixel-identical to before (70 of 70 captures), and all 105 browser checks pass, including the camera matrix before and after a battle.
+  - The armies deploy packed into corners, so a unit often has no free tile beside it. That's fine for play, but the checks and these pictures move a foe beside a unit, through a hook for checks.
+
 ### B3: stance and the skill gauge
 ![One battle, switched mid-way: neutral at the charge, aggressive from 3 s (edge +4, the gauge fills faster), passive from 7 s (edge 0, the gauge holds at 62), and the result](battles/b3-battle/stance/switch.jpg)
 

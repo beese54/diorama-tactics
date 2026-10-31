@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeTree } from '../render/dispose';
 
 /** The scene is laid out on a screen this many units tall, whatever the window's real size. */
 export const DESIGN_H = 1080;
@@ -37,6 +38,7 @@ export class BattleView {
   private readonly loader = new THREE.TextureLoader();
   private readonly backdrop: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private aspect = 16 / 9;
+  private readonly onResize = () => this.resize();
 
   constructor(parent: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -48,7 +50,7 @@ export class BattleView {
     this.backdrop.renderOrder = -1;
     this.scene.add(this.backdrop);
     this.resize();
-    window.addEventListener('resize', () => this.resize());
+    window.addEventListener('resize', this.onResize);
   }
 
   /** Loads a picture for the scene: smooth filtering with mipmaps, at full quality. */
@@ -106,5 +108,15 @@ export class BattleView {
 
   render(): void {
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Stops drawing, frees every mesh and picture and the renderer's context, and takes the canvas off the page. */
+  dispose(): void {
+    window.removeEventListener('resize', this.onResize);
+    this.renderer.setAnimationLoop(null);
+    disposeTree(this.scene);
+    this.renderer.dispose();
+    this.renderer.forceContextLoss();
+    this.canvas.remove();
   }
 }

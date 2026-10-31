@@ -233,6 +233,12 @@
     {
       "id": "B3-stance",
       "title": "B3 step 5: stance keys A/S/D (from the next beat), the edge on each banner, the skill gauge (src/game/gauge.ts: 4 a hit, 6 a duel won, x1.5 aggressive, none passive) rising as blows land; ?at= opens a battle still; check.mjs stance and gauge checks",
+      "status": "done",
+      "commit": "8ef69f8"
+    },
+    {
+      "id": "B3-from-map",
+      "title": "B3 step 6: attack from the skirmish and back (canAttack/attackWith in turn.ts: a foe on the next tile, once a turn, after moving but not before; target marks; BattleScene shared with ?mode=battle; tile defence in the battle; Morale applied on return, the camera unchanged, a unit at 0 leaves; the map stops drawing during the battle); check.mjs attack checks; 70/70 map identity",
       "status": "review",
       "commit": "next"
     }

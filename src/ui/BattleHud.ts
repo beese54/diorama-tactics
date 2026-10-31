@@ -73,6 +73,11 @@ export class BattleHud {
     if (text && this.word.textContent !== text) this.word.textContent = text;
   }
 
+  /** Takes the HUD off the page. */
+  dispose(): void {
+    this.el.remove();
+  }
+
   /** The Morale lost, over the losing side's half of the field, or none. */
   pop(side: 'left' | 'right' | null, damage = 0): void {
     this.loss.hidden = !side;

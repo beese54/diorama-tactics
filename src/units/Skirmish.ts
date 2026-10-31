@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import type { ClashSetup, ClashSide } from '../game/clash';
 import { deploy } from '../game/deploy';
 import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
-import { canMove, FIXED_POOL, moveUnit, nextTurn, startTurn, type TurnState } from '../game/turn';
-import type { Unit } from '../game/units';
+import { attackWith, canAttack, canMove, FIXED_POOL, FIXED_POW, moveUnit, nextTurn, startTurn, type TurnState } from '../game/turn';
+import { applyDamage, type Unit } from '../game/units';
+import { tileStats } from '../map/terrain';
 import type { MapFile, Tile } from '../map/types';
 import { TurnBox } from '../ui/TurnBox';
 import { UnitPanel } from '../ui/UnitPanel';
@@ -16,13 +18,17 @@ export interface SkirmishHost {
   focus: (point: THREE.Vector3) => void;
   /** A short notice in the menu box. */
   say: (text: string) => void;
+  /** Plays a battle over the board; resolves with how it came out once the player goes on from it. */
+  battle: (setup: ClashSetup) => Promise<{ winner: ClashSide; damage: number }>;
 }
 
 /**
  * A skirmish on one board: both sides deployed, the player's turn with a shared MOV pool.
  * Click (or Z) a unit to select it and see where it can go; click a blue tile to walk there.
- * An enemy shows its reach in red. X cancels; Enter ends the turn (until the enemy has an AI,
- * its turn passes at once).
+ * A foe on the next tile is marked in bold red: click it to attack, which opens the battle
+ * over the board, and the loser's Morale drops when the player comes back (at 0 it leaves the
+ * field). An enemy shows its reach in red. X cancels; Enter ends the turn (until the enemy has
+ * an AI, its turn passes at once).
  */
 export class Skirmish {
   readonly group = new THREE.Group();
@@ -37,6 +43,10 @@ export class Skirmish {
   private hovered: Tile | null = null;
   /** The range the path preview was last drawn for: a new selection redraws it. */
   private previewed: Map<number, Step> | null = null;
+  /** Whether a battle is on over the board. */
+  private fighting = false;
+  /** Battles fought so far, to give each its own seed. */
+  private fights = 0;
 
   constructor(private readonly map: MapFile, private readonly host: SkirmishHost, ui: HTMLElement) {
     this.units = deploy(map);
@@ -53,7 +63,16 @@ export class Skirmish {
   }
 
   get busy(): boolean {
-    return this.layer.busy;
+    return this.layer.busy || this.fighting;
+  }
+
+  private tileOf(unit: Unit): Tile {
+    return this.map.tiles[unit.y * this.map.width + unit.x];
+  }
+
+  /** The foes `unit` can attack now. */
+  private targets(unit: Unit): Unit[] {
+    return this.units.filter((foe) => canAttack(this.turn, unit, foe));
   }
 
   private index(tile: Tile): number {
@@ -66,6 +85,7 @@ export class Skirmish {
     this.marks.mark('reach', []);
     this.marks.mark('foe', []);
     this.marks.mark('path', []);
+    this.marks.mark('target', []);
     if (!unit) return;
     this.host.focus(this.host.surfacePoint(this.map.tiles[unit.y * this.map.width + unit.x], 0.5, 0.5));
     const tiles = (range: Map<number, Step>) => stopsIn(range).map((i) => this.map.tiles[i]);
@@ -76,6 +96,7 @@ export class Skirmish {
       // How far a foe could come on a full pool of its own.
       this.marks.mark('foe', tiles(moveRange(this.map, this.units, unit, FIXED_POOL)));
     }
+    this.marks.mark('target', this.targets(unit).map((foe) => this.tileOf(foe)));
   }
 
   /** A click (or Z) on `tile`. */
@@ -83,15 +104,43 @@ export class Skirmish {
     if (this.busy) return;
     const unit = this.unitAt(tile);
     const mover = this.selected;
+    if (mover && unit && canAttack(this.turn, mover, unit)) {
+      void this.attack(mover, unit);
+      return;
+    }
     if (mover && this.range && tile && this.range.get(this.index(tile))?.stop && !(tile.x === mover.x && tile.y === mover.y)) {
       const path = moveUnit(this.turn, this.map, this.units, mover, this.index(tile));
       if (path) {
         this.select(null);
-        this.layer.walk(mover, path, () => this.layer.setRested(mover, true));
+        // Arrived next to a foe, it stays selected, ready to attack.
+        this.layer.walk(mover, path, () => {
+          this.layer.setRested(mover, true);
+          if (this.targets(mover).length) this.select(mover);
+        });
         return;
       }
     }
     this.select(unit && unit !== mover ? unit : null);
+  }
+
+  /**
+   * `unit` attacks `foe`: the battle plays over the board (on the tiles' own defence), and once
+   * the player comes back the loser loses its Morale. The unit's turn is spent either way.
+   */
+  private async attack(unit: Unit, foe: Unit): Promise<void> {
+    if (!attackWith(this.turn, unit, foe)) return;
+    this.select(null);
+    this.fighting = true;
+    const setup: ClashSetup = {
+      attacker: unit, defender: foe, pow: FIXED_POW, seed: this.map.seed * 1009 + this.turn.number * 31 + ++this.fights,
+      attackerDefense: tileStats(this.tileOf(unit)).defense, defenderDefense: tileStats(this.tileOf(foe)).defense,
+    };
+    const { winner, damage } = await this.host.battle(setup);
+    const [won, lost] = winner === 'attacker' ? [unit, foe] : [foe, unit];
+    applyDamage(lost, damage);
+    this.layer.setRested(unit, true);
+    this.fighting = false;
+    this.host.say(`${won.name} wins. ${lost.name} loses ${damage} Morale${lost.morale > 0 ? '.' : ' and leaves the field.'}`);
   }
 
   /** X: lets go of the selected unit. */
@@ -131,10 +180,10 @@ export class Skirmish {
   }
 
   /** Counts for checks: tiles marked, and the rules' own count for the selected unit. */
-  marked(): { reach: number; foe: number; path: number; rules: number } {
+  marked(): { reach: number; foe: number; path: number; target: number; rules: number } {
     const s = this.selected;
     return {
-      reach: this.marks.count('reach'), foe: this.marks.count('foe'), path: this.marks.count('path'),
+      reach: this.marks.count('reach'), foe: this.marks.count('foe'), path: this.marks.count('path'), target: this.marks.count('target'),
       rules: s && canMove(this.turn, s) ? stopsIn(moveRange(this.map, this.units, s, this.turn.pool)).length : 0,
     };
   }
