@@ -351,8 +351,11 @@ check('the time picker switches the time and keeps it in the URL', pickedTime.ch
 check('day and night: no console errors', errors.length === 0, errors.join(' | '));
 check('world: no console errors', errors.length === 0, errors.join(' | '));
 
-// Skirmish: units deploy, a click selects one and marks exactly the rules' range, a click on a
-// marked tile walks it there and spends the pool, it can't move twice, and Enter ends the turn.
+// Skirmish: units deploy and the turn opens on the hand; nobody moves without a card, and the
+// card played sets the pool to its MOV (X takes it back before a move). A click selects a unit and
+// marks exactly the rules' range, a click on a marked tile walks it there and spends the pool, it
+// can't move twice, the card is fixed once a unit has moved, and Enter ends the turn; a used card
+// can't be played again.
 errors.length = 0;
 await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());
@@ -365,7 +368,34 @@ const clickTile = async (x, y) => {
   await page.mouse.click(pos.x, pos.y);
   await frames();
 };
+/** Clicks the `i`th card of the hand on screen. */
+const clickCard = async (i) => {
+  const pos = await page.evaluate((i) => { const r = document.querySelectorAll('#card-hand .card')[i].getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }, i);
+  await page.mouse.click(pos.x, pos.y);
+  await frames();
+};
+const turnNow = () => page.evaluate(() => window.__map.turn());
+const handNow = () => page.evaluate(() => window.__map.hand());
+const dealt = { turn: await turnNow(), hand: await handNow(), shown: await page.evaluate(() => document.querySelectorAll('#card-hand .card').length) };
+check('cards: the turn opens on a hand of 8, with no card in play and nothing to move with',
+  dealt.hand.open && dealt.shown === 8 && dealt.hand.cards.every((c) => !c.used) && dealt.turn.card === null && dealt.turn.pool === 0, JSON.stringify(dealt));
+await shot('12a-cards-hand');
 const mover = army[0];
+await page.keyboard.press('KeyC');
+await clickTile(mover.x, mover.y);
+const cardless = await page.evaluate(() => ({ selected: window.__map.selected(), marked: window.__map.marked() }));
+check('cards: without a card a unit can be picked but goes nowhere', cardless.selected === mover.id && cardless.marked.reach === 0, JSON.stringify(cardless));
+await page.keyboard.press('KeyX');
+await page.keyboard.press('KeyC');
+await clickCard(2);
+const third = dealt.hand.cards[2];
+const played = { turn: await turnNow(), hand: await handNow() };
+check("cards: playing a card sets the pool to its MOV and uses it up",
+  played.turn.card?.id === third.id && played.turn.pool === third.mov && !played.hand.open && played.hand.cards[2].used, JSON.stringify(played));
+await page.keyboard.press('KeyX');
+const takenBack = { turn: await turnNow(), hand: await handNow() };
+check('cards: X takes the card back before anyone moves', takenBack.turn.card === null && takenBack.turn.pool === 0 && takenBack.hand.open && !takenBack.hand.cards[2].used, JSON.stringify(takenBack));
+await clickCard(0);
 await clickTile(mover.x, mover.y);
 const marks = await page.evaluate(() => ({ selected: window.__map.selected(), marked: window.__map.marked() }));
 check('skirmish: a click selects the unit and marks exactly its range', marks.selected === mover.id && marks.marked.reach > 1 && marks.marked.reach === marks.marked.rules, JSON.stringify(marks));
@@ -383,10 +413,25 @@ await shot('13-skirmish-moved');
 await clickTile(moved.x, moved.y);
 check('skirmish: a unit that has moved gets no range', (await page.evaluate(() => window.__map.marked().reach)) === 0);
 await page.keyboard.press('KeyX');
+await page.keyboard.press('KeyC');
+await clickCard(1);
+const fixed = { turn: await turnNow(), hand: await handNow() };
+check('cards: once a unit has moved the card stays, and the hand is there to look at only',
+  fixed.turn.card?.id === dealt.hand.cards[0].id && fixed.hand.open && !fixed.hand.cards[1].used, JSON.stringify(fixed));
+await page.keyboard.press('KeyC');
 await page.keyboard.press('Enter');
 await new Promise((r) => setTimeout(r, 200));
-const turn2 = await page.evaluate(() => window.__map.turn());
-check('skirmish: Enter ends the turn and the pool comes back', turn2.number === 2 && turn2.side === 'player' && turn2.pool === turn2.card.mov && turn2.moved.length === 0, JSON.stringify(turn2));
+const turn2 = await turnNow();
+await clickCard(0);
+const usedAgain = { turn: await turnNow(), hand: await handNow() };
+check('cards: Enter ends the turn, and the next opens on the hand with the used card greyed and out of play',
+  turn2.number === 2 && turn2.side === 'player' && turn2.card === null && turn2.moved.length === 0 &&
+  usedAgain.hand.open && usedAgain.turn.card === null && (await page.evaluate(() => document.querySelectorAll('#card-hand .card')[0].classList.contains('used'))),
+  JSON.stringify({ turn2, usedAgain }));
+await shot('12b-cards-later');
+await clickCard(1);
+const turn2b = await turnNow();
+check('skirmish: a new card, a fresh pool', turn2b.card?.id === dealt.hand.cards[1].id && turn2b.pool === turn2b.card.mov, JSON.stringify(turn2b));
 const foe = army.find((u) => u.side === 'enemy');
 await clickTile(foe.x, foe.y);
 const foeMarks = await page.evaluate(() => window.__map.marked());
@@ -495,6 +540,7 @@ const finishBattle = async () => {
 };
 const allies = army.filter((u) => u.side === 'player');
 const foes = army.filter((u) => u.side === 'enemy');
+await clickCard(0);
 const [hero, foe1] = await besides(allies, foes[0]);
 await clickTile(hero.x, hero.y);
 check('attack: a foe on the next tile is marked as a target', (await page.evaluate(() => window.__map.marked().target)) === 1);
@@ -524,6 +570,7 @@ await shot('16-attack-back');
 // A battle between two units at 5 Morale, on the next turn: the loser drops to 0 and leaves the board.
 await page.keyboard.press('Enter');
 await frames(3);
+await clickCard(1);
 const [hero2, foe3] = await besides(allies.filter((u) => u.id !== hero.id), foes[1]);
 for (const u of [hero2, foe3]) await page.evaluate((id) => window.__map.setUnit(id, { morale: 5 }), u.id);
 await clickTile(hero2.x, hero2.y);

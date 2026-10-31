@@ -734,6 +734,8 @@ Plan: one card a turn sets the MOV pool and the battle's POW; one battle a turn,
   - Until the hand is on screen, the skirmish plays the longest reach left at each turn's start; battles use the card's POW.
   - Vitest: `cards.test.ts`, `turn.test.ts` (no move without a card, pool = MOV, used card refused, swap until the first move, one battle a turn).
   - Learned: vitest 5's file cache (`node_modules/.vitest-cache`) kept the purity test's `import.meta.glob` from before `cards.ts` existed ("unresolved import game/cards.ts"); clearing the cache fixed it.
-- [ ] 2. The hand on the map: `src/ui/CardHand.ts`, pixel menu cards (name, POW, MOV, ACE, skill); click or ←/→ and Z to play, X takes it back before a move, C shows the hand; the turn box shows the card. For the user's look.
+- [x] 2. The hand on the map: `src/ui/CardHand.ts`, pixel menu cards (name, POW, MOV, ACE, skill); click or ←/→ and Z to play, X takes it back before a move, C shows the hand; the turn box shows the card. For the user's look.
+  - Done: the skill text in a box above the hand (it doesn't fit on a card at the pixel scale); USED / IN PLAY stamps replace the ACE line; the tile and unit panels step aside while the hand is open; board clicks wait while it is open.
+  - Verified: check.mjs 111/111 (hand of 8 at the start, no reach without a card, pool = MOV, X takes back, the card stays once a unit moves, a used card refused next turn), 70/70 map identity, tests 1458. In review.
 - [ ] 3. One battle a turn ends it; the enemy's turn is shown (red box, its card, about 1.5 s) and passes back; check.mjs flow test; a video of one full turn.
 - Assumptions: the attack ends the turn; 8 cards a side from 12; an empty hand refills (until B7); the battle uses the attacker's card POW; no card pictures yet; skills named only (B6); the enemy doesn't move until B7.

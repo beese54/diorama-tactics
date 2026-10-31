@@ -120,6 +120,14 @@
       "image": "b3-battle/from-map/attack.jpg",
       "title": "B3 · From the map and back",
       "note": "A foe on the next tile is marked in bold red; a click opens the battle over the board, and Space comes back to the same view with the loser's Morale down. At 0 Morale a unit leaves the field."
+    },
+    {
+      "id": "b4-hand",
+      "date": "2026-10-31",
+      "commit": "next",
+      "image": "b4-cards/hand/focus.jpg",
+      "title": "B4 · The hand of cards",
+      "note": "Each turn opens on a hand of 8 cards in the map's menu style: name, POW, MOV and ACE, and the focused card's skill above. The card played sets the shared MOV pool; used cards are greyed and stamped."
     }
   ]
 }

@@ -152,6 +152,123 @@
         height: 100%;
         background: linear-gradient(#9cf08a, #4aa83a);
       }
+      /* The hand: menu-style cards along the bottom; the tile and unit panels step aside while it is open. */
+      #ui.choosing #tile-info,
+      #ui.choosing #unit-info {
+        display: none;
+      }
+      #card-hand {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: calc(var(--px) * 8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: calc(var(--px) * 4);
+      }
+      #card-hand[hidden] {
+        display: none;
+      }
+      #card-hand .detail {
+        width: calc(var(--px) * 300);
+        padding: calc(var(--px) * 4) calc(var(--px) * 6);
+        background: linear-gradient(#34488a, #18224d);
+        border: var(--px) solid #c9d4f0;
+        border-radius: calc(var(--px) * 2);
+        box-shadow: 0 0 0 var(--px) #0a0f24;
+      }
+      #card-hand .detail .head {
+        display: flex;
+        justify-content: space-between;
+        gap: calc(var(--px) * 8);
+      }
+      #card-hand .detail .skill {
+        color: #ffe27a;
+      }
+      #card-hand .detail .ace,
+      #card-hand .detail .keys {
+        color: #b4e08c;
+      }
+      #card-hand .detail .keys {
+        margin-top: calc(var(--px) * 3);
+        text-align: right;
+      }
+      #card-hand .cards {
+        display: flex;
+        align-items: flex-end;
+        gap: calc(var(--px) * 4);
+        pointer-events: auto;
+      }
+      #card-hand .card {
+        position: relative;
+        box-sizing: border-box;
+        width: calc(var(--px) * 52);
+        height: calc(var(--px) * 92);
+        padding: calc(var(--px) * 4) calc(var(--px) * 3);
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--px) * 2);
+        cursor: pointer;
+        background: linear-gradient(#4660b4, #22306a 55%, #18224d);
+        border: var(--px) solid #c9d4f0;
+        border-radius: calc(var(--px) * 3);
+        box-shadow: 0 0 0 var(--px) #0a0f24, inset 0 0 0 var(--px) #22306a;
+      }
+      #card-hand .card.focus {
+        transform: translateY(calc(var(--px) * -6));
+        border-color: #ffe27a;
+        box-shadow: 0 0 0 var(--px) #0a0f24, inset 0 0 0 var(--px) #8a6a1e;
+      }
+      #card-hand .card .name {
+        height: calc(var(--px) * 20);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        text-transform: uppercase;
+      }
+      #card-hand .card .num {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 0 calc(var(--px) * 1);
+        background: #0a0f2466;
+        border-radius: var(--px);
+      }
+      #card-hand .card .num b {
+        font-weight: normal;
+        font-size: calc(var(--px) * 16);
+        line-height: 1;
+      }
+      #card-hand .card .pow {
+        color: #ffe27a;
+      }
+      #card-hand .card .mov {
+        color: #a8d8ff;
+      }
+      #card-hand .card .ace {
+        margin-top: auto;
+        text-align: center;
+        color: #b4e08c;
+      }
+      #card-hand .card.used,
+      #card-hand .card.locked {
+        cursor: default;
+        filter: grayscale(1) brightness(0.62);
+      }
+      #card-hand .card.played {
+        cursor: default;
+        border-color: #ffe27a;
+      }
+      #card-hand .card .stamp {
+        margin: auto calc(var(--px) * -3) calc(var(--px) * 2);
+        padding: calc(var(--px) * 3) 0;
+        text-align: center;
+        color: #ffe27a;
+        background: #0a0f24d0;
+        transform: rotate(-8deg);
+      }
       /* The battle scene: full resolution and smooth, never pixelated. */
       #battle {
         position: fixed;

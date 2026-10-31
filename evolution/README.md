@@ -24,6 +24,31 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B4: the hand of cards
+![The turn opens on the hand: eight cards along the bottom, Steady Line raised with its skill, Hold Fast, in the box above](battles/b4-cards/hand/focus.jpg)
+
+| Steady Line played: the turn box shows it, MOV 10 of 10 | Turn 4: three cards used and greyed, Grave Toll in play |
+|---|---|
+| ![Steady Line played](battles/b4-cards/hand/played.jpg) | ![The hand later in the game](battles/b4-cards/hand/later.jpg) |
+
+- **What changed:**
+  - **Each turn opens on your hand:** 8 cards along the bottom in the map's menu style. Each card shows its name, POW, MOV and ACE, and the card under the cursor shows its skill in the box above. While the hand is open, the tile and unit panels step aside.
+  - **The card played sets the turn:**
+    - its MOV is the pool all your units share;
+    - its POW drives the turn's battle.
+    - Nobody moves or attacks without one.
+  - **Controls:** click a card, or use ←/→ and Z, to play it. X takes it back until a unit moves, and C shows the hand again; once a unit has moved, it is there to look at only.
+  - **Used cards** are greyed and stamped USED, and can't be played again. Once all 8 are used, they come back.
+  - **The turn box** shows the card in play and the MOV left out of its MOV, or PICK A CARD.
+  - **The rules** (`src/game/cards.ts`, `turn.ts`): 12 cards, each with an ACE and a named skill. POW and MOV trade off: POW + 5 × MOV = 115. 8 are dealt to each side by the map's seed.
+- **Decisions:**
+  - **Menu cards without pictures for now.** Card art comes with a later art round.
+  - **The skill text sits in a box above the hand,** because it doesn't fit on a card at the map's pixel scale.
+  - **The stamp replaces the ACE line,** so a used card's POW and MOV stay readable.
+- **Learned:**
+  - The map viewer is pixel-identical to before (70 of 70), and all 111 browser checks pass, including the new card flow: no move without a card, pool = MOV, take back, a used card refused.
+  - Vitest's file cache can hide a new source file from a test that globs the source tree. Clearing `node_modules/.vitest-cache` fixes it.
+
 ### B3: from the map and back
 ![Aria is selected and Varek, on the next tile, is marked to attack; the battle; Aria wins and Varek loses 44; back on the board in the same view, Varek's Morale shows 156](battles/b3-battle/from-map/attack.jpg)
 

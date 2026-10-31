@@ -3,10 +3,11 @@ import type { ClashSetup, ClashSide } from '../game/clash';
 import { deploy } from '../game/deploy';
 import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
 import { deal, refill, unused, type Hand } from '../game/cards';
-import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, type TurnState } from '../game/turn';
+import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from '../game/turn';
 import { applyDamage, type Side, type Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
 import type { MapFile, Tile } from '../map/types';
+import { CardHand } from '../ui/CardHand';
 import { TurnBox } from '../ui/TurnBox';
 import { UnitPanel } from '../ui/UnitPanel';
 import { RangeLayer } from './RangeLayer';
@@ -24,12 +25,14 @@ export interface SkirmishHost {
 }
 
 /**
- * A skirmish on one board: both sides deployed, the player's turn with a shared MOV pool.
- * Click (or Z) a unit to select it and see where it can go; click a blue tile to walk there.
+ * A skirmish on one board: both sides deployed, each with a hand of cards. A turn opens on the
+ * hand: the card played sets the MOV pool the side's units share and the POW of its battle (C
+ * shows the hand again; X takes the card back until a unit moves). Then click (or Z) a unit to
+ * select it and see where it can go; click a blue tile to walk there.
  * A foe on the next tile is marked in bold red: click it to attack, which opens the battle
  * over the board, and the loser's Morale drops when the player comes back (at 0 it leaves the
- * field). An enemy shows its reach in red. X cancels; Enter ends the turn (until the enemy has
- * an AI, its turn passes at once).
+ * field); one battle a turn. An enemy shows its reach in red. X cancels; Enter ends the turn
+ * (until the enemy has an AI, it plays a card and its turn passes at once).
  */
 export class Skirmish {
   readonly group = new THREE.Group();
@@ -43,6 +46,7 @@ export class Skirmish {
   private readonly marks: RangeLayer;
   private readonly panel: UnitPanel;
   private readonly box: TurnBox;
+  private readonly cards: CardHand;
   private hovered: Tile | null = null;
   /** The range the path preview was last drawn for: a new selection redraws it. */
   private previewed: Map<number, Step> | null = null;
@@ -51,7 +55,7 @@ export class Skirmish {
   /** Battles fought so far, to give each its own seed. */
   private fights = 0;
 
-  constructor(private readonly map: MapFile, private readonly host: SkirmishHost, ui: HTMLElement) {
+  constructor(private readonly map: MapFile, private readonly host: SkirmishHost, private readonly ui: HTMLElement) {
     this.units = deploy(map);
     this.hands = { player: deal(map.seed, 'player'), enemy: deal(map.seed, 'enemy') };
     this.layer = new UnitLayer(map, this.units, host.surfacePoint);
@@ -59,15 +63,46 @@ export class Skirmish {
     this.group.add(this.marks.group, this.layer.group);
     this.panel = new UnitPanel(ui);
     this.box = new TurnBox(ui);
+    this.cards = new CardHand(ui, (id) => this.play(id));
     this.begin(this.turn);
   }
 
-  /** Opens `turn`: the side's hand comes back once it is all played, and (until the hand is on screen) its longest reach is played. */
+  /**
+   * Opens `turn`: the side's hand comes back once it is all played. The player's opens on the
+   * hand; the enemy (no AI until B7) plays its first card left.
+   */
   private begin(turn: TurnState): TurnState {
     const hand = this.hands[turn.side];
     refill(hand);
-    playCard(turn, hand, unused(hand)[0].id);
+    if (turn.side === 'player') this.cards.show(hand, null, false);
+    else playCard(turn, hand, unused(hand)[0].id);
     return turn;
+  }
+
+  /** Whether the turn is under way: once a unit has moved or fought, the card stays. */
+  private get committed(): boolean {
+    return this.turn.moved.size > 0 || this.turn.attacked;
+  }
+
+  /** The player plays the card `id` (or swaps it for the one in play): the hand closes and the pool is its MOV. */
+  private play(id: string): void {
+    if (this.busy || this.turn.side !== 'player' || !playCard(this.turn, this.hands.player, id)) return;
+    this.cards.hide();
+    this.select(null);
+    const { name, mov, pow } = this.turn.card!;
+    this.host.say(`${name}: MOV ${mov}, POW ${pow}.`);
+  }
+
+  /** C: shows the hand, or puts it away. Once the turn is under way it is there to look at only. */
+  toggleHand(): void {
+    if (this.busy) return;
+    if (this.cards.open) this.cards.hide();
+    else this.cards.show(this.hands.player, this.turn.side === 'player' ? this.turn.card : null, this.turn.side !== 'player' || this.committed);
+  }
+
+  /** A key for the hand while it is open (arrows and Z). Returns whether it took the key. */
+  key(code: string): boolean {
+    return !this.busy && this.cards.key(code);
   }
 
   /** The longest reach left in `side`'s hand: how far its units could come next turn. */
@@ -120,7 +155,7 @@ export class Skirmish {
 
   /** A click (or Z) on `tile`. */
   click(tile: Tile | null): void {
-    if (this.busy) return;
+    if (this.busy || this.cards.open) return;
     const unit = this.unitAt(tile);
     const mover = this.selected;
     if (mover && unit && canAttack(this.turn, mover, unit)) {
@@ -139,7 +174,9 @@ export class Skirmish {
         return;
       }
     }
-    this.select(unit && unit !== mover ? unit : null);
+    const next = unit && unit !== mover ? unit : null;
+    if (next && next.side === 'player' && this.turn.side === 'player' && !this.turn.card) this.host.say('Play a card first: C opens the hand.');
+    this.select(next);
   }
 
   /**
@@ -162,15 +199,24 @@ export class Skirmish {
     this.host.say(`${won.name} wins. ${lost.name} loses ${damage} Morale${lost.morale > 0 ? '.' : ' and leaves the field.'}`);
   }
 
-  /** X: lets go of the selected unit. */
+  /** X: puts the hand away, or lets go of the selected unit, or takes the card back into the hand before anyone has moved. */
   cancel(): void {
-    if (!this.busy) this.select(null);
+    if (this.busy) return;
+    if (this.cards.open) {
+      if (this.turn.card && takeBack(this.turn, this.hands.player)) this.cards.show(this.hands.player, null, false);
+      else this.cards.hide();
+    } else if (this.selected) this.select(null);
+    else if (this.turn.side === 'player' && takeBack(this.turn, this.hands.player)) {
+      this.cards.show(this.hands.player, null, false);
+      this.host.say('The card goes back into the hand.');
+    }
   }
 
   /** Enter: ends the player's turn. The enemy has no AI yet (B7): it plays a card and its turn passes straight back. */
   endTurn(): void {
     if (this.busy || this.turn.side !== 'player') return;
     this.select(null);
+    this.cards.hide();
     const foes = this.begin(nextTurn(this.turn));
     this.turn = this.begin(nextTurn(foes));
     for (const u of this.units) this.layer.setRested(u, false);
@@ -192,6 +238,17 @@ export class Skirmish {
     const shown = this.unitAt(this.hovered) ?? this.selected;
     this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id));
     this.box.show(this.turn);
+    // While the hand is open it has the bottom of the screen: the tile and unit panels step aside.
+    this.ui.classList.toggle('choosing', this.cards.open);
+  }
+
+  /** The player's hand, for checks: each card, whether it is used, and the hand's state on screen. */
+  handInfo(): { open: boolean; focused: number; played: string | null; cards: { id: string; pow: number; mov: number; used: boolean }[] } {
+    const hand = this.hands.player;
+    return {
+      open: this.cards.open, focused: this.cards.focused, played: this.turn.side === 'player' ? this.turn.card?.id ?? null : null,
+      cards: hand.cards.map(({ id, pow, mov }) => ({ id, pow, mov, used: hand.used.has(id) })),
+    };
   }
 
   /** The tiles the selected unit can move to now, as [x, y] (for checks). */
@@ -213,5 +270,7 @@ export class Skirmish {
     this.panel.show(null);
     document.getElementById('unit-info')?.remove();
     document.getElementById('turn-info')?.remove();
+    document.getElementById('card-hand')?.remove();
+    this.ui.classList.remove('choosing');
   }
 }

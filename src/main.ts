@@ -321,6 +321,8 @@ async function main(): Promise<void> {
     if (e.code === 'KeyR' && generated) void newMap();
     if (e.code === 'KeyE') save();
     if (!skirmish) return;
+    if (skirmish.key(e.code)) return e.preventDefault();
+    if (e.code === 'KeyC') skirmish.toggleHand();
     if (e.code === 'KeyZ') skirmish.click(keyTile ?? hovered);
     if (e.code === 'KeyX') skirmish.cancel();
     if (e.code === 'Enter') skirmish.endTurn();
@@ -517,6 +519,8 @@ async function main(): Promise<void> {
         takeFrameCpu: () => frameCpu.splice(0),
         /** The skirmish, for checks: units, the turn, the selection and what is marked. */
         units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, x: u.x, y: u.y, morale: u.morale })) ?? null,
+        /** The player's hand: its cards, which are used, and whether it is open on screen. */
+        hand: () => skirmish?.handInfo(),
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },
         selected: () => skirmish?.selected?.id ?? null,
         marked: () => skirmish?.marked() ?? null,

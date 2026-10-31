@@ -246,6 +246,12 @@
       "id": "B4-rules",
       "title": "B4 step 1: cards and the turn rules (src/game/cards.ts: 12 cards, POW + 5 MOV = 115, an ACE and a named skill each; deal 8 a side by seed; the hand refills once all are played. turn.ts: no move or attack without a card, the pool is the card's MOV, a used card is refused, swap or take back until the first move, one battle a side a turn and it ends the turn). The skirmish plays the longest reach left until the hand is on screen (step 2); battles use the card's POW",
       "status": "done",
+      "commit": "ff8a238"
+    },
+    {
+      "id": "B4-hand",
+      "title": "B4 step 2: the hand on the map (src/ui/CardHand.ts): 8 menu-style cards (name, POW, MOV, ACE; the focused card's skill in a box above); click or arrows + Z to play, X takes it back before a move, C shows it (look only once a unit has moved); used cards greyed and stamped; the turn box shows the card; tile and unit panels step aside while it is open; check.mjs card checks; 70/70 map identity",
+      "status": "review",
       "commit": "next"
     }
   ],

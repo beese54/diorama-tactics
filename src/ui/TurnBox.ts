@@ -1,6 +1,6 @@
 import type { TurnState } from '../game/turn';
 
-/** FFT-style box in the top-right corner: whose turn, the MOV left in the shared pool out of the card's, and the keys. */
+/** FFT-style box in the top-right corner: whose turn, the card in play, the MOV left in the shared pool out of the card's, and the keys. */
 export class TurnBox {
   private readonly el: HTMLElement;
   private current = '';
@@ -18,7 +18,9 @@ export class TurnBox {
     this.el.className = turn.side;
     this.el.innerHTML =
       `<div class="head"><span>TURN ${turn.number}</span><span>${turn.side === 'player' ? 'ALLIES' : 'FOES'}</span></div>` +
-      `<div class="mov">MOV ${turn.pool} / ${turn.card?.mov ?? 0}</div>` +
-      '<div class="keys">ENTER END TURN</div>';
+      (turn.card
+        ? `<div class="card">${turn.card.name.toUpperCase()} · POW ${turn.card.pow}</div><div class="mov">MOV ${turn.pool} / ${turn.card.mov}</div>`
+        : '<div class="mov">PICK A CARD</div>') +
+      '<div class="keys">C CARDS · ENTER END TURN</div>';
   }
 }
