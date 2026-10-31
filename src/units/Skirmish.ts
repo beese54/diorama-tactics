@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import type { ClashSetup, ClashSide } from '../game/clash';
 import { deploy } from '../game/deploy';
 import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
-import { attackWith, canAttack, canMove, FIXED_POOL, FIXED_POW, moveUnit, nextTurn, startTurn, type TurnState } from '../game/turn';
-import { applyDamage, type Unit } from '../game/units';
+import { deal, refill, unused, type Hand } from '../game/cards';
+import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, type TurnState } from '../game/turn';
+import { applyDamage, type Side, type Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
 import type { MapFile, Tile } from '../map/types';
 import { TurnBox } from '../ui/TurnBox';
@@ -34,6 +35,8 @@ export class Skirmish {
   readonly group = new THREE.Group();
   readonly units: Unit[];
   turn: TurnState = startTurn('player', 1);
+  /** Each side's cards for the skirmish. */
+  readonly hands: Record<Side, Hand>;
   selected: Unit | null = null;
   private range: Map<number, Step> | null = null;
   private readonly layer: UnitLayer;
@@ -50,11 +53,27 @@ export class Skirmish {
 
   constructor(private readonly map: MapFile, private readonly host: SkirmishHost, ui: HTMLElement) {
     this.units = deploy(map);
+    this.hands = { player: deal(map.seed, 'player'), enemy: deal(map.seed, 'enemy') };
     this.layer = new UnitLayer(map, this.units, host.surfacePoint);
     this.marks = new RangeLayer(host.surfacePoint);
     this.group.add(this.marks.group, this.layer.group);
     this.panel = new UnitPanel(ui);
     this.box = new TurnBox(ui);
+    this.begin(this.turn);
+  }
+
+  /** Opens `turn`: the side's hand comes back once it is all played, and (until the hand is on screen) its longest reach is played. */
+  private begin(turn: TurnState): TurnState {
+    const hand = this.hands[turn.side];
+    refill(hand);
+    playCard(turn, hand, unused(hand)[0].id);
+    return turn;
+  }
+
+  /** The longest reach left in `side`'s hand: how far its units could come next turn. */
+  private reach(side: Side): number {
+    const left = unused(this.hands[side]);
+    return Math.max(...(left.length ? left : this.hands[side].cards).map((c) => c.mov));
   }
 
   /** The living unit standing on `tile`, if any. */
@@ -93,8 +112,8 @@ export class Skirmish {
       this.range = moveRange(this.map, this.units, unit, this.turn.pool);
       this.marks.mark('reach', tiles(this.range));
     } else if (unit.side !== this.turn.side) {
-      // How far a foe could come on a full pool of its own.
-      this.marks.mark('foe', tiles(moveRange(this.map, this.units, unit, FIXED_POOL)));
+      // How far a foe could come on its longest card.
+      this.marks.mark('foe', tiles(moveRange(this.map, this.units, unit, this.reach(unit.side))));
     }
     this.marks.mark('target', this.targets(unit).map((foe) => this.tileOf(foe)));
   }
@@ -132,7 +151,7 @@ export class Skirmish {
     this.select(null);
     this.fighting = true;
     const setup: ClashSetup = {
-      attacker: unit, defender: foe, pow: FIXED_POW, seed: this.map.seed * 1009 + this.turn.number * 31 + ++this.fights,
+      attacker: unit, defender: foe, pow: this.turn.card!.pow, seed: this.map.seed * 1009 + this.turn.number * 31 + ++this.fights,
       attackerDefense: tileStats(this.tileOf(unit)).defense, defenderDefense: tileStats(this.tileOf(foe)).defense,
     };
     const { winner, damage } = await this.host.battle(setup);
@@ -148,11 +167,12 @@ export class Skirmish {
     if (!this.busy) this.select(null);
   }
 
-  /** Enter: ends the player's turn. The enemy has no AI yet (B7), so its turn passes straight back. */
+  /** Enter: ends the player's turn. The enemy has no AI yet (B7): it plays a card and its turn passes straight back. */
   endTurn(): void {
     if (this.busy || this.turn.side !== 'player') return;
     this.select(null);
-    this.turn = nextTurn(nextTurn(this.turn));
+    const foes = this.begin(nextTurn(this.turn));
+    this.turn = this.begin(nextTurn(foes));
     for (const u of this.units) this.layer.setRested(u, false);
     this.host.say(`The foes hold their ground. Turn ${this.turn.number}.`);
   }
@@ -171,7 +191,7 @@ export class Skirmish {
     this.marks.update(elapsed);
     const shown = this.unitAt(this.hovered) ?? this.selected;
     this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id));
-    this.box.show(this.turn, FIXED_POOL);
+    this.box.show(this.turn);
   }
 
   /** The tiles the selected unit can move to now, as [x, y] (for checks). */

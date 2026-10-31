@@ -727,3 +727,13 @@ B2's unbuilt scripted battle is folded in: the scene plays what `ClashSim` decid
   - The battle takes each unit's tile defence (`tileStats`), as the rules allow; POW is `FIXED_POW` (60) until B4.
   - Verified: check.mjs 105/105 (canvas at full resolution, the board stops drawing, Morale down by the rules' damage, camera matrix unchanged, a unit at 0 leaves), 70/70 map identity in viewer mode.
 - Assumptions: POW 60 until B4; the meadow backdrop for every battle; taps not holds; gauge fills per hit and duel won, ×1.5 aggressive, none passive; recolour at runtime; `clash.ts` unchanged (until 4b: the user asked for opposite-number targeting and Morale-scaled soldiers; balance re-measured at 400 seeds: mirror 58%, triangle about 80%, against half Morale 88%).
+
+### B4 plan (approved 2026-10-31): cards and turns
+Plan: one card a turn sets the MOV pool and the battle's POW; one battle a turn, and it ends the turn; the enemy's turn is a real turn.
+- [x] 1. Cards and the turn rules, pure and tested: `src/game/cards.ts` (12 cards, POW + 5 MOV = 115, ACE and a named skill each; 8 dealt a side by seed; refill once all are played), `turn.ts` (`playCard`, `takeBack`; no move or attack without a card; one battle a side a turn, ending it). `FIXED_POOL` is gone; `FIXED_POW` only for `?mode=battle`.
+  - Until the hand is on screen, the skirmish plays the longest reach left at each turn's start; battles use the card's POW.
+  - Vitest: `cards.test.ts`, `turn.test.ts` (no move without a card, pool = MOV, used card refused, swap until the first move, one battle a turn).
+  - Learned: vitest 5's file cache (`node_modules/.vitest-cache`) kept the purity test's `import.meta.glob` from before `cards.ts` existed ("unresolved import game/cards.ts"); clearing the cache fixed it.
+- [ ] 2. The hand on the map: `src/ui/CardHand.ts`, pixel menu cards (name, POW, MOV, ACE, skill); click or ←/→ and Z to play, X takes it back before a move, C shows the hand; the turn box shows the card. For the user's look.
+- [ ] 3. One battle a turn ends it; the enemy's turn is shown (red box, its card, about 1.5 s) and passes back; check.mjs flow test; a video of one full turn.
+- Assumptions: the attack ends the turn; 8 cards a side from 12; an empty hand refills (until B7); the battle uses the attacker's card POW; no card pictures yet; skills named only (B6); the enemy doesn't move until B7.

@@ -378,7 +378,7 @@ await clickTile(goal[0], goal[1]);
 await page.waitForFunction(() => !window.__map.busy(), { timeout: 20000 });
 const after = await page.evaluate(() => ({ units: window.__map.units(), turn: window.__map.turn() }));
 const moved = after.units.find((u) => u.id === mover.id);
-check('skirmish: a click on a marked tile walks there and spends the pool', moved.x === goal[0] && moved.y === goal[1] && after.turn.pool < 12 && after.turn.moved.includes(mover.id), JSON.stringify({ goal, moved, turn: after.turn }));
+check('skirmish: a click on a marked tile walks there and spends the pool', moved.x === goal[0] && moved.y === goal[1] && after.turn.pool < after.turn.card.mov && after.turn.moved.includes(mover.id), JSON.stringify({ goal, moved, turn: after.turn }));
 await shot('13-skirmish-moved');
 await clickTile(moved.x, moved.y);
 check('skirmish: a unit that has moved gets no range', (await page.evaluate(() => window.__map.marked().reach)) === 0);
@@ -386,7 +386,7 @@ await page.keyboard.press('KeyX');
 await page.keyboard.press('Enter');
 await new Promise((r) => setTimeout(r, 200));
 const turn2 = await page.evaluate(() => window.__map.turn());
-check('skirmish: Enter ends the turn and the pool comes back', turn2.number === 2 && turn2.side === 'player' && turn2.pool === 12 && turn2.moved.length === 0, JSON.stringify(turn2));
+check('skirmish: Enter ends the turn and the pool comes back', turn2.number === 2 && turn2.side === 'player' && turn2.pool === turn2.card.mov && turn2.moved.length === 0, JSON.stringify(turn2));
 const foe = army.find((u) => u.side === 'enemy');
 await clickTile(foe.x, foe.y);
 const foeMarks = await page.evaluate(() => window.__map.marked());
@@ -521,7 +521,9 @@ check('attack: the camera is where it was, and the battle is gone from the page'
   (await stillCamera()) === cameraBefore && (await page.evaluate(() => !document.getElementById('battle') && !document.getElementById('battle-hud') && !window.__battle)));
 check('attack: the attacker has spent its turn', (await page.evaluate(() => window.__map.turn().moved)).includes(hero.id));
 await shot('16-attack-back');
-// A battle between two units at 5 Morale: the loser drops to 0 and leaves the board.
+// A battle between two units at 5 Morale, on the next turn: the loser drops to 0 and leaves the board.
+await page.keyboard.press('Enter');
+await frames(3);
 const [hero2, foe3] = await besides(allies.filter((u) => u.id !== hero.id), foes[1]);
 for (const u of [hero2, foe3]) await page.evaluate((id) => window.__map.setUnit(id, { morale: 5 }), u.id);
 await clickTile(hero2.x, hero2.y);

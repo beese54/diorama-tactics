@@ -517,7 +517,7 @@ async function main(): Promise<void> {
         takeFrameCpu: () => frameCpu.splice(0),
         /** The skirmish, for checks: units, the turn, the selection and what is marked. */
         units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, x: u.x, y: u.y, morale: u.morale })) ?? null,
-        turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved] },
+        turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },
         selected: () => skirmish?.selected?.id ?? null,
         marked: () => skirmish?.marked() ?? null,
         busy: () => skirmish?.busy ?? false,

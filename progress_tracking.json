@@ -241,6 +241,12 @@
       "title": "B3 step 6: attack from the skirmish and back (canAttack/attackWith in turn.ts: a foe on the next tile, once a turn, after moving but not before; target marks; BattleScene shared with ?mode=battle; tile defence in the battle; Morale applied on return, the camera unchanged, a unit at 0 leaves; the map stops drawing during the battle); check.mjs attack checks; 70/70 map identity",
       "status": "done",
       "commit": "f5adf41"
+    },
+    {
+      "id": "B4-rules",
+      "title": "B4 step 1: cards and the turn rules (src/game/cards.ts: 12 cards, POW + 5 MOV = 115, an ACE and a named skill each; deal 8 a side by seed; the hand refills once all are played. turn.ts: no move or attack without a card, the pool is the card's MOV, a used card is refused, swap or take back until the first move, one battle a side a turn and it ends the turn). The skirmish plays the longest reach left until the hand is on screen (step 2); battles use the card's POW",
+      "status": "done",
+      "commit": "next"
     }
   ],
   "backlog": [

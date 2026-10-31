@@ -57,3 +57,7 @@
 ## 2026-10-31: template strings lost to shell quoting (self-caught)
 - **What happened:** Twice I edited TypeScript and check.mjs through `node -e "..."` in bash. Bash expanded the `${...}` inside JavaScript template strings, leaving `page.goto(, ...)` and `className = ;`. tsc caught one; `node --check` would have caught the other.
 - **Rule:** Edit source with the Edit tool. Use `node -e` only for code without backticks or `${`. After any scripted edit, read the changed lines back before running anything.
+
+## 2026-10-31: a stale vitest file cache (self-caught)
+- **What happened:** After adding `src/game/cards.ts`, `purity.test.ts` failed with "unresolved import game/cards.ts", but only when its own text was unchanged. Vitest 5 keeps transformed modules in `node_modules/.vitest-cache`, and the purity test's `import.meta.glob` list was cached from before the file existed.
+- **Rule:** When a test that globs the source tree can't see a new file, delete `node_modules/.vitest-cache` and run again before changing any code.
