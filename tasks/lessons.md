@@ -61,3 +61,8 @@
 ## 2026-10-31: a stale vitest file cache (self-caught)
 - **What happened:** After adding `src/game/cards.ts`, `purity.test.ts` failed with "unresolved import game/cards.ts", but only when its own text was unchanged. Vitest 5 keeps transformed modules in `node_modules/.vitest-cache`, and the purity test's `import.meta.glob` list was cached from before the file existed.
 - **Rule:** When a test that globs the source tree can't see a new file, delete `node_modules/.vitest-cache` and run again before changing any code.
+
+## 2026-10-31: a paused loop's clock kept running (self-caught)
+- **What happened:** The board stops drawing while a battle has the screen, but its `THREE.Timer` still measured from the last frame. The first frame back carried the whole battle as one delta, so the foes' 1.5 s turn ended at once and the board's clock jumped. Only the new check.mjs flow test showed it: nothing earlier depended on `dt` across a battle.
+- **Rule:** Whenever a render loop is paused or skipped (a battle, a hidden tab, a modal), reset or clamp the clock that feeds `dt` when it resumes. Anything timed in game seconds (turns, walks, cooldowns) must be tested across a pause.
+- **Rule:** For videos of timed play, step the page's frames by hand (queue `requestAnimationFrame` in the capture script) so game time follows the video, not the wall clock, which slow screenshots stretch.

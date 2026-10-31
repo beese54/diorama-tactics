@@ -299,6 +299,8 @@ async function main(): Promise<void> {
           void BattleScene.open(setup, {
             onLeave: (outcome) => {
               battling = false;
+              // The board's clock stood still with it: the time the battle took doesn't count.
+              timer.reset();
               resolve(outcome);
             },
           });

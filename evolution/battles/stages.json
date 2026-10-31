@@ -124,10 +124,18 @@
     {
       "id": "b4-hand",
       "date": "2026-10-31",
-      "commit": "next",
+      "commit": "c5d1bf3",
       "image": "b4-cards/hand/focus.jpg",
       "title": "B4 · The hand of cards",
       "note": "Each turn opens on a hand of 8 cards in the map's menu style: name, POW, MOV and ACE, and the focused card's skill above. The card played sets the shared MOV pool; used cards are greyed and stamped."
+    },
+    {
+      "id": "b4-turn",
+      "date": "2026-10-31",
+      "commit": "next",
+      "image": "b4-cards/turn/turn.jpg",
+      "title": "B4 · One battle a turn, and the foes' turn",
+      "note": "The battle fights at the card's POW and ends the turn. The foes' turn shows for 1.5 s in a red box with the card they play, then the next turn opens on the hand."
     }
   ]
 }

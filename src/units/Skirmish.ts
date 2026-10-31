@@ -13,6 +13,9 @@ import { UnitPanel } from '../ui/UnitPanel';
 import { RangeLayer } from './RangeLayer';
 import { UnitLayer } from './UnitLayer';
 
+/** How long the foes' turn stays on screen, in seconds. */
+const FOES_TURN = 1.5;
+
 /** What the skirmish needs from the rest of the app. */
 export interface SkirmishHost {
   surfacePoint: (tile: Tile, u: number, v: number) => THREE.Vector3;
@@ -31,8 +34,9 @@ export interface SkirmishHost {
  * select it and see where it can go; click a blue tile to walk there.
  * A foe on the next tile is marked in bold red: click it to attack, which opens the battle
  * over the board, and the loser's Morale drops when the player comes back (at 0 it leaves the
- * field); one battle a turn. An enemy shows its reach in red. X cancels; Enter ends the turn
- * (until the enemy has an AI, it plays a card and its turn passes at once).
+ * field). The battle ends the turn, as Enter does at any time. An enemy shows its reach in red;
+ * X cancels. The foes' turn shows for a moment (until they have an AI in B7, they play a card and
+ * hold their ground), then the next turn opens on the hand.
  */
 export class Skirmish {
   readonly group = new THREE.Group();
@@ -54,6 +58,8 @@ export class Skirmish {
   private fighting = false;
   /** Battles fought so far, to give each its own seed. */
   private fights = 0;
+  /** Seconds left before the foes' turn passes back. */
+  private foesLeft = 0;
 
   constructor(private readonly map: MapFile, private readonly host: SkirmishHost, private readonly ui: HTMLElement) {
     this.units = deploy(map);
@@ -86,7 +92,7 @@ export class Skirmish {
 
   /** The player plays the card `id` (or swaps it for the one in play): the hand closes and the pool is its MOV. */
   private play(id: string): void {
-    if (this.busy || this.turn.side !== 'player' || !playCard(this.turn, this.hands.player, id)) return;
+    if (this.busy || !playCard(this.turn, this.hands.player, id)) return;
     this.cards.hide();
     this.select(null);
     const { name, mov, pow } = this.turn.card!;
@@ -97,7 +103,7 @@ export class Skirmish {
   toggleHand(): void {
     if (this.busy) return;
     if (this.cards.open) this.cards.hide();
-    else this.cards.show(this.hands.player, this.turn.side === 'player' ? this.turn.card : null, this.turn.side !== 'player' || this.committed);
+    else this.cards.show(this.hands.player, this.turn.card, this.committed);
   }
 
   /** A key for the hand while it is open (arrows and Z). Returns whether it took the key. */
@@ -116,8 +122,9 @@ export class Skirmish {
     return tile ? this.units.find((u) => u.morale > 0 && u.x === tile.x && u.y === tile.y) : undefined;
   }
 
+  /** Whether the board is taking no orders: a unit walking, a battle on, or the foes' turn. */
   get busy(): boolean {
-    return this.layer.busy || this.fighting;
+    return this.layer.busy || this.fighting || this.turn.side !== 'player';
   }
 
   private tileOf(unit: Unit): Tile {
@@ -175,7 +182,7 @@ export class Skirmish {
       }
     }
     const next = unit && unit !== mover ? unit : null;
-    if (next && next.side === 'player' && this.turn.side === 'player' && !this.turn.card) this.host.say('Play a card first: C opens the hand.');
+    if (next && next.side === 'player' && !this.turn.card) this.host.say('Play a card first: C opens the hand.');
     this.select(next);
   }
 
@@ -197,6 +204,8 @@ export class Skirmish {
     this.layer.setRested(unit, true);
     this.fighting = false;
     this.host.say(`${won.name} wins. ${lost.name} loses ${damage} Morale${lost.morale > 0 ? '.' : ' and leaves the field.'}`);
+    // One battle a turn: it ends the turn.
+    this.passTurn();
   }
 
   /** X: puts the hand away, or lets go of the selected unit, or takes the card back into the hand before anyone has moved. */
@@ -206,19 +215,30 @@ export class Skirmish {
       if (this.turn.card && takeBack(this.turn, this.hands.player)) this.cards.show(this.hands.player, null, false);
       else this.cards.hide();
     } else if (this.selected) this.select(null);
-    else if (this.turn.side === 'player' && takeBack(this.turn, this.hands.player)) {
+    else if (takeBack(this.turn, this.hands.player)) {
       this.cards.show(this.hands.player, null, false);
       this.host.say('The card goes back into the hand.');
     }
   }
 
-  /** Enter: ends the player's turn. The enemy has no AI yet (B7): it plays a card and its turn passes straight back. */
+  /** Enter: ends the player's turn. */
   endTurn(): void {
-    if (this.busy || this.turn.side !== 'player') return;
+    if (this.busy) return;
+    this.passTurn();
+    this.host.say(`The foes play ${this.turn.card!.name}.`);
+  }
+
+  /** The foes' turn begins. They have no AI yet (B7): they play a card, and it passes back after FOES_TURN. */
+  private passTurn(): void {
     this.select(null);
     this.cards.hide();
-    const foes = this.begin(nextTurn(this.turn));
-    this.turn = this.begin(nextTurn(foes));
+    this.turn = this.begin(nextTurn(this.turn));
+    this.foesLeft = FOES_TURN;
+  }
+
+  /** The foes' turn is over: the next turn opens on the player's hand. */
+  private handBack(): void {
+    this.turn = this.begin(nextTurn(this.turn));
     for (const u of this.units) this.layer.setRested(u, false);
     this.host.say(`The foes hold their ground. Turn ${this.turn.number}.`);
   }
@@ -233,6 +253,7 @@ export class Skirmish {
   }
 
   update(elapsed: number, dt: number, camera: THREE.Camera): void {
+    if (this.turn.side === 'enemy' && (this.foesLeft -= dt) <= 0) this.handBack();
     this.layer.update(elapsed, dt, camera);
     this.marks.update(elapsed);
     const shown = this.unitAt(this.hovered) ?? this.selected;
@@ -242,12 +263,13 @@ export class Skirmish {
     this.ui.classList.toggle('choosing', this.cards.open);
   }
 
-  /** The player's hand, for checks: each card, whether it is used, and the hand's state on screen. */
-  handInfo(): { open: boolean; focused: number; played: string | null; cards: { id: string; pow: number; mov: number; used: boolean }[] } {
+  /** The player's hand, for checks: each card, whether it is used, and the hand's state on screen; and how many cards the foes have left. */
+  handInfo(): { open: boolean; focused: number; played: string | null; cards: { id: string; pow: number; mov: number; used: boolean }[]; foesLeft: number } {
     const hand = this.hands.player;
     return {
       open: this.cards.open, focused: this.cards.focused, played: this.turn.side === 'player' ? this.turn.card?.id ?? null : null,
       cards: hand.cards.map(({ id, pow, mov }) => ({ id, pow, mov, used: hand.used.has(id) })),
+      foesLeft: unused(this.hands.enemy).length,
     };
   }
 

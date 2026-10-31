@@ -354,8 +354,9 @@ check('world: no console errors', errors.length === 0, errors.join(' | '));
 // Skirmish: units deploy and the turn opens on the hand; nobody moves without a card, and the
 // card played sets the pool to its MOV (X takes it back before a move). A click selects a unit and
 // marks exactly the rules' range, a click on a marked tile walks it there and spends the pool, it
-// can't move twice, the card is fixed once a unit has moved, and Enter ends the turn; a used card
-// can't be played again.
+// can't move twice, the card is fixed once a unit has moved, and Enter ends the turn: the foes play
+// a card and hold for a moment, taking no orders, then the next turn opens on the hand, where a
+// used card can't be played again.
 errors.length = 0;
 await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());
@@ -419,8 +420,26 @@ const fixed = { turn: await turnNow(), hand: await handNow() };
 check('cards: once a unit has moved the card stays, and the hand is there to look at only',
   fixed.turn.card?.id === dealt.hand.cards[0].id && fixed.hand.open && !fixed.hand.cards[1].used, JSON.stringify(fixed));
 await page.keyboard.press('KeyC');
+const turnBox = () => page.evaluate(() => { const el = document.getElementById('turn-info'); return { cls: el.className, text: el.textContent }; });
+const foesBefore = (await handNow()).foesLeft;
+const passedAt = Date.now();
 await page.keyboard.press('Enter');
-await new Promise((r) => setTimeout(r, 200));
+await frames(3);
+const foesTurn = { turn: await turnNow(), hand: await handNow(), box: await turnBox() };
+check("turns: Enter passes to the foes, who play a card (one fewer in their hand), and the box turns red with it",
+  foesTurn.turn.side === 'enemy' && foesTurn.turn.number === 1 && !!foesTurn.turn.card && foesTurn.hand.foesLeft === foesBefore - 1 && !foesTurn.hand.open &&
+  foesTurn.box.cls === 'enemy' && foesTurn.box.text.includes('FOES') && foesTurn.box.text.includes(foesTurn.turn.card.name.toUpperCase()),
+  JSON.stringify({ foesBefore, ...foesTurn }));
+await shot('12c-foes-turn');
+await page.keyboard.press('KeyC');
+await page.keyboard.press('Enter');
+await frames(3);
+const ignored = { turn: await turnNow(), hand: await handNow() };
+check("turns: on the foes' turn the board takes no orders", ignored.turn.side === 'enemy' && ignored.turn.number === 1 && !ignored.hand.open, JSON.stringify(ignored));
+await page.waitForFunction(() => window.__map.turn().side === 'player', { timeout: 10000 });
+const foesHeld = Date.now() - passedAt;
+check("turns: the foes' turn holds about 1.5 s, then passes back", foesHeld > 1200 && foesHeld < 5000, `${foesHeld} ms`);
+await frames(3);
 const turn2 = await turnNow();
 await clickCard(0);
 const usedAgain = { turn: await turnNow(), hand: await handNow() };
@@ -541,6 +560,7 @@ const finishBattle = async () => {
 const allies = army.filter((u) => u.side === 'player');
 const foes = army.filter((u) => u.side === 'enemy');
 await clickCard(0);
+const attackCard = (await turnNow()).card;
 const [hero, foe1] = await besides(allies, foes[0]);
 await clickTile(hero.x, hero.y);
 check('attack: a foe on the next tile is marked as a target', (await page.evaluate(() => window.__map.marked().target)) === 1);
@@ -557,6 +577,16 @@ check('attack: the battle opens over the board at full resolution, and the board
   JSON.stringify({ ...fight, drawnLater }));
 await shot('15-attack-battle');
 await finishBattle();
+const afterBattle = { turn: await turnNow(), box: await turnBox() };
+// A second attack: the same click again does nothing while the turn is the foes'.
+await clickInPlace(hero.x, hero.y);
+await frames(3);
+await clickInPlace(foe1.x, foe1.y);
+await frames(3);
+const again = await page.evaluate(() => ({ battling: window.__map.battling(), selected: window.__map.selected() }));
+check("attack: the battle's POW is the card's, and coming back from it ends the turn (no second attack)",
+  fight.rules.pow === attackCard.pow && afterBattle.turn.side === 'enemy' && afterBattle.box.cls === 'enemy' && !again.battling && again.selected === null,
+  JSON.stringify({ pow: fight.rules.pow, attackCard, afterBattle, again }));
 const back = await mapUnits();
 const loser = fight.rules.winner === 'attacker' ? foe1 : hero;
 const loserNow = back.find((u) => u.id === loser.id);
@@ -565,11 +595,13 @@ check("attack: back on the board, the loser's Morale is down by the rules' damag
   JSON.stringify({ rules: fight.rules, loser: loserNow }));
 check('attack: the camera is where it was, and the battle is gone from the page',
   (await stillCamera()) === cameraBefore && (await page.evaluate(() => !document.getElementById('battle') && !document.getElementById('battle-hud') && !window.__battle)));
-check('attack: the attacker has spent its turn', (await page.evaluate(() => window.__map.turn().moved)).includes(hero.id));
 await shot('16-attack-back');
-// A battle between two units at 5 Morale, on the next turn: the loser drops to 0 and leaves the board.
-await page.keyboard.press('Enter');
+await page.waitForFunction(() => window.__map.turn().side === 'player', { timeout: 10000 });
 await frames(3);
+const turn2After = { turn: await turnNow(), hand: await handNow() };
+check('attack: after the foes, turn 2 opens on the hand with the card used', turn2After.turn.number === 2 && turn2After.turn.card === null && turn2After.hand.open && turn2After.hand.cards[0].used,
+  JSON.stringify(turn2After));
+// A battle between two units at 5 Morale, on the next turn: the loser drops to 0 and leaves the board.
 await clickCard(1);
 const [hero2, foe3] = await besides(allies.filter((u) => u.id !== hero.id), foes[1]);
 for (const u of [hero2, foe3]) await page.evaluate((id) => window.__map.setUnit(id, { morale: 5 }), u.id);

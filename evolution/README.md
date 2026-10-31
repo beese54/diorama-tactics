@@ -24,6 +24,25 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B4: one battle a turn, and the foes' turn
+![The foes' turn: the turn box red with Swift Banner, POW 45; then turn 2 opens on the hand with Steady Line used](battles/b4-cards/turn/turn.jpg)
+
+| Aria has walked up to Varek with Steady Line in play: POW 65 for the battle | One full turn: card, walk, battle, the foes, the hand again |
+|---|---|
+| ![Varek marked as the target](battles/b4-cards/turn/target.jpg) | [one-turn.mp4](battles/b4-cards/turn/one-turn.mp4) ([GIF](battles/b4-cards/turn/one-turn.gif)) |
+
+- **What changed:**
+  - **The battle fights at the card's POW** (Steady Line: 65), and coming back from it ends your turn: one battle a turn.
+  - **The foes' turn is a real turn now.** The turn box turns red with the card they play, and the board takes no orders for about 1.5 s. Then the next turn opens on your hand. Enter ends your turn at any time.
+  - **The foes' hand** loses a card each turn, as yours does.
+- **Decisions:**
+  - **The foes play their first card left and hold their ground** until their AI arrives in B7.
+  - **No keys line on the foes' turn,** as there is nothing to press.
+- **Learned:**
+  - **The board's clock counted the time spent in a battle:** the board stops drawing while a battle has the screen, but its timer kept running. The first frame back carried the whole battle as one step, so the foes' turn ended at once and the board's clock jumped. The timer is now reset when the battle hands the screen back, so the board picks up exactly where it was.
+  - **Videos step the page's frames by hand:** screenshots are slower than the game, so the capture script queues the page's animation frames and runs 2.5 of them per video frame. Walks and the foes' 1.5 s then play at their real speed.
+  - All 115 browser checks pass, and the map viewer is still pixel-identical (70 of 70).
+
 ### B4: the hand of cards
 ![The turn opens on the hand: eight cards along the bottom, Steady Line raised with its skill, Hold Fast, in the box above](battles/b4-cards/hand/focus.jpg)
 

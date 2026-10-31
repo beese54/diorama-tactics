@@ -21,6 +21,7 @@ export class TurnBox {
       (turn.card
         ? `<div class="card">${turn.card.name.toUpperCase()} · POW ${turn.card.pow}</div><div class="mov">MOV ${turn.pool} / ${turn.card.mov}</div>`
         : '<div class="mov">PICK A CARD</div>') +
-      '<div class="keys">C CARDS · ENTER END TURN</div>';
+      // The foes' turn plays itself: no keys to press.
+      (turn.side === 'player' ? '<div class="keys">C CARDS · ENTER END TURN</div>' : '');
   }
 }

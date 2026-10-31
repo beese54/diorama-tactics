@@ -144,7 +144,7 @@ export class BattleScene {
         /** The rules' own result for this battle at neutral stances, for checks against what the scene shows. */
         rules: () => {
           const { winner, damage } = resolveClash(setup);
-          return { winner, damage, morale: { attacker: setup.attacker.morale, defender: setup.defender.morale } };
+          return { winner, damage, pow: setup.pow, morale: { attacker: setup.attacker.morale, defender: setup.defender.morale } };
         },
         /** Every character the scene could cast, for checks. */
         characters: Object.keys(CHARACTERS),

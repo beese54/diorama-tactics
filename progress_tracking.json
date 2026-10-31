@@ -251,6 +251,12 @@
     {
       "id": "B4-hand",
       "title": "B4 step 2: the hand on the map (src/ui/CardHand.ts): 8 menu-style cards (name, POW, MOV, ACE; the focused card's skill in a box above); click or arrows + Z to play, X takes it back before a move, C shows it (look only once a unit has moved); used cards greyed and stamped; the turn box shows the card; tile and unit panels step aside while it is open; check.mjs card checks; 70/70 map identity",
+      "status": "done",
+      "commit": "c5d1bf3"
+    },
+    {
+      "id": "B4-turn",
+      "title": "B4 step 3: one battle a turn and the foes' turn (the battle's POW is the card's; coming back from it ends the turn; the foes' turn shows for 1.5 s in a red box with their card, taking no orders, then the next turn opens on the hand; the board's clock no longer counts the time spent in a battle); check.mjs flow checks; a video of one full turn; 70/70 map identity",
       "status": "review",
       "commit": "next"
     }
