@@ -239,8 +239,8 @@
     {
       "id": "B3-from-map",
       "title": "B3 step 6: attack from the skirmish and back (canAttack/attackWith in turn.ts: a foe on the next tile, once a turn, after moving but not before; target marks; BattleScene shared with ?mode=battle; tile defence in the battle; Morale applied on return, the camera unchanged, a unit at 0 leaves; the map stops drawing during the battle); check.mjs attack checks; 70/70 map identity",
-      "status": "review",
-      "commit": "next"
+      "status": "done",
+      "commit": "f5adf41"
     }
   ],
   "backlog": [

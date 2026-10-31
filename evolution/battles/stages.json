@@ -116,7 +116,7 @@
     {
       "id": "b3-from-map",
       "date": "2026-10-31",
-      "commit": "next",
+      "commit": "f5adf41",
       "image": "b3-battle/from-map/attack.jpg",
       "title": "B3 · From the map and back",
       "note": "A foe on the next tile is marked in bold red; a click opens the battle over the board, and Space comes back to the same view with the loser's Morale down. At 0 Morale a unit leaves the field."

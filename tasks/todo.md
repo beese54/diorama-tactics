@@ -613,7 +613,7 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - [x] **B0 Rules core** (pure TS, tests only): units, classes, stats, weapon triangle, terrain defence from `TERRAIN`, move range by `moveCost` on a shared MOV pool, Union shapes (`+`/`x`), clash maths, Morale.
 - [x] **B1 Units on the map:** procedural pixel units (heads, two sides), idle animation, deployment on any theme, select, move range and path preview, move tween, unit info panel. Shots in `evolution/characters/`.
 - [ ] **B2 Battle scene v0:** first a still style frame at full resolution for approval (the risk point: if code-drawn characters fall short, fall back to a licensed hi-res art pack or supplied art). Then: attack an adjacent enemy, transition to a side view (full resolution, not pixelated) whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
-- [ ] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
+- [x] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
 - [ ] **B4 Cards and turns:** card hand (POW, MOV, ACE, skill), one card per turn, one attack per turn, end turn.
 - [ ] **B5 Unions:** shape detection and highlight, chained clashes.
 - [ ] **B6 Card skills:** cut-ins, flash, hit-stop, shake.
