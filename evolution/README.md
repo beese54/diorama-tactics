@@ -24,6 +24,29 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B4 r3: the hover clip, three models
+![The three test clips side by side, with what each cost](battles/b4-cards/r3-clip/clips-compare.jpg)
+
+| The card playing Fast's clip as the pointer circles | Mid-clip, in the card |
+|---|---|
+| ![](battles/b4-cards/r3-clip/long-road-clip.gif) | ![](battles/b4-cards/r3-clip/card-clip.jpg) |
+
+The full side-by-side video is [`clips-compare.mp4`](battles/b4-cards/r3-clip/clips-compare.mp4).
+
+**What changed**
+- **Long Road's hover clip** was made three times, by Seedance 2.0 Mini, 2.0 Fast and 2.0. Each had the same still as its first and last frame, the same prompt and seed 4242, and ran 5 s at 720p.
+  - **Mini ($0.38)** points the sword at the sun, but zooms out and reframes as it goes: the milestone leaves the frame, and the last frame isn't the still.
+  - **Fast ($0.61)** points the sword at the sun with the camera held still, and comes back to the still.
+  - **2.0 ($0.77)** raises the sword overhead into a starburst, with the camera held still, and comes back to the still.
+- **Fast's clip is installed** as `public/cards/long-road/motion.mp4` until the model is picked. On hover, it fades in over the layers and plays once.
+
+**Decisions**
+- **The default clip is Fast's, not Mini's** as planned. Mini's last frame is 38 levels off the still on average, against about 6 for Fast and 2.0, so the card would visibly jump when it fades back.
+
+**Learned**
+- **Mini doesn't hold the last-frame anchor**, at least for this clip: it treats the last frame loosely and drifts the camera. A clip that has to loop back into a card's still needs Fast or 2.0.
+- **A key's model permissions are separate from activating a model.** After activation, the 2.0 models answered 403 AccessDenied until the key was allowed to use them. An empty request costs nothing and tells the two apart: 403 means the key is blocked, and 400 means it's allowed in.
+
 ### B4 r2: the animated card
 ![Long Road tilted toward the pointer: the layers part, foil slides over the gold](battles/b4-cards/r2-card/tilt.jpg)
 
