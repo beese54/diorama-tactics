@@ -74,3 +74,11 @@
 ## 2026-11-01: check.mjs started twice in one command, again (self-caught)
 - **What happened:** I ended a `check.mjs` command with a leftover `; node scripts/check.mjs ... | true`, so a second full run queued behind the first. The same thing happened in B4. On this machine a heavy check takes over ten minutes and must run alone.
 - **Rule:** A heavy check gets a command of its own: exactly one `node scripts/check.mjs` (or identity, or capture) per Bash call, and nothing else chained after it. Read the command back before sending it.
+
+## 2026-11-01: the full checks run twice to read one count (self-caught)
+- **What happened:** I ran `check.mjs` once and read only the last lines, then ran it again in full just to count the FAILs.
+- **Rule:** Run a heavy check once, with its output saved to a scratchpad file (`> out.txt`), then read that file as many ways as needed.
+
+## 2026-11-01: model activation is not key permission (BytePlus ModelArk)
+- **What happened:** After the user activated the Seedance 2.0 models, every call returned 403 AccessDenied. The API key itself had to be allowed to use those models, which took about 5 minutes to apply.
+- **Rule:** Before any billed call to a newly enabled model, send a free probe: a request with empty `content`. 400 InvalidParameter means the key gets through, 403 means the key is blocked from that model, and ModelNotOpen means the model isn't activated. Tell the user which of these it is.
