@@ -66,3 +66,7 @@
 - **What happened:** The board stops drawing while a battle has the screen, but its `THREE.Timer` still measured from the last frame. The first frame back carried the whole battle as one delta, so the foes' 1.5 s turn ended at once and the board's clock jumped. Only the new check.mjs flow test showed it: nothing earlier depended on `dt` across a battle.
 - **Rule:** Whenever a render loop is paused or skipped (a battle, a hidden tab, a modal), reset or clamp the clock that feeds `dt` when it resumes. Anything timed in game seconds (turns, walks, cooldowns) must be tested across a pause.
 - **Rule:** For videos of timed play, step the page's frames by hand (queue `requestAnimationFrame` in the capture script) so game time follows the video, not the wall clock, which slow screenshots stretch.
+
+## 2026-10-31: "For cards, I dont want pixel art, I want animated cards that show motion"
+- **What happened:** I built the B4 cards in the map's pixel menu style and then proposed animations snapped to the pixel grid, assuming every piece of map UI follows the map's pixel look.
+- **Rule:** Only the map board is pixel art. Before giving any new visual element a style (cards, cut-ins, overlays), ask whether it belongs to the board or to the "showpiece" art like the battle scenes. Showpiece art is full resolution, smooth and animated. When unsure, ask before building it.
