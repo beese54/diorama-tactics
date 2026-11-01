@@ -6,24 +6,20 @@
 // The key comes from .env.local (git ignores it; .env.example shows the names) or the environment.
 // It is sent only in the Authorization header to ARK_BASE_URL and never printed.
 //
+// Every call is priced first and refused if it would take the round past ARK_CAP_USD; each image
+// made is recorded in art/source/spend.json (see spend.mjs).
+//
+// A pose takes its prompt from the file's `base` with {pose} filled in, or its own `prompt` if it
+// has one. A pose with no refs (a background plate) is drawn from the text alone.
+//
 // Usage: node scripts/art/generate.mjs <prompts.json> <pose>... [--count N] [--size 1536x1536|2K] [--seed N] [--dry]
-//   --dry prints what would be sent (without the key or the images' data) and spends nothing.
+//   --dry prints what would be sent (without the key or the images' data), its price, and spends nothing.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
+import { env, estimate, guard, record, summary } from './spend.mjs';
 
 const SOURCE = 'art/source';
 const OUT = join(SOURCE, 'candidates');
-
-function env() {
-  const vars = { ...process.env };
-  if (existsSync('.env.local')) {
-    for (const line of readFileSync('.env.local', 'utf8').split(/\r?\n/)) {
-      const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
-      if (m && m[2] !== '') vars[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
-    }
-  }
-  return vars;
-}
 
 function args(argv) {
   // Sizes stay in the cheaper price tier (up to about 2.36 MP): 1536x1536, or 1664x1248 (4:3) for riders.
@@ -72,22 +68,25 @@ let failed = 0;
 for (const name of opts.names) {
   const pose = prompts.poses[name];
   if (!pose) throw new Error(`no pose "${name}" in ${promptsFile}; it has: ${Object.keys(prompts.poses).join(', ')}`);
-  const refs = pose.refs.map((r) => join(SOURCE, r));
+  const refs = (pose.refs ?? []).map((r) => join(SOURCE, r));
   for (const r of refs) if (!existsSync(r)) throw new Error(`reference image missing: ${r}`);
   const body = {
     model: vars.ARK_IMAGE_MODEL ?? '(ARK_IMAGE_MODEL)',
-    prompt: prompts.base.replace('{pose}', pose.pose),
-    image: refs.length === 1 ? dataUri(refs[0]) : refs.map(dataUri),
+    prompt: pose.prompt ?? prompts.base.replace('{pose}', pose.pose),
+    ...(refs.length ? { image: refs.length === 1 ? dataUri(refs[0]) : refs.map(dataUri) } : {}),
     size: opts.size,
     response_format: 'b64_json',
     watermark: false,
     ...(opts.seed === undefined ? {} : { seed: opts.seed }),
   };
+  const price = estimate('image', { refs: refs.length });
   if (opts.dry) {
     console.log(`${name}: POST ${base}/images/generations`, JSON.stringify({ ...body, image: refs }, null, 1));
+    console.log(`${name}: ${opts.count} × $${price.toFixed(3)}`);
     continue;
   }
   for (let i = 0; i < opts.count; i++) {
+    guard(vars, price);
     // A dropped connection (it happens on long generations) or a request hung past three minutes
     // is tried twice more, then the pose is skipped so the rest of the batch still runs.
     let res;
@@ -126,9 +125,11 @@ for (const name of opts.names) {
       const ext = bytes[0] === 0x89 && bytes[1] === 0x50 ? '.png' : '.jpg';
       const file = nextFile(pose.out, ext);
       writeFileSync(file, bytes);
-      console.log(`${name}: ${file} (${item.size ?? opts.size})`);
+      record({ kind: 'image', model: body.model, name, file, estimate: price });
+      console.log(`${name}: ${file} (${item.size ?? opts.size}), $${price.toFixed(3)}; ${summary(vars)}`);
     }
   }
 }
+if (opts.dry) console.log(summary(vars));
 // exitCode rather than exit(): exiting while fetch's sockets close trips a libuv assertion on Windows.
 process.exitCode = failed ? 1 : 0;

@@ -742,3 +742,11 @@ Plan: one card a turn sets the MOV pool and the battle's POW; one battle a turn,
   - Fixed on the way: the board's `THREE.Timer` kept counting during a battle, so the first frame back carried the whole battle as one delta (the foes' turn ended at once, and the board's clock jumped). `timer.reset()` when the battle hands the screen back.
   - Verified: check.mjs 115/115 (foes' card and red box, one card fewer in their hand, no orders taken, about 1.5 s then back; the battle's POW = the card's, no second attack, turn 2 on the hand), 70/70 map identity, tests 1458. Approved (192be59): B4 done.
 - Assumptions: the attack ends the turn; 8 cards a side from 12; an empty hand refills (until B7); the battle uses the attacker's card POW; no card pictures yet; skills named only (B6); the enemy doesn't move until B7.
+
+### Card art round (approved 2026-11-01): A + C, capped at $12
+Plan: Seedream makes each card's layers through the API from the Flow standing images (A); Seedance 2.0 makes a square hover clip from each card's art (C). Long Road first, end to end, with one clip from each of Mini, Fast and 2.0 for the user to pick the model; then the round stops for their pick and their look at the card. Design: `scripts/art/prompts/cards.md`; options and prices: `tasks/card-art-options.md`.
+- [x] 1. The spending guard: `scripts/art/spend.mjs` (each call priced first, refused past `ARK_CAP_USD`, a ledger in `art/source/spend.json`), wired into `generate.mjs`; new `scripts/art/video.mjs` (Seedance image to video, first and last frame, the real cost from the task's usage). Verified: dry runs price an image at $0.045 (+$0.003 a further reference) and a 5 s 720p clip at $0.38 / $0.60 / $0.76; a $0.01 cap refuses, no cap refuses everything, both before any request.
+- [ ] 2. Long Road's layers (plate, character, front) and `scripts/art/cardart.py` → `public/cards/long-road/`.
+- [ ] 3. Three test clips (Mini, Fast, 2.0), side by side, for the user to pick.
+- [ ] 4. The card renderer (`src/cards/`) and `?mode=card&id=long-road`.
+- Later: the other 11 cards with the chosen model; the renderer replaces the B4 pixel hand.
