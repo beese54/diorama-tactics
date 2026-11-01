@@ -140,10 +140,18 @@
     {
       "id": "b4-cards-r1-art",
       "date": "2026-11-01",
-      "commit": "next",
+      "commit": "ee20ff9",
       "image": "b4-cards/r1-art/art.jpg",
       "title": "B4 r1 · Long Road's card art",
       "note": "The first animated card's art, in layers: a dawn road plate, Aria and a sword soldier from their standing images, and a milestone and straw grass in front, made by Seedream through the API ($0.14) and composited by cardart.py with a contact shadow and a depth map."
+    },
+    {
+      "id": "b4-cards-r2-card",
+      "date": "2026-11-01",
+      "commit": "next",
+      "image": "b4-cards/r2-card/tilt.jpg",
+      "title": "B4 r2 · The animated card",
+      "note": "Long Road as a layered 3D card at full resolution: the layers part as it tilts toward the pointer, dawn beams breathe, dust drifts, a glint runs along Aria's sword, holographic foil slides over the gold, and a click flips it to its crested back. The foes' cards are crimson and silver."
     }
   ]
 }

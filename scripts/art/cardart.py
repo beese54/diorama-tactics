@@ -6,17 +6,25 @@ picks are named in scripts/art/prompts/cards.json, or the first of each by defau
   card's `place` says: the figures centred where it puts them, the foreground pieces pushed
   into the lower corners;
 - grades the cutouts toward the plate's light, and lays a soft contact shadow under the feet;
-- builds a depth map from the layers: the plate's ground rising toward the viewer, the figures
-  nearer, the foreground nearest;
+- builds the plate's depth map: the sky and horizon far, the ground rising toward the viewer
+  (the figures and foreground are layers of their own, each at its own depth);
 - writes public/cards/<id>/: art.jpg (the flat still, also the clip's first and last frame),
   plate.jpg, character.webp, front.webp (full-art RGBA, so the layers stack without offsets),
   depth.png, and layers.json (the files, and the weapon's glint line in art fractions).
 
+It also lists the card in public/cards/index.json, the manifest the game reads to know which
+cards have art.
+
+With --clip <file.mp4>, it instead installs that clip as the card's hover clip: re-encoded
+(H.264, no audio, fast start) to public/cards/<id>/motion.mp4 and listed in layers.json.
+
 Usage: python scripts/art/cardart.py <card id> [--plate N] [--character N] [--front N]
+       python scripts/art/cardart.py <card id> --clip <file.mp4>
 """
 import argparse
 import json
 import os
+import subprocess
 import sys
 
 import numpy as np
@@ -146,13 +154,12 @@ def over(base: np.ndarray, layer: np.ndarray) -> np.ndarray:
     return base * (1 - a) + layer[..., :3] * a
 
 
-def depth_map(figures: np.ndarray, front: np.ndarray, horizon: float) -> np.ndarray:
-    """White is near. The sky and the horizon far, the ground rising toward the bottom edge."""
+def depth_map(horizon: float) -> np.ndarray:
+    """The plate's depth, white near: the sky and the horizon far, the ground rising toward the
+    bottom edge. The figures and the foreground are layers of their own, each at its own depth,
+    so they stay out of it: a plate warped around their outlines would show at their edges."""
     y = np.linspace(0, 1, SIZE)[:, None].repeat(SIZE, 1)
-    d = np.clip((y - horizon) / (1 - horizon), 0, 1) ** 1.3 * 0.55
-    d = np.maximum(d, figures[..., 3] * 0.72)
-    d = np.maximum(d, front[..., 3] * 0.95)
-    return ndimage.gaussian_filter(d, 4)
+    return np.clip((y - horizon) / (1 - horizon), 0, 1) ** 1.3
 
 
 def pick(card: str, kind: str, n) -> str:
@@ -162,13 +169,43 @@ def pick(card: str, kind: str, n) -> str:
     return path
 
 
+def manifest(card: str) -> None:
+    """Adds the card to public/cards/index.json, the list of cards that have art."""
+    path = os.path.join('public', 'cards', 'index.json')
+    ids = json.load(open(path, encoding='utf8'))['cards'] if os.path.exists(path) else []
+    with open(path, 'w', encoding='utf8') as f:
+        json.dump({'cards': sorted(set(ids) | {card})}, f, indent=1)
+        f.write('\n')
+
+
+def install_clip(card: str, clip: str) -> None:
+    """Re-encodes `clip` as the card's hover clip and lists it in its layers.json."""
+    out = os.path.join('public', 'cards', card)
+    layers_path = os.path.join(out, 'layers.json')
+    if not os.path.exists(layers_path):
+        raise SystemExit(f'build the card first: {layers_path} is missing')
+    dest = os.path.join(out, 'motion.mp4')
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', clip, '-an', '-c:v', 'libx264', '-crf', '20', '-preset', 'slow',
+                    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', dest], check=True)
+    layers = json.load(open(layers_path, encoding='utf8'))
+    layers['motion'] = 'motion.mp4'
+    with open(layers_path, 'w', encoding='utf8') as f:
+        json.dump(layers, f, indent=1)
+        f.write('\n')
+    print(f'{dest}: {os.path.getsize(dest) // 1024} KB from {clip}')
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument('card')
+    ap.add_argument('--clip', help="install this mp4 as the card's hover clip instead of building its art")
     for kind in ('plate', 'character', 'front'):
         ap.add_argument(f'--{kind}', default=None)
     ap.add_argument('--horizon', type=float, default=0.42, help='the horizon line, as a fraction of the art from the top')
     a = ap.parse_args()
+    if a.clip:
+        install_clip(a.card, a.clip)
+        return
     poses = json.load(open(PROMPTS, encoding='utf8'))['poses']
     char_cfg, front_cfg = poses[f'{a.card}-character'], poses[f'{a.card}-front']
     picks = {k: getattr(a, k) or poses[f'{a.card}-{k}'].get('pick', 1) for k in ('plate', 'character', 'front')}
@@ -188,15 +225,19 @@ def main() -> None:
     for name, layer in (('character', figures), ('front', front)):
         rgba = np.dstack([layer[..., :3], layer[..., 3] * 255])
         Image.fromarray(u8(rgba), 'RGBA').save(os.path.join(out, f'{name}.webp'), quality=90, method=6)
-    depth = depth_map(figures, front, a.horizon)
+    depth = depth_map(a.horizon)
     Image.fromarray(u8(depth * 255), 'L').resize((768, 768), Image.LANCZOS).save(os.path.join(out, 'depth.png'), optimize=True)
 
     # The glint line: source fractions → source pixels (the cutout was resized to SIZE) → art fractions.
     glint = [[round((gx * SIZE * s + dx) / SIZE, 4), round((gy * SIZE * s + dy) / SIZE, 4)] for gx, gy in char_cfg.get('glint', [])]
     layers = {'art': 'art.jpg', 'plate': 'plate.jpg', 'character': 'character.webp', 'front': 'front.webp', 'depth': 'depth.png', 'glint': glint}
+    # A clip installed earlier stays listed: rebuilding the art doesn't drop it.
+    if os.path.exists(os.path.join(out, 'motion.mp4')):
+        layers['motion'] = 'motion.mp4'
     with open(os.path.join(out, 'layers.json'), 'w', encoding='utf8') as f:
         json.dump(layers, f, indent=1)
         f.write('\n')
+    manifest(a.card)
     sizes = ', '.join(f'{n} {os.path.getsize(os.path.join(out, n)) // 1024} KB' for n in sorted(os.listdir(out)))
     print(f'{out}: {sizes}; glint {glint}')
 

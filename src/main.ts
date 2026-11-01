@@ -26,6 +26,7 @@ import { GpuTimer } from './render/GpuTimer';
 import { Skirmish } from './units/Skirmish';
 import { animTest } from './battle/animTest';
 import { battlePreview } from './battle/preview';
+import { cardShowcase } from './cards/showcase';
 import { BattleScene } from './battle/BattleScene';
 
 /** Map files larger than this are refused unread; a full 64×64 map is well under it. */
@@ -64,6 +65,8 @@ async function main(): Promise<void> {
   if (new URLSearchParams(location.search).get('mode') === 'battle') return battlePreview();
   // The round 2 animation test: pose images against Flow video, side by side.
   if (new URLSearchParams(location.search).get('mode') === 'anim') return animTest();
+  // One animated card on its own, full resolution: the card showcase.
+  if (new URLSearchParams(location.search).get('mode') === 'card') return cardShowcase();
   const stage = document.getElementById('stage')!;
   const pipeline = createPipeline(stage);
   if (!pipeline) return;

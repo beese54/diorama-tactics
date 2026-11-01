@@ -24,6 +24,44 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B4 r2: the animated card
+![Long Road tilted toward the pointer: the layers part, foil slides over the gold](battles/b4-cards/r2-card/tilt.jpg)
+
+| At rest, then the pointer circling, then the flip | The card at rest | Its back | The foes' card | A card with no art yet |
+|---|---|---|---|---|
+| ![](battles/b4-cards/r2-card/long-road-card.gif) | ![](battles/b4-cards/r2-card/card.jpg) | ![](battles/b4-cards/r2-card/back.jpg) | ![](battles/b4-cards/r2-card/foes.jpg) | ![](battles/b4-cards/r2-card/no-art.jpg) |
+
+**What changed**
+- **A new card renderer, `src/cards/`**, shown on its own at `?mode=card&id=<card>` (`&side=enemy` for the foes' card). It draws at full device resolution, with nothing of the map's pixel pipeline.
+- **The face** is painted on a canvas at twice the design size: the name in gold Cinzel, the skill's name in italic, POW on a crimson medallion and MOV on an azure one, the ACE badge, the skill line, rarity, the crest and the number, inside a double gold border with corner scrolls.
+- **The back:** the set's crest (a tower over two crossed blades in a laurel) and DIORAMA TACTICS, on a faint lattice.
+- **The art window is a live stack of layers**, redrawn every frame:
+  - the plate bends by its depth map;
+  - the dawn sunbeams breathe and turn;
+  - dust drifts behind and in front of the figures;
+  - a glint sweeps along Aria's sword every few seconds;
+  - the milestone sits nearest.
+  - As the card tilts, each layer shifts by its own depth, so the picture opens up like a window.
+- **Motion:**
+  - the card tilts toward the pointer by up to 14°, and floats and sways at rest;
+  - a click or tap flips it, lifting it through the turn;
+  - on a phone, a finger drag or the gyroscope tilts it.
+  - Its shadow follows the tilt, the float and the flip.
+- **Surface:** holographic foil slides over the gold and the bright metal in the art as the card tilts, and the gold's edges catch a moving light, as if embossed.
+- **The foes' cards** use the same art on crimson stock with dark silver.
+- **The hover clip** is wired in: it fades in over the art, plays once and holds, then fades out rewound. It waits on the Seedance models being enabled on the account.
+
+**Feedback**
+- "For cards, I dont want pixel art, I want animated cards that show motion."
+
+**Decisions**
+- **One renderer** will serve the showcase, the hand and the foes' card. The B4 pixel hand stays until the 12 cards have art.
+- **`public/cards/index.json`** lists the cards that have art, so a card without any never asks the server for missing files.
+- **`depth.png` describes the plate alone.** The figures and the foreground are layers of their own. A plate warped around their outlines would show at their edges.
+
+**Learned**
+- **The parallax direction.** Tilting a card's right side away is like stepping to its left, so the far layers slide left and the near ones right. Turning the stack about a middle depth keeps the figures steady while the background and foreground part around them.
+
 ### B4 r1: Long Road's card art
 ![Long Road's art: Aria leads a sword soldier down a dawn road toward a far castle, a milestone and straw grass in front](battles/b4-cards/r1-art/art.jpg)
 

@@ -70,3 +70,7 @@
 ## 2026-10-31: "For cards, I dont want pixel art, I want animated cards that show motion"
 - **What happened:** I built the B4 cards in the map's pixel menu style and then proposed animations snapped to the pixel grid, assuming every piece of map UI follows the map's pixel look.
 - **Rule:** Only the map board is pixel art. Before giving any new visual element a style (cards, cut-ins, overlays), ask whether it belongs to the board or to the "showpiece" art like the battle scenes. Showpiece art is full resolution, smooth and animated. When unsure, ask before building it.
+
+## 2026-11-01: check.mjs started twice in one command, again (self-caught)
+- **What happened:** I ended a `check.mjs` command with a leftover `; node scripts/check.mjs ... | true`, so a second full run queued behind the first. The same thing happened in B4. On this machine a heavy check takes over ten minutes and must run alone.
+- **Rule:** A heavy check gets a command of its own: exactly one `node scripts/check.mjs` (or identity, or capture) per Bash call, and nothing else chained after it. Read the command back before sending it.

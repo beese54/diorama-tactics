@@ -616,6 +616,75 @@ const left = await page.evaluate((id) => ({ morale: window.__map.units().find((u
 check('attack: a unit at 0 Morale leaves the board', left.morale === 0 && left.selected === null, JSON.stringify({ rules2, left }));
 check('attack: no console errors', errors.length === 0, errors.join(' | '));
 
+// ---- The card showcase (?mode=card): the layered, animated card --------------------------------
+const cardErrors = errors.length;
+/** Luminance mean and spread of a screen region, from a real screenshot of it. */
+const regionStats = async (r) => {
+  const b64 = await page.screenshot({ clip: { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) }, encoding: 'base64' });
+  return page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = Object.assign(document.createElement('canvas'), { width: 64, height: 64 });
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, 64, 64);
+    const d = ctx.getImageData(0, 0, 64, 64).data;
+    const ls = [];
+    for (let i = 0; i < d.length; i += 4) ls.push((0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255);
+    const mean = ls.reduce((s, l) => s + l, 0) / ls.length;
+    const sd = Math.sqrt(ls.reduce((s, l) => s + (l - mean) ** 2, 0) / ls.length);
+    return { mean: +mean.toFixed(3), sd: +sd.toFixed(3) };
+  }, b64);
+};
+/** The card's art window on screen (its middle 80%, clear of the frame and medallions). */
+const artRegion = async () => {
+  const r = await page.evaluate(() => window.__card.rect());
+  const s = r.width * 0.92;
+  return { x: r.x + r.width * 0.04 + s * 0.1, y: r.y + r.height * (170 / 1400) + s * 0.1, width: s * 0.8, height: s * 0.8 };
+};
+await page.goto(`${url}?mode=card&id=long-road&clean=1`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__card?.ready, { timeout: 30000 });
+await frames(10);
+const cardLoaded = await page.evaluate(() => window.__card.loaded);
+check('card: Long Road loads every art layer', ['layers.json', 'art.jpg', 'plate.jpg', 'character.webp', 'front.webp', 'depth.png'].every((f) => cardLoaded[f] === true), JSON.stringify(cardLoaded));
+const artFront = await artRegion().then(regionStats);
+check('card: the art window shows the art (not blank)', artFront.sd > 0.08 && artFront.mean > 0.15 && artFront.mean < 0.9, JSON.stringify(artFront));
+await shot('18-card');
+// Hover: the pointer over the card tilts it toward the pointer.
+const cardRect = await page.evaluate(() => window.__card.rect());
+const centre = { x: cardRect.x + cardRect.width / 2, y: cardRect.y + cardRect.height / 2 };
+await page.mouse.move(centre.x + cardRect.width * 0.4, centre.y - cardRect.height * 0.4);
+await frames(30);
+const hoverState = await page.evaluate(() => ({ hovered: window.__card.hovered(), tilt: window.__card.tilt(), clip: window.__card.clip() }));
+check('card: hovering tilts the card toward the pointer', hoverState.hovered && hoverState.tilt.x > 0.3 && hoverState.tilt.y > 0.3, JSON.stringify(hoverState));
+if (hoverState.clip.has) {
+  check('card: hovering plays the clip', hoverState.clip.playing && hoverState.clip.mix > 0, JSON.stringify(hoverState.clip));
+}
+await page.mouse.move(5, 5);
+await frames(60);
+const leftState = await page.evaluate(() => ({ hovered: window.__card.hovered(), clip: window.__card.clip(), start: window.__card.params.clipStart }));
+check('card: leaving the card stops hovering' + (leftState.clip.has ? ', and the clip fades out rewound' : ''),
+  !leftState.hovered && (!leftState.clip.has || (leftState.clip.mix === 0 && !leftState.clip.playing && leftState.clip.time === leftState.start)), JSON.stringify(leftState));
+// A click flips it to its back, and another back again.
+await page.mouse.click(centre.x, centre.y);
+await frames(90);
+const backArt = await artRegion().then(regionStats);
+const flippedOnce = await page.evaluate(() => window.__card.flipped());
+await shot('19-card-back');
+await page.mouse.click(centre.x, centre.y);
+await frames(90);
+const flippedTwice = await page.evaluate(() => window.__card.flipped());
+check('card: a click flips it to its back (the art gone), and another back', flippedOnce && !flippedTwice && Math.abs(backArt.mean - artFront.mean) > 0.1, JSON.stringify({ flippedOnce, flippedTwice, artFront, backArt }));
+// A card with no art yet still shows its frame and text, and asks for no missing files.
+await page.goto(`${url}?mode=card&id=swift-banner&clean=1`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__card?.ready, { timeout: 30000 });
+await frames(10);
+const bare = await page.evaluate(() => ({ loaded: window.__card.loaded, rect: window.__card.rect() }));
+const bareStats = await regionStats(bare.rect);
+check('card: a card with no art renders its frame and asks for no missing files', bare.loaded['layers.json'] === false && bareStats.sd > 0.08, JSON.stringify({ bare, bareStats }));
+await shot('20-card-no-art');
+check('card: no console or HTTP errors', errors.length === cardErrors, errors.slice(cardErrors).join(' | '));
+
 await browser.close();
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.name}${r.ok ? '' : `  -> ${r.detail}`}`);
 process.exit(results.every((r) => r.ok) ? 0 : 1);
