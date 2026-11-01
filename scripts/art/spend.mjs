@@ -32,7 +32,7 @@ export const EXTRA_REF_PRICE = 0.003;
  * price (Mini $0.38, Fast $0.60, 2.0 $0.76).
  */
 export const VIDEO_MODELS = {
-  mini: { id: 'dreamina-seedance-2-0-mini', perMillion: 0.38 / 0.108 },
+  mini: { id: 'dreamina-seedance-2-0-mini-260615', perMillion: 0.38 / 0.108 },
   fast: { id: 'dreamina-seedance-2-0-fast-260128', perMillion: 0.6 / 0.108 },
   '2.0': { id: 'dreamina-seedance-2-0-260128', perMillion: 0.76 / 0.108 },
 };
