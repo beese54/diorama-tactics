@@ -1,0 +1,17 @@
+{
+ "art": "art.jpg",
+ "plate": "plate.jpg",
+ "character": "character.webp",
+ "front": "front.webp",
+ "depth": "depth.png",
+ "glint": [
+  [
+   0.441,
+   0.3053
+  ],
+  [
+   0.8004,
+   0.2814
+  ]
+ ]
+}

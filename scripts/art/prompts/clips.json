@@ -7,6 +7,61 @@
       "out": "long-road-motion",
       "first": "public/cards/long-road/art.jpg",
       "prompt": "The blonde knight woman in front and the soldier behind her march a few steps in place along the road; her blue cape and golden ponytail stream in the wind; she raises her longsword toward the rising sun ahead of her, holds it for a moment, then lowers it and settles back into the opening pose. The dawn light shimmers, thin mist drifts slowly through the valleys and the dry grass sways in the breeze. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the mist, the light and the grass. The characters keep the same faces, armour, colours and weapons throughout, each holding exactly one sword. No text."
+    },
+    "swift-banner": {
+      "out": "swift-banner-motion",
+      "first": "public/cards/swift-banner/art.jpg",
+      "prompt": "The white warhorse gallops hard in place, its legs moving through a full gallop, its mane and tail flying; the blue banner on the lance flutters and snaps hard in the wind and the knight's cape streams behind him. The clouds race across the sky and the tall grass ripples in waves. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the clouds and the grass. The characters keep the same faces, armour, colours and weapons throughout, the knight holding exactly one lance, and end back in the opening pose. No text."
+    },
+    "scouts-path": {
+      "out": "scouts-path-motion",
+      "first": "public/cards/scouts-path/art.jpg",
+      "prompt": "The archer slowly draws her bowstring fully back to her cheek, holds her aim for a moment, then eases the string back to half-draw. Thin mist drifts slowly through the gorge, a few amber leaves fall, and the ferns sway. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the mist, the leaves and the ferns. The characters keep the same faces, armour, colours and weapons throughout, the archer holding exactly one bow, and end back in the opening pose. No text."
+    },
+    "open-field": {
+      "out": "open-field-motion",
+      "first": "public/cards/open-field/art.jpg",
+      "prompt": "The two soldiers run a few charging steps in place, swords raised, shouting, their tabards swinging. White and yellow petals swirl past in the wind, and the meadow grass and flowers wave. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the petals, the grass and the flowers. The characters keep the same faces, armour, colours and weapons throughout, each holding exactly one sword and one shield, and end back in the opening pose. No text."
+    },
+    "iron-column": {
+      "out": "iron-column-motion",
+      "first": "public/cards/iron-column/art.jpg",
+      "prompt": "The two spearmen take one step forward together in unison; their spears dip and then level again, points aimed ahead. A fine drizzle falls, the storm clouds churn and the shaft of sunlight shifts across the bridge. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the drizzle, the clouds and the light. The characters keep the same faces, armour, colours and weapons throughout, each holding exactly one spear, and end back in the opening pose. No text."
+    },
+    "ember-rite": {
+      "out": "ember-rite-motion",
+      "first": "public/cards/ember-rite/art.jpg",
+      "prompt": "The ring of fire runes kindles brighter and turns slowly around the mage; her robes and silver hair lift in the heat and the crystal on her staff glows, then the runes dim back. Embers rise and drift upward, and the dusk clouds move slowly. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the embers, the runes' glow and the clouds. The characters keep the same faces, armour, colours and weapons throughout, the mage holding exactly one staff, and end back in the opening pose. No text."
+    },
+    "steady-line": {
+      "out": "steady-line-motion",
+      "first": "public/cards/steady-line/art.jpg",
+      "prompt": "The two soldiers brace as a blow strikes the shield: they rock back half a step, then push forward and hold firm, shields and spear steady. A cold rain falls and the puddles ripple; low clouds drift. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the rain, the puddles and the clouds. The characters keep the same faces, armour, colours and weapons throughout, one holding exactly one sword and one shield, the other exactly one spear, and end back in the opening pose. No text."
+    },
+    "cleavers-oath": {
+      "out": "cleavers-oath-motion",
+      "first": "public/cards/cleavers-oath/art.jpg",
+      "prompt": "The axeman lifts his great axe higher toward the sky as he swears his oath, shouting, then lowers it back to the opening pose. The firelight surges and flickers across him and the camp, sparks and embers rise, and the banners stir. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the firelight, the sparks and the banners. The characters keep the same faces, armour, colours and weapons throughout, the axeman holding exactly one axe, and end back in the opening pose. No text."
+    },
+    "shield-wall": {
+      "out": "shield-wall-motion",
+      "first": "public/cards/shield-wall/art.jpg",
+      "prompt": "The two soldiers press their locked shields tighter together and brace as arrows streak in and glance off the shields, then hold steady. The torch flames flicker and their light dances over the walls; dust drifts. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the torch flames, their light and the dust. The characters keep the same faces, armour, colours and weapons throughout, each holding exactly one sword and one shield, and end back in the opening pose. No text."
+    },
+    "thunder-hoof": {
+      "out": "thunder-hoof-motion",
+      "first": "public/cards/thunder-hoof/art.jpg",
+      "prompt": "The black warhorse charges at full gallop in place, its legs pounding and mud flying; the knight's red cape whips behind him and the lance stays levelled. Lightning flashes behind him and lights him from behind, rain sweeps across the field. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the lightning, the rain and the storm clouds. The characters keep the same faces, armour, colours and weapons throughout, the knight holding exactly one lance, and end back in the opening pose. No text."
+    },
+    "grave-toll": {
+      "out": "grave-toll-motion",
+      "first": "public/cards/grave-toll/art.jpg",
+      "prompt": "The bell in the ruined tower swings slowly; the brute lifts the huge axe from his shoulder and lowers it toward the viewer in a slow threat, then swings it back onto his shoulder. Ash drifts down and the ground mist rolls between the graves. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the bell, the ash and the mist. The characters keep the same faces, armour, colours and weapons throughout, the brute holding exactly one axe, and end back in the opening pose. No text."
+    },
+    "kings-wager": {
+      "out": "kings-wager-motion",
+      "first": "public/cards/kings-wager/art.jpg",
+      "prompt": "The swordswoman reaches toward the war table and slides one game piece forward on the map, smiling, then straightens back to her pose. The candle flames flare and flicker, and golden dust glitters in the candlelight. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the candle flames and the dust. The characters keep the same faces, armour, colours and weapons throughout, the swordswoman holding exactly one sabre, and end back in the opening pose. No text."
     }
   }
 }

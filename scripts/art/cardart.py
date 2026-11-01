@@ -51,11 +51,43 @@ def defringe(rgb: np.ndarray, alpha: np.ndarray, band: int = 40) -> np.ndarray:
     return ndimage.gaussian_filter(out, 0.7) * (out > 0.02)
 
 
-def cutout(path: str) -> np.ndarray:
+def unlight(rgb: np.ndarray, alpha: np.ndarray, figures: bool = True) -> np.ndarray:
+    """Drops light that the model painted on the green screen (a shaft of sun, a moon glow, a
+    lightning flare). Mixed with the screen it stays green-tinted or cyan, which the figures never are
+    (their prompts allow no green), though it is far enough from the screen's colour to key as
+    solid. For figures, its white core, cut off from them once the tinted wash is gone, is dropped
+    too: a piece that touches the picture's edge and isn't the figures themselves. (Foreground
+    pieces sit in the corners by design, so they keep theirs.)"""
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    # Green-tinted (a warm or white light on the screen), or cyan (a blue light on it): green well
+    # above red and close to blue. Blue cloth and steel keep blue far above green, so they stay.
+    tinted = (g > np.maximum(r, b) + 22) | ((g > r + 35) & (g > 0.8 * b))
+    out = np.where(tinted, 0, alpha)
+    labels, n = ndimage.label(out > 0.3)
+    if figures and n > 1:
+        sizes = ndimage.sum(np.ones_like(out), labels, range(1, n + 1))
+        main = 1 + int(np.argmax(sizes))
+        edge = set(np.unique(np.concatenate([labels[0], labels[-1], labels[:, 0], labels[:, -1]]))) - {0, main}
+        if edge:
+            out = np.where(np.isin(labels, list(edge)), 0, out)
+    return out
+
+
+def warm(rgb: np.ndarray) -> np.ndarray:
+    """A fire's or a lamp's glow over the screen keys as a yellow-green haze, green just above red.
+    It is meant to be there, so it keeps its alpha and loses the green: green goes just under red,
+    a warm yellow-orange. The figures' own golds and flames already keep red above green."""
+    out = rgb.copy()
+    r, g, b = out[..., 0], out[..., 1], out[..., 2]
+    out[..., 1] = np.where((g > r) & (g > 1.3 * b + 10), r * 0.95, g)
+    return out
+
+
+def cutout(path: str, figures: bool = True) -> np.ndarray:
     """The source keyed off its green: float RGBA, alpha in [0, 1]."""
     rgb = np.asarray(Image.open(path).convert('RGB').resize((SIZE, SIZE), Image.LANCZOS)).astype(np.float32)
-    alpha = defringe(rgb, erode(key(rgb)))
-    return np.dstack([despill(rgb, alpha), alpha])
+    alpha = defringe(rgb, unlight(rgb, erode(key(rgb)), figures))
+    return np.dstack([warm(despill(rgb, alpha)), alpha])
 
 
 def bbox(alpha: np.ndarray, at: float = 0.5):
@@ -114,6 +146,17 @@ def place_front(src: np.ndarray, place: dict) -> np.ndarray:
             continue
         xs = np.nonzero(m)[1]
         groups['left' if xs.mean() < SIZE / 2 else 'right'] |= m
+    # A foreground that runs across the middle (grass or mud along the whole bottom edge) can't be
+    # split at the centre without a hard seam: it goes in whole, as drawn (or scaled by `wholeScale`
+    # about its foot's middle, where it doesn't reach the sides), moved down so its foot sits on `bottom`.
+    for i in range(1, n + 1):
+        xs = np.nonzero(labels == i)[1]
+        if xs.size >= 400 and xs.min() < SIZE * 0.4 and xs.max() > SIZE * 0.6:
+            k = place.get('wholeScale', 1.0)
+            piece = scaled(src, k) if k != 1.0 else src
+            _, _, _, y1 = bbox(piece[..., 3], 0.05)
+            paste(canvas, piece, round((SIZE - piece.shape[1]) / 2), round(place['bottom'] * SIZE - y1))
+            return canvas
     for side, m in groups.items():
         if not m.any():
             continue
@@ -201,7 +244,7 @@ def main() -> None:
     ap.add_argument('--clip', help="install this mp4 as the card's hover clip instead of building its art")
     for kind in ('plate', 'character', 'front'):
         ap.add_argument(f'--{kind}', default=None)
-    ap.add_argument('--horizon', type=float, default=0.42, help='the horizon line, as a fraction of the art from the top')
+    ap.add_argument('--horizon', type=float, default=None, help="the horizon line, as a fraction of the art from the top (default: the plate's `horizon` in cards.json, else 0.42)")
     a = ap.parse_args()
     if a.clip:
         install_clip(a.card, a.clip)
@@ -212,7 +255,7 @@ def main() -> None:
 
     plate = np.asarray(Image.open(pick(a.card, 'plate', picks['plate'])).convert('RGB').resize((SIZE, SIZE), Image.LANCZOS)).astype(np.float32)
     figures, (s, dx, dy) = place_figures(cutout(pick(a.card, 'character', picks['character'])), char_cfg['place'])
-    front = place_front(cutout(pick(a.card, 'front', picks['front'])), front_cfg['place'])
+    front = place_front(cutout(pick(a.card, 'front', picks['front']), figures=False), front_cfg['place'])
     figures, front = grade(figures, plate), grade(front, plate)
     ground = contact_shadow(plate, figures)
     art = over(over(ground, figures), front)
@@ -225,7 +268,8 @@ def main() -> None:
     for name, layer in (('character', figures), ('front', front)):
         rgba = np.dstack([layer[..., :3], layer[..., 3] * 255])
         Image.fromarray(u8(rgba), 'RGBA').save(os.path.join(out, f'{name}.webp'), quality=90, method=6)
-    depth = depth_map(a.horizon)
+    horizon = a.horizon if a.horizon is not None else poses[f'{a.card}-plate'].get('horizon', 0.42)
+    depth = depth_map(horizon)
     Image.fromarray(u8(depth * 255), 'L').resize((768, 768), Image.LANCZOS).save(os.path.join(out, 'depth.png'), optimize=True)
 
     # The glint line: source fractions → source pixels (the cutout was resized to SIZE) → art fractions.

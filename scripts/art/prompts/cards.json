@@ -5,11 +5,15 @@
   "poses": {
     "long-road-plate": {
       "out": "long-road-plate",
-      "prompt": "Square fantasy tactics RPG card illustration background: a winding dirt road over rolling green hills at dawn, the road starting wide at the lower left and curving away to the right into the distance, where a castle with tall pale towers stands on a far hill against the sunrise. Low golden sun just above the right horizon, long soft rays through thin morning mist in the valleys, warm peach and gold sky fading to soft blue at the top, a few small clouds lit gold from below. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Warm dawn lighting from the right. The centre and lower middle of the road are left open, as a stage for figures walking there. Even detail to every edge."
+      "prompt": "Square fantasy tactics RPG card illustration background: a winding dirt road over rolling green hills at dawn, the road starting wide at the lower left and curving away to the right into the distance, where a castle with tall pale towers stands on a far hill against the sunrise. Low golden sun just above the right horizon, long soft rays through thin morning mist in the valleys, warm peach and gold sky fading to soft blue at the top, a few small clouds lit gold from below. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Warm dawn lighting from the right. The centre and lower middle of the road are left open, as a stage for figures walking there. Even detail to every edge.",
+      "horizon": 0.42
     },
     "long-road-character": {
       "out": "long-road-character",
-      "refs": ["leader-f.jpg", "soldier-sword-m-stand.jpg"],
+      "refs": [
+        "leader-f.jpg",
+        "soldier-sword-m-stand.jpg"
+      ],
       "place": {
         "x": 0.5,
         "bottom": 0.93,
@@ -17,8 +21,14 @@
       },
       "prompt": "Two characters from the two reference images, walking together down a road: in front, the blonde knight woman from the first reference (the same face, golden ponytail, blue and silver armour, blue cape, longsword), striding forward with determination, her longsword held low in her right hand with the blade angled down and forward, her cape and ponytail streaming back in the wind, looking ahead into the distance. One step behind her and to the left, smaller because he is further back, the soldier from the second reference (the same steel kettle helmet, chainmail coif, blue tabard with white trim, small round blue shield, plain straight sword), marching after her with his shield on his arm and his sword at his side. Both in three-quarter view facing right, drawn in exactly the same art style as the references, the same people with the same armour, colours and weapons. Each holds exactly one sword. Both full figures in frame with margin around them, from the top of their heads to their boots, with empty space below their feet. Lit by warm golden dawn light from the right, a soft warm rim light along their right edges, to match a sunrise road background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the characters, no text.",
       "glint": [
-        [0.54, 0.566],
-        [0.93, 0.8]
+        [
+          0.54,
+          0.566
+        ],
+        [
+          0.93,
+          0.8
+        ]
       ]
     },
     "long-road-front": {
@@ -30,6 +40,427 @@
         "overhang": 0.07
       },
       "prompt": "Foreground elements only, close to the viewer: at the lower left corner, an old weathered grey stone road milestone with a worn carved arrow, leaning slightly, with tufts of dry straw-coloured and amber grass around its base; at the lower right corner, a few tall tufts of dry golden straw grass and a pair of small pale stones. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, warm golden dawn lighting from the right. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "swift-banner-plate": {
+      "out": "swift-banner-plate",
+      "horizon": 0.58,
+      "prompt": "Square fantasy tactics RPG card illustration background: A wide open plain of tall grass under a vast bright blue sky full of big white clouds streaming in the wind, low rolling hills along a low far horizon, a faint dirt track crossing the plain, a few wildflowers in the grass. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Bright high daylight from the upper right, crisp shadows. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "swift-banner-character": {
+      "out": "swift-banner-character",
+      "refs": [
+        "edric-stand.jpg"
+      ],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.9,
+        "height": 0.62
+      },
+      "prompt": "The armoured lancer knight on the white warhorse from the reference (the same blue-plumed helm, white and gold armour, blue cape, white horse in blue and gold barding, long lance), galloping at full speed to the right, the horse's legs stretched out in mid-gallop, the lance held forward and slightly raised with a long blue swallowtail banner streaming back from just below its tip, his blue cape streaming behind him. Side three-quarter view facing right, drawn in exactly the same art style as the reference, the same rider and horse with the same armour, colours and weapons. He holds exactly one lance. The whole horse and rider in frame with margin around them, from the top of the helmet and the lance tip to the hooves, with empty space below the hooves. Lit by bright daylight from the upper right, a soft rim light along the edges facing the light, to match a sunny open plain background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the character, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.37,
+          0.45
+        ],
+        [
+          0.96,
+          0.16
+        ]
+      ]
+    },
+    "swift-banner-front": {
+      "out": "swift-banner-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left corner, tall tufts of dry golden straw grass bending to the left in a strong wind; at the lower right corner, more tall bent straw grass and a few seed heads blowing loose. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, bright daylight from the upper right. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "scouts-path-plate": {
+      "out": "scouts-path-plate",
+      "horizon": 0.5,
+      "prompt": "Square fantasy tactics RPG card illustration background: The flat top of a rocky cliff ledge in the lower middle, high above a deep misty gorge; dark pine forests far below fading into white mist, sheer grey cliffs on both sides, distant blue ridges. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Soft cool morning light from the upper left, long shafts of light slanting down through the mist. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "scouts-path-character": {
+      "out": "scouts-path-character",
+      "refs": [
+        "dela-stand.jpg"
+      ],
+      "place": {
+        "x": 0.52,
+        "bottom": 0.9,
+        "height": 0.6
+      },
+      "prompt": "The archer woman from the reference (the same black hair with a white feather, pink and white armour, white cape, blue sash, longbow, quiver of arrows), crouched low on one knee on a ledge, her longbow raised and half-drawn with one arrow nocked, aiming ahead into the distance, eyes narrowed, scanning. Three-quarter view facing left, drawn in exactly the same art style as the reference, the same person with the same armour, colours and weapons. She holds exactly one bow and one nocked arrow. Full figure in frame with margin around it, from the top of the head to the boots, with empty space below the feet. Lit by cool morning light from the upper left, a soft rim light along the edges facing the light, to match a misty mountain gorge background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the character, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.45,
+          0.38
+        ],
+        [
+          0.07,
+          0.445
+        ]
+      ],
+      "pick": 2
+    },
+    "scouts-path-front": {
+      "out": "scouts-path-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: along the lower left corner, the jagged edge of a grey rock ledge with rust-red ferns growing from a crack; at the lower right corner, a smaller grey rock and amber ferns. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, soft cool morning light from the upper left. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "open-field-plate": {
+      "out": "open-field-plate",
+      "horizon": 0.48,
+      "prompt": "Square fantasy tactics RPG card illustration background: A wide flowering meadow at noon, green grass dotted with white and yellow wildflowers, a few broad trees at the far edge, gentle hills, a clear bright sky with small white clouds. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. High noon sun from straight above, bright and warm, a soft bloom of light. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "open-field-character": {
+      "out": "open-field-character",
+      "refs": [
+        "soldier-sword-m-stand.jpg",
+        "soldier-sword-f-stand.jpg"
+      ],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.93,
+        "height": 0.7
+      },
+      "prompt": "Two sword soldiers from the two reference images: the man from the first (the same steel kettle helmet, chainmail, blue tabard with white trim, small round blue shield, straight sword) and the woman from the second (the same steel kettle helmet, brown braid, blue tabard, small round blue shield, straight sword), charging forward side by side to the right, swords raised high, shields forward, shouting a battle cry; the woman one step ahead on the right, the man just behind her on the left. Both in three-quarter view facing right, drawn in exactly the same art style as the references, the same people with the same armour, colours and weapons. Each holds exactly one sword and one shield. Both full figures in frame with margin around them, from the top of their heads to their boots, with empty space below their feet. Lit by bright high noon sun from above, a soft rim light along the edges facing the light, to match a sunny flowering meadow background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the characters, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.13,
+          0.32
+        ],
+        [
+          0.47,
+          0.1
+        ]
+      ]
+    },
+    "open-field-front": {
+      "out": "open-field-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left and lower right corners, clusters of white daisies and yellow buttercups on pale straw-coloured stems, with dry golden grass blades. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, bright high noon sunlight. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "iron-column-plate": {
+      "out": "iron-column-plate",
+      "horizon": 0.45,
+      "prompt": "Square fantasy tactics RPG card illustration background: An old grey stone arch bridge over a deep river gorge, its paved road running from the lower middle into the distance toward a far fortress; dark storm clouds breaking apart, a bright gap in the clouds at the upper right letting a shaft of sunlight through, wet stones glistening. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Cold storm light, with a bright shaft of sunlight from the upper right. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "iron-column-character": {
+      "out": "iron-column-character",
+      "refs": [
+        "bram-stand.jpg",
+        "soldier-spear-m-stand.jpg"
+      ],
+      "place": {
+        "x": 0.48,
+        "bottom": 0.93,
+        "height": 0.72
+      },
+      "prompt": "Two spearmen from the two reference images: in front, the bearded captain from the first (the same dark hair and beard, bronze-brown plate armour, white scarf, blue sash, long spear); one step behind him and to the left, the spear soldier from the second (the same steel kettle helmet, white scarf, blue padded tabard, long spear), advancing in step to the right as a column, both spears levelled forward horizontally, points aimed ahead, grim and steady. Both in three-quarter view facing right, drawn in exactly the same art style as the references, the same people with the same armour, colours and weapons. Each holds exactly one spear. Both full figures in frame with margin around them, from the top of their heads to their boots, with empty space below their feet. Lit by cold storm light with a bright shaft of sun from the upper right, a soft rim light along the edges facing the light, to match a stone bridge under a breaking storm background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the characters, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.55,
+          0.49
+        ],
+        [
+          0.94,
+          0.355
+        ]
+      ],
+      "pick": 2
+    },
+    "iron-column-front": {
+      "out": "iron-column-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: two small separate groups: at the lower left corner, two rough wet grey stone blocks from a broken bridge parapet; at the lower right corner, one rough grey stone block and a little loose rubble. The middle of the bottom edge is empty between them. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, cold storm light from the upper right. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text.",
+      "pick": 2
+    },
+    "ember-rite-plate": {
+      "out": "ember-rite-plate",
+      "horizon": 0.55,
+      "prompt": "Square fantasy tactics RPG card illustration background: An ancient ring of tall weathered standing stones on a grassy hilltop at dusk, an orange and violet sky with the last sliver of sun on the far horizon, a few early stars, the hills below in purple shadow. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Warm dusk light low from the horizon, deep violet shadows. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "ember-rite-character": {
+      "out": "ember-rite-character",
+      "refs": [
+        "ilse-stand.jpg"
+      ],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.93,
+        "height": 0.76
+      },
+      "prompt": "The silver-haired mage woman from the reference (the same long silver hair, white and lavender robes with gold trim, staff topped with a pale crystal), casting a fire spell, her staff raised high in her right hand and her left hand stretched out, a thin ring of crisp bright orange flames and fire runes circling around her at waist height, drawn as clean solid flame strokes with no glow, haze or light spilling onto the background, her robes and hair lifting in a hot updraft. Three-quarter view facing left, drawn in exactly the same art style as the reference, the same person with the same armour, colours and weapons. She holds exactly one staff. Full figure in frame with margin around it, from the top of the head to the boots, with empty space below the feet. Lit by the warm orange glow of her fire runes, and dusk light from behind, a soft rim light along the edges facing the light, to match a stone circle at dusk background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the character, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.4,
+          0.17
+        ],
+        [
+          0.79,
+          0.08
+        ]
+      ],
+      "pick": 3
+    },
+    "ember-rite-front": {
+      "out": "ember-rite-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left corner, the weathered grey edge of a tall standing stone with carved spirals; at the lower right corner, dry amber heather and a small grey stone. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, warm orange firelight and dusk light. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "steady-line-plate": {
+      "out": "steady-line-plate",
+      "horizon": 0.45,
+      "prompt": "Square fantasy tactics RPG card illustration background: A churned muddy battlefield under a cold grey overcast sky, puddles reflecting the sky, broken wooden fences and a dark distant treeline, low drifting cloud. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Cold flat light from the upper left, a pale cold rim of light. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "steady-line-character": {
+      "out": "steady-line-character",
+      "refs": [
+        "soldier-sword-f-stand.jpg",
+        "soldier-spear-f-stand.jpg"
+      ],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.93,
+        "height": 0.72
+      },
+      "prompt": "Two women soldiers from the two reference images: the sword soldier from the first (the same steel kettle helmet, brown braid, blue tabard, small round blue shield, straight sword) and the spear soldier from the second (the same steel kettle helmet, brown braid, blue padded tabard, long spear), standing shoulder to shoulder, braced against a coming blow: the sword soldier in front on the left with her round shield raised and sword ready, the spear soldier beside her on the right with her spear levelled past her, feet planted wide in the mud, determined. Both in three-quarter view facing left, drawn in exactly the same art style as the references, the same people with the same armour, colours and weapons. One holds exactly one sword and one shield, the other exactly one spear. Both full figures in frame with margin around them, from the top of their heads to their boots, with empty space below their feet. Lit by cold light from the upper left, a soft rim light along the edges facing the light, to match a cold overcast muddy battlefield background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the characters, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.2,
+          0.39
+        ],
+        [
+          0.03,
+          0.09
+        ]
+      ]
+    },
+    "steady-line-front": {
+      "out": "steady-line-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left and lower right corners, broken and splintered wooden stakes leaning in dark brown mud, with a few dry brown reeds. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, cold flat overcast light. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "cleavers-oath-plate": {
+      "out": "cleavers-oath-plate",
+      "horizon": 0.6,
+      "prompt": "Square fantasy tactics RPG card illustration background: A hilltop war camp at night: canvas tents and tall banners in dark silhouette, a deep blue starry sky with a few clouds, the whole camp lit warm orange from below by a big bonfire just out of frame at the bottom. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Warm flickering orange firelight from below, cool blue night above. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "cleavers-oath-character": {
+      "out": "cleavers-oath-character",
+      "refs": [
+        "corin-stand.jpg"
+      ],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.93,
+        "height": 0.8
+      },
+      "prompt": "The red-haired axeman from the reference (the same red hair tied up, fur cloak, bronze and steel armour, great double-headed axe), raising his great axe high over his head with both hands toward the sky, swearing an oath, shouting with fierce resolve, his fur cloak spread behind him. Three-quarter view facing right, drawn in exactly the same art style as the reference, the same person with the same armour, colours and weapons. He holds exactly one axe. Full figure in frame with margin around it, from the top of the head to the boots, with empty space below the feet. Lit by warm orange firelight from below, a soft rim light along the edges facing the light, to match a night camp lit by a bonfire background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the character, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.7,
+          0.24
+        ],
+        [
+          0.44,
+          0.06
+        ]
+      ]
+    },
+    "cleavers-oath-front": {
+      "out": "cleavers-oath-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left corner, half-burnt firewood logs with glowing orange ember tips and a ring of dark stones; at the lower right corner, a stack of split firewood logs and a dark stone. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, warm orange firelight from below. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "shield-wall-plate": {
+      "out": "shield-wall-plate",
+      "horizon": 0.42,
+      "prompt": "Square fantasy tactics RPG card illustration background: The courtyard before a stone castle gatehouse at night, a heavy iron-bound wooden gate under a raised portcullis, burning torches in iron brackets on both walls, worn cobblestones in the lower middle. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Warm flickering torchlight from the left, deep blue night shadows. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "shield-wall-character": {
+      "out": "shield-wall-character",
+      "refs": [
+        "soldier-sword-m-stand.jpg",
+        "soldier-sword-f-stand.jpg"
+      ],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.93,
+        "height": 0.7
+      },
+      "prompt": "Two sword soldiers from the two reference images: the man from the first (the same steel kettle helmet, chainmail, blue tabard, small round blue shield, straight sword) and the woman from the second (the same steel kettle helmet, brown braid, blue tabard, small round blue shield, straight sword), standing side by side as one rank, both facing the same way toward the left, the man on the left and the woman on the right, in a low braced stance; their round blue shields are held side by side in front of their bodies, the rims overlapping edge to edge, and both swords point forward to the left over the tops of the shields, ready. Allies, not opponents: they never face each other and their swords never cross. Both in three-quarter view facing left, drawn in exactly the same art style as the references, the same people with the same armour, colours and weapons. Each holds exactly one sword and one shield. Both full figures in frame with margin around them, from the top of their heads to their boots, with empty space below their feet. Lit by warm torchlight from the left, a soft rim light along the edges facing the light, to match a torchlit castle gate at night background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the characters, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.32,
+          0.5
+        ],
+        [
+          0.03,
+          0.22
+        ]
+      ],
+      "pick": 2
+    },
+    "shield-wall-front": {
+      "out": "shield-wall-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left and lower right corners, a few spent arrows with grey and white fletching stuck at angles in the cobbled ground, and a broken arrow shaft. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, warm torchlight from the left. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "thunder-hoof-plate": {
+      "out": "thunder-hoof-plate",
+      "horizon": 0.52,
+      "prompt": "Square fantasy tactics RPG card illustration background: A dark stormy battlefield plain under violet and black storm clouds, a jagged lightning bolt in the far distance, rain sweeping across, broken banners and spears leaning in the mud. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Dark storm light with cold violet lightning from the upper right. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "thunder-hoof-character": {
+      "out": "thunder-hoof-character",
+      "refs": [
+        "varek-stand.jpg"
+      ],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.92,
+        "height": 0.66
+      },
+      "prompt": "The black-armoured knight on the black warhorse from the reference (the same horned black helm with a red plume, black and crimson armour, red cape, black horse in crimson barding, long dark lance), charging at full gallop toward the left, the lance couched under his arm and levelled forward, the horse in a powerful stride with its forelegs high, his red cape flying behind him, clods of brown mud flying from the hooves. Three-quarter view facing left, drawn in exactly the same art style as the reference, the same rider and horse with the same armour, colours and weapons. He holds exactly one lance. The whole horse and rider in frame with margin around them, from the top of the helmet and the lance tip to the hooves, with empty space below the hooves. Lit by cold violet storm light from behind and the upper right, a soft rim light along the edges facing the light, to match a dark stormy battlefield background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the character, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.55,
+          0.3
+        ],
+        [
+          0.02,
+          0.13
+        ]
+      ],
+      "pick": 2
+    },
+    "thunder-hoof-front": {
+      "out": "thunder-hoof-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left and lower right corners, splashes of dark brown mud and the rippled edge of a muddy puddle. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, cold violet storm light. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    },
+    "grave-toll-plate": {
+      "out": "grave-toll-plate",
+      "horizon": 0.5,
+      "prompt": "Square fantasy tactics RPG card illustration background: A moonlit graveyard: a ruined stone bell tower with a large bronze bell hanging in its broken arch, crooked old tombstones, bare dead trees, a big full moon at the upper right, blue night mist along the ground. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Cold blue moonlight from the upper right. The centre and lower middle are left open, as a stage for figures standing there. Even detail to every edge."
+    },
+    "grave-toll-character": {
+      "out": "grave-toll-character",
+      "refs": [
+        "gorran-stand.jpg"
+      ],
+      "place": {
+        "x": 0.48,
+        "bottom": 0.93,
+        "height": 0.78
+      },
+      "prompt": "The bald bearded brute from the reference (the same bald head, thick black beard, spiked black armour, tattered dark red cloth, huge double-headed axe), resting the huge axe on his shoulder, glowering at the viewer with menace, heavy and still. Three-quarter view facing left, drawn in exactly the same art style as the reference, the same person with the same armour, colours and weapons. He holds exactly one axe. Full figure in frame with margin around it, from the top of the head to the boots, with empty space below the feet. Lit by cold blue moonlight from the upper right, a soft rim light along the edges facing the light, to match a moonlit graveyard background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the character, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.5,
+          0.2
+        ],
+        [
+          0.95,
+          0.17
+        ]
+      ],
+      "pick": 2
+    },
+    "grave-toll-front": {
+      "out": "grave-toll-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07,
+        "wholeScale": 0.85
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left and lower right corners, old leaning grey tombstones, cracked and weathered, with dry dead brown grass at their bases. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, cold blue moonlight from the upper right. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text. The background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "pick": 2
+    },
+    "kings-wager-plate": {
+      "out": "kings-wager-plate",
+      "horizon": 0.42,
+      "prompt": "Square fantasy tactics RPG card illustration background: A royal war room at night: at the right, a large wooden war table covered with a campaign map, a golden crown resting on the map beside carved game pieces; tall iron candelabras with lit candles, stone walls hung with crimson banners. The left and centre of the floor are left open. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Warm golden candlelight from the left, deep shadows. Even detail to every edge."
+    },
+    "kings-wager-character": {
+      "out": "kings-wager-character",
+      "refs": [
+        "sabine-stand.jpg"
+      ],
+      "place": {
+        "x": 0.38,
+        "bottom": 0.93,
+        "height": 0.76
+      },
+      "prompt": "The black-haired swordswoman from the reference (the same long black braided hair, dark crimson and black armour, black and crimson cape, curved sabre), standing at ease with a confident smirk, one hand resting on the hilt of her curved sabre planted point-down beside her, the other hand on her hip, leaning slightly on the sabre. Three-quarter view facing right, drawn in exactly the same art style as the reference, the same person with the same armour, colours and weapons. She holds exactly one sabre. Full figure in frame with margin around it, from the top of the head to the boots, with empty space below the feet. Lit by warm golden candlelight from the left, a soft rim light along the edges facing the light, to match a candlelit royal war room background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the character, no text. The green background is one even flat colour everywhere: no light rays, no glow, no lightning, no sky and no effects drawn on it.",
+      "glint": [
+        [
+          0.48,
+          0.48
+        ],
+        [
+          0.5,
+          0.96
+        ]
+      ]
+    },
+    "kings-wager-front": {
+      "out": "kings-wager-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07,
+        "wholeScale": 0.7
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left corner, a tipped-over golden goblet with a splash of spilled red wine; at the lower right corner, a few carved wooden game pieces, a small tower and a horse's head. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, warm golden candlelight. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
     }
   }
 }
