@@ -1,0 +1,35 @@
+{
+  "about": "Card art layers for scripts/art/generate.mjs (the design is cards.md, Parts 2 and 3). Each card has a plate (the scene, no people, no reference), a character layer (the figures on flat green, from their standing images) and a front layer (foreground pieces on flat green). `place` tells scripts/art/cardart.py where a cutout goes in the square art, in fractions of the art's side: for the character, the centre x and bottom y of the figures and their height; for the front, `split` pushes the pieces left of centre into the lower left corner and the rest into the lower right, scaled by `scale`, their bottom at `bottom` and hanging `overhang` past the edge. `glint` is the weapon's line in the character source image (fractions), for the glint sweep.",
+  "size": "1536x1536",
+  "base": "{pose}",
+  "poses": {
+    "long-road-plate": {
+      "out": "long-road-plate",
+      "prompt": "Square fantasy tactics RPG card illustration background: a winding dirt road over rolling green hills at dawn, the road starting wide at the lower left and curving away to the right into the distance, where a castle with tall pale towers stands on a far hill against the sunrise. Low golden sun just above the right horizon, long soft rays through thin morning mist in the valleys, warm peach and gold sky fading to soft blue at the top, a few small clouds lit gold from below. No people, no animals, no text. Painterly 2D anime background art with cel-shaded forms, rich saturated colours and soft atmospheric depth: clear foreground, middle ground and far distance. Warm dawn lighting from the right. The centre and lower middle of the road are left open, as a stage for figures walking there. Even detail to every edge."
+    },
+    "long-road-character": {
+      "out": "long-road-character",
+      "refs": ["leader-f.jpg", "soldier-sword-m-stand.jpg"],
+      "place": {
+        "x": 0.5,
+        "bottom": 0.93,
+        "height": 0.74
+      },
+      "prompt": "Two characters from the two reference images, walking together down a road: in front, the blonde knight woman from the first reference (the same face, golden ponytail, blue and silver armour, blue cape, longsword), striding forward with determination, her longsword held low in her right hand with the blade angled down and forward, her cape and ponytail streaming back in the wind, looking ahead into the distance. One step behind her and to the left, smaller because he is further back, the soldier from the second reference (the same steel kettle helmet, chainmail coif, blue tabard with white trim, small round blue shield, plain straight sword), marching after her with his shield on his arm and his sword at his side. Both in three-quarter view facing right, drawn in exactly the same art style as the references, the same people with the same armour, colours and weapons. Each holds exactly one sword. Both full figures in frame with margin around them, from the top of their heads to their boots, with empty space below their feet. Lit by warm golden dawn light from the right, a soft warm rim light along their right edges, to match a sunrise road background. 2D anime fantasy tactics RPG character art, clean crisp lineart, cel shading, rich saturated colours, highly detailed, sharp focus, no motion blur, no cast shadow, no ground. Plain flat pure green background (#00FF00), no green on the characters, no text.",
+      "glint": [
+        [0.54, 0.566],
+        [0.93, 0.8]
+      ]
+    },
+    "long-road-front": {
+      "out": "long-road-front",
+      "place": {
+        "split": true,
+        "scale": 0.72,
+        "bottom": 1.04,
+        "overhang": 0.07
+      },
+      "prompt": "Foreground elements only, close to the viewer: at the lower left corner, an old weathered grey stone road milestone with a worn carved arrow, leaning slightly, with tufts of dry straw-coloured and amber grass around its base; at the lower right corner, a few tall tufts of dry golden straw grass and a pair of small pale stones. They sit along the bottom edge and the lower corners of the picture, slightly soft as if just in front of the lens. The middle and the whole top of the picture are empty. Painterly 2D anime style, cel shading, warm golden dawn lighting from the right. No green colours at all: grass and leaves in straw, amber or rust. Plain flat pure green background (#00FF00), no text."
+    }
+  }
+}

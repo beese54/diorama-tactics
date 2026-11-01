@@ -264,7 +264,13 @@
       "id": "cards-spend",
       "title": "Card art round step 1: the spending guard (scripts/art/spend.mjs: price each call, refuse past ARK_CAP_USD, ledger in art/source/spend.json) in generate.mjs, and scripts/art/video.mjs for Seedance 2.0 clips",
       "status": "done",
-      "commit": "pending"
+      "commit": "0b06cd0"
+    },
+    {
+      "id": "cards-long-road-art",
+      "title": "Card art round step 2: Long Road's layers by Seedream through the API (plate, Aria and a sword soldier from their standing images, a milestone and straw grass in front; $0.14) and scripts/art/cardart.py (key, defringe the rim light's glow, place, grade, contact shadow, depth map) -> public/cards/long-road/",
+      "status": "review",
+      "commit": "next"
     }
   ],
   "backlog": [

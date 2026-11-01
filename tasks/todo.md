@@ -746,7 +746,7 @@ Plan: one card a turn sets the MOV pool and the battle's POW; one battle a turn,
 ### Card art round (approved 2026-11-01): A + C, capped at $12
 Plan: Seedream makes each card's layers through the API from the Flow standing images (A); Seedance 2.0 makes a square hover clip from each card's art (C). Long Road first, end to end, with one clip from each of Mini, Fast and 2.0 for the user to pick the model; then the round stops for their pick and their look at the card. Design: `scripts/art/prompts/cards.md`; options and prices: `tasks/card-art-options.md`.
 - [x] 1. The spending guard: `scripts/art/spend.mjs` (each call priced first, refused past `ARK_CAP_USD`, a ledger in `art/source/spend.json`), wired into `generate.mjs`; new `scripts/art/video.mjs` (Seedance image to video, first and last frame, the real cost from the task's usage). Verified: dry runs price an image at $0.045 (+$0.003 a further reference) and a 5 s 720p clip at $0.38 / $0.60 / $0.76; a $0.01 cap refuses, no cap refuses everything, both before any request.
-- [ ] 2. Long Road's layers (plate, character, front) and `scripts/art/cardart.py` → `public/cards/long-road/`.
+- [x] 2. Long Road's layers (plate, character, front) and `scripts/art/cardart.py` → `public/cards/long-road/`. One generation each, $0.14 in all. The rim light's glow keyed as a yellow-green halo; `defringe` drops edge pixels whose green rises to their red. The foreground came out mid-frame, so cardart pushes its pieces into the corners.
 - [ ] 3. Three test clips (Mini, Fast, 2.0), side by side, for the user to pick.
 - [ ] 4. The card renderer (`src/cards/`) and `?mode=card&id=long-road`.
 - Later: the other 11 cards with the chosen model; the renderer replaces the B4 pixel hand.

@@ -24,6 +24,35 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B4 r1: Long Road's card art
+![Long Road's art: Aria leads a sword soldier down a dawn road toward a far castle, a milestone and straw grass in front](battles/b4-cards/r1-art/art.jpg)
+
+![The layers: the plate with its contact shadow, the keyed character and foreground, and the depth map](battles/b4-cards/r1-art/layers.jpg)
+
+**What changed**
+- **The first card's art, in layers**, for the animated card. Seedream made three images through the API, $0.14 in all:
+  - the plate: a winding road at dawn, the castle on a far hill;
+  - the figures: Aria leading a sword soldier, made from their own standing images, so both stay on model;
+  - the foreground: a milestone and straw grass.
+- **`scripts/art/cardart.py`** turns them into `public/cards/long-road/`:
+  - it keys the green, places the figures and pushes the foreground pieces into the lower corners;
+  - it grades the cutouts toward the plate's light, and lays a soft contact shadow under their feet;
+  - it builds a depth map: the sky far, the ground rising toward the viewer, the figures nearer and the foreground nearest.
+- **The flat `art.jpg`** is the card's still image, and also the first and last frame of its hover clip.
+
+**Feedback**
+- "For cards, I dont want pixel art, I want animated cards that show motion."
+- The user chose Seedream for the layers and Seedance for the clips, capped at $12.
+
+**Decisions**
+- **Every generation goes through the spending guard** (`scripts/art/spend.mjs`). Each call is priced before it is sent, and refused if it would take the round past the cap. What is spent goes into a ledger outside git.
+- **The layers are stored full-frame** (1536², WebP with alpha), so the card stacks them without offsets.
+- **`layers.json`** carries the sword's line, for the glint that sweeps along it.
+
+**Learned**
+- **The rim light** that the prompt asked for glows into the green screen. The keyer kept that glow as a yellow-green halo around Aria. `defringe` drops edge pixels whose green rises as high as their red. The figures' own warm colours (gold hair, leather) have green well below red, so they stay.
+- **Seedream put the "corner" foreground pieces mid-frame.** It's easier to place them in code than to prompt for the exact spot.
+
 ### B4: one battle a turn, and the foes' turn
 ![The foes' turn: the turn box red with Swift Banner, POW 45; then turn 2 opens on the hand with Steady Line used](battles/b4-cards/turn/turn.jpg)
 

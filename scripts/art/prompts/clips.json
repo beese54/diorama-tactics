@@ -1,0 +1,12 @@
+{
+  "about": "Hover clips for the cards, for scripts/art/video.mjs (the design is cards.md, Part 1 'Hover animation'). Each clip starts and ends on the card's art (first and last frame both art.jpg), square, 720p, no audio, so it maps onto the art window and ends where it began.",
+  "seconds": 5,
+  "resolution": "720p",
+  "clips": {
+    "long-road": {
+      "out": "long-road-motion",
+      "first": "public/cards/long-road/art.jpg",
+      "prompt": "The blonde knight woman in front and the soldier behind her march a few steps in place along the road; her blue cape and golden ponytail stream in the wind; she raises her longsword toward the castle on the horizon, holds it for a moment, then lowers it and settles back into the opening pose. The dawn light shimmers, thin mist drifts slowly through the valleys and the dry grass sways in the breeze. The camera stays completely still: no zoom, no pan, no cut. The background holds still except for the mist, the light and the grass. The characters keep the same faces, armour, colours and weapons throughout, each holding exactly one sword. No text."
+    }
+  }
+}
