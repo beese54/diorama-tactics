@@ -675,7 +675,27 @@ await page.mouse.click(centre.x, centre.y);
 await frames(90);
 const flippedTwice = await page.evaluate(() => window.__card.flipped());
 check('card: a click flips it to its back (the art gone), and another back', flippedOnce && !flippedTwice && Math.abs(backArt.mean - artFront.mean) > 0.1, JSON.stringify({ flippedOnce, flippedTwice, artFront, backArt }));
-// A card with no art yet still shows its frame and text, and asks for no missing files.
+// Every card in the game is listed as having art, and every file its layers.json names is there.
+const artFiles = await page.evaluate(async () => {
+  const root = `${location.origin}/cards/`;
+  const listed = (await (await fetch(`${root}index.json`)).json()).cards;
+  const missing = [];
+  for (const id of listed) {
+    const layers = await (await fetch(`${root}${id}/layers.json`)).json();
+    for (const f of Object.values(layers).filter((v) => typeof v === 'string')) {
+      const r = await fetch(`${root}${id}/${f}`, { method: 'HEAD' });
+      if (!r.ok) missing.push(`${id}/${f}`);
+    }
+  }
+  return { listed, missing };
+});
+const cardIds = ['long-road', 'swift-banner', 'scouts-path', 'open-field', 'iron-column', 'ember-rite', 'steady-line', 'cleavers-oath', 'shield-wall', 'thunder-hoof', 'grave-toll', 'kings-wager'];
+check('card: all 12 cards are listed with art, and every layer file they name is there', cardIds.every((id) => artFiles.listed.includes(id)) && artFiles.missing.length === 0, JSON.stringify(artFiles));
+// A card with no art yet still shows its frame and text, and asks for no missing files. Every card
+// has art now, so the page is told none do: the card list comes back empty.
+await page.setRequestInterception(true);
+const noArt = (req) => (req.url().endsWith('/cards/index.json') ? req.respond({ status: 200, contentType: 'application/json', body: '{"cards":[]}' }) : req.continue());
+page.on('request', noArt);
 await page.goto(`${url}?mode=card&id=swift-banner&clean=1`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__card?.ready, { timeout: 30000 });
 await frames(10);
@@ -683,6 +703,8 @@ const bare = await page.evaluate(() => ({ loaded: window.__card.loaded, rect: wi
 const bareStats = await regionStats(bare.rect);
 check('card: a card with no art renders its frame and asks for no missing files', bare.loaded['layers.json'] === false && bareStats.sd > 0.08, JSON.stringify({ bare, bareStats }));
 await shot('20-card-no-art');
+page.off('request', noArt);
+await page.setRequestInterception(false);
 check('card: no console or HTTP errors', errors.length === cardErrors, errors.slice(cardErrors).join(' | '));
 
 await browser.close();

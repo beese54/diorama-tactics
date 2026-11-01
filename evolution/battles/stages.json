@@ -156,10 +156,18 @@
     {
       "id": "b4-cards-r3-clip",
       "date": "2026-11-01",
-      "commit": "next",
+      "commit": "4c35e59",
       "image": "b4-cards/r3-clip/card-clip.jpg",
       "title": "B4 r3 · The hover clip, three models",
       "note": "Long Road’s hover clip made by Seedance 2.0 Mini, Fast and 2.0 from the same still, prompt and seed. Mini zooms out and ends off the still, so it would jump when the card fades back; Fast and 2.0 loop back to it. Fast’s clip is installed until the user picks. Spent $1.75 on the three."
+    },
+    {
+      "id": "b4-cards-r4-eleven",
+      "date": "2026-11-02",
+      "commit": "next",
+      "image": "b4-cards/r4-eleven/cards.jpg",
+      "title": "B4 r4 · All twelve cards",
+      "note": "The other 11 cards made the same way as Long Road: Seedream layers from the units’ standing images, composited by cardart.py, each with a Seedance 2.0 Fast hover clip that loops back to its still. Each card now has its own light (daylight, mist, a storm break, a fire aura, firelight, torches, lightning, moonbeams, candles) and rain falls in streaks. The round spent $10.46 of the $12 cap."
     }
   ]
 }

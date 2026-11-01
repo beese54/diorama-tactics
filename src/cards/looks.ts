@@ -27,8 +27,8 @@ export const LOOKS: Record<string, Look> = {
   'ember-rite': { light: 'aura', particles: 'embers', glow: '#ff9a3c', mote: '#ffb35c', source: [0.5, 0.45], sky: ['#e2794a', '#3d2c3e'] },
   'steady-line': { light: 'rim', particles: 'rain', glow: '#d5e2f0', mote: '#b9c8d8', source: [0.2, 0.15], sky: ['#76828f', '#4a4038'] },
   'cleavers-oath': { light: 'firelight', particles: 'sparks', glow: '#ff7a2e', mote: '#ffc06a', source: [0.5, 0.85], sky: ['#1d1830', '#5a2418'] },
-  'shield-wall': { light: 'torchlight', particles: 'dust', glow: '#ffb04f', mote: '#ffd9a0', source: [0.15, 0.3], sky: ['#3a3040', '#5e4632'] },
+  'shield-wall': { light: 'torchlight', particles: 'dust', glow: '#ffb04f', mote: '#ffd9a0', source: [0.1, 0.25], sky: ['#3a3040', '#5e4632'] },
   'thunder-hoof': { light: 'lightning', particles: 'rain', glow: '#d9d2ff', mote: '#c9c6e8', source: [0.6, 0.0], sky: ['#3d3858', '#2a2630'] },
-  'grave-toll': { light: 'moonbeams', particles: 'ash', glow: '#bcd2ff', mote: '#c8cdd8', source: [0.75, 0.1], sky: ['#26314d', '#1a1d26'] },
-  'kings-wager': { light: 'candlelight', particles: 'gold-dust', glow: '#ffcf7a', mote: '#ffe39a', source: [0.3, 0.5], sky: ['#4a2e22', '#2a1a14'] },
+  'grave-toll': { light: 'moonbeams', particles: 'ash', glow: '#bcd2ff', mote: '#c8cdd8', source: [0.86, 0.15], sky: ['#26314d', '#1a1d26'] },
+  'kings-wager': { light: 'candlelight', particles: 'gold-dust', glow: '#ffcf7a', mote: '#ffe39a', source: [0.15, 0.33], sky: ['#4a2e22', '#2a1a14'] },
 };

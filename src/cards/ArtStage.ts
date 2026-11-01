@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Look, ParticleKind } from './looks';
+import type { LightKind, Look, ParticleKind } from './looks';
 
 /** What `public/cards/<id>/layers.json` lists (scripts/art/cardart.py writes it). */
 interface LayerFiles {
@@ -36,6 +36,9 @@ const PIVOT = 0.5;
 const PLATE_ZOOM = 1.06;
 
 const QUAD = new THREE.PlaneGeometry(1, 1);
+
+/** The light kinds, in the order the light shader's `mode` numbers them. */
+const LIGHT_KINDS: LightKind[] = ['sunbeams', 'daylight', 'mist', 'bloom', 'storm-break', 'aura', 'rim', 'firelight', 'torchlight', 'lightning', 'moonbeams', 'candlelight'];
 
 const VERT = /* glsl */ `
   varying vec2 vUv;
@@ -175,11 +178,12 @@ export class ArtStage {
     return new THREE.Mesh(QUAD, new THREE.MeshBasicMaterial({ map, transparent: true, depthTest: false, depthWrite: false }));
   }
 
-  /** The card's light: for Long Road, dawn sunbeams fanning from the sun, slowly turning and breathing. */
+  /** The card's light, of its look's kind (cards.md, Part 3), from the look's source: added over the plate. */
   private lightMesh(): THREE.Mesh {
     const u = {
       time: { value: 0 },
       strength: { value: 1 },
+      mode: { value: LIGHT_KINDS.indexOf(this.look.light) },
       glow: { value: new THREE.Color(this.look.glow) },
       source: { value: new THREE.Vector2(this.look.source[0], 1 - this.look.source[1]) },
     };
@@ -188,21 +192,81 @@ export class ArtStage {
       uniforms: u,
       vertexShader: VERT,
       fragmentShader: /* glsl */ `
-        uniform float time, strength;
+        uniform float time, strength, mode;
         uniform vec3 glow;
         uniform vec2 source;
         varying vec2 vUv;
+        float hash(float n) { return fract(sin(n) * 43758.5453); }
+        float noise(float x) {
+          float i = floor(x), f = fract(x);
+          return mix(hash(i), hash(i + 1.0), f * f * (3.0 - 2.0 * f));
+        }
+        /** A flame's unsteady brightness, about 0.6 to 1. */
+        float flicker(float t) { return 0.6 + 0.4 * (noise(t * 7.0) * 0.6 + noise(t * 17.0 + 7.0) * 0.4); }
+        /** Rays fanning from the source: slow sine combs across the angle, so the beams drift. */
+        float rays(vec2 p, float n1, float n2, float speed) {
+          float a = atan(p.y, p.x);
+          float r = 0.5 + 0.5 * sin(a * n1 + time * 0.23 * speed) * sin(a * n2 - time * 0.17 * speed + 1.3);
+          return pow(r, 2.5) + 0.35 * pow(0.5 + 0.5 * sin(a * 9.0 - time * 0.11 * speed), 4.0);
+        }
         void main() {
           vec2 p = vUv - source;
           float r = length(p);
-          float a = atan(p.y, p.x);
-          // Rays: a few slow sine combs across the angle, so the beams drift and change width.
-          float rays = 0.5 + 0.5 * sin(a * 17.0 + time * 0.23) * sin(a * 29.0 - time * 0.17 + 1.3);
-          rays = pow(rays, 2.5) + 0.35 * pow(0.5 + 0.5 * sin(a * 9.0 - time * 0.11), 4.0);
-          float breathe = 0.85 + 0.15 * sin(time * 0.7);
-          float beams = rays * exp(-r * 2.4) * smoothstep(0.02, 0.12, r);
-          float core = exp(-r * r * 60.0) * 0.8 + exp(-r * 7.0) * 0.18;
-          gl_FragColor = vec4(glow * (beams * 0.32 + core * 0.8) * breathe * strength, 1.0);
+          int m = int(mode + 0.5);
+          float l = 0.0;
+          if (m == 0) {
+            // Sunbeams: rays and a bright core, breathing.
+            float beams = rays(p, 17.0, 29.0, 1.0) * exp(-r * 2.4) * smoothstep(0.02, 0.12, r);
+            l = (beams * 0.32 + exp(-r * r * 60.0) * 0.8 + exp(-r * 7.0) * 0.18) * (0.85 + 0.15 * sin(time * 0.7));
+          } else if (m == 1) {
+            // Daylight: a wide soft glow with a few broad, slow rays.
+            l = (rays(p, 7.0, 11.0, 0.6) * exp(-r * 1.7) * 0.2 + exp(-r * 3.0) * 0.2) * (0.9 + 0.1 * sin(time * 0.5));
+          } else if (m == 2) {
+            // Mist: slanting shafts from the source, and soft bands drifting across the lower half.
+            float shafts = pow(0.5 + 0.5 * sin(atan(p.y, p.x) * 23.0 + time * 0.12) * sin(atan(p.y, p.x) * 13.0 - time * 0.08), 3.0);
+            float bands = 0.5 + 0.5 * sin(vUv.y * 11.0 + sin(vUv.x * 3.0 + time * 0.15) * 1.5 + time * 0.1);
+            l = shafts * exp(-r * 1.6) * 0.28 + bands * smoothstep(0.75, 0.1, vUv.y) * 0.1;
+          } else if (m == 3) {
+            // Bloom: a high, even, slowly breathing glow from above.
+            l = (exp(-r * 2.2) * 0.3 + smoothstep(0.4, 1.0, vUv.y) * 0.12) * (0.88 + 0.12 * sin(time * 0.6));
+          } else if (m == 4) {
+            // A break in storm clouds: one shaft slanting down from the source, sweeping slowly.
+            float a = atan(p.y, p.x);
+            float aim = -1.72 + 0.1 * sin(time * 0.25);
+            float shaft = exp(-pow((a - aim) / 0.14, 2.0)) + 0.5 * exp(-pow((a - aim - 0.26) / 0.06, 2.0));
+            l = shaft * exp(-r * 1.4) * 0.34 * (0.8 + 0.2 * sin(time * 0.4)) + exp(-r * 9.0) * 0.25;
+          } else if (m == 5) {
+            // A magic aura: a glow pulsing around the source, with a ring breathing out.
+            float pulse = 0.75 + 0.25 * sin(time * 2.2);
+            float ring = exp(-pow((r - 0.2 - 0.04 * sin(time * 1.1)) / 0.03, 2.0));
+            l = (exp(-r * 4.5) * 0.45 + ring * 0.12) * pulse * flicker(time * 0.3);
+          } else if (m == 6) {
+            // A cold rim: a faint wash from the source's side that shifts slowly.
+            l = exp(-r * 2.0) * 0.22 * (0.9 + 0.1 * sin(time * 0.35));
+          } else if (m == 7) {
+            // Firelight from below: a flickering glow that rises and fades upward.
+            l = exp(-r * 4.0) * 0.4 * flicker(time) + smoothstep(0.45, 0.0, vUv.y) * 0.07 * flicker(time + 3.0);
+          } else if (m == 8) {
+            // Torchlight: a tight flickering pool at the source's torch and at one across from it.
+            // Night scenes: a broad glow would wash the dark out, so the light stays at the flames.
+            float q = length(vUv - vec2(1.0 - source.x, source.y));
+            l = (exp(-r * 8.0) * 0.32 + exp(-r * 22.0) * 0.3) * flicker(time) + (exp(-q * 9.0) * 0.22 + exp(-q * 24.0) * 0.2) * flicker(time + 11.0);
+          } else if (m == 9) {
+            // Lightning: a double flash every few seconds, washing the scene from the source.
+            float t = mod(time, 3.7);
+            float flash = exp(-t * 14.0) + 0.7 * step(0.16, t) * exp(-(t - 0.16) * 10.0);
+            l = flash * (0.32 + exp(-r * 2.0) * 0.5) + exp(-r * 3.0) * 0.05;
+          } else if (m == 10) {
+            // Moonbeams: slow, faint rays and a halo round the moon.
+            float beams = rays(p, 11.0, 19.0, 0.5) * exp(-r * 2.0) * smoothstep(0.03, 0.15, r);
+            l = beams * 0.2 + exp(-r * r * 90.0) * 0.4 + exp(-r * 6.0) * 0.12;
+          } else {
+            // Candlelight: small warm pools at the source's candles and at a second stand across
+            // the room, each flickering on its own.
+            float q = length(vUv - vec2(1.0 - source.x, source.y));
+            l = (exp(-r * 9.0) * 0.26 + exp(-r * 26.0) * 0.3) * flicker(time * 0.8) + (exp(-q * 9.0) * 0.2 + exp(-q * 26.0) * 0.24) * flicker(time * 0.8 + 5.0);
+          }
+          gl_FragColor = vec4(glow * l * strength, 1.0);
         }
       `,
       blending: THREE.AdditiveBlending,
@@ -227,6 +291,7 @@ export class ArtStage {
       drizzle: [0.02, -0.5, 0.0],
       rain: [0.05, -0.9, 0.0],
     };
+    const rain = kind === 'rain' || kind === 'drizzle';
     const seeds = new Float32Array(count * 4);
     let s = 1234567 + count;
     const rand = () => ((s = (s * 16807) % 2147483647) / 2147483647);
@@ -240,7 +305,10 @@ export class ArtStage {
       scale: { value: 1 },
       colour: { value: new THREE.Color(this.look.mote) },
       drift: { value: new THREE.Vector3(...motion[kind]) },
-      size: { value: size },
+      // Rain falls as thin streaks (three times a mote's size, so a streak is long enough to read);
+      // everything else is a soft round mote.
+      size: { value: rain ? size * 3 : size },
+      streak: { value: rain ? 1 : 0 },
     };
     this.uniforms.push(u);
     const mat = new THREE.ShaderMaterial({
@@ -260,10 +328,11 @@ export class ArtStage {
       `,
       fragmentShader: /* glsl */ `
         uniform vec3 colour;
-        uniform float strength;
+        uniform float strength, streak;
         varying float vTwinkle;
         void main() {
-          float d = length(gl_PointCoord - 0.5) * 2.0;
+          vec2 c = (gl_PointCoord - 0.5) * 2.0;
+          float d = streak > 0.5 ? length(c * vec2(9.0, 1.0)) : length(c);
           float a = smoothstep(1.0, 0.0, d);
           gl_FragColor = vec4(colour * a * a * vTwinkle * 0.55 * strength, 1.0);
         }

@@ -24,6 +24,54 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B4 r4: all twelve cards
+![The 12 cards at rest, each in its own light](battles/b4-cards/r4-eleven/cards.jpg)
+
+| All 12 hover clips at once | Thunder Hoof: lightning, the clip, the flip |
+|---|---|
+| ![](battles/b4-cards/r4-eleven/clips-grid.gif) | ![](battles/b4-cards/r4-eleven/thunder-hoof.jpg) |
+
+| The 12 cards' art | King's Wager, by candlelight | Ember Rite, the fire aura |
+|---|---|---|
+| ![](battles/b4-cards/r4-eleven/art-sheet.jpg) | ![](battles/b4-cards/r4-eleven/kings-wager.jpg) | ![](battles/b4-cards/r4-eleven/ember-rite.jpg) |
+
+Videos: [`clips-grid.mp4`](battles/b4-cards/r4-eleven/clips-grid.mp4) (the 12 clips) and [`thunder-hoof-card.mp4`](battles/b4-cards/r4-eleven/thunder-hoof-card.mp4) (one card in the renderer).
+
+**What changed**
+- **The other 11 cards** are made the way Long Road was, from `cards.md` Part 3:
+  - Seedream drew a plate, a figure layer from the units' standing images and a foreground for each;
+  - `cardart.py` composited them, with a glint line along each weapon;
+  - Seedance 2.0 Fast made each card's 5 s hover clip, which starts and ends on its still.
+- **The art, card by card:**
+  - Swift Banner: Edric gallops across a windy plain.
+  - Scout's Path: Dela draws on a cliff ledge above a misty gorge.
+  - Open Field: two sword soldiers charge through a flowering meadow.
+  - Iron Column: Bram and a spearman cross a bridge under a breaking storm.
+  - Ember Rite: Ilse turns a ring of fire runes in a stone circle at dusk.
+  - Steady Line: two women soldiers brace in the mud.
+  - Cleaver's Oath: Corin swears on his axe over a bonfire.
+  - Shield Wall: two soldiers lock shields at a torchlit gate.
+  - Thunder Hoof: Varek charges under lightning.
+  - Grave Toll: Gorran stands in a moonlit graveyard.
+  - King's Wager: Sabine waits in a candlelit war room.
+- **Each card has its own light.** It used to be dawn sunbeams on every card. Now it's twelve kinds: daylight, mist shafts, a storm break, a soft bloom, a fire aura, a cold rim, firelight, torches, lightning, moonbeams and candles, each from where its source is in the plate.
+- **Rain and drizzle** fall in streaks, not round motes.
+- **The clips are re-encoded at CRF 23,** about a third smaller (all 12 come to 23 MB) for the same look.
+
+**Feedback**
+- "go with Fast for the other 11 cards"
+
+**Decisions**
+- **Painted light on the green screen is keyed out in code, not prompted away.** Seedream kept drawing sun shafts, moon glows and lightning on the green behind the figures even when told not to, and they keyed as solid shapes.
+  - `unlight` drops what is green-tinted or cyan (light mixed with the screen; the figures have no green), and then any leftover piece that touches the picture's edge apart from the figures.
+  - `warm` keeps a fire's glow but turns its yellow-green haze warm.
+- **A foreground that runs along the whole bottom edge goes in whole,** as drawn. Splitting it into the two corners left a hard seam.
+- **Night lights stay small.** An added glow washes a dark scene out, so torches and candles are tight, flickering pools at the flames themselves.
+
+**Learned**
+- **Re-prompting doesn't remove light the model wants to draw.** Three of the four retries for it came back with the same glow. Fixing it in the keyer worked for all of them at once.
+- **Fast held every clip's last frame.** All 11 ended 4.8 to 9.1 levels from their still, so none jumps when the card fades back to the still.
+
 ### B4 r3: the hover clip, three models
 ![The three test clips side by side, with what each cost](battles/b4-cards/r3-clip/clips-compare.jpg)
 

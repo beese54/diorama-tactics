@@ -281,6 +281,12 @@
     {
       "id": "cards-clips",
       "title": "Card art round step 3: Long Road's hover clip by Seedance 2.0 Mini, Fast and 2.0 (same still as first and last frame, prompt and seed; $1.75 in all) side by side; Mini drifts and ends off the still, Fast and 2.0 loop back; Fast's installed as public/cards/long-road/motion.mp4 until the user picks",
+      "status": "done",
+      "commit": "4c35e59"
+    },
+    {
+      "id": "cards-eleven",
+      "title": "Card art round: the other 11 cards with Seedance 2.0 Fast (the user's pick): Seedream layers from the standing images ($1.91 with retries), cardart.py unlight/warm keying and whole-width foregrounds, 11 Fast hover clips ($6.66, all loop back to their stills), clips at CRF 23 (23 MB for 12); each card's own light kind in ArtStage (12 modes), rain as streaks; check.mjs checks every card's files and the no-art fallback with the art hidden",
       "status": "review",
       "commit": "next"
     }
