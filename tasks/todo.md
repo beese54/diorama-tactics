@@ -615,7 +615,7 @@ Proposed milestones (each one reviewed with screenshots before the next):
 - [x] **B2 Battle scene v0:** first a still style frame at full resolution for approval (the risk point: if code-drawn characters fall short, fall back to a licensed hi-res art pack or supplied art). Then: attack an adjacent enemy, transition to a side view (full resolution, not pixelated) whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
 - [x] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
 - [x] **B4 Cards and turns:** card hand (POW, MOV, ACE, skill), one card per turn, one attack per turn, end turn. Then the card art round: 12 layered, animated cards with Seedance hover clips, and the animated hand (approved 2026-11-02).
-- [x] **B5 Unions:** shape detection and highlight, chained clashes (built 2026-11-02, in review). The user chose "same target, chained" and "every battle in full":
+- [x] **B5 Unions:** shape detection and highlight, chained clashes (approved 2026-11-02). The user chose "same target, chained" and "every battle in full":
   - `fightUnion` (src/game/union.ts): the leader, then each member, fights the foe in turn; losses carry; the chain stops when the foe falls. 6 new tests.
   - Selected, a unit's Union is marked violet (a hue no other mark uses), its shape's empty places edged; the unit panel reads UNION xN.
   - The attack plays each battle over the board in full, the HUD reading UNION n / N; one summary notice after.

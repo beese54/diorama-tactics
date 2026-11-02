@@ -299,8 +299,8 @@
     {
       "id": "B5",
       "title": "Unions: fightUnion in the rules core (one battle per member against the same foe, losses carried, stops when the foe falls; 6 tests); the Union marked violet on the board with its shape's empty places edged, UNION xN in the unit panel; the attack plays the chain, every battle in full, labelled UNION n / N in the battle HUD; check.mjs union checks (highlight = rules, order, carried Morale, stop on a fall)",
-      "status": "review",
-      "commit": "next"
+      "status": "done",
+      "commit": "536823e"
     }
   ],
   "backlog": [
