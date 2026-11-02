@@ -60,26 +60,40 @@ export async function loadCardFonts(): Promise<void> {
   );
 }
 
-export function paintCard(card: Card, side: Side): CardPaint {
+/** The backs painted so far, by side and scale: every card on a side shares one back. */
+const backs = new Map<string, Pick<CardPaint, 'back' | 'backMetal'>>();
+
+/**
+ * Paints `card`'s face, and its side's back, at `scale` canvas pixels per design unit: 2 for the
+ * full-screen showcase, less for the hand's smaller cards (the canvases are uploaded as
+ * textures, and eight cards at full scale would be most of a gigabyte).
+ */
+export function paintCard(card: Card, side: Side, scale = PAINT_SCALE): CardPaint {
   const scheme = SCHEMES[side];
   const canvas = () => {
     const c = document.createElement('canvas');
-    c.width = CARD_W * PAINT_SCALE;
-    c.height = CARD_H * PAINT_SCALE;
+    c.width = Math.round(CARD_W * scale);
+    c.height = Math.round(CARD_H * scale);
     return c;
   };
-  const out = { face: canvas(), faceMetal: canvas(), back: canvas(), backMetal: canvas() };
-  for (const [c, mode] of [[out.face, 'colour'], [out.faceMetal, 'metal']] as const) new Painter(c, mode, scheme).face(card);
-  for (const [c, mode] of [[out.back, 'colour'], [out.backMetal, 'metal']] as const) new Painter(c, mode, scheme).back();
-  return out;
+  const face = { face: canvas(), faceMetal: canvas() };
+  for (const [c, mode] of [[face.face, 'colour'], [face.faceMetal, 'metal']] as const) new Painter(c, mode, scheme, scale).face(card);
+  const key = `${side}:${scale}`;
+  let back = backs.get(key);
+  if (!back) {
+    back = { back: canvas(), backMetal: canvas() };
+    for (const [c, mode] of [[back.back, 'colour'], [back.backMetal, 'metal']] as const) new Painter(c, mode, scheme, scale).back();
+    backs.set(key, back);
+  }
+  return { ...face, ...back };
 }
 
 class Painter {
   private readonly ctx: CanvasRenderingContext2D;
 
-  constructor(canvas: HTMLCanvasElement, private readonly mode: Mode, private readonly scheme: Scheme) {
+  constructor(canvas: HTMLCanvasElement, private readonly mode: Mode, private readonly scheme: Scheme, private readonly scale: number) {
     this.ctx = canvas.getContext('2d')!;
-    this.ctx.scale(PAINT_SCALE, PAINT_SCALE);
+    this.ctx.scale(scale, scale);
   }
 
   face(card: Card): void {
@@ -139,8 +153,8 @@ class Painter {
     ctx.save();
     if (this.colour) {
       ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-      ctx.shadowBlur = blur * PAINT_SCALE;
-      ctx.shadowOffsetY = dy * PAINT_SCALE;
+      ctx.shadowBlur = blur * this.scale;
+      ctx.shadowOffsetY = dy * this.scale;
     }
     draw();
     ctx.restore();

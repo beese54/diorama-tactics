@@ -13,8 +13,8 @@ import { UnitPanel } from '../ui/UnitPanel';
 import { RangeLayer } from './RangeLayer';
 import { UnitLayer } from './UnitLayer';
 
-/** How long the foes' turn stays on screen, in seconds. */
-const FOES_TURN = 1.5;
+/** How long the foes' turn stays on screen, in seconds: long enough to watch their card turn face up. */
+const FOES_TURN = 2.6;
 
 /** What the skirmish needs from the rest of the app. */
 export interface SkirmishHost {
@@ -69,8 +69,9 @@ export class Skirmish {
     this.group.add(this.marks.group, this.layer.group);
     this.panel = new UnitPanel(ui);
     this.box = new TurnBox(ui);
-    this.cards = new CardHand(ui, (id) => this.play(id));
+    this.cards = new CardHand((id) => this.play(id));
     this.begin(this.turn);
+    this.cards.prefetchFoes(this.hands.enemy.cards);
   }
 
   /**
@@ -81,7 +82,10 @@ export class Skirmish {
     const hand = this.hands[turn.side];
     refill(hand);
     if (turn.side === 'player') this.cards.show(hand, null, false);
-    else playCard(turn, hand, unused(hand)[0].id);
+    else {
+      playCard(turn, hand, unused(hand)[0].id);
+      this.cards.showFoeCard(turn.card!);
+    }
     return turn;
   }
 
@@ -238,6 +242,7 @@ export class Skirmish {
 
   /** The foes' turn is over: the next turn opens on the player's hand. */
   private handBack(): void {
+    this.cards.hideFoeCard();
     this.turn = this.begin(nextTurn(this.turn));
     for (const u of this.units) this.layer.setRested(u, false);
     this.host.say(`The foes hold their ground. Turn ${this.turn.number}.`);
@@ -264,12 +269,16 @@ export class Skirmish {
   }
 
   /** The player's hand, for checks: each card, whether it is used, and the hand's state on screen; and how many cards the foes have left. */
-  handInfo(): { open: boolean; focused: number; played: string | null; cards: { id: string; pow: number; mov: number; used: boolean }[]; foesLeft: number } {
+  handInfo(): {
+    open: boolean; focused: number; played: string | null; cards: { id: string; pow: number; mov: number; used: boolean }[]; foesLeft: number;
+    view: ReturnType<CardHand['info']>;
+  } {
     const hand = this.hands.player;
     return {
       open: this.cards.open, focused: this.cards.focused, played: this.turn.side === 'player' ? this.turn.card?.id ?? null : null,
       cards: hand.cards.map(({ id, pow, mov }) => ({ id, pow, mov, used: hand.used.has(id) })),
       foesLeft: unused(this.hands.enemy).length,
+      view: this.cards.info(),
     };
   }
 
@@ -292,7 +301,7 @@ export class Skirmish {
     this.panel.show(null);
     document.getElementById('unit-info')?.remove();
     document.getElementById('turn-info')?.remove();
-    document.getElementById('card-hand')?.remove();
+    this.cards.dispose();
     this.ui.classList.remove('choosing');
   }
 }

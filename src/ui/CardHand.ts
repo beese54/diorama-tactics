@@ -1,38 +1,32 @@
 import type { Card, Hand } from '../game/cards';
-
-const ACE: Record<Card['ace'], string> = { all: 'ALL', sword: 'SWORD', spear: 'SPEAR', axe: 'AXE', bow: 'BOW', staff: 'STAFF', lance: 'LANCE' };
+import { HandView, type HandCardState } from '../cards/HandView';
 
 /**
- * The hand along the bottom of the screen, in the map's menu style: each card's name, POW, MOV
- * and ACE, and the focused card's skill in a box above. Click a card, or ←/→ and Z, to play it;
- * used cards are greyed and can't be. Shown locked (to look at only) once the turn is under way.
+ * The player's hand of cards, drawn as the animated cards (src/cards/HandView.ts) along the
+ * bottom of the screen. Point at a card (or ←/→) to bring it up: it plays its clip; click it (or
+ * Z) to play it, F or a long press to turn it over. Used cards are greyed and can't be played.
+ * Shown locked (to look at only) once the turn is under way. It also shows the card the foes play.
  */
 export class CardHand {
-  private readonly el: HTMLElement;
+  private readonly view: HandView;
   private hand: Hand | null = null;
   private played: Card | null = null;
   private locked = false;
-  /** The card the arrows and the detail box are on, as an index into the hand. */
+  /** The card the arrows are on, as an index into the hand. */
   focused = 0;
 
-  constructor(parent: HTMLElement, private readonly onPlay: (id: string) => void) {
-    this.el = document.createElement('div');
-    this.el.id = 'card-hand';
-    this.el.hidden = true;
-    parent.appendChild(this.el);
-    this.el.addEventListener('click', (e) => {
-      const id = (e.target as HTMLElement).closest<HTMLElement>('.card')?.dataset.id;
-      if (id && this.playable(id)) this.onPlay(id);
-    });
-    this.el.addEventListener('mouseover', (e) => {
-      const id = (e.target as HTMLElement).closest<HTMLElement>('.card')?.dataset.id;
-      const i = this.hand?.cards.findIndex((c) => c.id === id) ?? -1;
-      if (i >= 0 && i !== this.focused) this.focus(i);
+  constructor(private readonly onPlay: (id: string) => void) {
+    this.view = new HandView({
+      focus: (i) => this.focus(i),
+      play: (i) => {
+        const id = this.hand?.cards[i].id;
+        if (id && this.playable(id)) this.onPlay(id);
+      },
     });
   }
 
   get open(): boolean {
-    return !this.el.hidden;
+    return this.view.open;
   }
 
   /** Opens `hand`, with `played` the card in play this turn, if any; `locked` once the turn is under way. */
@@ -40,15 +34,28 @@ export class CardHand {
     [this.hand, this.played, this.locked] = [hand, played, locked];
     const first = hand.cards.findIndex((c) => this.playable(c.id));
     this.focused = played ? hand.cards.indexOf(played) : Math.max(0, first);
-    this.el.hidden = false;
-    this.render();
+    this.view.show(hand.cards, this.states(), this.focused, this.keys());
   }
 
   hide(): void {
-    this.el.hidden = true;
+    this.view.hide();
   }
 
-  /** A key while the hand is open: ←/→ move along it and Z plays the focused card. Returns whether the hand took it. */
+  /** The foes play `card`: it shows face down, then turns face up. */
+  showFoeCard(card: Card): void {
+    this.view.showFoe(card);
+  }
+
+  hideFoeCard(): void {
+    this.view.hideFoe();
+  }
+
+  /** Gets the foes' cards ready in the background, so theirs shows the moment they play it. */
+  prefetchFoes(cards: readonly Card[]): void {
+    this.view.prefetch(cards, 'enemy');
+  }
+
+  /** A key while the hand is open: ←/→ move along it, Z plays the focused card, F turns it over. Returns whether the hand took it. */
   key(code: string): boolean {
     if (!this.open || !this.hand) return false;
     const n = this.hand.cards.length;
@@ -56,8 +63,18 @@ export class CardHand {
     else if (code === 'KeyZ') {
       const id = this.hand.cards[this.focused].id;
       if (this.playable(id)) this.onPlay(id);
-    } else return code === 'ArrowUp' || code === 'ArrowDown';
+    } else if (code === 'KeyF') this.view.flipFocused();
+    else return code === 'ArrowUp' || code === 'ArrowDown';
     return true;
+  }
+
+  /** The hand on screen, for checks. */
+  info(): ReturnType<HandView['info']> {
+    return this.view.info();
+  }
+
+  dispose(): void {
+    this.view.dispose();
   }
 
   private playable(id: string): boolean {
@@ -66,26 +83,19 @@ export class CardHand {
 
   private focus(i: number): void {
     this.focused = i;
-    this.render();
+    this.view.setFocus(i);
   }
 
-  private render(): void {
+  private states(): HandCardState[] {
     const hand = this.hand!;
-    const f = hand.cards[this.focused];
-    const cards = hand.cards.map((c, i) => {
-      const state = c === this.played ? 'played' : hand.used.has(c.id) ? 'used' : this.locked ? 'locked' : '';
-      return `<div class="card ${state}${i === this.focused ? ' focus' : ''}" data-id="${c.id}">` +
-        `<div class="name">${c.name}</div>` +
-        `<div class="num"><span>POW</span><b class="pow">${c.pow}</b></div>` +
-        `<div class="num"><span>MOV</span><b class="mov">${c.mov}</b></div>` +
-        // A used card, or the one in play, is stamped where its ACE was (the box above still shows it).
-        (state === 'played' ? '<div class="stamp">IN PLAY</div>' : state === 'used' ? '<div class="stamp">USED</div>' : `<div class="ace">ACE<br>${ACE[c.ace]}</div>`) +
-        '</div>';
-    }).join('');
-    const keys = this.locked ? 'C CLOSE' : this.played ? '←→ CHOOSE · Z SWAP · X TAKE BACK · C CLOSE' : '←→ CHOOSE · Z PLAY · C CLOSE';
-    this.el.innerHTML =
-      `<div class="detail"><div class="head"><span class="skill">${f.skill.name}</span><span class="ace">ACE ${ACE[f.ace]}</span></div>` +
-      `<div class="text">${f.skill.text}</div><div class="keys">${keys}</div></div>` +
-      `<div class="cards">${cards}</div>`;
+    return hand.cards.map((c) => (c === this.played ? 'played' : hand.used.has(c.id) ? 'used' : this.locked ? 'locked' : ''));
+  }
+
+  /** The line of keys over the hand; on a touch screen, what a finger does instead. */
+  private keys(): string {
+    if (matchMedia('(pointer: coarse)').matches) {
+      return this.locked ? 'HOLD A CARD TO FLIP IT' : this.played ? 'TAP TO CHOOSE · TAP AGAIN TO SWAP · HOLD TO FLIP' : 'TAP TO CHOOSE · TAP AGAIN TO PLAY · HOLD TO FLIP';
+    }
+    return this.locked ? 'F FLIP · C CLOSE' : this.played ? '←→ CHOOSE · Z SWAP · X TAKE BACK · F FLIP · C CLOSE' : '←→ CHOOSE · Z PLAY · F FLIP · C CLOSE';
   }
 }

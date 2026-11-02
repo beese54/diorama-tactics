@@ -369,23 +369,56 @@ const clickTile = async (x, y) => {
   await page.mouse.click(pos.x, pos.y);
   await frames();
 };
-/** Clicks the `i`th card of the hand on screen. */
+/** Clicks the `i`th card of the hand on screen, at a point on it no other card covers. */
 const clickCard = async (i) => {
-  const pos = await page.evaluate((i) => { const r = document.querySelectorAll('#card-hand .card')[i].getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }, i);
+  const pos = await page.evaluate((i) => window.__map.hand().view.aims[i], i);
   await page.mouse.click(pos.x, pos.y);
   await frames();
 };
 const turnNow = () => page.evaluate(() => window.__map.turn());
 const handNow = () => page.evaluate(() => window.__map.hand());
+/** The animated hand on screen: its canvas, focus, clips, flips and the foes' card. */
+const handView = () => page.evaluate(() => window.__map.hand().view);
 const dealt = { turn: await turnNow(), hand: await handNow(), shown: await page.evaluate(() => document.querySelectorAll('#card-hand .card').length) };
 check('cards: the turn opens on a hand of 8, with no card in play and nothing to move with',
   dealt.hand.open && dealt.shown === 8 && dealt.hand.cards.every((c) => !c.used) && dealt.turn.card === null && dealt.turn.pool === 0, JSON.stringify(dealt));
 await shot('12a-cards-hand');
+// The hand is the animated cards, drawn on a canvas of their own at full device resolution.
+await page.waitForFunction(() => window.__map.hand().view.drawing, { timeout: 10000 }).catch(() => {});
+const view0 = await handView();
+const dpr = await page.evaluate(() => devicePixelRatio);
+check('hand: the cards draw on their own canvas, at full device resolution', view0.open && view0.drawing && view0.canvas.width === Math.round(view0.canvas.css * dpr), JSON.stringify({ dpr, canvas: view0.canvas }));
+// Pointing at a card brings it up and plays its clip; the one before stops.
+await page.mouse.move(view0.aims[3].x, view0.aims[3].y);
+await page.waitForFunction(() => { const v = window.__map.hand().view; return v.focused === 3 && v.playing[3]; }, { timeout: 15000 }).catch(() => {});
+const focus3 = await handView();
+await page.mouse.move(focus3.aims[5].x, focus3.aims[5].y);
+await page.waitForFunction(() => { const v = window.__map.hand().view; return v.focused === 5 && v.playing[5] && !v.playing[3]; }, { timeout: 15000 }).catch(() => {});
+const focus5 = await handView();
+check('hand: pointing at a card brings it up and plays its clip, and the card before stops',
+  focus3.focused === 3 && focus3.playing[3] && focus5.focused === 5 && focus5.playing[5] && focus5.playing.filter(Boolean).length === 1,
+  JSON.stringify({ focus3: [focus3.focused, focus3.playing], focus5: [focus5.focused, focus5.playing] }));
+await shot('12d-hand-focus');
+// F turns the focused card over, and F again turns it back.
+await page.keyboard.press('KeyF');
+await frames(40);
+const handFlipped = (await handView()).flipped;
+await shot('12e-hand-flip');
+await page.keyboard.press('KeyF');
+await frames(40);
+const handUnflipped = (await handView()).flipped;
+check('hand: F turns the focused card over, and F again turns it back',
+  handFlipped[5] && handFlipped.filter(Boolean).length === 1 && handUnflipped.every((f) => !f), JSON.stringify({ handFlipped, handUnflipped }));
+await page.mouse.move(5, 5);
 const mover = army[0];
 await page.keyboard.press('KeyC');
 await clickTile(mover.x, mover.y);
 const cardless = await page.evaluate(() => ({ selected: window.__map.selected(), marked: window.__map.marked() }));
 check('cards: without a card a unit can be picked but goes nowhere', cardless.selected === mover.id && cardless.marked.reach === 0, JSON.stringify(cardless));
+// Put away, the cards sink off the screen, and their canvas stops drawing and gets out of the way.
+await page.waitForFunction(() => !window.__map.hand().view.drawing, { timeout: 5000 }).catch(() => {});
+const closedView = { view: await handView(), hidden: await page.evaluate(() => document.getElementById('card-hand').hidden) };
+check('hand: closed, the cards are put away and their canvas stops drawing', !closedView.view.open && !closedView.view.drawing && closedView.hidden, JSON.stringify(closedView));
 await page.keyboard.press('KeyX');
 await page.keyboard.press('KeyC');
 await clickCard(2);
@@ -430,6 +463,11 @@ check("turns: Enter passes to the foes, who play a card (one fewer in their hand
   foesTurn.turn.side === 'enemy' && foesTurn.turn.number === 1 && !!foesTurn.turn.card && foesTurn.hand.foesLeft === foesBefore - 1 && !foesTurn.hand.open &&
   foesTurn.box.cls === 'enemy' && foesTurn.box.text.includes('FOES') && foesTurn.box.text.includes(foesTurn.turn.card.name.toUpperCase()),
   JSON.stringify({ foesBefore, ...foesTurn }));
+// Their card slides in face down, on the foes' crimson stock, and turns face up.
+await page.waitForFunction(() => window.__map.hand().view.foe?.faceUp, { timeout: 2400 }).catch(() => {});
+await frames(4);
+const foeCard = (await handView()).foe;
+check("turns: the foes' card shows on their crimson stock and turns face up", foeCard?.id === foesTurn.turn.card.id && foeCard.side === 'enemy' && foeCard.faceUp, JSON.stringify(foeCard));
 await shot('12c-foes-turn');
 await page.keyboard.press('KeyC');
 await page.keyboard.press('Enter');
@@ -438,9 +476,10 @@ const ignored = { turn: await turnNow(), hand: await handNow() };
 check("turns: on the foes' turn the board takes no orders", ignored.turn.side === 'enemy' && ignored.turn.number === 1 && !ignored.hand.open, JSON.stringify(ignored));
 await page.waitForFunction(() => window.__map.turn().side === 'player', { timeout: 10000 });
 const foesHeld = Date.now() - passedAt;
-check("turns: the foes' turn holds about 1.5 s, then passes back", foesHeld > 1200 && foesHeld < 5000, `${foesHeld} ms`);
+check("turns: the foes' turn holds about 2.6 s, then passes back", foesHeld > 2200 && foesHeld < 6000, `${foesHeld} ms`);
 await frames(3);
 const turn2 = await turnNow();
+check("turns: back on the player's turn, the foes' card is gone", (await handView()).foe === null, JSON.stringify((await handView()).foe));
 await clickCard(0);
 const usedAgain = { turn: await turnNow(), hand: await handNow() };
 check('cards: Enter ends the turn, and the next opens on the hand with the used card greyed and out of play',

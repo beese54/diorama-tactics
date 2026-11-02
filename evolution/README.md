@@ -24,6 +24,44 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B4 r5: the hand of animated cards
+![The hand over the board: the card under the pointer risen, playing its clip](battles/b4-cards/r5-hand/focus.jpg)
+
+| Choosing, flipping, playing, and the foes' card | On a phone: the chosen card lifts clear | Its back (long press) | The foes' card |
+|---|---|---|---|
+| ![](battles/b4-cards/r5-hand/hand.gif) | ![](battles/b4-cards/r5-hand/phone-focus.jpg) | ![](battles/b4-cards/r5-hand/phone-flip.jpg) | ![](battles/b4-cards/r5-hand/foe.jpg) |
+
+Videos: [`hand-desktop.mp4`](battles/b4-cards/r5-hand/hand-desktop.mp4) and [`hand-phone.mp4`](battles/b4-cards/r5-hand/hand-phone.mp4).
+
+**What changed**
+- **The hand is the animated cards now.** The B4 pixel menu boxes are gone. The cards draw on a canvas of their own over the board, at full device resolution and smooth like the battle scenes; the board stays pixel art beneath them.
+- **Choosing:**
+  - the cards fan along the bottom;
+  - the one under the pointer (or the arrows) rises, grows, tilts toward the pointer and plays its clip, and the card before it stops;
+  - a click (or Z) plays it.
+- **On a phone:** a tap brings a card up, a second tap plays it, and a long press turns it over. The chosen card lifts clear above the row, several times its size, so it can be read, and every other card stays in reach of a finger. The keys line speaks of taps on a touch screen.
+- **F turns the chosen card over** to its crested back, and back again.
+- **Spent cards** are greyed, and stamped USED, or IN PLAY for this turn's card.
+- **The foes' turn:** their card slides in face down on crimson stock and turns face up. Their turn lasts 2.6 s (from 1.5) so the turn can be watched.
+- **When the hand is put away,** its cards sink off the screen and the canvas stops drawing, so the board costs what it did before.
+
+**Feedback**
+- "go" (to the hand, after "For cards, I dont want pixel art, I want animated cards that show motion.")
+
+**Decisions**
+- **The same card renderer as the showcase,** with sizes chosen for the hand:
+  - each card's frame is painted at the size it's drawn (on desktop, a quarter of the showcase's scale);
+  - every card on a side shares one painted back;
+  - the art layers are scaled down as they load, to 512 px on desktop and 768 on a phone;
+  - the clips load only when a card is first chosen.
+- **The cards that aren't chosen redraw their art every third frame.** Their light and motes move slowly, and the chosen card redraws every frame.
+- **The foes' cards are pre-loaded in the background** once the player's hand is up, so theirs shows the moment they play it.
+- **The turn box stays in the pixel style.** It belongs to the board, as the tile and unit panels do.
+
+**Learned**
+- **One view becoming eight needs its memory worked out first.** At the showcase's sizes the hand was about a gigabyte of textures, and painting them stalled the page for seconds. Sized to how big they're drawn, the cards open at once. On a GPU the hand runs at 150 frames a second open.
+- **A page loaded straight after a source edit can look hung to puppeteer.** Vite reloads it as it loads, and the first load's requests never finish in puppeteer's count, so "network idle" never comes.
+
 ### B4 r4: all twelve cards
 ![The 12 cards at rest, each in its own light](battles/b4-cards/r4-eleven/cards.jpg)
 

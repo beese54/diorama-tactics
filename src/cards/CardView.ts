@@ -34,7 +34,7 @@ const FACE_VERT = /* glsl */ `
  */
 const FACE_FRAG = /* glsl */ `
   uniform sampler2D frame, metal, art;
-  uniform float hasArt, foil, clipMix, time;
+  uniform float hasArt, foil, clipMix, time, dim;
   uniform vec4 artUv;
   uniform vec2 tilt, size, texel;
   uniform float radius;
@@ -93,6 +93,10 @@ const FACE_FRAG = /* glsl */ `
     float sheen = exp(-pow(dot(vUv - 0.5, light) * 3.0 + 0.4 - tilt.x * 0.6, 2.0) * 6.0);
     col += sheen * 0.035;
 
+    // A spent card (in the hand): greyed and darkened.
+    float grey = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col = mix(col, vec3(grey), dim * 0.85) * (1.0 - dim * 0.45);
+
     gl_FragColor = vec4(col, edge);
     #include <colorspace_fragment>
   }
@@ -134,9 +138,13 @@ export class CardView {
   /** 0 face up, 1 face down; the flip eases toward `flipGoal`. */
   private flipT = 0;
   private flipGoal = 0;
+  /** How spent the card looks, 0 to 1: greyed and darkened (a used card in the hand). */
+  dim = 0;
+  /** Seconds added to the clock for this card's sway and float, so cards side by side don't move in step. */
+  phase = 0;
 
-  private constructor(readonly card: Card, readonly side: Side, readonly stage: ArtStage, readonly params: CardParams) {
-    const paint = paintCard(card, side);
+  private constructor(readonly card: Card, readonly side: Side, readonly stage: ArtStage, readonly params: CardParams, paintScale?: number) {
+    const paint = paintCard(card, side, paintScale);
     const canvasTex = (c: HTMLCanvasElement, srgb: boolean) => {
       const t = new THREE.CanvasTexture(c);
       if (srgb) t.colorSpace = THREE.SRGBColorSpace;
@@ -155,6 +163,7 @@ export class CardView {
           foil: { value: params.foil },
           clipMix: { value: 0 },
           time: { value: 0 },
+          dim: { value: 0 },
           artUv: { value: new THREE.Vector4(ART_UV.u0, ART_UV.v0, ART_UV.u1, ART_UV.v1) },
           tilt: { value: new THREE.Vector2() },
           size: { value: new THREE.Vector2(CARD_W, CARD_H) },
@@ -183,9 +192,14 @@ export class CardView {
     this.group.add(this.shadow, this.body);
   }
 
-  static async create(card: Card, side: Side, params: CardParams, artSize: number): Promise<CardView> {
-    const stage = await ArtStage.load(card.id, LOOKS[card.id], params, artSize);
-    return new CardView(card, side, stage, params);
+  /**
+   * `lazyClip`: fetch the hover clip on the first hover, not now (the hand holds eight cards).
+   * `paintScale`: the frame's canvas pixels per design unit (frameArt's PAINT_SCALE by default).
+   * `texSize`: the art layers' size as loaded (see ArtStage.load).
+   */
+  static async create(card: Card, side: Side, params: CardParams, artSize: number, opts: { lazyClip?: boolean; paintScale?: number; texSize?: number } = {}): Promise<CardView> {
+    const stage = await ArtStage.load(card.id, LOOKS[card.id], params, artSize, opts);
+    return new CardView(card, side, stage, params, opts.paintScale);
   }
 
   /** The mesh to test the pointer against (the face's rest shape). */
@@ -201,6 +215,11 @@ export class CardView {
     this.flipGoal = 1 - this.flipGoal;
   }
 
+  /** Turns the card face down (or up) at once, with no flip to watch. */
+  setFlipped(down: boolean): void {
+    this.flipGoal = this.flipT = down ? 1 : 0;
+  }
+
   hover(on: boolean): void {
     this.hovered = on;
     // Only a face-up card plays its clip.
@@ -208,8 +227,10 @@ export class CardView {
   }
 
   /** Advances the card to `time`: eases the tilt and the flip, floats it, and redraws the art. */
-  update(time: number, dt: number, renderer: THREE.WebGLRenderer): void {
+  /** `drawArt`: redraw the art window this frame (the hand redraws its resting cards' art less often). */
+  update(clock: number, dt: number, renderer: THREE.WebGLRenderer, drawArt = true): void {
     const p = this.params;
+    const time = clock + this.phase;
     // At rest the card sways a little on its own, so its depth shows even untouched.
     const idle = this.hovered ? new THREE.Vector2() : new THREE.Vector2(Math.sin(time * 0.5) * 0.22, Math.cos(time * 0.37) * 0.16);
     const goal = this.hovered ? this.tiltGoal : idle;
@@ -234,12 +255,13 @@ export class CardView {
 
     // The art sees the tilt in its own frame (turned with the card when face down).
     this.stage.update(time, dt, this.tilt);
-    this.stage.render(renderer);
+    if (drawArt) this.stage.render(renderer);
     for (const m of [this.face.material, this.back.material]) {
       m.uniforms.time.value = time;
       m.uniforms.tilt.value.copy(this.tilt);
       m.uniforms.foil.value = p.foil;
       m.uniforms.clipMix.value = this.stage.clipMix;
+      m.uniforms.dim.value = this.dim;
     }
   }
 

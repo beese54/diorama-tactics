@@ -287,6 +287,12 @@
     {
       "id": "cards-eleven",
       "title": "Card art round: the other 11 cards with Seedance 2.0 Fast (the user's pick): Seedream layers from the standing images ($1.91 with retries), cardart.py unlight/warm keying and whole-width foregrounds, 11 Fast hover clips ($6.66, all loop back to their stills), clips at CRF 23 (23 MB for 12); each card's own light kind in ArtStage (12 modes), rain as streaks; check.mjs checks every card's files and the no-art fallback with the art hidden",
+      "status": "done",
+      "commit": "a002834"
+    },
+    {
+      "id": "cards-hand",
+      "title": "The animated cards replace the B4 pixel hand: handLayout (pure, tested: the fan, the focused card lifted, a clickable point per card), HandView (own full-resolution canvas, CardView per card, DOM hit boxes, used/in-play states, the focused card's clip, F and long-press flip, touch-aware keys line, the foes' card turning face up; idle when closed), lazily loaded clips, hand cards painted and loaded at their size on screen (paint scale, scaled-down layers, one back per side), the foes' cards pre-loaded; FOES_TURN 2.6 s; check.mjs hand checks",
       "status": "review",
       "commit": "next"
     }

@@ -68,6 +68,9 @@ export class ArtStage {
   clipMix = 0;
   private hovered = false;
   private lightScale = 1;
+  /** The clip waiting to be fetched on the first hover (a lazy stage), and whether it is on its way. */
+  private clipUrl: string | null = null;
+  private clipLoading = false;
   /** Which of the card's files loaded, for the dev checklist and the checks. */
   readonly loaded: Record<string, boolean> = {};
 
@@ -75,8 +78,14 @@ export class ArtStage {
     this.target = new THREE.WebGLRenderTarget(size, size, { type: THREE.HalfFloatType, depthBuffer: false });
   }
 
-  /** Loads card `id`'s art from `public/cards/<id>/`; missing files fall back (see `build`). */
-  static async load(id: string, look: Look, params: ArtParams, size: number): Promise<ArtStage> {
+  /**
+   * Loads card `id`'s art from `public/cards/<id>/`; missing files fall back (see `build`).
+   * `lazyClip`: the hover clip is fetched on the first hover instead of now.
+   * `texSize`: the layers are scaled down to this many pixels square as they load (the files are
+   * 1536 for the full-screen showcase; a hand card needs far less, and each layer at full size
+   * is about 12 MB of GPU memory).
+   */
+  static async load(id: string, look: Look, params: ArtParams, size: number, opts: { lazyClip?: boolean; texSize?: number } = {}): Promise<ArtStage> {
     const stage = new ArtStage(size, look, params);
     const root = `${import.meta.env.BASE_URL}cards/`;
     const dir = `${root}${id}/`;
@@ -92,11 +101,22 @@ export class ArtStage {
       : {};
     stage.loaded['layers.json'] = Object.keys(files).length > 0;
     const loader = new THREE.TextureLoader();
+    const small = opts.texSize
+      ? new THREE.ImageBitmapLoader().setOptions({
+          imageOrientation: 'flipY', premultiplyAlpha: 'none', resizeWidth: opts.texSize, resizeHeight: opts.texSize, resizeQuality: 'high',
+        })
+      : null;
     const tex = async (name: keyof LayerFiles, srgb = true): Promise<THREE.Texture | null> => {
       const file = files[name];
       if (typeof file !== 'string') return null;
       try {
-        const t = await loader.loadAsync(dir + file);
+        let t: THREE.Texture;
+        if (small) {
+          // Decoded and scaled down off the main thread, already the right way up.
+          t = new THREE.Texture(await small.loadAsync(dir + file));
+          t.flipY = false;
+          t.needsUpdate = true;
+        } else t = await loader.loadAsync(dir + file);
         if (srgb) t.colorSpace = THREE.SRGBColorSpace;
         t.minFilter = THREE.LinearMipmapLinearFilter;
         t.anisotropy = 4;
@@ -109,7 +129,10 @@ export class ArtStage {
     };
     const [art, plate, character, front, depth] = await Promise.all([tex('art'), tex('plate'), tex('character'), tex('front'), tex('depth', false)]);
     stage.build({ art, plate, character, front, depth, glint: files.glint ?? null });
-    if (files.motion) await stage.loadClip(dir + files.motion);
+    if (files.motion) {
+      if (opts.lazyClip) stage.clipUrl = dir + files.motion;
+      else await stage.loadClip(dir + files.motion);
+    }
     return stage;
   }
 
@@ -431,6 +454,16 @@ export class ArtStage {
   hover(on: boolean): void {
     if (on === this.hovered) return;
     this.hovered = on;
+    if (on && !this.video && this.clipUrl && !this.clipLoading) {
+      // A lazy stage fetches its clip now, and plays it if the pointer is still there.
+      this.clipLoading = true;
+      void this.loadClip(this.clipUrl).then(() => {
+        if (this.hovered && this.video) {
+          this.video.currentTime = this.params.clipStart;
+          void this.video.play().catch(() => {});
+        }
+      });
+    }
     const v = this.video;
     if (on && v) {
       v.currentTime = this.params.clipStart;

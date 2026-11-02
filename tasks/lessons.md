@@ -82,3 +82,11 @@
 ## 2026-11-01: model activation is not key permission (BytePlus ModelArk)
 - **What happened:** After the user activated the Seedance 2.0 models, every call returned 403 AccessDenied. The API key itself had to be allowed to use those models, which took about 5 minutes to apply.
 - **Rule:** Before any billed call to a newly enabled model, send a free probe: a request with empty `content`. 400 InvalidParameter means the key gets through, 403 means the key is blocked from that model, and ModelNotOpen means the model isn't activated. Tell the user which of these it is.
+
+## 2026-11-02: a page loaded right after a source edit never goes "network idle" (self-caught)
+- **What happened:** A headless load straight after I edited a source file timed out waiting for network idle, twice. Vite reloaded the page as it loaded, and puppeteer kept the first load's module requests as pending forever. It looked like a hanging app.
+- **Rule:** After editing source, let the dev server settle before a headless load. If a load times out on network idle, log the navigations and pending requests before blaming the app: two navigations means it was Vite's reload.
+
+## 2026-11-02: size GPU assets to how big they're drawn, before multiplying views (self-caught)
+- **What happened:** The hand reused the showcase's CardView: 2000x2800 frame canvases and 1536 px art layers per card. Eight cards came to about a gigabyte of textures, and painting them stalled the page for seconds. The steady frame rate hid it; only the first seconds showed it.
+- **Rule:** When one view becomes many, work out its memory (pixels x 4 bytes x 1.33 for mipmaps, for each texture) and paint and load at the size it's drawn. Measure the first seconds after it opens, not only the steady frame rate.
