@@ -1,8 +1,8 @@
 /**
- * The four transitions B8 adds, each switchable so the user can see them and choose which to
- * keep (the ones dropped are then removed): the wipe from the board into a battle and back, the
- * turn banners, the played card flying to the turn box, and the battle's intro and outro.
- * All on by default; `?fx=wipe,intro` turns on only those listed, `?fx=none` none.
+ * The four transitions B8 adds, all kept (the user's choice, 2026-11-03): the wipe from the board
+ * into a battle and back, the turn banners, the played card flying to the turn box, and the
+ * battle's intro and outro. All on; the switch stays for checks and for looking at one alone:
+ * `?fx=wipe,intro` turns on only those listed, `?fx=none` none.
  */
 export type FxName = 'wipe' | 'banners' | 'cardfly' | 'intro';
 export const FX_NAMES: readonly FxName[] = ['wipe', 'banners', 'cardfly', 'intro'];

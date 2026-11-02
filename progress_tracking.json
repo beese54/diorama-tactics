@@ -319,6 +319,12 @@
       "title": "Enemy AI and win/lose: src/game/ai.ts (planTurn Easy/Hard, forecast over 8 seeds, the pool shared so foes advance together, steered by walking cost; 11 tests), src/game/end.ts (outcome, stats); the foes' turn plays the plan (card, walks, a Union attack the player defends in, skills fired on their own, All In for them too); ResultScreen (VICTORY/DEFEAT, stats, Play again/New map); Foes: Easy/Hard picker (?foes=hard); battle banners coloured by side; check.mjs: untilPlayerTurn, holdFoes, 7 B7 checks",
       "status": "done",
       "commit": "ac08fb6"
+    },
+    {
+      "id": "B8",
+      "title": "Polish: sound effects synthesised in code (src/audio: 13 recipes, one context unlocked on the first input, mute on M, Music and Effects volumes kept in localStorage, music from a manifest so none is asked for until the user's loops arrive); all four transitions kept by the user (the wipe into and out of battles, turn banners, the played card flying to the turn box, the battle intro and outro); battle effects (sparks tinted by weapon, a ring, a flash and a star on each blow, a dust trail on the charge, the skill's light); check.mjs B8 section (11 checks)",
+      "status": "in review: the effects and sounds await the user's verdict; the music awaits the user's loops",
+      "commit": "bf13905, d576f2b, and this one"
     }
   ],
   "backlog": [

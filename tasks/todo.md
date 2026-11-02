@@ -630,7 +630,12 @@ Proposed milestones (each one reviewed with screenshots before the next):
   - `src/game/end.ts`; ResultScreen; the Foes picker; foes fire ready skills on their own, and their All In fills their gauges.
   - Battle banners follow sides (the player's blue with the stance keys, the foes' red), as the foes now attack from the left.
   - check.mjs 148/148 (7 new; untilPlayerTurn; holdFoes keeps the attack, Union and skill sections on their subject); identity 70/70.
-- [ ] **B8 Polish:** transitions, audio, art pass.
+- [ ] **B8 Polish:** transitions, audio, art pass. In review (2026-11-03). The user chose: sound effects in code with their own music, all four transitions (kept, 2026-11-03), battle effects for the art pass, a mute button and volumes.
+  - `src/audio/`: one Web Audio context unlocked on the first input; 13 effect recipes (clash, hit, crit, arrow, spell, charge, cut-in, card, tick, click, victory, defeat, wipe); mute on M with Music and Effects sliders in the menu, kept in localStorage; music crossfaded from a manifest (none yet: `scripts/art/prompts/music.md` holds the four prompts, `scripts/art/music.mjs` encodes them).
+  - The transitions: the wipe into and out of battles (a Union's battles stay covered between), turn banners, the played card's flight to the turn box, the battle intro (banners in, VS slam) and outro (the Morale loss punches). `?fx=` turns them on one at a time for checks.
+  - Battle effects (`src/battle/Impact.ts`): sparks tinted by weapon with a ring, a flash and a star on each blow, a dust trail on the charge, the skill's light around its squad.
+  - check.mjs 159/159 (11 new: sound unlock, mute kept over a reload, the card's flight, the wipe both ways, the banners, the intro, the outro, sparks and sounds on blows, `?fx=none`, no errors); identity 70/70.
+  - Waiting on: the user's verdict on the effects and sounds, and the four music loops.
 
 - **Art (approved 2026-10-27):** the user generates the battle art in Google Flow from prompts I write. Round 1 is one sword leader, one sword soldier and one meadow background, on flat #00FF00; I key them and build a still style frame in the engine. Round 2 tests animation on the sword class, pose images against Flow video, side by side in the engine. Then the rest: 18 designs (6 leaders per side, 6 shared soldier designs, recoloured for the enemy), portraits, backgrounds, card art. Smears between poses are drawn in code. Sources go in `art/source/`.
 

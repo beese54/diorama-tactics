@@ -103,3 +103,7 @@
 - **What happened:** The first foe AI made only legal moves, but the nearest foe spent the whole shared MOV pool every turn, and the foes steered by straight-line distance into a corner a cliff cut off. The unit tests passed; watching a few turns in the real game showed both.
 - **Rule:** An AI isn't done when its moves are legal. Watch several of its turns on a real map before trusting it, and turn what looks wrong into a test, as "advances together" now is.
 
+
+## 2026-11-03: a shell heredoc broke JavaScript again, and an intro started too early (self-caught)
+- **What happened:** A capture script written through a bash heredoc lost a `\n` inside a JS string, and the script failed to parse. This is the same mistake as the test file on 2026-11-02. Separately, the battle intro's classes were added when its HUD was built, at the start of loading. The intro then played under the wipe and was over before the battle could be seen. A probe showed the animation itself was fine; the screenshot had simply come too late.
+- **Rule:** Code with escapes goes in through Write, Edit or a Python file in the scratchpad, never inline in a heredoc. Start an animation when its subject is on screen (here, once the battle is ready), not when its element is built. Capture an animation by waiting on its own `currentTime`, not on a guessed delay.

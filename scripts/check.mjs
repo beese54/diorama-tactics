@@ -1017,6 +1017,111 @@ await shot('26-defeat');
 check('end: the last ally falling is DEFEAT', b7Loss?.result === 'defeat' && /Defeat/i.test(b7Loss.text), JSON.stringify(b7Loss));
 check('foes: no console errors', errors.length === 0, errors.join(' | '));
 
+// ---- Polish (B8): sound, the four transitions and the battle effects ----------------------------
+// Sound can't be heard here, so the checks read its state: no audio until the first input, M mutes
+// it and the setting comes back after a reload, the battle asks for its effects, and the music
+// missing asks for no files. The transitions last about a second each, so they are watched from
+// inside the page as they come and go: the wipe, the turn banners and the battle HUD's intro.
+errors.length = 0;
+const watcher = await page.evaluateOnNewDocument(() => {
+  window.__seen = [];
+  const note = (el) => {
+    if (['wipe', 'turn-banner', 'battle-hud'].includes(el.id)) window.__seen.push({ id: el.id, cls: el.className, text: el.id === 'turn-banner' ? el.textContent : '' });
+  };
+  new MutationObserver((list) => {
+    for (const m of list) {
+      if (m.type === 'attributes') note(m.target);
+      else for (const n of m.addedNodes) if (n.nodeType === 1) note(n);
+    }
+  }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+});
+const seenNow = () => page.evaluate(() => window.__seen);
+const sound = () => page.evaluate(() => ({ ...window.__audio.state(), speaker: document.querySelector('#hud .speaker')?.textContent }));
+// From saved settings of none (a click of an earlier section can land on the menu's speaker).
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.evaluate(() => localStorage.removeItem('diorama.audio'));
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+const fresh = await sound();
+check('sound: no audio before the first click, tap or key, and no music asked for while it has none', !fresh.ready && !fresh.settings.muted && fresh.speaker === 'Sound: on' && fresh.playing === null, JSON.stringify(fresh));
+await page.keyboard.press('KeyM');
+const muted = await sound();
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+await page.evaluate(() => window.__map.holdFoes(true));
+const kept = await sound();
+await page.keyboard.press('KeyM');
+const unmuted = await sound();
+check('sound: the first key starts it, M mutes it, and the setting comes back after a reload',
+  muted.ready && muted.settings.muted && muted.speaker === 'Sound: off' && !kept.ready && kept.settings.muted && kept.speaker === 'Sound: off' && unmuted.ready && !unmuted.settings.muted,
+  JSON.stringify({ muted, kept, unmuted }));
+const opening8 = await seenNow();
+check('transitions: the first turn opens with its banner', opening8.some((s) => s.id === 'turn-banner' && s.cls === 'player' && /Your turn/i.test(s.text) && /Turn 1/.test(s.text)), JSON.stringify(opening8));
+// The card played lifts out of the hand and flies to the turn box.
+await clickCard(0);
+await page.waitForFunction(() => window.__map.hand().view.flights > 0 && !window.__map.hand().view.flying, { timeout: 10000 }).catch(() => {});
+const flown = { flights: (await handNow()).view.flights, played: (await sound()).played };
+check('transitions: the card played flies to the turn box, with its sound', flown.flights === 1 && flown.played.card >= 1, JSON.stringify(flown));
+// An attack: the blade covers the board, the battle opens behind it with the intro, and the sweep goes on.
+let p8 = await b7();
+const [p8x, p8y] = await standPair(p8.aria.id, p8.varek.id);
+await clickTile(p8x, p8y);
+const p8From = (await seenNow()).length;
+await clickInPlace(p8x, p8y + 1);
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+await page.waitForFunction(() => !document.getElementById('wipe') && !document.querySelector('#battle-hud.intro'), { timeout: 15000 }).catch(() => {});
+// A card that fills the gauge holds the battle for the choice: Space saves it.
+if (await page.evaluate(() => window.__battle.skill().held)) {
+  await page.keyboard.press('Space');
+  await frames(3);
+}
+// The blows, the clock stepped through the battle: each one's burst, and its sound.
+const struck = await page.evaluate(() => {
+  const b = window.__battle;
+  const before = { fx: b.fx(), played: window.__audio.state().played };
+  for (let t = 0; t <= b.length(); t += 0.1) b.at(t);
+  b.at(b.length() + 0.5);
+  return { before, fx: b.fx(), played: window.__audio.state().played, hud: document.getElementById('battle-hud').className };
+});
+const blows = (p) => (p.hit ?? 0) + (p.clash ?? 0) + (p.crit ?? 0);
+check('effects: the blows burst in sparks as they land, and sound', struck.fx.bursts - struck.before.fx.bursts >= 3 && blows(struck.played) > blows(struck.before.played), JSON.stringify(struck));
+check("transitions: at the result the loser's Morale loss lands with a punch", /lost-(left|right)/.test(struck.hud), struck.hud);
+await shot('27-b8-result');
+await page.keyboard.press('Space');
+await untilPlayerTurn();
+await page.waitForFunction(() => !document.getElementById('wipe'), { timeout: 10000 }).catch(() => {});
+const p8Seen = (await seenNow()).slice(p8From);
+const sweeps = p8Seen.filter((s) => s.id === 'wipe' && s.cls).map((s) => s.cls).filter((c, i, all) => c !== all[i - 1]);
+check('transitions: the wipe covers the board into the battle and back out, and is gone after',
+  sweeps.join(',') === 'cover,reveal,cover,reveal' && !(await page.evaluate(() => !!document.getElementById('wipe'))), JSON.stringify(sweeps));
+check('transitions: the battle opens with its intro (the banners slide in, the VS slams down)', p8Seen.some((s) => s.id === 'battle-hud' && /\bintro\b/.test(s.cls)), JSON.stringify(p8Seen.filter((s) => s.id === 'battle-hud')));
+const banners8 = p8Seen.filter((s) => s.id === 'turn-banner').map((s) => `${s.cls}: ${s.text}`).filter((c, i, all) => c !== all[i - 1]);
+check("transitions: each turn opens with its banner, the foes' in red and the player's next",
+  banners8.some((b) => /^enemy: Foes' turn\s*Turn 1/i.test(b)) && banners8.some((b) => /^player: Your turn\s*Turn 2/i.test(b)), JSON.stringify(banners8));
+// Every transition off (?fx=none): no flight, wipe, banner or intro, and the turn plays the same.
+await page.goto(`${url}?map=meadow&fx=none`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+await page.evaluate(() => window.__map.holdFoes(true));
+await clickCard(0);
+const bareCard = { played: !!(await turnNow()).card, flights: (await handNow()).view.flights };
+p8 = await b7();
+const [n8x, n8y] = await standPair(p8.aria.id, p8.varek.id);
+await clickTile(n8x, n8y);
+await clickInPlace(n8x, n8y + 1);
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+await page.keyboard.press('Space');
+await frames(3);
+await page.keyboard.press('Space');
+await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
+await untilPlayerTurn();
+const bareSeen = await seenNow();
+const bareTurn = await turnNow();
+check('transitions: with ?fx=none there is no flight, wipe, banner or intro, and the turn plays the same',
+  bareCard.played && bareCard.flights === 0 && !bareSeen.some((s) => s.id !== 'battle-hud' || /intro|outro/.test(s.cls)) && bareTurn.side === 'player' && bareTurn.number === 2,
+  JSON.stringify({ bareCard, bareSeen, bareTurn }));
+await page.removeScriptToEvaluateOnNewDocument(watcher.identifier);
+check('polish: no console or HTTP errors', errors.length === 0, errors.join(' | '));
+
 // ---- The card showcase (?mode=card): the layered, animated card --------------------------------
 const cardErrors = errors.length;
 /** Luminance mean and spread of a screen region, from a real screenshot of it. */
