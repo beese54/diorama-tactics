@@ -311,8 +311,8 @@
     {
       "id": "B6-r1",
       "title": "B6 review round 1: the cut-in slower (4.2 s from 1.9) with the card's clip in focus: the battle dims, a taller band, the clip about 40% larger, the name easing in; K, Space or Enter skips it",
-      "status": "review",
-      "commit": "next"
+      "status": "done",
+      "commit": "363a849"
     }
   ],
   "backlog": [

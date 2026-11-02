@@ -498,8 +498,9 @@ export class ArtStage {
     const step = dt / Math.max(0.05, p.crossfade);
     this.clipMix = goal > this.clipMix ? Math.min(goal, this.clipMix + step) : Math.max(goal, this.clipMix - step);
     if (this.clipMat) this.clipMat.opacity = this.clipMix;
-    // Once it has faded out, the clip waits rewound for the next hover.
-    if (!this.hovered && this.clipMix === 0 && this.video && !this.video.paused) {
+    // Once it has faded out, the clip waits rewound for the next hover: whether it was still
+    // playing, or had already played to its end and stopped there.
+    if (!this.hovered && this.clipMix === 0 && this.video && (!this.video.paused || this.video.currentTime !== p.clipStart)) {
       this.video.pause();
       this.video.currentTime = p.clipStart;
     }

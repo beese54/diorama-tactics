@@ -463,17 +463,28 @@ check("turns: Enter passes to the foes, who play a card (one fewer in their hand
   foesTurn.turn.side === 'enemy' && foesTurn.turn.number === 1 && !!foesTurn.turn.card && foesTurn.hand.foesLeft === foesBefore - 1 && !foesTurn.hand.open &&
   foesTurn.box.cls === 'enemy' && foesTurn.box.text.includes('FOES') && foesTurn.box.text.includes(foesTurn.turn.card.name.toUpperCase()),
   JSON.stringify({ foesBefore, ...foesTurn }));
-// Their card slides in face down, on the foes' crimson stock, and turns face up.
-await page.waitForFunction(() => window.__map.hand().view.foe?.faceUp, { timeout: 2400 }).catch(() => {});
-await frames(4);
-const foeCard = (await handView()).foe;
-check("turns: the foes' card shows on their crimson stock and turns face up", foeCard?.id === foesTurn.turn.card.id && foeCard.side === 'enemy' && foeCard.faceUp, JSON.stringify(foeCard));
-await shot('12c-foes-turn');
+// The foes' turn lasts 2.6 s: what it checks is watched from inside the page as it plays, so a
+// slow machine (or a slow screenshot) can't let the turn run out before the check looks.
+await page.evaluate(() => {
+  const log = (window.__foeLog = []);
+  const watch = () => {
+    const f = window.__map.hand().view.foe;
+    if (f) log.push(f);
+    if (window.__map.turn().side === 'enemy') requestAnimationFrame(watch);
+  };
+  requestAnimationFrame(watch);
+});
+// On the foes' turn the board takes no orders: C and Enter change nothing.
 await page.keyboard.press('KeyC');
 await page.keyboard.press('Enter');
 await frames(3);
 const ignored = { turn: await turnNow(), hand: await handNow() };
 check("turns: on the foes' turn the board takes no orders", ignored.turn.side === 'enemy' && ignored.turn.number === 1 && !ignored.hand.open, JSON.stringify(ignored));
+// Their card slides in face down, on the foes' crimson stock, and turns face up.
+await page.waitForFunction(() => window.__foeLog.some((f) => f.faceUp) || window.__map.turn().side === 'player', { timeout: 10000 }).catch(() => {});
+await shot('12c-foes-turn');
+const foeCard = await page.evaluate(() => window.__foeLog.find((f) => f.faceUp) ?? window.__foeLog.at(-1) ?? null);
+check("turns: the foes' card shows on their crimson stock and turns face up", foeCard?.id === foesTurn.turn.card.id && foeCard.side === 'enemy' && foeCard.faceUp, JSON.stringify(foeCard));
 await page.waitForFunction(() => window.__map.turn().side === 'player', { timeout: 10000 });
 const foesHeld = Date.now() - passedAt;
 check("turns: the foes' turn holds about 2.6 s, then passes back", foesHeld > 2200 && foesHeld < 6000, `${foesHeld} ms`);
@@ -896,7 +907,9 @@ await shot('18-card');
 const cardRect = await page.evaluate(() => window.__card.rect());
 const centre = { x: cardRect.x + cardRect.width / 2, y: cardRect.y + cardRect.height / 2 };
 await page.mouse.move(centre.x + cardRect.width * 0.4, centre.y - cardRect.height * 0.4);
-await frames(30);
+// Waits for the tilt to ease over and the clip to start, however fast the frames come (a slow
+// machine draws few, and a fixed count of them could outlast the five-second clip).
+await page.waitForFunction(() => { const t = window.__card.tilt(); const c = window.__card.clip(); return t.x > 0.3 && t.y > 0.3 && (!c.has || (c.playing && c.mix > 0)); }, { timeout: 15000 }).catch(() => {});
 const hoverState = await page.evaluate(() => ({ hovered: window.__card.hovered(), tilt: window.__card.tilt(), clip: window.__card.clip() }));
 check('card: hovering tilts the card toward the pointer', hoverState.hovered && hoverState.tilt.x > 0.3 && hoverState.tilt.y > 0.3, JSON.stringify(hoverState));
 if (hoverState.clip.has) {
