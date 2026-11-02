@@ -313,6 +313,12 @@
       "title": "B6 review round 1: the cut-in slower (4.2 s from 1.9) with the card's clip in focus: the battle dims, a taller band, the clip about 40% larger, the name easing in; K, Space or Enter skips it",
       "status": "done",
       "commit": "363a849"
+    },
+    {
+      "id": "B7",
+      "title": "Enemy AI and win/lose: src/game/ai.ts (planTurn Easy/Hard, forecast over 8 seeds, the pool shared so foes advance together, steered by walking cost; 11 tests), src/game/end.ts (outcome, stats); the foes' turn plays the plan (card, walks, a Union attack the player defends in, skills fired on their own, All In for them too); ResultScreen (VICTORY/DEFEAT, stats, Play again/New map); Foes: Easy/Hard picker (?foes=hard); battle banners coloured by side; check.mjs: untilPlayerTurn, holdFoes, 7 B7 checks",
+      "status": "review",
+      "commit": "next"
     }
   ],
   "backlog": [

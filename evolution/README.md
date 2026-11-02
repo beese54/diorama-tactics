@@ -24,6 +24,37 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B7: the foes play, and battles end
+![A foe attack: Varek (red, left) charges, Aria (blue, right) defends with the stance keys](battles/b7-foes/foe-attack.jpg)
+
+| The foes' turn: card, march, attack | Victory | Defeat | The Foes picker |
+|---|---|---|---|
+| ![](battles/b7-foes/foes-turn.gif) | ![](battles/b7-foes/victory.jpg) | ![](battles/b7-foes/defeat.jpg) | ![](battles/b7-foes/picker.jpg) |
+
+Video: [`foes-turn.mp4`](battles/b7-foes/foes-turn.mp4): the foes play King's Wager, Varek rides up and attacks Corin, who defends aggressively and wins.
+
+**What changed**
+- **The foes play real turns** under the same rules as the player: they choose a card, move on its shared MOV pool, and make one attack, as a Union when allies stand on the attacker's shape. Their skills fire on their own when ready, and their All In fills their gauges.
+- **Two ways to play them,** picked in the menu (Foes: Easy / Hard), or with `?foes=hard`:
+  - **Easy** is bold: the foes march on the nearest ally and take whatever fight in reach hurts most.
+  - **Hard** is cautious and sharp: the foes seek strong ground, line up a Union behind their attacker, and only attack when the rules forecast at least a 60% chance of coming out ahead.
+- **Defending:** a foe attack plays in full, with the foe on the left and your unit on the right, and you set your stance with A, S or D.
+- **Battles end:** when every foe or every ally has fallen, VICTORY (gold) or DEFEAT (crimson) comes up over the board, with the turns, the battles won, the foes felled and the allies lost. **Play again** (Enter) restarts the same map; **New map** (R) moves on.
+- **Banners follow sides:** your side's banner is blue with the stance keys and the foes' red, whichever end of the field each stands at.
+
+**Feedback**
+- Foe AI: "Choose per battle"; win and lose: "Defeat every unit"; defending: "The full battle"; the end: "Result screen".
+
+**Decisions**
+- **The AI lives in the rules core** (`src/game/ai.ts`, pure and tested), and plans a turn the rules then replay. Every move it makes is one the player could make.
+- **Fights are forecast by the rules themselves:** the AI plays the Union chain over 8 fixed seeds to judge a fight. It never looks at the real battle's seed.
+- **The foes split the shared pool and advance together,** steering by the real walking cost around cliffs and water.
+
+**Learned**
+- **A shared pool spent greedily moves one unit.** At first the nearest foe spent the whole pool every turn and trickled in alone.
+- **A straight-line distance leads into dead ends.** The first version marched the foes along the board's edge into a corner a cliff cut off; walking cost fixed it.
+- **Colours tied to the screen's side broke the moment the foes attacked.** Varek showed in blue and Aria in red; colours now follow allegiance.
+
 ### B6 r1: a slower cut-in, the card in focus
 ![Before and after: the cut-in at 1.9 s, and at 4.2 s with the battle dimmed and the clip larger](battles/b6-skills/r1-slower/compare.jpg)
 

@@ -563,7 +563,7 @@ check('battle: Space skips to the result', skipped[ld].standing === 0 && skipped
 // Stance: A, S and D set the player's from the next beat. The edge shown moves with it at once, and
 // the skill gauge fills faster when aggressive and not at all when passive.
 const player = () => page.evaluate(() => {
-  const b = document.querySelector('#battle-hud .banner.left');
+  const b = document.querySelector('#battle-hud .banner.ally');
   return { edge: b.querySelector('.edge').textContent, stance: b.querySelector('.stance b.on').dataset.stance, gauge: Number(b.querySelector('.skill .value').textContent) };
 });
 // Opened still (&at=), so no beat is fought before the key.
@@ -682,17 +682,33 @@ check('attack: the battle opens over the board at full resolution, and the board
   bc.w === Math.round(bc.cssW * bc.dpr) && bc.h === Math.round(bc.cssH * bc.dpr) && bc.cssW === 1920 && bc.cssH === 1080 && drawnLater === fight.drawn,
   JSON.stringify({ ...fight, drawnLater }));
 await shot('15-attack-battle');
+// Whether coming back from the battle passed the turn to the foes is watched from inside the page:
+// holding their ground, their turn lasts only as long as their card shows.
+await page.evaluate(() => {
+  const log = (window.__turnLog = []);
+  const watch = () => {
+    const t = window.__map.turn();
+    const box = document.getElementById('turn-info')?.className;
+    if (!log.length || log.at(-1).side !== t.side) log.push({ side: t.side, number: t.number, box });
+    if (log.length < 3) requestAnimationFrame(watch);
+  };
+  requestAnimationFrame(watch);
+});
 await finishBattle();
 const afterBattle = { turn: await turnNow(), box: await turnBox() };
+const foesWent = await page.evaluate(() => window.__turnLog.some((t) => t.side === 'enemy' && t.number === 1 && t.box === 'enemy'));
 // A second attack: the same click again does nothing while the turn is the foes'.
 await clickInPlace(hero.x, hero.y);
 await frames(3);
 await clickInPlace(foe1.x, foe1.y);
 await frames(3);
 const again = await page.evaluate(() => ({ battling: window.__map.battling(), selected: window.__map.selected() }));
+// The clicks take no orders if the foes' turn is still on; if it has already passed back, the
+// player's new turn has no card yet, so no attack either way.
+const stillFoes = afterBattle.turn.side === 'enemy';
 check("attack: the battle's POW is the card's, and coming back from it ends the turn (no second attack)",
-  fight.rules.pow === attackCard.pow && afterBattle.turn.side === 'enemy' && afterBattle.box.cls === 'enemy' && !again.battling && again.selected === null,
-  JSON.stringify({ pow: fight.rules.pow, attackCard, afterBattle, again }));
+  fight.rules.pow === attackCard.pow && foesWent && !again.battling && (!stillFoes || again.selected === null),
+  JSON.stringify({ pow: fight.rules.pow, attackCard, foesWent, afterBattle, again }));
 const back = await mapUnits();
 const loser = fight.rules.winner === 'attacker' ? foe1 : hero;
 const loserNow = back.find((u) => u.id === loser.id);
@@ -980,6 +996,7 @@ await frames(3);
 await page.keyboard.press('Space');
 await page.waitForFunction(() => !!window.__map.result(), { timeout: 30000 });
 const b7Win = await page.evaluate(() => window.__map.result());
+await new Promise((r) => setTimeout(r, 800)); // the result screen fades in
 await shot('25-victory');
 check('end: the last foe falling is VICTORY, with the stats', b7Win.result === 'victory' && /Victory/i.test(b7Win.text) && /Foes felled\s*5/.test(b7Win.text) && /Allies lost\s*0/.test(b7Win.text), JSON.stringify(b7Win));
 await new Promise((r) => setTimeout(r, 400));
@@ -995,6 +1012,7 @@ await standPair(b7Aria.id, b7Varek.id, { morale: 1 });
 await page.keyboard.press('Enter');
 await untilPlayerTurn();
 const b7Loss = await page.evaluate(() => window.__map.result());
+await new Promise((r) => setTimeout(r, 800)); // the result screen fades in
 await shot('26-defeat');
 check('end: the last ally falling is DEFEAT', b7Loss?.result === 'defeat' && /Defeat/i.test(b7Loss.text), JSON.stringify(b7Loss));
 check('foes: no console errors', errors.length === 0, errors.join(' | '));

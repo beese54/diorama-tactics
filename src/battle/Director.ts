@@ -298,7 +298,7 @@ export class Director {
       const { stance } = this.sim.squad(side);
       return {
         name: this.names[side], cls: CLASSES[unit.cls].name, morale: Math.max(0, unit.morale - lost), maxMorale: unit.maxMorale,
-        standing: total - down, total, stance, edge: this.sim.edge(side), gauge,
+        standing: total - down, total, stance, edge: this.sim.edge(side), gauge, ally: unit.side === 'player',
       };
     };
     const line = result ? `${this.names[result.winner]} wins · Morale −${result.damage}` : this.matchup;

@@ -625,7 +625,11 @@ Proposed milestones (each one reviewed with screenshots before the next):
   - `src/game/skills.ts`: each card's skill; `canFire` (full gauge + ACE or All) and why not; All In on play. 11 battle effects in ClashSim; Firestorm's blast hits by chance (the volley's + 0.2), as a sure hit on every foe won every battle outright. 19 tests.
   - The battle holds at its opening while the player chooses (K fire, Space save; buttons for touch); the cut-in (card clip, gold name, flash); hit-stop and harder shake on skill blows; SKL gauge in the unit panel and a READY glow on the banner. Pike Wall reads "The foe's charge and counter miss."
   - check.mjs 141/141 (6 new); identity 70/70.
-- [ ] **B7 Enemy AI and win/lose:** a full playable skirmish.
+- [x] **B7 Enemy AI and win/lose:** a full playable skirmish (built 2026-11-03, in review). The user chose: a difficulty picker (Easy bold / Hard cautious), defeat every unit, foe attacks in full with the player defending, a result screen.
+  - `src/game/ai.ts`: planTurn under the player's rules; forecast (the Union chain over 8 seeds); Easy goes for the nearest fight, Hard seeks strong ground, lines up Unions, attacks only at 60%+. The shared pool is split so the foes advance together (one foe spent it all at first), and they steer by walking cost around obstacles (a straight count marched them into a cut-off corner). 11 tests.
+  - `src/game/end.ts`; ResultScreen; the Foes picker; foes fire ready skills on their own, and their All In fills their gauges.
+  - Battle banners follow sides (the player's blue with the stance keys, the foes' red), as the foes now attack from the left.
+  - check.mjs 148/148 (7 new; untilPlayerTurn; holdFoes keeps the attack, Union and skill sections on their subject); identity 70/70.
 - [ ] **B8 Polish:** transitions, audio, art pass.
 
 - **Art (approved 2026-10-27):** the user generates the battle art in Google Flow from prompts I write. Round 1 is one sword leader, one sword soldier and one meadow background, on flat #00FF00; I key them and build a still style frame in the engine. Round 2 tests animation on the sword class, pose images against Flow video, side by side in the engine. Then the rest: 18 designs (6 leaders per side, 6 shared soldier designs, recoloured for the enemy), portraits, backgrounds, card art. Smears between poses are drawn in code. Sources go in `art/source/`.

@@ -14,6 +14,8 @@ export interface BannerInfo {
   /** The side's effectiveness: the weapon triangle, its stance and any card bonus. */
   edge: number;
   gauge: number;
+  /** Whether it is the player's side: blue, with the stance keys. The foes' is red, wherever it stands. */
+  ally: boolean;
 }
 
 /** The skill guide's state: what the player's card can do in this battle, and what to press. */
@@ -97,9 +99,10 @@ export class BattleHud {
     const banner = (b: BannerInfo, side: string) => {
       const share = Math.max(0, b.morale / b.maxMorale) * 100;
       const pips = Array.from({ length: b.total }, (_, i) => `<i class="${i < b.standing ? 'up' : ''}"></i>`).join('');
-      // Only the player (left) picks a stance, so only its chips show their keys.
-      const chips = STANCES.map((s) => `<b class="${s.stance === b.stance ? 'on' : ''}" data-stance="${s.stance}">${side === 'left' ? `<kbd>${s.key}</kbd>` : ''}${s.label}</b>`).join('');
-      return `<div class="banner ${side}"><div class="who"><span class="name"></span><span class="cls"></span><span class="edge">EDGE ${b.edge > 0 ? '+' : b.edge < 0 ? '−' : ''}${Math.abs(b.edge)}</span></div>` +
+      // Only the player picks a stance, so only its chips show their keys: on the left when it
+      // attacks, on the right when it defends against the foes' attack (B7).
+      const chips = STANCES.map((s) => `<b class="${s.stance === b.stance ? 'on' : ''}" data-stance="${s.stance}">${b.ally ? `<kbd>${s.key}</kbd>` : ''}${s.label}</b>`).join('');
+      return `<div class="banner ${side} ${b.ally ? 'ally' : 'foe'}"><div class="who"><span class="name"></span><span class="cls"></span><span class="edge">EDGE ${b.edge > 0 ? '+' : b.edge < 0 ? '−' : ''}${Math.abs(b.edge)}</span></div>` +
         `<div class="morale"><span class="label">MORALE</span><span class="bar"><span style="width:${share.toFixed(1)}%"></span></span><span class="value">${b.morale}</span></div>` +
         `<div class="troops">${pips}</div>` +
         `<div class="stance"><span class="label">STANCE</span>${chips}</div>` +

@@ -200,6 +200,14 @@
       "image": "b6-skills/r1-slower/cut-in.jpg",
       "title": "B6 r1 · A slower cut-in, the card in focus",
       "note": "The skill cut-in lasts 4.2 s instead of 1.9: the battle dims, the band is taller and the card’s clip plays about 40% larger, the skill’s name easing in beside it, before the flash. K, Space or Enter skips it."
+    },
+    {
+      "id": "b7-foes",
+      "date": "2026-11-03",
+      "commit": "next",
+      "image": "b7-foes/foe-attack.jpg",
+      "title": "B7 · The foes play, and battles end",
+      "note": "The foes take real turns under the player’s own rules: a card, moves on the shared pool (advancing together along real paths), Union attacks the player defends in, and their skills fired on their own. Easy is bold, Hard cautious and sharp (a menu picker). The battle ends in VICTORY or DEFEAT with the stats, Play again or New map. Battle banners now follow sides: the player’s blue, the foes’ red."
     }
   ]
 }

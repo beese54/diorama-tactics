@@ -99,3 +99,7 @@
 - **What happened:** Four checks failed twice in a row with the same code. The machine was running 2-4x slower than earlier the same day (2.3 fps with the hand open, from 9.5). One check waited a fixed 30 frames and expected a 5-second clip still to be playing. Two others had to finish their steps, a screenshot included, inside the foes' 2.6-second turn. The slow run also showed up a real bug: a clip that had played to its end was never rewound.
 - **Rule:** A check waits for the state it tests (`waitForFunction` on the condition, with a generous timeout), never for a fixed count of frames. A check that races a game timer watches from inside the page as the timer runs. When checks fail with no change in the code they cover, measure the machine's speed against an earlier figure before suspecting the code.
 
+## 2026-11-03: an AI that obeys the rules can still play badly (self-caught)
+- **What happened:** The first foe AI made only legal moves, but the nearest foe spent the whole shared MOV pool every turn, and the foes steered by straight-line distance into a corner a cliff cut off. The unit tests passed; watching a few turns in the real game showed both.
+- **Rule:** An AI isn't done when its moves are legal. Watch several of its turns on a real map before trusting it, and turn what looks wrong into a test, as "advances together" now is.
+

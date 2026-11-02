@@ -262,6 +262,14 @@
         text-align: right;
         background: linear-gradient(200deg, rgba(168, 44, 44, 0.92), rgba(78, 16, 20, 0.92));
       }
+      /* The colour follows the side, not the place: the player's is blue and the foes' red, whichever
+         end of the field each stands at (the foes attack from the left, B7). */
+      #battle-hud .banner.ally {
+        background: linear-gradient(160deg, rgba(40, 72, 160, 0.92), rgba(18, 30, 78, 0.92));
+      }
+      #battle-hud .banner.foe {
+        background: linear-gradient(200deg, rgba(168, 44, 44, 0.92), rgba(78, 16, 20, 0.92));
+      }
       #battle-hud .who {
         display: flex;
         align-items: baseline;

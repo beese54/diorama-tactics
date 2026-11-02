@@ -327,7 +327,9 @@ export class Skirmish {
     const plan = planTurn(this.map, this.units, this.hands.enemy, 'enemy', this.difficulty);
     playCard(this.turn, this.hands.enemy, plan.card.id);
     this.cards.showFoeCard(plan.card);
-    this.host.say(`The foes play ${plan.card.name}.`);
+    // The same rules for both sides: the foes' All In fills their gauges as it is played.
+    const filled = onPlay(plan.card, 'enemy', this.units);
+    this.host.say(`The foes play ${plan.card.name}.${filled.length ? ` ${plan.card.skill.name}: their skill gauges are full.` : ''}`);
     await pause(FOES_CARD_MS);
     if (this.idle) {
       this.cards.hideFoeCard();
