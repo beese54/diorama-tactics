@@ -5,13 +5,20 @@ import type { Tile } from '../map/types';
 /** Grid steps across a tile, enough to follow its rounded lips. */
 const SEGMENTS = 4;
 
-/** The kinds of mark: where the selected unit can go (blue, or red for an enemy's reach), the path it would take, and the foes it can attack. */
-export type MarkKind = 'reach' | 'foe' | 'path' | 'target';
+/**
+ * The kinds of mark: where the selected unit can go (blue, or red for an enemy's reach), the path
+ * it would take, the foes it can attack, and its Union: violet under the allies on its shape, and a
+ * faint violet edge on the shape's empty places, where an ally would join.
+ */
+export type MarkKind = 'reach' | 'foe' | 'path' | 'target' | 'union' | 'shape';
 const STYLE: Record<MarkKind, { fill: string; edge: string; opacity: number }> = {
   reach: { fill: 'rgba(90, 160, 255, 0.42)', edge: '#cfe6ff', opacity: 0.85 },
   foe: { fill: 'rgba(255, 96, 80, 0.4)', edge: '#ffd0c8', opacity: 0.85 },
   path: { fill: 'rgba(255, 214, 96, 0.62)', edge: '#fff4c4', opacity: 1 },
   target: { fill: 'rgba(235, 48, 36, 0.66)', edge: '#fff0d8', opacity: 1 },
+  // Violet, a hue no other mark uses: the path is yellow, the reach blue and the foes red.
+  union: { fill: 'rgba(176, 108, 255, 0.6)', edge: '#f0e2ff', opacity: 1 },
+  shape: { fill: 'rgba(176, 108, 255, 0.12)', edge: '#d6b4ff', opacity: 0.85 },
 };
 
 function markTexture(kind: MarkKind): THREE.CanvasTexture {
@@ -52,7 +59,9 @@ export class RangeLayer {
       this.group.add(mesh);
       return mesh;
     };
-    this.meshes = { reach: make('reach', 0), foe: make('foe', 0), path: make('path', 1), target: make('target', 1) };
+    this.meshes = {
+      reach: make('reach', 0), foe: make('foe', 0), path: make('path', 1), target: make('target', 1), union: make('union', 1), shape: make('shape', 0),
+    };
   }
 
   /** Marks `tiles` as `kind`, replacing whatever that kind marked before. */
@@ -92,6 +101,6 @@ export class RangeLayer {
 
   /** A slow pulse, so the marks read as a choice to make rather than part of the ground. */
   update(elapsed: number): void {
-    for (const kind of ['reach', 'foe', 'target'] as const) this.meshes[kind].material.opacity = STYLE[kind].opacity * (0.8 + 0.2 * Math.sin(elapsed * 3));
+    for (const kind of ['reach', 'foe', 'target', 'union'] as const) this.meshes[kind].material.opacity = STYLE[kind].opacity * (0.8 + 0.2 * Math.sin(elapsed * 3));
   }
 }

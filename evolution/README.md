@@ -24,6 +24,38 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B5: Unions
+![Aria selected: her Union of three marked violet, Gorran the target in red](battles/b5-unions/highlight.jpg)
+
+| The second battle of the chain | Battle 1: Aria | Battle 3: Corin | Back on the board |
+|---|---|---|---|
+| ![](battles/b5-unions/union.gif) | ![](battles/b5-unions/battle-1.jpg) | ![](battles/b5-unions/battle-3.jpg) | ![](battles/b5-unions/after.jpg) |
+
+Video: [`union-attack.mp4`](battles/b5-unions/union-attack.mp4), the whole three-battle attack.
+
+**What changed**
+- **A unit attacks with its Union.** A woman leads a + of the four tiles beside her, a man an × of his four corners: the allies standing there join her attack.
+- **On the board:**
+  - selecting a unit marks the allies on its shape in violet, and edges the shape's empty places, where an ally would join;
+  - the unit panel reads "UNION ×3".
+- **The attack is a chain of battles:**
+  - the leader fights the foe first, then each member fights the same foe in turn, every battle in full;
+  - each battle's HUD reads "UNION 2 / 3" under the VS;
+  - each loser loses its Morale before the next battle, so the foe carries its losses down the chain;
+  - the chain stops as soon as the foe falls.
+- **In the video,** Aria wins her battle (Gorran −45), then Bram and Corin each lose theirs to Gorran's axe (−35 and −37 to them). A notice sums up the whole attack.
+
+**Feedback**
+- Asked whom each member fights: "Same target, chained". Asked about pacing: "All in full".
+
+**Decisions**
+- **The chain is one function in the rules core** (`fightUnion`), with the battle passed in. The game plays each battle on screen, and the tests use the rules alone. So the same loop is checked both ways: 6 Vitest cases, and the browser checks compare every battle with the rules.
+- **Violet for the Union.** It was gold at first, but the path preview is yellow and the two read alike. No other mark is violet.
+- **A lone unit is a Union of one:** an attack without allies on the shape is the same single battle as before.
+
+**Learned**
+- **Every attack is a Union attack now,** so the older single-battle checks had to make their attacker stand alone. Before, an ally that happened to stand on the hero's shape opened a second battle the check didn't expect.
+
 ### B4 r5: the hand of animated cards
 ![The hand over the board: the card under the pointer risen, playing its clip](battles/b4-cards/r5-hand/focus.jpg)
 

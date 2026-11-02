@@ -572,6 +572,33 @@ const besides = async (heroes, foe) => {
   }
   throw new Error('no player unit has a free tile beside it');
 };
+/** A woman's Union is a + of her edge neighbours, a man's an x of his corners (src/game/union.ts). */
+const UNION_SHAPE = { female: [[0, -1], [1, 0], [0, 1], [-1, 0]], male: [[1, -1], [1, 1], [-1, 1], [-1, -1]] };
+/**
+ * Makes `hero` stand alone, so its attack is a single battle (Unions are checked on their own):
+ * any ally on its Union shape moves to a free tile at least three tiles away.
+ */
+const isolate = async (hero) => {
+  for (;;) {
+    const now = await mapUnits();
+    const me = now.find((u) => u.id === hero.id);
+    const near = now.find((u) => u.side === me.side && u.id !== me.id && u.morale > 0 && UNION_SHAPE[me.gender].some(([dx, dy]) => u.x === me.x + dx && u.y === me.y + dy));
+    if (!near) return;
+    const taken = new Set(now.filter((u) => u.morale > 0).map((u) => `${u.x},${u.y}`));
+    let moved = false;
+    for (let r = 3; r < 12 && !moved; r++) {
+      for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r], [r, r], [-r, -r], [r, -r], [-r, r]]) {
+        const [x, y] = [me.x + dx, me.y + dy];
+        if (!taken.has(`${x},${y}`) && (await page.evaluate((x, y) => !!window.__map.tile(x, y), x, y))) {
+          await page.evaluate((id, x, y) => window.__map.setUnit(id, { x, y }), near.id, x, y);
+          moved = true;
+          break;
+        }
+      }
+    }
+    if (!moved) throw new Error(`no free tile to move ${near.id} off ${hero.id}'s Union`);
+  }
+};
 /** Waits until the camera stops moving (a selection eases it over), and returns its matrix. */
 const stillCamera = async () => {
   let last = null;
@@ -601,6 +628,7 @@ const foes = army.filter((u) => u.side === 'enemy');
 await clickCard(0);
 const attackCard = (await turnNow()).card;
 const [hero, foe1] = await besides(allies, foes[0]);
+await isolate(hero);
 await clickTile(hero.x, hero.y);
 check('attack: a foe on the next tile is marked as a target', (await page.evaluate(() => window.__map.marked().target)) === 1);
 await page.evaluate((x, y) => window.__map.setPose(45, 55, 1.6, x, y), foe1.x, foe1.y);
@@ -643,6 +671,7 @@ check('attack: after the foes, turn 2 opens on the hand with the card used', tur
 // A battle between two units at 5 Morale, on the next turn: the loser drops to 0 and leaves the board.
 await clickCard(1);
 const [hero2, foe3] = await besides(allies.filter((u) => u.id !== hero.id), foes[1]);
+await isolate(hero2);
 for (const u of [hero2, foe3]) await page.evaluate((id) => window.__map.setUnit(id, { morale: 5 }), u.id);
 await clickTile(hero2.x, hero2.y);
 await clickInPlace(foe3.x, foe3.y);
@@ -654,6 +683,83 @@ await clickTile(gone.x, gone.y);
 const left = await page.evaluate((id) => ({ morale: window.__map.units().find((u) => u.id === id).morale, selected: window.__map.selected() }), gone.id);
 check('attack: a unit at 0 Morale leaves the board', left.morale === 0 && left.selected === null, JSON.stringify({ rules2, left }));
 check('attack: no console errors', errors.length === 0, errors.join(' | '));
+
+// ---- Unions (B5): the highlight is the rules' Union, and an attack plays one battle per member -
+// Aria (a woman: a + Union) stands with an ally above her and one to her right, and a foe below.
+// Selected, her two allies are marked gold and the shape's two other places edged; attacking, she
+// and then each ally fight the foe in turn, the foe carrying its Morale losses down the chain.
+errors.length = 0;
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+const uStart = await mapUnits();
+const aria = uStart.find((u) => u.side === 'player' && u.gender === 'female' && u.cls === 'sword');
+const [allyTop, allyRight] = uStart.filter((u) => u.side === 'player' && u !== aria).slice(0, 2);
+const uFoe = uStart.find((u) => u.side === 'enemy');
+/** A centre near Aria whose + places are all on the board and clear of every other unit. */
+const unionSpot = async () => {
+  const mine = new Set([aria.id, allyTop.id, allyRight.id, uFoe.id]);
+  const taken = new Set((await mapUnits()).filter((u) => u.morale > 0 && !mine.has(u.id)).map((u) => `${u.x},${u.y}`));
+  for (let r = 0; r < 8; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const [x, y] = [aria.x + dx, aria.y + dy];
+        const spots = [[x, y], [x, y - 1], [x + 1, y], [x, y + 1], [x - 1, y]];
+        if (spots.some(([a, b]) => taken.has(`${a},${b}`))) continue;
+        if ((await page.evaluate((s) => s.every(([a, b]) => !!window.__map.tile(a, b)), spots))) return [x, y];
+      }
+    }
+  }
+  throw new Error('no room for a Union near Aria');
+};
+/** Stands the Union and its foe: Aria at the centre, allies above and to the right, the foe below. */
+const standUnion = async (foeMorale) => {
+  const [x, y] = await unionSpot();
+  for (const [u, ux, uy, morale] of [[aria, x, y, aria.morale], [allyTop, x, y - 1, allyTop.morale], [allyRight, x + 1, y, allyRight.morale], [uFoe, x, y + 1, foeMorale]]) {
+    await page.evaluate((id, c) => window.__map.setUnit(id, c), u.id, { x: ux, y: uy, morale });
+  }
+  return [x, y];
+};
+/** Plays every battle of the attack now opening, skipping each to its result; returns what each showed. */
+const playChain = async () => {
+  const seen = [];
+  for (;;) {
+    const i = seen.length;
+    const next = await page.waitForFunction((i) => (window.__map.battling() && window.__battle?.chain !== undefined && (window.__battle.chain?.index ?? 0) === i ? 'battle' : !window.__map.battling() && i > 0 ? 'done' : null), { timeout: 30000 }, i);
+    if ((await next.jsonValue()) === 'done') return seen;
+    seen.push(await page.evaluate(() => ({ chain: window.__battle.chain, attacker: window.__battle.attacker, defenderMorale: window.__battle.defenderMorale, rules: window.__battle.rules() })));
+    await page.keyboard.press('Space');
+    await frames(3);
+    await page.keyboard.press('Space');
+    await frames(3);
+  }
+};
+await clickCard(0);
+const [ux, uy] = await standUnion(9000);
+await clickTile(ux, uy);
+const unionMarks = { marked: await page.evaluate(() => window.__map.marked()), ids: await page.evaluate(() => window.__map.union()) };
+check('union: selected, the leader\'s allies on its shape are marked, and its empty places edged: exactly the rules\' Union',
+  unionMarks.marked.union === 2 && unionMarks.marked.shape === 2 && JSON.stringify(unionMarks.ids) === JSON.stringify([aria.id, allyTop.id, allyRight.id]), JSON.stringify(unionMarks));
+await shot('21-union-highlight');
+await clickInPlace(ux, uy + 1);
+const chain = await playChain();
+const foeAfter = (await mapUnits()).find((u) => u.id === uFoe.id).morale;
+const carried = chain.every((b, i) => i === 0 || b.defenderMorale === chain[i - 1].defenderMorale - (chain[i - 1].rules.winner === 'attacker' ? chain[i - 1].rules.damage : 0));
+const last = chain[chain.length - 1];
+check('union: the attack plays one battle per member, in the Union\'s order, labelled UNION 1 / 3 to 3 / 3',
+  chain.length === 3 && chain.map((b) => b.attacker).join() === unionMarks.ids.join() && chain.map((b) => `${b.chain.index + 1}/${b.chain.count}`).join() === '1/3,2/3,3/3', JSON.stringify(chain.map((b) => [b.attacker, b.chain])));
+check('union: the foe carries its Morale losses from one battle to the next, and the board shows the end of the chain',
+  carried && foeAfter === last.defenderMorale - (last.rules.winner === 'attacker' ? last.rules.damage : 0), JSON.stringify({ morale: chain.map((b) => [b.defenderMorale, b.rules.winner, b.rules.damage]), foeAfter }));
+// Next turn, against a foe on its last Morale: the chain stops at the first battle that fells it.
+await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+await clickCard(1);
+const [vx, vy] = await standUnion(1);
+await clickTile(vx, vy);
+await clickInPlace(vx, vy + 1);
+const short = await playChain();
+const firstWin = short.findIndex((b) => b.rules.winner === 'attacker');
+check('union: the chain stops as soon as the foe falls',
+  firstWin >= 0 ? short.length === firstWin + 1 && (await mapUnits()).find((u) => u.id === uFoe.id).morale === 0 : short.length === 3, JSON.stringify(short.map((b) => [b.attacker, b.rules.winner])));
+check('union: no console errors', errors.length === 0, errors.join(' | '));
 
 // ---- The card showcase (?mode=card): the layered, animated card --------------------------------
 const cardErrors = errors.length;

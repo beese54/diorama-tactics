@@ -399,6 +399,23 @@
       }
       #battle-hud .loss.left { left: 22%; }
       #battle-hud .loss.right { right: 22%; }
+      /* Which battle of a Union attack this is, under the VS. */
+      #battle-hud .union {
+        position: absolute;
+        top: calc(var(--u) * 7.4);
+        left: 50%;
+        transform: translateX(-50%);
+        padding: calc(var(--u) * 0.3) calc(var(--u) * 1.2);
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: calc(var(--u) * 1.5);
+        letter-spacing: 0.14em;
+        color: #2a1d08;
+        background: linear-gradient(#ffe8a0, #e8b84c);
+        border: calc(var(--u) * 0.12) solid #fff4d6;
+        border-radius: calc(var(--u) * 1);
+        box-shadow: 0 calc(var(--u) * 0.2) calc(var(--u) * 0.8) rgba(0, 0, 0, 0.45);
+      }
       #battle-hud [hidden] { display: none; }
       #fallback {
         color: #c8c2b0;

@@ -296,10 +296,11 @@ async function main(): Promise<void> {
       surfacePoint: (tile, u, v) => mesh.surfacePoint(tile, u, v),
       focus: (point) => rig.focusOn(point),
       say: (text) => hud.say(text),
-      battle: (setup) => {
+      battle: (setup, chain) => {
         battling = true;
         return new Promise((resolve) => {
           void BattleScene.open(setup, {
+            chain,
             onLeave: (outcome) => {
               battling = false;
               // The board's clock stood still with it: the time the battle took doesn't count.
@@ -523,11 +524,13 @@ async function main(): Promise<void> {
         /** CPU frame times since the last call, in ms. */
         takeFrameCpu: () => frameCpu.splice(0),
         /** The skirmish, for checks: units, the turn, the selection and what is marked. */
-        units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, x: u.x, y: u.y, morale: u.morale })) ?? null,
+        units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, gender: u.gender, x: u.x, y: u.y, morale: u.morale })) ?? null,
         /** The player's hand: its cards, which are used, and whether it is open on screen. */
         hand: () => skirmish?.handInfo(),
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },
         selected: () => skirmish?.selected?.id ?? null,
+        /** The rules' Union for the selected unit, leader first, as ids. */
+        union: () => skirmish?.unionIds() ?? [],
         marked: () => skirmish?.marked() ?? null,
         busy: () => skirmish?.busy ?? false,
         reachable: () => skirmish?.reachable() ?? [],

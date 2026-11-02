@@ -4,7 +4,8 @@ import { deploy } from '../game/deploy';
 import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
 import { deal, refill, unused, type Hand } from '../game/cards';
 import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from '../game/turn';
-import { applyDamage, type Side, type Unit } from '../game/units';
+import { fightUnion, unionOf, unionShape } from '../game/union';
+import type { Side, Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
 import type { MapFile, Tile } from '../map/types';
 import { CardHand } from '../ui/CardHand';
@@ -23,8 +24,11 @@ export interface SkirmishHost {
   focus: (point: THREE.Vector3) => void;
   /** A short notice in the menu box. */
   say: (text: string) => void;
-  /** Plays a battle over the board; resolves with how it came out once the player goes on from it. */
-  battle: (setup: ClashSetup) => Promise<{ winner: ClashSide; damage: number }>;
+  /**
+   * Plays a battle over the board; resolves with how it came out once the player goes on from it.
+   * `chain`: which battle of a Union attack this is, counting from 0, and how many the Union has.
+   */
+  battle: (setup: ClashSetup, chain?: { index: number; count: number }) => Promise<{ winner: ClashSide; damage: number }>;
 }
 
 /**
@@ -151,6 +155,8 @@ export class Skirmish {
     this.marks.mark('foe', []);
     this.marks.mark('path', []);
     this.marks.mark('target', []);
+    this.marks.mark('union', []);
+    this.marks.mark('shape', []);
     if (!unit) return;
     this.host.focus(this.host.surfacePoint(this.map.tiles[unit.y * this.map.width + unit.x], 0.5, 0.5));
     const tiles = (range: Map<number, Step>) => stopsIn(range).map((i) => this.map.tiles[i]);
@@ -162,6 +168,15 @@ export class Skirmish {
       this.marks.mark('foe', tiles(moveRange(this.map, this.units, unit, this.reach(unit.side))));
     }
     this.marks.mark('target', this.targets(unit).map((foe) => this.tileOf(foe)));
+    // The Union it would attack with: violet under the allies on its shape, the empty places edged.
+    if (unit.side === this.turn.side && !this.turn.attacked) {
+      const members = unionOf(unit, this.units).slice(1);
+      this.marks.mark('union', members.map((m) => this.tileOf(m)));
+      const empty = unionShape(unit)
+        .map(([dx, dy]) => [unit.x + dx, unit.y + dy])
+        .filter(([x, y]) => x >= 0 && y >= 0 && x < this.map.width && y < this.map.height && !members.some((m) => m.x === x && m.y === y));
+      this.marks.mark('shape', empty.map(([x, y]) => this.map.tiles[y * this.map.width + x]));
+    }
   }
 
   /** A click (or Z) on `tile`. */
@@ -191,25 +206,40 @@ export class Skirmish {
   }
 
   /**
-   * `unit` attacks `foe`: the battle plays over the board (on the tiles' own defence), and once
-   * the player comes back the loser loses its Morale. The unit's turn is spent either way.
+   * `unit` attacks `foe` with its Union (B5): it fights first, then each ally on its shape fights
+   * the same foe in turn, one battle each over the board (on the tiles' own defence), until the
+   * foe falls or the Union runs out. Each loser loses its Morale before the next battle, so the
+   * foe carries its losses down the chain. Alone, it is one battle, as before. Then the turn ends.
    */
   private async attack(unit: Unit, foe: Unit): Promise<void> {
     if (!attackWith(this.turn, unit, foe)) return;
+    const members = unionOf(unit, this.units);
     this.select(null);
     this.fighting = true;
-    const setup: ClashSetup = {
-      attacker: unit, defender: foe, pow: this.turn.card!.pow, seed: this.map.seed * 1009 + this.turn.number * 31 + ++this.fights,
-      attackerDefense: tileStats(this.tileOf(unit)).defense, defenderDefense: tileStats(this.tileOf(foe)).defense,
-    };
-    const { winner, damage } = await this.host.battle(setup);
-    const [won, lost] = winner === 'attacker' ? [unit, foe] : [foe, unit];
-    applyDamage(lost, damage);
-    this.layer.setRested(unit, true);
+    if (members.length > 1) this.host.say(`${unit.name}'s Union attacks: ${members.length} battles.`);
+    const before = foe.morale;
+    const battles = await fightUnion(members, foe, (attacker, index) => this.host.battle(this.setupFor(attacker, foe), { index, count: members.length }));
+    for (const b of battles) this.layer.setRested(b.attacker, true);
     this.fighting = false;
-    this.host.say(`${won.name} wins. ${lost.name} loses ${damage} Morale${lost.morale > 0 ? '.' : ' and leaves the field.'}`);
-    // One battle a turn: it ends the turn.
+    const gone = foe.morale > 0 ? '.' : ' and leaves the field.';
+    if (battles.length === 1) {
+      const [{ attacker, winner, damage }] = battles;
+      const [won, lost] = winner === 'attacker' ? [attacker, foe] : [foe, attacker];
+      this.host.say(`${won.name} wins. ${lost.name} loses ${damage} Morale${lost.morale > 0 ? '.' : ' and leaves the field.'}`);
+    } else {
+      const fallen = battles.filter((b) => b.attackerMorale <= 0).map((b) => b.attacker.name);
+      this.host.say(`${foe.name} loses ${before - foe.morale} Morale over ${battles.length} battles${gone}${fallen.length ? ` ${fallen.join(' and ')} fell.` : ''}`);
+    }
+    // One attack a turn: it ends the turn.
     this.passTurn();
+  }
+
+  /** One battle of an attack: `attacker` against `foe`, on this turn's card, with its own seed. */
+  private setupFor(attacker: Unit, foe: Unit): ClashSetup {
+    return {
+      attacker, defender: foe, pow: this.turn.card!.pow, seed: this.map.seed * 1009 + this.turn.number * 31 + ++this.fights,
+      attackerDefense: tileStats(this.tileOf(attacker)).defense, defenderDefense: tileStats(this.tileOf(foe)).defense,
+    };
   }
 
   /** X: puts the hand away, or lets go of the selected unit, or takes the card back into the hand before anyone has moved. */
@@ -262,7 +292,7 @@ export class Skirmish {
     this.layer.update(elapsed, dt, camera);
     this.marks.update(elapsed);
     const shown = this.unitAt(this.hovered) ?? this.selected;
-    this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id));
+    this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id), shown ? unionOf(shown, this.units).length : 1);
     this.box.show(this.turn);
     // While the hand is open it has the bottom of the screen: the tile and unit panels step aside.
     this.ui.classList.toggle('choosing', this.cards.open);
@@ -288,10 +318,11 @@ export class Skirmish {
   }
 
   /** Counts for checks: tiles marked, and the rules' own count for the selected unit. */
-  marked(): { reach: number; foe: number; path: number; target: number; rules: number } {
+  marked(): { reach: number; foe: number; path: number; target: number; union: number; shape: number; rules: number } {
     const s = this.selected;
     return {
       reach: this.marks.count('reach'), foe: this.marks.count('foe'), path: this.marks.count('path'), target: this.marks.count('target'),
+      union: this.marks.count('union'), shape: this.marks.count('shape'),
       rules: s && canMove(this.turn, s) ? stopsIn(moveRange(this.map, this.units, s, this.turn.pool)).length : 0,
     };
   }
@@ -303,5 +334,10 @@ export class Skirmish {
     document.getElementById('turn-info')?.remove();
     this.cards.dispose();
     this.ui.classList.remove('choosing');
+  }
+
+  /** The rules' Union for the selected unit, leader first, as ids (for checks). */
+  unionIds(): string[] {
+    return this.selected ? unionOf(this.selected, this.units).map((u) => u.id) : [];
   }
 }

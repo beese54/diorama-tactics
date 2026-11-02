@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { canAttack, unionOf } from './union';
+import { resolveClash, type ClashSetup } from './clash';
+import { canAttack, fightUnion, unionOf } from './union';
 import { applyDamage, CLASSES, isDefeated, makeUnit, triangleEdge, type Gender, type Side } from './units';
 
 const unit = (x: number, y: number, side: Side = 'player', gender: Gender = 'female') =>
@@ -71,5 +72,73 @@ describe('units', () => {
     applyDamage(u, 999);
     expect(u.morale).toBe(0);
     expect(isDefeated(u)).toBe(true);
+  });
+});
+
+describe('fightUnion', () => {
+  /** A woman at (1, 1) with allies above and to her right (a Union of 3), and a foe below her. */
+  const scene = () => {
+    const leader = unit(1, 1);
+    const all = [leader, unit(1, 0, 'player', 'male'), unit(2, 1, 'player', 'male'), unit(1, 2, 'enemy', 'male')];
+    return { leader, all, members: unionOf(leader, all), foe: all[3] };
+  };
+  /** The rules' own battle, seeded per member, as the game sets it up. */
+  const rules = (foe: ReturnType<typeof unit>) => (attacker: ReturnType<typeof unit>, i: number) => {
+    const setup: ClashSetup = { attacker, defender: foe, pow: 60, seed: 1000 + i * 7, attackerDefense: 0, defenderDefense: 0 };
+    return resolveClash(setup);
+  };
+
+  it("plays one battle per member, in the Union's order", async () => {
+    const { members, foe } = scene();
+    foe.morale = foe.maxMorale = 10_000;
+    const fought = await fightUnion(members, foe, rules(foe));
+    expect(fought.map((b) => b.attacker.id)).toEqual(members.map((m) => m.id));
+  });
+
+  it("carries the foe's losses from one battle to the next", async () => {
+    const { members, foe } = scene();
+    foe.morale = foe.maxMorale = 10_000;
+    const startedOn: number[] = [];
+    const fought = await fightUnion(members, foe, (a, i) => {
+      startedOn.push(foe.morale);
+      return rules(foe)(a, i);
+    });
+    // Each battle starts on what the one before left the foe (or the member) with.
+    for (let i = 1; i < fought.length; i++) expect(startedOn[i]).toBe(fought[i - 1].foeMorale);
+    const lost = fought.filter((b) => b.winner === 'attacker').reduce((s, b) => s + b.damage, 0);
+    expect(foe.morale).toBe(10_000 - lost);
+  });
+
+  it("stops once the foe falls: the later members don't fight", async () => {
+    const { members, foe } = scene();
+    const fought = await fightUnion(members, foe, () => ({ winner: 'attacker', damage: 999 }));
+    expect(fought.length).toBe(1);
+    expect(foe.morale).toBe(0);
+  });
+
+  it('lets a lone unit fight one battle, as before Unions', async () => {
+    const lone = unit(5, 5);
+    const foe = unit(5, 6, 'enemy');
+    const fought = await fightUnion(unionOf(lone, [lone, foe]), foe, rules(foe));
+    expect(fought.length).toBe(1);
+  });
+
+  it('passes over a member who has fallen by its turn, and goes on', async () => {
+    const { members, foe } = scene();
+    foe.morale = foe.maxMorale = 10_000;
+    // The first battle is lost heavily by the leader; the second member has already fallen.
+    members[1].morale = 0;
+    const fought = await fightUnion(members, foe, (a) => (a === members[0] ? { winner: 'defender', damage: 999 } : { winner: 'attacker', damage: 5 }));
+    expect(fought.map((b) => b.attacker.id)).toEqual([members[0].id, members[2].id]);
+    expect(members[0].morale).toBe(0);
+  });
+
+  it('replays exactly with the same seeds', async () => {
+    const once = async () => {
+      const { members, foe } = scene();
+      foe.morale = foe.maxMorale = 10_000;
+      return (await fightUnion(members, foe, rules(foe))).map((b) => [b.winner, b.damage, b.foeMorale]);
+    };
+    expect(await once()).toEqual(await once());
   });
 });

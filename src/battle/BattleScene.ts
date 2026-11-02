@@ -66,10 +66,19 @@ export class BattleScene {
     if (import.meta.env.DEV) this.hook();
   }
 
-  /** Loads both squads and the backdrop for `setup` and opens the battle on the page. */
-  static async open(setup: ClashSetup, options: { at?: number | null; onLeave?: (outcome: BattleOutcome) => void } = {}): Promise<BattleScene> {
+  /**
+   * Loads both squads and the backdrop for `setup` and opens the battle on the page. `chain`:
+   * which battle of a Union attack this is (from 0) and how many the Union has; shown as
+   * "UNION 2 / 3" under the VS when there is more than one.
+   */
+  static async open(
+    setup: ClashSetup,
+    options: { at?: number | null; onLeave?: (outcome: BattleOutcome) => void; chain?: { index: number; count: number } } = {},
+  ): Promise<BattleScene> {
     const view = new BattleView(document.body);
     const hud = new BattleHud(document.body);
+    const chain = options.chain && options.chain.count > 1 ? options.chain : null;
+    hud.chain(chain ? `UNION ${chain.index + 1} / ${chain.count}` : null);
     const sim = new ClashSim(setup);
     const sizes = { attacker: sim.attacker.fighters.length, defender: sim.defender.fighters.length };
     const [a, d] = [setup.attacker, setup.defender];
@@ -83,7 +92,9 @@ export class BattleScene {
     const names = { attacker: a.name, defender: d.name };
     const director = new Director(view, { attacker: left, defender: right }, sim, script, hud, names, matchup(setup));
     const player: ClashSide = a.side === 'player' ? 'attacker' : 'defender';
-    return new BattleScene(view, hud, director, sim, setup, player, options.at ?? null, options.onLeave);
+    const scene = new BattleScene(view, hud, director, sim, setup, player, options.at ?? null, options.onLeave);
+    if (import.meta.env.DEV) Object.assign((window as { __battle?: object }).__battle!, { chain, attacker: setup.attacker.id, defenderMorale: setup.defender.morale });
+    return scene;
   }
 
   private now(): number {

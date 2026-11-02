@@ -90,3 +90,7 @@
 ## 2026-11-02: size GPU assets to how big they're drawn, before multiplying views (self-caught)
 - **What happened:** The hand reused the showcase's CardView: 2000x2800 frame canvases and 1536 px art layers per card. Eight cards came to about a gigabyte of textures, and painting them stalled the page for seconds. The steady frame rate hid it; only the first seconds showed it.
 - **Rule:** When one view becomes many, work out its memory (pixels x 4 bytes x 1.33 for mipmaps, for each texture) and paint and load at the size it's drawn. Measure the first seconds after it opens, not only the steady frame rate.
+
+## 2026-11-02: test code through a shell heredoc, again (self-caught)
+- **What happened:** I appended TypeScript tests through a bash heredoc into a Python string. The escaped apostrophes in three test names (`it('... Union\'s order')`) lost their backslashes, and the test file failed to parse.
+- **Rule:** The standing rule covers quotes as well as backticks and `${`: any code with quotes goes in with Write or Edit, never through a shell heredoc. Name tests in double quotes when they contain an apostrophe.

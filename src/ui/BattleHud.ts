@@ -32,6 +32,8 @@ export class BattleHud {
   private readonly el: HTMLElement;
   private readonly word = document.createElement('div');
   private readonly loss = document.createElement('div');
+  /** Which battle of a Union attack this is, under the VS. */
+  private readonly union = document.createElement('div');
   private shown = '';
 
   constructor(parent: HTMLElement) {
@@ -64,7 +66,15 @@ export class BattleHud {
     }
     this.el.querySelector('.effect')!.textContent = effect;
     this.word.className = 'callout';
-    this.el.append(this.word, this.loss);
+    this.union.className = 'union';
+    this.el.append(this.word, this.loss, this.union);
+  }
+
+  /** "UNION 2 / 3" under the VS while a Union attack's battles play, or none. */
+  chain(text: string | null): void {
+    this.union.hidden = !text;
+    this.union.textContent = text ?? '';
+    if (!this.union.isConnected) this.el.append(this.union);
   }
 
   /** A word across the middle of the field, or none. */
