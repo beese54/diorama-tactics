@@ -5,7 +5,7 @@
  */
 export type SfxName =
   | 'clash' | 'hit' | 'crit' | 'arrow' | 'spell' | 'charge'
-  | 'cutin' | 'card' | 'tick' | 'click' | 'victory' | 'defeat';
+  | 'cutin' | 'card' | 'tick' | 'click' | 'victory' | 'defeat' | 'wipe';
 
 export type Recipe = (ctx: BaseAudioContext, out: AudioNode, t: number, rand: () => number) => void;
 
@@ -108,6 +108,8 @@ export const SFX: Record<SfxName, Recipe> = {
   card: (ctx, out, t, rand) => noise(ctx, out, t, 'highpass', 1200 * vary(rand), 4800, 0.17, 0.18, 0.02),
   // A card focused: a soft tick.
   tick: (ctx, out, t, rand) => tone(ctx, out, t, 'sine', 1800 * vary(rand, 0.03), 1700, 0.035, 0.07),
+  // The wipe into a battle: a long blade's rush of air.
+  wipe: (ctx, out, t) => noise(ctx, out, t, 'bandpass', 300, 2600, 0.42, 0.22, 0.12, 0.8),
   // A menu click.
   click: (ctx, out, t) => tone(ctx, out, t, 'square', 900, 880, 0.04, 0.04),
   // Victory: a rising arpeggio landing on a held major chord.

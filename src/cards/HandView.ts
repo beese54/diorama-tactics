@@ -20,6 +20,15 @@ const LONG_PRESS_MS = 450;
 /** The foes' card: how long it takes to slide in, and when it turns face up. */
 const FOE_IN = 0.35;
 const FOE_FLIP_AT = 0.45;
+/** A played card's flight to the turn box (B8), in seconds. */
+const FLY_SECONDS = 0.6;
+
+/** Where a card flies to: a spot on screen and the height it shrinks to there. */
+export interface FlyTarget {
+  x: number;
+  y: number;
+  h: number;
+}
 
 /** A card on screen: its view, and the pose it is easing toward its spot with. */
 interface Placed {
@@ -57,6 +66,10 @@ export class HandView {
   /** Frames drawn, to share the resting cards' art redraws across frames. */
   private ticks = 0;
   private press: { index: number; timer: number; flipped: boolean } | null = null;
+  /** A card flying to the turn box (B8): which, from where, how far along, and what to do as it lands. */
+  private flight: { p: Placed; from: Placed['pose']; to: FlyTarget; t: number; landed: () => void; foe: boolean } | null = null;
+  /** Flights that have landed, for checks. */
+  private flights = 0;
   private disposed = false;
 
   constructor(private readonly events: HandEvents) {
@@ -151,9 +164,62 @@ export class HandView {
     });
   }
 
-  /** The foes' card slides away. */
-  hideFoe(): void {
-    if (this.foe) this.foe.leaving = true;
+  /** The foes' card slides away, or, given a target, flies there (B8). */
+  hideFoe(to?: FlyTarget, landed?: () => void): void {
+    const f = this.foe;
+    if (!f) return;
+    f.leaving = true;
+    if (to) this.startFlight(f, to, landed ?? (() => {}), true);
+  }
+
+  /**
+   * Card `index` flies from the hand to `to` (the turn box, B8): it lifts, arcs across and
+   * shrinks into it, and `landed` is called as it arrives (the box glows); then it is gone.
+   */
+  fly(index: number, to: FlyTarget, landed: () => void): void {
+    const p = this.placed[index];
+    if (!p) return void landed();
+    this.startFlight(p, to, landed, false);
+  }
+
+  private startFlight(p: Placed, to: FlyTarget, landed: () => void, foe: boolean): void {
+    // A flight under way lands at once: one card in the air at a time.
+    if (this.flight) this.land();
+    this.flight = { p, from: { ...p.pose }, to, t: 0, landed, foe };
+    this.wake();
+  }
+
+  /** Moves the flying card along its arc; true while it is in the air. */
+  private flyStep(dt: number): boolean {
+    const f = this.flight;
+    if (!f) return false;
+    f.t += dt;
+    const u = Math.min(1, f.t / FLY_SECONDS);
+    // Eased in and out, along a curve that lifts it first: a card picked up and tossed.
+    const e = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+    const [a, b] = [f.from, f.to];
+    const cx = (a.x + b.x) / 2;
+    const cy = Math.min(a.y, b.y) - innerHeight * 0.18;
+    const q = f.p.pose;
+    q.x = (1 - e) ** 2 * a.x + 2 * (1 - e) * e * cx + e * e * b.x;
+    q.y = (1 - e) ** 2 * a.y + 2 * (1 - e) * e * cy + e * e * b.y;
+    q.h = a.h + (b.h - a.h) * e;
+    q.rot = a.rot * (1 - e) - 14 * Math.sin(e * Math.PI);
+    if (u >= 1) this.land();
+    return true;
+  }
+
+  /** The flying card arrives: the target is told, and the card goes (below the screen, or off the board for the foes'). */
+  private land(): void {
+    const f = this.flight;
+    if (!f) return;
+    this.flight = null;
+    this.flights++;
+    if (f.foe) {
+      this.scene.remove(f.p.view.group);
+      if (this.foe === f.p) this.foe = null;
+    } else f.p.pose = { ...f.p.pose, y: innerHeight + f.p.pose.h * 2 };
+    f.landed();
   }
 
   /** The state of the hand on screen, for checks. */
@@ -161,6 +227,7 @@ export class HandView {
     open: boolean; drawing: boolean; canvas: { width: number; height: number; css: number };
     focused: number; flipped: boolean[]; playing: boolean[]; clip: { has: boolean; playing: boolean; mix: number } | null;
     aims: ({ x: number; y: number } | null)[]; foe: { id: string; side: string; faceUp: boolean } | null;
+    flying: boolean; flights: number;
   } {
     const f = this.placed[this.focused];
     return {
@@ -172,6 +239,8 @@ export class HandView {
       playing: this.placed.map((p) => !!p?.view.stage.clipState().playing),
       clip: f ? f.view.stage.clipState() : null,
       aims: this.spots.map((_, i) => visiblePoint(this.spots, i)),
+      flying: this.flight !== null,
+      flights: this.flights,
       foe: this.foe && !this.foe.leaving ? { id: this.foe.card.id, side: this.foe.view.side, faceUp: !this.foe.view.flipped } : null,
     };
   }
@@ -347,12 +416,18 @@ export class HandView {
     this.camera.updateProjectionMatrix();
 
     const k = 1 - Math.exp(-dt * 10);
-    let moving = false;
+    const flyer = this.flight?.p;
+    let moving = this.flyStep(dt);
     this.placed.forEach((p, i) => {
       if (!p) return;
       const s = this.spots[i];
-      // Put away: the cards sink below the screen.
+      // Put away: the cards sink below the screen. The one in flight follows its arc.
       const goal = this.shown ? s : { ...s, y: H + s.h };
+      if (p === flyer) {
+        this.place(p, 250);
+        p.view.update(this.clock, dt, this.renderer, true);
+        return;
+      }
       moving = this.ease(p, goal, k) || moving;
       const dimGoal = this.states[i] === 'used' || this.states[i] === 'played' ? 1 : this.states[i] === 'locked' ? 0.6 : 0;
       p.view.dim += (dimGoal - p.view.dim) * k;
@@ -366,11 +441,11 @@ export class HandView {
       f.t += dt;
       const s = this.foeSpot();
       const goal = f.leaving ? { x: W + s.h, y: s.y, h: s.h, rot: 8 } : { ...s, rot: f.t < FOE_IN ? 8 : 0 };
-      this.ease(f, goal, 1 - Math.exp(-dt * 8));
+      if (f !== flyer) this.ease(f, goal, 1 - Math.exp(-dt * 8));
       if (!f.leaving && f.t >= FOE_FLIP_AT && f.view.flipped) f.view.flip();
       this.place(f, 200);
       f.view.update(this.clock, dt, this.renderer);
-      if (f.leaving && f.pose.x > W + s.h * 0.4) {
+      if (f.leaving && f !== flyer && f.pose.x > W + s.h * 0.4) {
         this.scene.remove(f.view.group);
         this.foe = null;
       }
@@ -378,7 +453,7 @@ export class HandView {
     this.renderer.render(this.scene, this.camera);
     this.ticks++;
     // Nothing up and nothing still sliding away: stop drawing and get out of the way.
-    if (!this.shown && !this.foe && !moving) {
+    if (!this.shown && !this.foe && !this.flight && !moving) {
       this.frame = 0;
       this.last = null;
       this.renderer.clear();

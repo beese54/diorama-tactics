@@ -27,6 +27,9 @@ import { Skirmish } from './units/Skirmish';
 import type { Difficulty } from './game/ai';
 import { ResultScreen } from './ui/ResultScreen';
 import { audio } from './audio/Audio';
+import type { SfxName } from './audio/sfx';
+import { fx } from './ui/transitions';
+import { Wipe } from './ui/Wipe';
 import { animTest } from './battle/animTest';
 import { battlePreview } from './battle/preview';
 import { cardShowcase } from './cards/showcase';
@@ -317,20 +320,27 @@ async function main(): Promise<void> {
           if (generated) void newMap();
           else pick(maps[(maps.findIndex((m) => m.id === theme.id) + 1) % maps.length].id);
         }),
-      battle: (setup, opts) => {
+      battle: async (setup, opts) => {
         battling = true;
         void audio.music('battle');
+        // The wipe (B8): the blade covers the board, the battle opens behind it, and it sweeps away.
+        if (fx.wipe) await Wipe.cover();
         return new Promise((resolve) => {
           void BattleScene.open(setup, {
             chain: opts?.chain,
             card: opts?.card,
             onLeave: (outcome) => {
+              // The battle left under the blade; between a Union's battles it stays down, so the
+              // next opens behind it without a flicker of the board.
               battling = false;
               void audio.music('map');
               // The board's clock stood still with it: the time the battle took doesn't count.
               timer.reset();
               resolve(outcome);
+              if (fx.wipe) setTimeout(() => !battling && void Wipe.reveal(), 60);
             },
+          }).then(() => {
+            if (fx.wipe) void Wipe.reveal();
           });
         });
       },
@@ -483,7 +493,13 @@ async function main(): Promise<void> {
     // Hooks for scripts/check.mjs (headless verification); stripped from production builds.
     Object.assign(window, {
       /** The sound (B8), for checks: whether the context exists, the settings, the effects asked for, the music. */
-      __audio: { state: () => audio.state() },
+      __audio: {
+        state: () => audio.state(),
+        /** The effects asked for, with when (performance.now(), ms). */
+        log: () => audio.log,
+        /** A WAV (base64) of `events` (names at seconds), for a review video's soundtrack. */
+        render: async (events: { name: SfxName; at: number }[], seconds: number) => (await import('./audio/record')).renderEffects(events, seconds),
+      },
       __map: {
         tile: (x: number, y: number) => tileAt(board.map, x, y),
         hovered: () => hovered,

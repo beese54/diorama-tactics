@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { fx } from '../ui/transitions';
+import { Wipe } from '../ui/Wipe';
 import type { Card } from '../game/cards';
 import { ClashSim, resolveClash, type ClashSetup, type ClashSide, type SkillId, type Stance } from '../game/clash';
 import { battleSkill, canFire, whyNot } from '../game/skills';
@@ -178,9 +180,13 @@ export class BattleScene {
     const director = new Director(view, { attacker: left, defender: right }, sim, script, hud, names, matchup(setup));
     const player: ClashSide = a.side === 'player' ? 'attacker' : 'defender';
     const scene = new BattleScene(view, hud, director, sim, setup, player, options.at ?? null, options.onLeave, options.card ?? null);
+    hud.intro();
     if (import.meta.env.DEV) Object.assign((window as { __battle?: object }).__battle!, { chain, attacker: setup.attacker.id, defenderMorale: setup.defender.morale });
     return scene;
   }
+
+  /** Set once the battle has begun to leave (the wipe covering it), so a second key doesn't leave twice. */
+  private leaving = false;
 
   private now(): number {
     return this.held ?? this.clock.getElapsedTime() + this.skew;
@@ -197,8 +203,11 @@ export class BattleScene {
   }
 
   /** Goes on from a finished battle, if there is somewhere to go: takes the battle off the page and hands back how it came out. */
-  private leave(): void {
-    if (!this.onLeave || !this.sim.winner) return;
+  private async leave(): Promise<void> {
+    if (!this.onLeave || !this.sim.winner || this.leaving) return;
+    this.leaving = true;
+    // The wipe (B8): the blade covers the battle before it goes, so the board never flashes between.
+    if (fx.wipe) await Wipe.cover();
     this.dispose();
     this.onLeave({ winner: this.sim.winner, damage: this.sim.damage, gauges: { attacker: this.sim.gauge('attacker'), defender: this.sim.gauge('defender') }, fired: this.fired });
   }
@@ -220,7 +229,7 @@ export class BattleScene {
     if (this.held !== null) return;
     if (LEAVE_KEYS.has(e.code) && this.over() && this.onLeave) {
       e.preventDefault();
-      this.leave();
+      void this.leave();
     } else if (e.code === 'Space') {
       e.preventDefault();
       this.skew += Math.max(0, this.director.length() - this.now());
@@ -260,6 +269,8 @@ export class BattleScene {
         skill: () => ({ state: this.guide?.state ?? null, held: this.held !== null, fired: this.fired, cutIn: CutIn.state() }),
         /** Each side's stance now, and the result once the rules have decided it (Space plays them to the end). */
         stances: () => ({ attacker: this.sim.attacker.stance, defender: this.sim.defender.stance }),
+        /** The battle effects drawn so far (B8): blows' bursts, and the fighters lit by a skill. */
+        fx: () => this.director.fx(),
         result: () => (this.sim.winner ? { winner: this.sim.winner, damage: this.sim.damage, defender: setup.defender.id, attacker: setup.attacker.id } : null),
         /** Every character the scene could cast, for checks. */
         characters: Object.keys(CHARACTERS),

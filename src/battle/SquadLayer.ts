@@ -3,6 +3,7 @@ import { CLASSES, type ClassId, type Side } from '../game/units';
 import { DESIGN_H, type BattleView } from './BattleView';
 import { CHARACTERS, Dust, Figure, loadSet, type Character, type Effect, type Frame } from './cast';
 import { formation, type Place } from './formation';
+import { Impact } from './Impact';
 import { lineup } from './lineup';
 
 /** A place's scale is relative to the head's (1.06): a character's height is its size there. */
@@ -15,6 +16,8 @@ export interface FighterView {
   frames: Map<string, Frame>;
   effect: Effect;
   dust: Dust;
+  /** Its blows' bursts, its charge's dust trail and its skill's light (B8). */
+  impact: Impact;
   place: Place;
   /** Its scale against the character's own size (the far ranks stand smaller). */
   scale: number;
@@ -59,10 +62,12 @@ export class SquadLayer {
       figure.body.add(effect.mesh);
       const dust = new Dust();
       figure.group.add(dust.group);
+      const impact = new Impact(character.height * scale);
+      figure.group.add(impact.group);
       figure.group.position.set(dir * place.x * view.width, DESIGN_H / 2 - place.y * DESIGN_H, 0);
       // The art faces right; the right-hand squad is mirrored to face left.
       figure.group.scale.x = -dir;
-      fighters[place.fighter] = { figure, character, frames, effect, dust, place, scale };
+      fighters[place.fighter] = { figure, character, frames, effect, dust, impact, place, scale };
     }
     return new SquadLayer(fighters);
   }

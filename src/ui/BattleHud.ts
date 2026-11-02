@@ -1,5 +1,10 @@
 import type { Stance } from '../game/clash';
+import { audio } from '../audio/Audio';
 import { GAUGE_MAX } from '../game/gauge';
+import { fx } from './transitions';
+
+/** How long the intro's classes stay on the HUD (ms): the banners slide in, the VS slams down, the HUD shakes. */
+const INTRO_MS = 1500;
 
 /** One side's banner: its head's name and class, Morale, soldiers standing, stance, edge and skill gauge. */
 export interface BannerInfo {
@@ -58,6 +63,16 @@ export class BattleHud {
     this.el = document.createElement('div');
     this.el.id = 'battle-hud';
     parent.appendChild(this.el);
+    // The outro (B8, fx.intro): classes on the HUD itself, which outlast show()'s redraws.
+    if (fx.intro) this.el.classList.add('outro');
+  }
+
+  /** The intro (B8, fx.intro), once the battle is ready: the banners slide in, the VS slams down, the HUD shakes. */
+  intro(): void {
+    if (!fx.intro) return;
+    this.el.classList.add('intro');
+    audio.play('clash', 0.62);
+    setTimeout(() => this.el.classList.remove('intro'), INTRO_MS);
     this.guideEl.className = 'guide';
     this.guideEl.hidden = true;
     this.guideEl.addEventListener('click', (e) => {
@@ -140,8 +155,13 @@ export class BattleHud {
 
   /** The Morale lost, over the losing side's half of the field, or none. */
   pop(side: 'left' | 'right' | null, damage = 0): void {
+    const landing = !!side && this.loss.hidden;
     this.loss.hidden = !side;
+    this.el.classList.toggle('lost-left', side === 'left');
+    this.el.classList.toggle('lost-right', side === 'right');
     if (!side) return;
+    // The outro (B8): the Morale lost lands with a punch.
+    if (landing && fx.intro) audio.play('crit');
     this.loss.className = `loss ${side}`;
     this.loss.textContent = `−${damage}`;
   }

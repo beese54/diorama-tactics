@@ -8,6 +8,7 @@ import type { BattleView } from './BattleView';
 import { smooth } from './cast';
 import { BLOCK, charge, FALL, FOLLOW, HURT, RUN_FROM, STRIDES, SWING, VICTORY } from './clips';
 import { clipSeconds, sample, type Beat, type Body, type Cue } from './poseClip';
+import { AURA, TRAIL } from './Impact';
 import { actSeconds, STRIKE, type Act, type BattleScript, type Who } from './script';
 import type { FighterView, SquadLayer } from './SquadLayer';
 
@@ -310,6 +311,7 @@ export class Director {
     const stamps = [...(run?.s ? run.s.cues : []), ...clipCues.filter((c) => c.age >= 0)].filter((c) => c.cue === 'step' || (c.cue === 'strike' && !f.effect.speed));
     const stamp = stamps.sort((p, q) => p.age - q.age)[0];
     f.dust.update(stamp?.age ?? -1, body.x + (stamp?.cue === 'strike' ? f.character.foot * f.scale : 0));
+    this.effects(w, f, seconds, act, age, body.x, alpha, fallen);
 
     // A blow landing: the white blink and the shake (harder for a crit).
     const hit = act && isReaction(act) && act.kind !== 'block' ? age : Infinity;
@@ -317,6 +319,43 @@ export class Director {
     const crit = swing?.crit ? 2 : 1;
     const shakes = [hit, swing && !swing.ranged ? blow : Infinity].filter((x) => x >= 0 && x < 0.2);
     return shakes.length ? 4 * crit * (1 - Math.min(...shakes) / 0.2) : 0;
+  }
+
+  /**
+   * The fighter's effects (B8): the burst of the latest blow to reach it (its foes' weapon's
+   * sparks, a ring and a flash, bigger on a crit; sparks only for a blow blocked), the dust trail
+   * of its side's latest run, and its side's skill light while that skill is in play.
+   */
+  private effects(w: Who, f: FighterView, seconds: number, act: BodyAct | undefined, age: number, x: number, alpha: number, fallen: boolean): void {
+    const foes: ClashSide = w.side === 'attacker' ? 'defender' : 'attacker';
+    const struck = act && isReaction(act) ? act : undefined;
+    const blow = struck
+      ? (this.acts.filter((a) => a.kind === 'attack' && key(a.foe) === key(w) && a.start <= struck.start).at(-1) as Extract<Timed, { kind: 'attack' }> | undefined)
+      : undefined;
+    f.impact.hit(struck ? age : -1, x, CLASSES[this.sim.squad(foes).unit.cls].weapon, !!blow?.crit, struck?.kind === 'block', struck?.start ?? -1);
+
+    const run = this.advances[w.side].filter((a) => a.start <= seconds).at(-1);
+    const puffs: { x: number; age: number }[] = [];
+    if (run && !fallen) {
+      const now = this.station(w, seconds);
+      const until = Math.min(seconds, run.start + run.seconds);
+      for (let t = run.start; t <= until; t += TRAIL.every) {
+        if (seconds - t < TRAIL.life) puffs.push({ x: (this.station(w, t) - now) / f.figure.group.scale.x, age: seconds - t });
+      }
+    }
+    f.impact.trail(puffs.slice(-TRAIL.puffs));
+
+    const skill = this.sim.squad(w.side).skill;
+    f.impact.glow(skill && !fallen ? AURA[skill] : null, seconds, x, alpha);
+  }
+
+  /** The effects drawn so far, for checks: blows' bursts, and the fighters lit by a skill now. */
+  fx(): { bursts: number; lit: number } {
+    const all = [...this.squads.attacker.fighters, ...this.squads.defender.fighters];
+    return {
+      bursts: all.reduce((n, f) => n + f.impact.bursts, 0),
+      lit: all.filter((f) => f.impact.group.children[0].visible).length,
+    };
   }
 
   private drawHud(seconds: number): void {

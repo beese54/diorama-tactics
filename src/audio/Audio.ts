@@ -27,6 +27,8 @@ class AudioEngine {
   private musicGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
   private readonly counts = new Map<SfxName, number>();
+  /** The effects asked for, with when (performance.now(), ms): for the review videos' soundtrack. */
+  readonly log: { name: SfxName; t: number }[] = [];
   private readonly listeners = new Set<() => void>();
   private manifest: Promise<Set<string>> | null = null;
   private readonly buffers = new Map<Track, Promise<AudioBuffer | null>>();
@@ -89,6 +91,7 @@ class AudioEngine {
   /** Plays the effect `name` now (counted for checks, even before the context exists). */
   play(name: SfxName, delay = 0): void {
     this.counts.set(name, (this.counts.get(name) ?? 0) + 1);
+    if (this.log.length < 5000) this.log.push({ name, t: performance.now() + delay * 1000 });
     if (!this.ctx || !this.sfxGain || this.settings.muted) return;
     const rand = () => ((this.seed = (this.seed * 16807) % 2147483647) / 2147483647);
     SFX[name](this.ctx, this.sfxGain, this.ctx.currentTime + 0.005 + delay, rand);

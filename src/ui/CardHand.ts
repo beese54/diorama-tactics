@@ -1,6 +1,27 @@
 import { audio } from '../audio/Audio';
 import type { Card, Hand } from '../game/cards';
-import { HandView, type HandCardState } from '../cards/HandView';
+import { HandView, type FlyTarget, type HandCardState } from '../cards/HandView';
+import { fx } from './transitions';
+
+/** The turn box on screen, to fly a played card into (B8), or null if it isn't up. */
+function turnBox(): { el: HTMLElement; to: FlyTarget } | null {
+  const el = document.getElementById('turn-info');
+  const r = el?.getBoundingClientRect();
+  if (!el || !r || r.width === 0) return null;
+  return { el, to: { x: r.left + r.width / 2, y: r.top + r.height / 2, h: Math.max(48, r.height * 1.1) } };
+}
+
+/** The turn box lights up as a card lands in it. */
+function glow(el: HTMLElement): void {
+  el.animate(
+    [
+      { boxShadow: '0 0 0 0 rgba(255, 224, 138, 0)', filter: 'brightness(1)' },
+      { boxShadow: '0 0 28px 8px rgba(255, 224, 138, 0.9)', filter: 'brightness(1.7)', offset: 0.25 },
+      { boxShadow: '0 0 0 0 rgba(255, 224, 138, 0)', filter: 'brightness(1)' },
+    ],
+    { duration: 750, easing: 'ease-out' },
+  );
+}
 
 /**
  * The player's hand of cards, drawn as the animated cards (src/cards/HandView.ts) along the
@@ -47,8 +68,11 @@ export class CardHand {
     this.view.showFoe(card);
   }
 
+  /** The foes' card goes: into the turn box (B8), or off to the side. */
   hideFoeCard(): void {
-    this.view.hideFoe();
+    const box = fx.cardfly ? turnBox() : null;
+    if (box) this.view.hideFoe(box.to, () => glow(box.el));
+    else this.view.hideFoe();
   }
 
   /** Gets the foes' cards ready in the background, so theirs shows the moment they play it. */
@@ -88,9 +112,11 @@ export class CardHand {
     this.view.setFocus(i);
   }
 
-  /** Plays card `id`, with its swish (B8). */
+  /** Plays card `id`, with its swish; it flies into the turn box (B8). */
   private playCard(id: string): void {
     audio.play('card');
+    const box = fx.cardfly ? turnBox() : null;
+    if (box && this.hand) this.view.fly(this.hand.cards.findIndex((c) => c.id === id), box.to, () => glow(box.el));
     this.onPlay(id);
   }
 

@@ -12,6 +12,8 @@ import type { Side, Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
 import type { MapFile, Tile } from '../map/types';
 import { CardHand } from '../ui/CardHand';
+import { fx } from '../ui/transitions';
+import { TurnBanner } from '../ui/TurnBanner';
 import { TurnBox } from '../ui/TurnBox';
 import { UnitPanel } from '../ui/UnitPanel';
 import { RangeLayer } from './RangeLayer';
@@ -104,6 +106,8 @@ export class Skirmish {
    * hand; the foes' plays itself out (`foesTurn`).
    */
   private begin(turn: TurnState): TurnState {
+    // The turn banner (B8): whose turn it is, sweeping across the board.
+    if (fx.banners) TurnBanner.show(turn.side, turn.number);
     refill(this.hands[turn.side]);
     if (turn.side === 'player') this.cards.show(this.hands.player, null, false);
     return turn;
