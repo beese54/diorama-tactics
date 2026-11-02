@@ -20,6 +20,10 @@ export interface HudActions {
   modes: readonly { id: string; name: string }[];
   mode: string;
   pickMode: (id: string) => void;
+  /** How the foes play (B7): Easy or Hard, the one on, and what to do on a change; skirmish only. */
+  foes?: readonly { id: string; name: string }[];
+  foesLevel?: string;
+  pickFoes?: (id: string) => void;
   /** Grows a new random map; generated themes only. */
   newMap?: () => void;
   save: () => void;
@@ -64,6 +68,7 @@ export class Hud {
     };
     select('Switch map', actions.maps, actions.current, actions.pick);
     select('Skirmish or map viewer', actions.modes, actions.mode, actions.pickMode);
+    if (actions.foes && actions.pickFoes) select('How the foes play', actions.foes, actions.foesLevel ?? 'easy', actions.pickFoes);
     select('Weather', actions.weathers, actions.weather, actions.pickWeather);
     select('Time of day', actions.times, actions.time, actions.pickTime);
     if (actions.sizes && actions.pickSize) select('Board size', actions.sizes, actions.size ?? '', actions.pickSize);

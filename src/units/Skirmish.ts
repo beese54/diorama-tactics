@@ -4,6 +4,8 @@ import { deploy } from '../game/deploy';
 import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
 import { deal, refill, unused, type Card, type Hand } from '../game/cards';
 import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from '../game/turn';
+import { planTurn, type Difficulty } from '../game/ai';
+import { outcome, stats, type Outcome, type Stats } from '../game/end';
 import { onPlay } from '../game/skills';
 import { fightUnion, unionOf, unionShape } from '../game/union';
 import type { Side, Unit } from '../game/units';
@@ -15,8 +17,11 @@ import { UnitPanel } from '../ui/UnitPanel';
 import { RangeLayer } from './RangeLayer';
 import { UnitLayer } from './UnitLayer';
 
-/** How long the foes' turn stays on screen, in seconds: long enough to watch their card turn face up. */
-const FOES_TURN = 2.6;
+/** How long the foes' card shows before they move: long enough to watch it turn face up (ms). */
+const FOES_CARD_MS = 1100;
+/** A short pause between the foes' moves and their attack (ms), so the board can be read. */
+const FOES_BEAT_MS = 350;
+const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** What the skirmish needs from the rest of the app. */
 export interface SkirmishHost {
@@ -35,6 +40,8 @@ export interface SkirmishHost {
     setup: ClashSetup,
     options?: { chain?: { index: number; count: number }; card?: Card | null },
   ) => Promise<{ winner: ClashSide; damage: number; gauges?: Record<ClashSide, number> }>;
+  /** The skirmish is over (B7): every foe fallen, or every ally. */
+  end: (result: Outcome, stats: Stats) => void;
 }
 
 /**
@@ -45,8 +52,9 @@ export interface SkirmishHost {
  * A foe on the next tile is marked in bold red: click it to attack, which opens the battle
  * over the board, and the loser's Morale drops when the player comes back (at 0 it leaves the
  * field). The battle ends the turn, as Enter does at any time. An enemy shows its reach in red;
- * X cancels. The foes' turn shows for a moment (until they have an AI in B7, they play a card and
- * hold their ground), then the next turn opens on the hand.
+ * X cancels. Then the foes play their turn by the AI (B7, at the chosen difficulty): their card,
+ * their moves and an attack, which the player watches and defends in; then the next turn opens on
+ * the hand. Once every foe or every ally has fallen, the skirmish ends.
  */
 export class Skirmish {
   readonly group = new THREE.Group();
@@ -68,8 +76,15 @@ export class Skirmish {
   private fighting = false;
   /** Battles fought so far, to give each its own seed. */
   private fights = 0;
-  /** Seconds left before the foes' turn passes back. */
-  private foesLeft = 0;
+  /** How the foes play their turns (B7): Easy, bold and simple; Hard, cautious and sharp. */
+  difficulty: Difficulty = 'easy';
+  /** How the skirmish ended, once it has. */
+  ended: Outcome | null = null;
+  /** For checks of other things than the AI: the foes play their card and hold their ground (dev hook). */
+  idle = false;
+  /** Battles fought, and won by the player's side, for the result screen. */
+  private battles = 0;
+  private won = 0;
 
   constructor(private readonly map: MapFile, private readonly host: SkirmishHost, private readonly ui: HTMLElement) {
     this.units = deploy(map);
@@ -86,16 +101,11 @@ export class Skirmish {
 
   /**
    * Opens `turn`: the side's hand comes back once it is all played. The player's opens on the
-   * hand; the enemy (no AI until B7) plays its first card left.
+   * hand; the foes' plays itself out (`foesTurn`).
    */
   private begin(turn: TurnState): TurnState {
-    const hand = this.hands[turn.side];
-    refill(hand);
-    if (turn.side === 'player') this.cards.show(hand, null, false);
-    else {
-      playCard(turn, hand, unused(hand)[0].id);
-      this.cards.showFoeCard(turn.card!);
-    }
+    refill(this.hands[turn.side]);
+    if (turn.side === 'player') this.cards.show(this.hands.player, null, false);
     return turn;
   }
 
@@ -138,9 +148,9 @@ export class Skirmish {
     return tile ? this.units.find((u) => u.morale > 0 && u.x === tile.x && u.y === tile.y) : undefined;
   }
 
-  /** Whether the board is taking no orders: a unit walking, a battle on, or the foes' turn. */
+  /** Whether the board is taking no orders: a unit walking, a battle on, the foes' turn, or the skirmish over. */
   get busy(): boolean {
-    return this.layer.busy || this.fighting || this.turn.side !== 'player';
+    return this.layer.busy || this.fighting || this.turn.side !== 'player' || this.ended !== null;
   }
 
   private tileOf(unit: Unit): Tile {
@@ -221,6 +231,17 @@ export class Skirmish {
    */
   private async attack(unit: Unit, foe: Unit): Promise<void> {
     if (!attackWith(this.turn, unit, foe)) return;
+    await this.fight(unit, foe);
+    // One attack a turn: it ends the turn (unless it ended the skirmish).
+    if (!this.checkEnd()) this.passTurn();
+  }
+
+  /**
+   * `unit`'s Union attack on `foe`, for either side: each battle over the board on the side's card
+   * (the player watches the foes' and defends in them), the gauges carried on, the battles counted
+   * for the result screen, and a notice of how it went.
+   */
+  private async fight(unit: Unit, foe: Unit): Promise<void> {
     const members = unionOf(unit, this.units);
     this.select(null);
     this.fighting = true;
@@ -232,7 +253,11 @@ export class Skirmish {
       if (out.gauges) [attacker.gauge, foe.gauge] = [out.gauges.attacker, out.gauges.defender];
       return out;
     });
-    for (const b of battles) this.layer.setRested(b.attacker, true);
+    for (const b of battles) {
+      this.layer.setRested(b.attacker, true);
+      this.battles++;
+      if ((b.winner === 'attacker') === (b.attacker.side === 'player')) this.won++;
+    }
     this.fighting = false;
     const gone = foe.morale > 0 ? '.' : ' and leaves the field.';
     if (battles.length === 1) {
@@ -243,8 +268,18 @@ export class Skirmish {
       const fallen = battles.filter((b) => b.attackerMorale <= 0).map((b) => b.attacker.name);
       this.host.say(`${foe.name} loses ${before - foe.morale} Morale over ${battles.length} battles${gone}${fallen.length ? ` ${fallen.join(' and ')} fell.` : ''}`);
     }
-    // One attack a turn: it ends the turn.
-    this.passTurn();
+  }
+
+  /** Ends the skirmish if every foe or every ally has fallen: the result screen. Returns whether it ended. */
+  private checkEnd(): boolean {
+    const result = outcome(this.units);
+    if (!result) return false;
+    this.ended = result;
+    this.select(null);
+    this.cards.hide();
+    this.cards.hideFoeCard();
+    this.host.end(result, stats(this.units, this.turn.number, this.battles, this.won));
+    return true;
   }
 
   /** One battle of an attack: `attacker` against `foe`, on this turn's card, with its own seed. */
@@ -272,23 +307,56 @@ export class Skirmish {
   endTurn(): void {
     if (this.busy) return;
     this.passTurn();
-    this.host.say(`The foes play ${this.turn.card!.name}.`);
   }
 
-  /** The foes' turn begins. They have no AI yet (B7): they play a card, and it passes back after FOES_TURN. */
+  /** The player's turn is over: the foes play theirs. */
   private passTurn(): void {
     this.select(null);
     this.cards.hide();
     this.turn = this.begin(nextTurn(this.turn));
-    this.foesLeft = FOES_TURN;
+    void this.foesTurn();
+  }
+
+  /**
+   * The foes' turn (B7), as the AI plans it at the chosen difficulty: they play their card (it
+   * slides in and turns face up), walk their moves one by one with the camera on each, then make
+   * their attack, if any, which the player watches and defends in. Then the end check, or the
+   * player's turn.
+   */
+  private async foesTurn(): Promise<void> {
+    const plan = planTurn(this.map, this.units, this.hands.enemy, 'enemy', this.difficulty);
+    playCard(this.turn, this.hands.enemy, plan.card.id);
+    this.cards.showFoeCard(plan.card);
+    this.host.say(`The foes play ${plan.card.name}.`);
+    await pause(FOES_CARD_MS);
+    if (this.idle) {
+      this.cards.hideFoeCard();
+      this.handBack();
+      return;
+    }
+    for (const m of plan.moves) {
+      if (this.ended) return;
+      const path = moveUnit(this.turn, this.map, this.units, m.unit, m.path.at(-1)!);
+      if (!path) continue;
+      this.host.focus(this.host.surfacePoint(this.tileOf(m.unit), 0.5, 0.5));
+      await new Promise<void>((done) => this.layer.walk(m.unit, path, done));
+      this.layer.setRested(m.unit, true);
+    }
+    this.cards.hideFoeCard();
+    const a = plan.attack;
+    if (a && attackWith(this.turn, a.unit, a.target)) {
+      this.host.focus(this.host.surfacePoint(this.tileOf(a.target), 0.5, 0.5));
+      await pause(FOES_BEAT_MS);
+      await this.fight(a.unit, a.target);
+    } else if (!plan.moves.length) this.host.say('The foes hold their ground.');
+    if (!this.checkEnd()) this.handBack();
   }
 
   /** The foes' turn is over: the next turn opens on the player's hand. */
   private handBack(): void {
-    this.cards.hideFoeCard();
     this.turn = this.begin(nextTurn(this.turn));
     for (const u of this.units) this.layer.setRested(u, false);
-    this.host.say(`The foes hold their ground. Turn ${this.turn.number}.`);
+    this.host.say(`Turn ${this.turn.number}: play a card.`);
   }
 
   /** The tile under the cursor: previews the path there and shows whoever stands on it. */
@@ -301,7 +369,6 @@ export class Skirmish {
   }
 
   update(elapsed: number, dt: number, camera: THREE.Camera): void {
-    if (this.turn.side === 'enemy' && (this.foesLeft -= dt) <= 0) this.handBack();
     this.layer.update(elapsed, dt, camera);
     this.marks.update(elapsed);
     const shown = this.unitAt(this.hovered) ?? this.selected;

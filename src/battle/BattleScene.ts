@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Card } from '../game/cards';
 import { ClashSim, resolveClash, type ClashSetup, type ClashSide, type SkillId, type Stance } from '../game/clash';
-import { battleSkill, whyNot } from '../game/skills';
+import { battleSkill, canFire, whyNot } from '../game/skills';
 import { CLASSES, triangleEdge } from '../game/units';
 import { BattleHud, type GuideInfo } from '../ui/BattleHud';
 import { BattleView } from './BattleView';
@@ -58,6 +58,8 @@ export class BattleScene {
   /** The skill guide's state, or null with no card in play. */
   private guide: GuideInfo | null = null;
   private fired: SkillId | null = null;
+  /** The side whose skill fired. */
+  private firedBy: ClashSide = 'attacker';
   private readonly onKey = (e: KeyboardEvent) => this.key(e);
   private readonly onClick = () => this.over() && this.leave();
 
@@ -86,13 +88,19 @@ export class BattleScene {
   }
 
   /**
-   * The skill guide (B6), for the card the player's side has in play: ready (the battle holds in
-   * its opening until the player fires it, K, or saves the gauge, Space), charging, or the wrong
-   * ACE. Only the player's own unit chooses; the foes fire theirs when they attack (from B7).
+   * The card skill, for the attacking side's card. The player's own attack gets the guide (B6):
+   * ready (the battle holds in its opening until the player fires it, K, or saves the gauge,
+   * Space), charging, or the wrong ACE. When the foes attack (B7), their skill fires on its own
+   * at the opening if it can, with its cut-in; the player defends without a guide.
    */
   private prepareSkill(): void {
     const card = this.card;
     if (!card) return;
+    if (this.player !== 'attacker') {
+      const skill = battleSkill(card);
+      if (skill && canFire(this.setup.attacker, card)) void this.foesFire(skill);
+      return;
+    }
     const unit = this.player === 'attacker' ? this.setup.attacker : this.setup.defender;
     const not = whyNot(unit, card);
     const state: GuideInfo['state'] = !not ? 'ready' : not.why === 'charging' ? 'charging' : not.why === 'ace' ? 'ace' : 'on-play';
@@ -102,12 +110,24 @@ export class BattleScene {
     if (state === 'ready' && this.fixed === null) this.held = CHOOSE_AT;
   }
 
+  /** The foes' skill, fired on its own at the opening: its cut-in with the clock held, then the battle goes on. */
+  private async foesFire(skill: SkillId): Promise<void> {
+    if (!this.sim.fire('attacker', skill)) return;
+    this.fired = skill;
+    this.firedBy = 'attacker';
+    if (this.fixed !== null) return;
+    this.held = CHOOSE_AT;
+    await CutIn.play(document.body, this.card!, this.card!.skill.name);
+    this.release();
+  }
+
   /** K, or the guide's FIRE: fires the card's skill, plays its cut-in with the clock held, then lets the battle go on. */
   private async fire(): Promise<void> {
     const skill = this.card && battleSkill(this.card);
     if (!skill || this.guide?.state !== 'ready' || this.fired) return;
     if (!this.sim.fire(this.player, skill)) return;
     this.fired = skill;
+    this.firedBy = this.player;
     this.guide = { ...this.guide, state: 'fired', gauge: 0 };
     this.hud.guide(this.guide);
     this.held ??= this.now();
@@ -233,11 +253,14 @@ export class BattleScene {
         length: () => director.length(),
         /** The rules' own result for this battle at neutral stances, for checks against what the scene shows. */
         rules: () => {
-          const { winner, damage } = resolveClash(this.fired ? { ...setup, fire: { [this.player]: this.fired } } : setup);
+          const { winner, damage } = resolveClash(this.fired ? { ...setup, fire: { [this.firedBy]: this.fired } } : setup);
           return { winner, damage, pow: setup.pow, morale: { attacker: setup.attacker.morale, defender: setup.defender.morale } };
         },
         /** The card skill: the guide's state, whether the clock holds for the choice, the skill fired, and the cut-in. */
         skill: () => ({ state: this.guide?.state ?? null, held: this.held !== null, fired: this.fired, cutIn: CutIn.state() }),
+        /** Each side's stance now, and the result once the rules have decided it (Space plays them to the end). */
+        stances: () => ({ attacker: this.sim.attacker.stance, defender: this.sim.defender.stance }),
+        result: () => (this.sim.winner ? { winner: this.sim.winner, damage: this.sim.damage, defender: setup.defender.id, attacker: setup.attacker.id } : null),
         /** Every character the scene could cast, for checks. */
         characters: Object.keys(CHARACTERS),
       },

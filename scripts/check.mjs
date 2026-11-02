@@ -379,6 +379,25 @@ const turnNow = () => page.evaluate(() => window.__map.turn());
 const handNow = () => page.evaluate(() => window.__map.hand());
 /** The animated hand on screen: its canvas, focus, clips, flips and the foes' card. */
 const handView = () => page.evaluate(() => window.__map.hand().view);
+/**
+ * Plays the foes' turn out (B7): through any battle of theirs (Space to the result, Space to go
+ * on) until the player's hand is back, or the skirmish has ended. Waits on the game, not the clock.
+ */
+const untilPlayerTurn = async () => {
+  for (let i = 0; i < 600; i++) {
+    const s = await page.evaluate(() => ({
+      side: window.__map.turn().side, open: window.__map.hand().open, battling: window.__map.battling(), ready: !!window.__battle?.ready, ended: !!window.__map.result(),
+    }));
+    if (s.ended || (s.side === 'player' && s.open && !s.battling)) return;
+    if (s.battling && s.ready) {
+      await page.keyboard.press('Space');
+      await frames(3);
+      await page.keyboard.press('Space');
+    }
+    await frames(3);
+  }
+  throw new Error("the foes' turn never passed back");
+};
 const dealt = { turn: await turnNow(), hand: await handNow(), shown: await page.evaluate(() => document.querySelectorAll('#card-hand .card').length) };
 check('cards: the turn opens on a hand of 8, with no card in play and nothing to move with',
   dealt.hand.open && dealt.shown === 8 && dealt.hand.cards.every((c) => !c.used) && dealt.turn.card === null && dealt.turn.pool === 0, JSON.stringify(dealt));
@@ -455,7 +474,7 @@ check('cards: once a unit has moved the card stays, and the hand is there to loo
 await page.keyboard.press('KeyC');
 const turnBox = () => page.evaluate(() => { const el = document.getElementById('turn-info'); return { cls: el.className, text: el.textContent }; });
 const foesBefore = (await handNow()).foesLeft;
-const passedAt = Date.now();
+const foesBeforeTurn = await page.evaluate(() => window.__map.units().filter((u) => u.side === 'enemy'));
 await page.keyboard.press('Enter');
 await frames(3);
 const foesTurn = { turn: await turnNow(), hand: await handNow(), box: await turnBox() };
@@ -485,9 +504,15 @@ await page.waitForFunction(() => window.__foeLog.some((f) => f.faceUp) || window
 await shot('12c-foes-turn');
 const foeCard = await page.evaluate(() => window.__foeLog.find((f) => f.faceUp) ?? window.__foeLog.at(-1) ?? null);
 check("turns: the foes' card shows on their crimson stock and turns face up", foeCard?.id === foesTurn.turn.card.id && foeCard.side === 'enemy' && foeCard.faceUp, JSON.stringify(foeCard));
-await page.waitForFunction(() => window.__map.turn().side === 'player', { timeout: 10000 });
-const foesHeld = Date.now() - passedAt;
-check("turns: the foes' turn holds about 2.6 s, then passes back", foesHeld > 2200 && foesHeld < 6000, `${foesHeld} ms`);
+await untilPlayerTurn();
+// The foes' turn is the AI's now (B7): their card, then moves on the shared pool to tiles they
+// could reach, nobody sharing a tile; then the turn passes back.
+const foesAfterTurn = await page.evaluate(() => window.__map.units().filter((u) => u.side === 'enemy'));
+const livingSpots = await page.evaluate(() => window.__map.units().filter((u) => u.morale > 0).map((u) => `${u.x},${u.y}`));
+const movedFoes = foesAfterTurn.filter((u) => { const b = foesBeforeTurn.find((o) => o.id === u.id); return b.x !== u.x || b.y !== u.y; });
+const foesOnTiles = await page.evaluate((fs) => fs.every((u) => !!window.__map.tile(u.x, u.y)), foesAfterTurn);
+check("turns: the foes play their turn by the AI (their card, then moves on the shared pool), then pass back",
+  movedFoes.length > 0 && foesOnTiles && new Set(livingSpots).size === livingSpots.length, JSON.stringify({ moved: movedFoes.map((u) => [u.name, u.x, u.y]) }));
 await frames(3);
 const turn2 = await turnNow();
 check("turns: back on the player's turn, the foes' card is gone", (await handView()).foe === null, JSON.stringify((await handView()).foe));
@@ -501,7 +526,8 @@ await shot('12b-cards-later');
 await clickCard(1);
 const turn2b = await turnNow();
 check('skirmish: a new card, a fresh pool', turn2b.card?.id === dealt.hand.cards[1].id && turn2b.pool === turn2b.card.mov, JSON.stringify(turn2b));
-const foe = army.find((u) => u.side === 'enemy');
+// Where a foe stands now: the foes have moved on their turn.
+const foe = (await page.evaluate(() => window.__map.units())).find((u) => u.side === 'enemy' && u.morale > 0);
 await clickTile(foe.x, foe.y);
 const foeMarks = await page.evaluate(() => window.__map.marked());
 check('skirmish: a foe shows its reach in red and cannot be moved', foeMarks.foe > 1 && foeMarks.reach === 0, JSON.stringify(foeMarks));
@@ -568,6 +594,8 @@ check('battle: no console errors', errors.length === 0, errors.join(' | '));
 errors.length = 0;
 await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());
+// The foes hold their ground here (the B7 AI has its own section): this one checks other things.
+await page.evaluate(() => window.__map.holdFoes(true));
 const mapUnits = () => page.evaluate(() => window.__map.units());
 /** Puts `foe` on a free tile next to the first of `heroes` that has one; returns the pair as they now stand. */
 const besides = async (heroes, foe) => {
@@ -674,7 +702,7 @@ check("attack: back on the board, the loser's Morale is down by the rules' damag
 check('attack: the camera is where it was, and the battle is gone from the page',
   (await stillCamera()) === cameraBefore && (await page.evaluate(() => !document.getElementById('battle') && !document.getElementById('battle-hud') && !window.__battle)));
 await shot('16-attack-back');
-await page.waitForFunction(() => window.__map.turn().side === 'player', { timeout: 10000 });
+await untilPlayerTurn();
 await frames(3);
 const turn2After = { turn: await turnNow(), hand: await handNow() };
 check('attack: after the foes, turn 2 opens on the hand with the card used', turn2After.turn.number === 2 && turn2After.turn.card === null && turn2After.hand.open && turn2After.hand.cards[0].used,
@@ -702,6 +730,8 @@ check('attack: no console errors', errors.length === 0, errors.join(' | '));
 errors.length = 0;
 await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());
+// The foes hold their ground here (the B7 AI has its own section): this one checks other things.
+await page.evaluate(() => window.__map.holdFoes(true));
 const uStart = await mapUnits();
 const aria = uStart.find((u) => u.side === 'player' && u.gender === 'female' && u.cls === 'sword');
 const [allyTop, allyRight] = uStart.filter((u) => u.side === 'player' && u !== aria).slice(0, 2);
@@ -761,7 +791,7 @@ check('union: the attack plays one battle per member, in the Union\'s order, lab
 check('union: the foe carries its Morale losses from one battle to the next, and the board shows the end of the chain',
   carried && foeAfter === last.defenderMorale - (last.rules.winner === 'attacker' ? last.rules.damage : 0), JSON.stringify({ morale: chain.map((b) => [b.defenderMorale, b.rules.winner, b.rules.damage]), foeAfter }));
 // Next turn, against a foe on its last Morale: the chain stops at the first battle that fells it.
-await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+await untilPlayerTurn();
 await clickCard(1);
 const [vx, vy] = await standUnion(1);
 await clickTile(vx, vy);
@@ -779,6 +809,8 @@ check('union: no console errors', errors.length === 0, errors.join(' | '));
 errors.length = 0;
 await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());
+// The foes hold their ground here (the B7 AI has its own section): this one checks other things.
+await page.evaluate(() => window.__map.holdFoes(true));
 const kStart = await mapUnits();
 const kAriaId = kStart.find((u) => u.name === 'Aria').id;
 const kFoes = kStart.filter((u) => u.side === 'enemy');
@@ -787,7 +819,7 @@ const skillNow = () => page.evaluate(() => window.__battle.skill());
 const unitNow = async (id) => (await mapUnits()).find((u) => u.id === id);
 /** On the player's turn: plays card `id`, stands Aria alone beside `foe` with `gauge`, and attacks; resolves with the battle up. */
 const skillBattle = async (id, gauge, foe) => {
-  await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+  await untilPlayerTurn();
   await clickCard(kHand.indexOf(id));
   // A clear spot near her (the Union section's finder), the foe below her, no ally on her shape.
   const [x, y] = await unionSpot();
@@ -834,7 +866,7 @@ await finishBattle();
 check("skills: a card whose ACE the unit can't wield neither holds nor fires, the guide says what it needs, and the gauge stays full",
   k2.state === 'ace' && !k2.held && k2After.fired === null && (await unitNow(kAriaId)).gauge === 100, JSON.stringify({ k2, k2After }));
 // Turn 3, Steady Line as a Union attack: Aria (full) saves her gauge with Space; her two allies are charging.
-await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+await untilPlayerTurn();
 await clickCard(kHand.indexOf('steady-line'));
 const [kx, ky] = await standUnion(9000);
 for (const [id, g] of [[kAriaId, 100], [allyTop.id, 40], [allyRight.id, 40]]) await page.evaluate((id, g) => window.__map.setUnit(id, { gauge: g }), id, g);
@@ -862,12 +894,110 @@ check('skills: Space saves a ready skill (the gauge stays full), and a unit whos
   k3[0].state === 'ready' && k3[0].after === 'saved' && k3[0].fired === null && (await unitNow(kAriaId)).gauge === 100 &&
   k3.slice(1).every((b) => b.state === 'charging' && !b.held), JSON.stringify(k3));
 // Turn 4, King's Wager: All In fills every ally's gauge as it is played.
-await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+await untilPlayerTurn();
 for (const u of (await mapUnits()).filter((u) => u.side === 'player')) await page.evaluate((id) => window.__map.setUnit(id, { gauge: 0 }), u.id);
 await clickCard(kHand.indexOf('kings-wager'));
 const k4 = (await mapUnits()).filter((u) => u.side === 'player' && u.morale > 0);
 check("skills: King's Wager (All In) fills every ally's gauge as it is played", k4.length > 0 && k4.every((u) => u.gauge === 100), JSON.stringify(k4.map((u) => [u.name, u.gauge])));
 check('skills: no console errors', errors.length === 0, errors.join(' | '));
+
+// ---- The foes' AI and the end (B7) ---------------------------------------------------------------
+// A foe beside an ally attacks it on the foes' turn; the player defends (D sets the defender's
+// stance) and the board shows the battle's own result. Hard turns down a fight it would lose. The
+// last foe falling is VICTORY, with the stats and Play again; the last ally falling is DEFEAT.
+errors.length = 0;
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+const b7 = async () => {
+  const all = await mapUnits();
+  return { all, aria: all.find((u) => u.name === 'Aria'), varek: all.find((u) => u.name === 'Varek') };
+};
+/** Stands ally `a` on a clear spot with foe `f` just below it, nobody else on either one's Union shape. */
+const standPair = async (aId, fId, aChanges = {}, fChanges = {}) => {
+  const [x, y] = await unionSpot();
+  const was = await unitNow(aId);
+  for (const u of (await mapUnits()).filter((u) => u.id !== aId && u.id !== fId && u.morale > 0 && u.x === x && (u.y === y || u.y === y + 1))) {
+    await page.evaluate((id, c) => window.__map.setUnit(id, c), u.id, { x: was.x, y: was.y });
+  }
+  await page.evaluate((id, c) => window.__map.setUnit(id, c), aId, { x, y, ...aChanges });
+  await page.evaluate((id, c) => window.__map.setUnit(id, c), fId, { x, y: y + 1, ...fChanges });
+  await isolate({ id: aId });
+  await isolate({ id: fId });
+  return [x, y];
+};
+// A foe attack, on Easy: Varek beside Aria attacks her; she defends.
+let { aria: b7Aria, varek: b7Varek } = await b7();
+await clickCard(0);
+await standPair(b7Aria.id, b7Varek.id);
+const b7Before = await mapUnits();
+await page.keyboard.press('Enter');
+await page.waitForFunction(() => window.__map.battling() && window.__battle?.ready, { timeout: 60000 });
+await page.keyboard.press('KeyD');
+await frames(3);
+const b7Stances = await page.evaluate(() => window.__battle.stances());
+await shot('24-foe-attack');
+await page.keyboard.press('Space');
+await page.waitForFunction(() => !!window.__battle.result(), { timeout: 30000 });
+const b7Result = await page.evaluate(() => window.__battle.result());
+await untilPlayerTurn();
+const b7After = await mapUnits();
+const b7Side = (id) => b7Before.find((u) => u.id === id).side;
+const b7Loser = b7Result.winner === 'attacker' ? b7Result.defender : b7Result.attacker;
+const b7Lost = b7Before.find((u) => u.id === b7Loser).morale - b7After.find((u) => u.id === b7Loser).morale;
+check("foes: on their turn a foe beside an ally attacks it; the foe on the left, the player defending on the right, D sets the defender's stance",
+  b7Side(b7Result.attacker) === 'enemy' && b7Side(b7Result.defender) === 'player' && b7Stances.defender === 'passive', JSON.stringify({ b7Result, b7Stances }));
+check("foes: the board shows the foe battle's own result", b7Lost === b7Result.damage, JSON.stringify({ b7Result, b7Lost }));
+// Hard turns down a fight it forecasts to lose: Varek on 5 Morale beside a full-strength Aria.
+await page.goto(`${url}?map=meadow&foes=hard`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+({ aria: b7Aria, varek: b7Varek } = await b7());
+await clickCard(0);
+await standPair(b7Aria.id, b7Varek.id, {}, { morale: 5 });
+await page.evaluate(() => {
+  window.__fought = false;
+  const watch = () => {
+    if (window.__map.battling()) window.__fought = true;
+    if (window.__map.turn().side !== 'player' || window.__map.battling()) requestAnimationFrame(watch);
+  };
+  setTimeout(() => requestAnimationFrame(watch), 0);
+});
+await page.keyboard.press('Enter');
+await untilPlayerTurn();
+const b7Hard = { difficulty: await page.evaluate(() => window.__map.difficulty()), fought: await page.evaluate(() => window.__fought), varek: (await unitNow(b7Varek.id)).morale };
+check('foes: on Hard they turn down a fight they forecast to lose', b7Hard.difficulty === 'hard' && !b7Hard.fought && b7Hard.varek === 5, JSON.stringify(b7Hard));
+// VICTORY: the last foe, on its last Morale, falls to Aria; the result screen, then Play again.
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+({ aria: b7Aria, varek: b7Varek } = await b7());
+await clickCard(0);
+for (const u of (await mapUnits()).filter((u) => u.side === 'enemy' && u.id !== b7Varek.id)) await page.evaluate((id) => window.__map.setUnit(id, { morale: 0 }), u.id);
+const [wx, wy] = await standPair(b7Aria.id, b7Varek.id, {}, { morale: 1 });
+await clickTile(wx, wy);
+await clickInPlace(wx, wy + 1);
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+await page.keyboard.press('Space');
+await frames(3);
+await page.keyboard.press('Space');
+await page.waitForFunction(() => !!window.__map.result(), { timeout: 30000 });
+const b7Win = await page.evaluate(() => window.__map.result());
+await shot('25-victory');
+check('end: the last foe falling is VICTORY, with the stats', b7Win.result === 'victory' && /Victory/i.test(b7Win.text) && /Foes felled\s*5/.test(b7Win.text) && /Allies lost\s*0/.test(b7Win.text), JSON.stringify(b7Win));
+await new Promise((r) => setTimeout(r, 400));
+await page.keyboard.press('Enter');
+await page.waitForFunction(() => !window.__map.result() && window.__map.hand().open, { timeout: 30000 });
+const b7Again = { turn: await turnNow(), units: await mapUnits() };
+check('end: Play again starts a fresh skirmish on the same map', b7Again.turn.number === 1 && b7Again.units.every((u) => u.morale > 0), JSON.stringify(b7Again.turn));
+// DEFEAT: the last ally, on her last Morale, beside Varek on the foes' turn.
+({ aria: b7Aria, varek: b7Varek } = await b7());
+await clickCard(0);
+for (const u of (await mapUnits()).filter((u) => u.side === 'player' && u.id !== b7Aria.id)) await page.evaluate((id) => window.__map.setUnit(id, { morale: 0 }), u.id);
+await standPair(b7Aria.id, b7Varek.id, { morale: 1 });
+await page.keyboard.press('Enter');
+await untilPlayerTurn();
+const b7Loss = await page.evaluate(() => window.__map.result());
+await shot('26-defeat');
+check('end: the last ally falling is DEFEAT', b7Loss?.result === 'defeat' && /Defeat/i.test(b7Loss.text), JSON.stringify(b7Loss));
+check('foes: no console errors', errors.length === 0, errors.join(' | '));
 
 // ---- The card showcase (?mode=card): the layered, animated card --------------------------------
 const cardErrors = errors.length;

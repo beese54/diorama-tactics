@@ -24,6 +24,8 @@ import { WEATHER_KINDS, WEATHER_NAMES, weatherForMap, type WeatherKind } from '.
 import { TileInfo } from './ui/TileInfo';
 import { GpuTimer } from './render/GpuTimer';
 import { Skirmish } from './units/Skirmish';
+import type { Difficulty } from './game/ai';
+import { ResultScreen } from './ui/ResultScreen';
 import { animTest } from './battle/animTest';
 import { battlePreview } from './battle/preview';
 import { cardShowcase } from './cards/showcase';
@@ -240,7 +242,7 @@ async function main(): Promise<void> {
   const pick = (id: string) => {
     // A new map keeps the weather, time, board size and mode picked for the last one.
     const params = new URLSearchParams(location.search);
-    const keep = ['weather', 'time', 'size', 'mode'].filter((k) => params.has(k)).map((k) => `&${k}=${params.get(k)}`).join('');
+    const keep = ['weather', 'time', 'size', 'mode', 'foes'].filter((k) => params.has(k)).map((k) => `&${k}=${params.get(k)}`).join('');
     location.search = `?map=${id}${keep}`;
   };
   const weathers = [{ id: 'auto', name: 'Weather: the map\'s own' }, ...WEATHER_KINDS.map((k) => ({ id: k, name: WEATHER_NAMES[k] }))];
@@ -269,11 +271,21 @@ async function main(): Promise<void> {
     location.search = `?${params}`;
   };
   const askedTime = new URLSearchParams(location.search).get('time');
+  /** How the foes play (B7): Easy unless ?foes=hard. Changing it applies from their next turn. */
+  let foes: Difficulty = new URLSearchParams(location.search).get('foes') === 'hard' ? 'hard' : 'easy';
+  const foeLevels = [{ id: 'easy', name: 'Foes: Easy' }, { id: 'hard', name: 'Foes: Hard' }];
+  const pickFoes = (id: string) => {
+    foes = id === 'hard' ? 'hard' : 'easy';
+    setParam('foes', foes === 'easy' ? null : foes);
+    if (skirmish) skirmish.difficulty = foes;
+    hud.say(foes === 'hard' ? 'The foes play Hard: cautious and sharp.' : 'The foes play Easy: bold and simple.');
+  };
   const hud = new Hud(ui, {
     maps, current: theme.id, pick, weathers, weather: WEATHER_KINDS.find((k) => k === asked) ?? 'auto', pickWeather,
     times, time: [...TIMES, 'cycle'].find((t) => t === askedTime) ?? 'own', pickTime,
     ...(generated ? { sizes, size: String(board.map.width), pickSize: (id: string) => void pickSize(id) } : {}),
     modes, mode: viewer ? 'view' : 'skirmish', pickMode,
+    ...(viewer ? {} : { foes: foeLevels, foesLevel: foes, pickFoes }),
     newMap: generated ? () => void newMap() : undefined, save, load,
   });
   hud.setTitle(theme.name, theme.seed);
@@ -290,12 +302,19 @@ async function main(): Promise<void> {
     }
     skirmish = null;
     keyTile = null;
+    ResultScreen.hide();
     if (viewer) return;
     const { mesh } = board;
     skirmish = new Skirmish(board.map, {
       surfacePoint: (tile, u, v) => mesh.surfacePoint(tile, u, v),
       focus: (point) => rig.focusOn(point),
       say: (text) => hud.say(text),
+      // The end (B7): the result over the board; play the same map again, or move on to a new one.
+      end: (result, s) =>
+        ResultScreen.show(result, s, () => startSkirmish(), () => {
+          if (generated) void newMap();
+          else pick(maps[(maps.findIndex((m) => m.id === theme.id) + 1) % maps.length].id);
+        }),
       battle: (setup, opts) => {
         battling = true;
         return new Promise((resolve) => {
@@ -312,6 +331,7 @@ async function main(): Promise<void> {
         });
       },
     }, ui);
+    skirmish.difficulty = foes;
     scene.add(skirmish.group);
     // The opening view looks over the allies, as a battle opens on your own army.
     const allies = skirmish.units.filter((u) => u.side === 'player');
@@ -530,6 +550,11 @@ async function main(): Promise<void> {
         hand: () => skirmish?.handInfo(),
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },
         selected: () => skirmish?.selected?.id ?? null,
+        /** The result screen, if the skirmish has ended (B7), and the foes' difficulty. */
+        result: () => ResultScreen.state(),
+        difficulty: () => skirmish?.difficulty ?? null,
+        /** Checks of other things than the AI: the foes play their card and hold their ground. */
+        holdFoes: (on: boolean) => skirmish && (skirmish.idle = on),
         /** The rules' Union for the selected unit, leader first, as ids. */
         union: () => skirmish?.unionIds() ?? [],
         marked: () => skirmish?.marked() ?? null,
