@@ -16,6 +16,17 @@ export interface BannerInfo {
   gauge: number;
 }
 
+/** The skill guide's state: what the player's card can do in this battle, and what to press. */
+export interface GuideInfo {
+  card: string;
+  skill: string;
+  text: string;
+  /** ready: K fires it now, Space saves it; charging: not full yet; ace: the unit can't wield it; on-play: All In acted when played; fired / saved: chosen. */
+  state: 'ready' | 'charging' | 'ace' | 'on-play' | 'fired' | 'saved';
+  gauge: number;
+  ace: string;
+}
+
 /** The stances in the order the chips show them, with the key that picks each on the player's side. */
 const STANCES: { stance: Stance; key: string; label: string }[] = [
   { stance: 'aggressive', key: 'A', label: 'Aggressive' },
@@ -34,12 +45,48 @@ export class BattleHud {
   private readonly loss = document.createElement('div');
   /** Which battle of a Union attack this is, under the VS. */
   private readonly union = document.createElement('div');
+  /** The skill guide: the card's skill, and whether to fire it now or keep charging. */
+  private readonly guideEl = document.createElement('div');
+  private guideKey = '';
+  /** Called when the guide's FIRE or SAVE button is pressed (a tap, on a phone). */
+  onGuide: ((act: 'fire' | 'save') => void) | null = null;
   private shown = '';
 
   constructor(parent: HTMLElement) {
     this.el = document.createElement('div');
     this.el.id = 'battle-hud';
     parent.appendChild(this.el);
+    this.guideEl.className = 'guide';
+    this.guideEl.hidden = true;
+    this.guideEl.addEventListener('click', (e) => {
+      const act = (e.target as HTMLElement).closest<HTMLElement>('button')?.dataset.act;
+      if (act === 'fire' || act === 'save') this.onGuide?.(act);
+    });
+  }
+
+  /** The skill guide: the card in play, its skill, and the choice (or why there is none), or nothing. */
+  guide(g: GuideInfo | null): void {
+    const key = JSON.stringify(g);
+    if (key !== this.guideKey) {
+      this.guideKey = key;
+      this.guideEl.hidden = !g;
+      if (g) {
+        const status = {
+          ready: `<b class="ready">READY</b> <button data-act="fire"><kbd>K</kbd> Fire now</button><button data-act="save"><kbd>Space</kbd> Save it</button>`,
+          charging: `Charging <b>${g.gauge} / 100</b> · fight to fill it: Aggressive fills it faster, Passive not at all`,
+          ace: `Needs <b>ACE ${g.ace.toUpperCase()}</b>: this unit can't fire it`,
+          'on-play': 'Acted when the card was played',
+          fired: '<b class="ready">FIRED</b>',
+          saved: 'Saved: the gauge stays full for a later battle',
+        }[g.state];
+        this.guideEl.className = `guide ${g.state}`;
+        this.guideEl.innerHTML = `<div class="head"><span class="card"></span><span class="skill"></span></div><div class="text"></div><div class="status">${status}</div>`;
+        this.guideEl.querySelector('.card')!.textContent = g.card;
+        this.guideEl.querySelector('.skill')!.textContent = g.skill;
+        this.guideEl.querySelector('.text')!.textContent = g.text;
+      }
+    }
+    if (!this.guideEl.isConnected) this.el.append(this.guideEl);
   }
 
   /** Draws the banners and the bottom line; unchanged, it leaves the page alone. */
@@ -56,7 +103,7 @@ export class BattleHud {
         `<div class="morale"><span class="label">MORALE</span><span class="bar"><span style="width:${share.toFixed(1)}%"></span></span><span class="value">${b.morale}</span></div>` +
         `<div class="troops">${pips}</div>` +
         `<div class="stance"><span class="label">STANCE</span>${chips}</div>` +
-        `<div class="morale skill"><span class="label">SKILL</span><span class="bar"><span style="width:${((b.gauge / GAUGE_MAX) * 100).toFixed(1)}%"></span></span><span class="value">${b.gauge}</span></div></div>`;
+        `<div class="morale skill${b.gauge >= GAUGE_MAX ? ' full' : ''}"><span class="label">SKILL</span><span class="bar"><span style="width:${((b.gauge / GAUGE_MAX) * 100).toFixed(1)}%"></span></span><span class="value">${Math.floor(b.gauge)}</span></div></div>`;
     };
     this.el.innerHTML = `${banner(left, 'left')}<div class="vs">VS</div>${banner(right, 'right')}<div class="effect"></div>`;
     const [l, r] = this.el.querySelectorAll('.banner');
@@ -67,7 +114,7 @@ export class BattleHud {
     this.el.querySelector('.effect')!.textContent = effect;
     this.word.className = 'callout';
     this.union.className = 'union';
-    this.el.append(this.word, this.loss, this.union);
+    this.el.append(this.word, this.loss, this.union, this.guideEl);
   }
 
   /** "UNION 2 / 3" under the VS while a Union attack's battles play, or none. */

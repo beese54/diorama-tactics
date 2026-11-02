@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import type { ClashSetup, ClashSide } from '../game/clash';
 import { deploy } from '../game/deploy';
 import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
-import { deal, refill, unused, type Hand } from '../game/cards';
+import { deal, refill, unused, type Card, type Hand } from '../game/cards';
 import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from '../game/turn';
+import { onPlay } from '../game/skills';
 import { fightUnion, unionOf, unionShape } from '../game/union';
 import type { Side, Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
@@ -27,8 +28,13 @@ export interface SkirmishHost {
   /**
    * Plays a battle over the board; resolves with how it came out once the player goes on from it.
    * `chain`: which battle of a Union attack this is, counting from 0, and how many the Union has.
+   * `card`: the attacking side's card in play, whose skill its unit may fire (B6). The outcome
+   * carries each side's skill gauge as the battle ended.
    */
-  battle: (setup: ClashSetup, chain?: { index: number; count: number }) => Promise<{ winner: ClashSide; damage: number }>;
+  battle: (
+    setup: ClashSetup,
+    options?: { chain?: { index: number; count: number }; card?: Card | null },
+  ) => Promise<{ winner: ClashSide; damage: number; gauges?: Record<ClashSide, number> }>;
 }
 
 /**
@@ -103,8 +109,10 @@ export class Skirmish {
     if (this.busy || !playCard(this.turn, this.hands.player, id)) return;
     this.cards.hide();
     this.select(null);
-    const { name, mov, pow } = this.turn.card!;
-    this.host.say(`${name}: MOV ${mov}, POW ${pow}.`);
+    const card = this.turn.card!;
+    // All In acts as it is played: every ally's skill gauge fills.
+    const filled = onPlay(card, 'player', this.units);
+    this.host.say(`${card.name}: MOV ${card.mov}, POW ${card.pow}.${filled.length ? ` ${card.skill.name}: every ally's skill gauge is full.` : ''}`);
   }
 
   /** C: shows the hand, or puts it away. Once the turn is under way it is there to look at only. */
@@ -218,7 +226,12 @@ export class Skirmish {
     this.fighting = true;
     if (members.length > 1) this.host.say(`${unit.name}'s Union attacks: ${members.length} battles.`);
     const before = foe.morale;
-    const battles = await fightUnion(members, foe, (attacker, index) => this.host.battle(this.setupFor(attacker, foe), { index, count: members.length }));
+    const battles = await fightUnion(members, foe, async (attacker, index) => {
+      const out = await this.host.battle(this.setupFor(attacker, foe), { chain: { index, count: members.length }, card: this.turn.card });
+      // Each fighter carries its skill gauge on from the battle (spent, if its skill fired).
+      if (out.gauges) [attacker.gauge, foe.gauge] = [out.gauges.attacker, out.gauges.defender];
+      return out;
+    });
     for (const b of battles) this.layer.setRested(b.attacker, true);
     this.fighting = false;
     const gone = foe.morale > 0 ? '.' : ' and leaves the field.';

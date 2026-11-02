@@ -46,11 +46,13 @@ export interface Unit {
   morale: number;
   maxMorale: number;
   stats: Stats;
+  /** The skill gauge, 0 to GAUGE_MAX: filled by fighting, carried from battle to battle, spent when a card's skill fires (B6). */
+  gauge: number;
 }
 
 export function makeUnit(o: { id: string; name: string; side: Side; cls: ClassId; gender: Gender; x: number; y: number }): Unit {
   const def = CLASSES[o.cls];
-  return { ...o, morale: def.morale, maxMorale: def.morale, stats: { ...def.stats } };
+  return { ...o, morale: def.morale, maxMorale: def.morale, stats: { ...def.stats }, gauge: 0 };
 }
 
 /** Morale is a unit's life: at zero it is defeated and leaves the map. */

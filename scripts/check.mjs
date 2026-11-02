@@ -761,6 +761,103 @@ check('union: the chain stops as soon as the foe falls',
   firstWin >= 0 ? short.length === firstWin + 1 && (await mapUnits()).find((u) => u.id === uFoe.id).morale === 0 : short.length === 3, JSON.stringify(short.map((b) => [b.attacker, b.rules.winner])));
 check('union: no console errors', errors.length === 0, errors.join(' | '));
 
+// ---- Card skills (B6): a skill fires only with a full gauge and the card's ACE, K fires it ----
+// The meadow's hand holds Long Road and Steady Line (for All, so Aria can wield them), Swift
+// Banner (a lance's, which she can't) and King's Wager (All In: it fills every ally's gauge as it
+// is played). Each turn Aria fights a foe; the battle holds for the choice only when she can fire.
+errors.length = 0;
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+const kStart = await mapUnits();
+const kAriaId = kStart.find((u) => u.name === 'Aria').id;
+const kFoes = kStart.filter((u) => u.side === 'enemy');
+const kHand = (await handNow()).cards.map((c) => c.id);
+const skillNow = () => page.evaluate(() => window.__battle.skill());
+const unitNow = async (id) => (await mapUnits()).find((u) => u.id === id);
+/** On the player's turn: plays card `id`, stands Aria alone beside `foe` with `gauge`, and attacks; resolves with the battle up. */
+const skillBattle = async (id, gauge, foe) => {
+  await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+  await clickCard(kHand.indexOf(id));
+  // A clear spot near her (the Union section's finder), the foe below her, no ally on her shape.
+  const [x, y] = await unionSpot();
+  // Anyone else on the two tiles trades places with Aria (the finder sees past the Union section's units).
+  const was = await unitNow(kAriaId);
+  for (const u of (await mapUnits()).filter((u) => u.id !== kAriaId && u.id !== foe.id && u.morale > 0 && u.x === x && (u.y === y || u.y === y + 1))) {
+    await page.evaluate((id, c) => window.__map.setUnit(id, c), u.id, { x: was.x, y: was.y });
+  }
+  await page.evaluate((id, c) => window.__map.setUnit(id, c), kAriaId, { x, y, gauge });
+  await page.evaluate((id, c) => window.__map.setUnit(id, c), foe.id, { x, y: y + 1 });
+  await isolate({ id: kAriaId });
+  await clickTile(x, y);
+  await clickInPlace(x, y + 1);
+  const f = { ...foe, x, y: y + 1 };
+  await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
+  await frames(6);
+  return f;
+};
+// Turn 1, Long Road with a full gauge: the battle holds at READY; K fires Forced March and its cut-in.
+const kFoe1 = await skillBattle('long-road', 100, kFoes[0]);
+const k1Ready = await skillNow();
+await shot('22-skill-ready');
+await page.keyboard.press('KeyK');
+await page.waitForFunction(() => window.__battle.skill().cutIn.on, { timeout: 5000 }).catch(() => {});
+const k1Cut = await skillNow();
+await shot('23-skill-cut-in');
+await page.waitForFunction(() => !window.__battle.skill().held, { timeout: 10000 }).catch(() => {});
+const k1Rules = await page.evaluate(() => window.__battle.rules());
+const k1Before = { aria: await unitNow(kAriaId), foe: await unitNow(kFoe1.id) };
+await finishBattle();
+const k1After = { aria: await unitNow(kAriaId), foe: await unitNow(kFoe1.id) };
+check("skills: with a full gauge and the card's ACE, the battle holds for the choice, and K fires the skill with its cut-in",
+  k1Ready.state === 'ready' && k1Ready.held && k1Cut.fired === 'forced-march' && k1Cut.cutIn.on && k1Cut.state === 'fired', JSON.stringify({ k1Ready, k1Cut }));
+const k1Loser = k1Rules.winner === 'attacker' ? 'foe' : 'aria';
+check('skills: the result is the rules\' with the skill fired, and the gauge was spent (refilling from empty)',
+  k1After[k1Loser].morale === k1Before[k1Loser].morale - k1Rules.damage && k1After.aria.gauge < 100, JSON.stringify({ k1Rules, k1Before, k1After }));
+// Turn 2, Swift Banner (a lance's): Aria can't wield it, so no hold, K does nothing, the gauge stays.
+await skillBattle('swift-banner', 100, kFoes[1]);
+const k2 = await skillNow();
+await page.keyboard.press('KeyK');
+await frames(6);
+const k2After = await skillNow();
+await finishBattle();
+check("skills: a card whose ACE the unit can't wield neither holds nor fires, the guide says what it needs, and the gauge stays full",
+  k2.state === 'ace' && !k2.held && k2After.fired === null && (await unitNow(kAriaId)).gauge === 100, JSON.stringify({ k2, k2After }));
+// Turn 3, Steady Line as a Union attack: Aria (full) saves her gauge with Space; her two allies are charging.
+await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+await clickCard(kHand.indexOf('steady-line'));
+const [kx, ky] = await standUnion(9000);
+for (const [id, g] of [[kAriaId, 100], [allyTop.id, 40], [allyRight.id, 40]]) await page.evaluate((id, g) => window.__map.setUnit(id, { gauge: g }), id, g);
+await clickTile(kx, ky);
+await clickInPlace(kx, ky + 1);
+const k3 = [];
+for (let i = 0; i < 3; i++) {
+  await page.waitForFunction((i) => window.__map.battling() && window.__battle?.chain?.index === i, { timeout: 30000 }, i);
+  await frames(6);
+  const s = await skillNow();
+  k3.push({ ...s, attacker: await page.evaluate(() => window.__battle.attacker) });
+  // The leader's battle holds for the choice: Space saves the gauge.
+  if (s.state === 'ready') {
+    await page.keyboard.press('Space');
+    await frames(3);
+    k3[i].after = (await skillNow()).state;
+  }
+  await page.keyboard.press('Space');
+  await frames(3);
+  await page.keyboard.press('Space');
+  await frames(3);
+}
+await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
+check('skills: Space saves a ready skill (the gauge stays full), and a unit whose gauge isn\'t full fights on, charging',
+  k3[0].state === 'ready' && k3[0].after === 'saved' && k3[0].fired === null && (await unitNow(kAriaId)).gauge === 100 &&
+  k3.slice(1).every((b) => b.state === 'charging' && !b.held), JSON.stringify(k3));
+// Turn 4, King's Wager: All In fills every ally's gauge as it is played.
+await page.waitForFunction(() => window.__map.turn().side === 'player' && window.__map.hand().open, { timeout: 15000 });
+for (const u of (await mapUnits()).filter((u) => u.side === 'player')) await page.evaluate((id) => window.__map.setUnit(id, { gauge: 0 }), u.id);
+await clickCard(kHand.indexOf('kings-wager'));
+const k4 = (await mapUnits()).filter((u) => u.side === 'player' && u.morale > 0);
+check("skills: King's Wager (All In) fills every ally's gauge as it is played", k4.length > 0 && k4.every((u) => u.gauge === 100), JSON.stringify(k4.map((u) => [u.name, u.gauge])));
+check('skills: no console errors', errors.length === 0, errors.join(' | '));
+
 // ---- The card showcase (?mode=card): the layered, animated card --------------------------------
 const cardErrors = errors.length;
 /** Luminance mean and spread of a screen region, from a real screenshot of it. */

@@ -1,9 +1,12 @@
 import * as THREE from 'three';
-import { ClashSim, resolveClash, type ClashSetup, type ClashSide, type Stance } from '../game/clash';
+import type { Card } from '../game/cards';
+import { ClashSim, resolveClash, type ClashSetup, type ClashSide, type SkillId, type Stance } from '../game/clash';
+import { battleSkill, whyNot } from '../game/skills';
 import { CLASSES, triangleEdge } from '../game/units';
-import { BattleHud } from '../ui/BattleHud';
+import { BattleHud, type GuideInfo } from '../ui/BattleHud';
 import { BattleView } from './BattleView';
 import { ART, CHARACTERS } from './cast';
+import { CutIn } from './CutIn';
 import { Director, LEAD } from './Director';
 import { BattleScript } from './script';
 import { SquadLayer } from './SquadLayer';
@@ -27,7 +30,14 @@ export interface BattleOutcome {
   winner: ClashSide;
   /** Morale the loser loses. */
   damage: number;
+  /** Each side's skill gauge as the battle ended: for its unit to carry on. */
+  gauges: Record<ClashSide, number>;
+  /** The skill the player fired, if any. */
+  fired: SkillId | null;
 }
+
+/** Where the clock holds while the player chooses whether to fire a skill: in the opening, before the charge. */
+const CHOOSE_AT = LEAD * 0.5;
 
 /**
  * One battle on screen, over whatever is behind it: its own full-resolution canvas and HUD, the
@@ -43,6 +53,11 @@ export class BattleScene {
   private readonly clock = new THREE.Clock();
   /** Seconds added to the real clock: Space jumps it to the result. */
   private skew = 0;
+  /** While the player chooses whether to fire (and through the cut-in), the clock holds here. */
+  private held: number | null = null;
+  /** The skill guide's state, or null with no card in play. */
+  private guide: GuideInfo | null = null;
+  private fired: SkillId | null = null;
   private readonly onKey = (e: KeyboardEvent) => this.key(e);
   private readonly onClick = () => this.over() && this.leave();
 
@@ -57,23 +72,73 @@ export class BattleScene {
     /** A still clock's second, or null for real time. */
     private fixed: number | null,
     private readonly onLeave?: (outcome: BattleOutcome) => void,
+    /** The card the player's side has in play, whose skill it may fire. */
+    private readonly card: Card | null = null,
   ) {
     this.sim = sim;
+    this.prepareSkill();
     view.renderer.setAnimationLoop(() => this.fixed === null && this.draw(this.now()));
     if (fixed !== null) this.draw(fixed);
     window.addEventListener('keydown', this.onKey);
     view.canvas.addEventListener('click', this.onClick);
+    hud.onGuide = (act) => (act === 'fire' ? void this.fire() : this.save());
     if (import.meta.env.DEV) this.hook();
+  }
+
+  /**
+   * The skill guide (B6), for the card the player's side has in play: ready (the battle holds in
+   * its opening until the player fires it, K, or saves the gauge, Space), charging, or the wrong
+   * ACE. Only the player's own unit chooses; the foes fire theirs when they attack (from B7).
+   */
+  private prepareSkill(): void {
+    const card = this.card;
+    if (!card) return;
+    const unit = this.player === 'attacker' ? this.setup.attacker : this.setup.defender;
+    const not = whyNot(unit, card);
+    const state: GuideInfo['state'] = !not ? 'ready' : not.why === 'charging' ? 'charging' : not.why === 'ace' ? 'ace' : 'on-play';
+    this.guide = { card: card.name, skill: card.skill.name, text: card.skill.text, state, gauge: Math.floor(unit.gauge), ace: card.ace };
+    this.hud.guide(this.guide);
+    // Ready, in real time: hold in the opening for the choice.
+    if (state === 'ready' && this.fixed === null) this.held = CHOOSE_AT;
+  }
+
+  /** K, or the guide's FIRE: fires the card's skill, plays its cut-in with the clock held, then lets the battle go on. */
+  private async fire(): Promise<void> {
+    const skill = this.card && battleSkill(this.card);
+    if (!skill || this.guide?.state !== 'ready' || this.fired) return;
+    if (!this.sim.fire(this.player, skill)) return;
+    this.fired = skill;
+    this.guide = { ...this.guide, state: 'fired', gauge: 0 };
+    this.hud.guide(this.guide);
+    this.held ??= this.now();
+    await CutIn.play(document.body, this.card!, this.card!.skill.name);
+    this.release();
+  }
+
+  /** Space while the battle holds for the choice, or the guide's SAVE: keeps the gauge full for later. */
+  private save(): void {
+    if (this.guide?.state !== 'ready') return;
+    this.guide = { ...this.guide, state: 'saved' };
+    this.hud.guide(this.guide);
+    this.release();
+  }
+
+  /** Lets the held clock run on from where it stood. */
+  private release(): void {
+    if (this.held === null) return;
+    this.skew = this.held - this.clock.getElapsedTime();
+    this.held = null;
   }
 
   /**
    * Loads both squads and the backdrop for `setup` and opens the battle on the page. `chain`:
    * which battle of a Union attack this is (from 0) and how many the Union has; shown as
-   * "UNION 2 / 3" under the VS when there is more than one.
+   * "UNION 2 / 3" under the VS when there is more than one. `card`: the card the player's side
+   * has in play, whose skill its unit may fire (B6).
    */
   static async open(
     setup: ClashSetup,
-    options: { at?: number | null; onLeave?: (outcome: BattleOutcome) => void; chain?: { index: number; count: number } } = {},
+    options: { at?: number | null; onLeave?: (outcome: BattleOutcome) => void; chain?: { index: number; count: number }; card?: Card | null } = {},
   ): Promise<BattleScene> {
     const view = new BattleView(document.body);
     const hud = new BattleHud(document.body);
@@ -92,13 +157,13 @@ export class BattleScene {
     const names = { attacker: a.name, defender: d.name };
     const director = new Director(view, { attacker: left, defender: right }, sim, script, hud, names, matchup(setup));
     const player: ClashSide = a.side === 'player' ? 'attacker' : 'defender';
-    const scene = new BattleScene(view, hud, director, sim, setup, player, options.at ?? null, options.onLeave);
+    const scene = new BattleScene(view, hud, director, sim, setup, player, options.at ?? null, options.onLeave, options.card ?? null);
     if (import.meta.env.DEV) Object.assign((window as { __battle?: object }).__battle!, { chain, attacker: setup.attacker.id, defenderMorale: setup.defender.morale });
     return scene;
   }
 
   private now(): number {
-    return this.clock.getElapsedTime() + this.skew;
+    return this.held ?? this.clock.getElapsedTime() + this.skew;
   }
 
   private draw(seconds: number): void {
@@ -115,10 +180,18 @@ export class BattleScene {
   private leave(): void {
     if (!this.onLeave || !this.sim.winner) return;
     this.dispose();
-    this.onLeave({ winner: this.sim.winner, damage: this.sim.damage });
+    this.onLeave({ winner: this.sim.winner, damage: this.sim.damage, gauges: { attacker: this.sim.gauge('attacker'), defender: this.sim.gauge('defender') }, fired: this.fired });
   }
 
   private key(e: KeyboardEvent): void {
+    // While the battle holds for the choice: K fires the skill, Space saves the gauge.
+    if (this.guide?.state === 'ready' && (e.code === 'KeyK' || e.code === 'Space')) {
+      e.preventDefault();
+      if (e.code === 'KeyK') void this.fire();
+      else this.save();
+      return;
+    }
+    if (this.held !== null) return;
     if (LEAVE_KEYS.has(e.code) && this.over() && this.onLeave) {
       e.preventDefault();
       this.leave();
@@ -154,9 +227,11 @@ export class BattleScene {
         length: () => director.length(),
         /** The rules' own result for this battle at neutral stances, for checks against what the scene shows. */
         rules: () => {
-          const { winner, damage } = resolveClash(setup);
+          const { winner, damage } = resolveClash(this.fired ? { ...setup, fire: { [this.player]: this.fired } } : setup);
           return { winner, damage, pow: setup.pow, morale: { attacker: setup.attacker.morale, defender: setup.defender.morale } };
         },
+        /** The card skill: the guide's state, whether the clock holds for the choice, the skill fired, and the cut-in. */
+        skill: () => ({ state: this.guide?.state ?? null, held: this.held !== null, fired: this.fired, cutIn: CutIn.state() }),
         /** Every character the scene could cast, for checks. */
         characters: Object.keys(CHARACTERS),
       },

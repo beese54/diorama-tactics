@@ -161,6 +161,9 @@ export class BattleScript {
         case 'panic':
           acts.push({ kind: 'panic', at: lastBlow, side: e.side });
           break;
+        case 'skill':
+          // A skill fired before the battle: its cut-in plays before the clock starts (BattleScene).
+          break;
         case 'duel': {
           const a: Who = { side: 'attacker', fighter: e.attacker };
           const d: Who = { side: 'defender', fighter: e.defender };
@@ -195,8 +198,9 @@ export class BattleScript {
           break;
         }
       }
-      // Every event ends on an act of its own: a blow on its foe's reaction as it lands.
-      times.push(acts.at(-1)!.at);
+      // Every event ends on an act of its own: a blow on its foe's reaction as it lands (a fired
+      // skill, which has none, at the beat's start).
+      times.push(acts.at(-1)?.at ?? start);
     }
     const seconds = acts.length ? Math.max(...acts.map((x) => x.at + actSeconds(x))) + PAUSE : 0;
     return { acts, seconds, times };

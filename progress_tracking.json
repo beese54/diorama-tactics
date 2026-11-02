@@ -301,6 +301,12 @@
       "title": "Unions: fightUnion in the rules core (one battle per member against the same foe, losses carried, stops when the foe falls; 6 tests); the Union marked violet on the board with its shape's empty places edged, UNION xN in the unit panel; the attack plays the chain, every battle in full, labelled UNION n / N in the battle HUD; check.mjs union checks (highlight = rules, order, carried Morale, stop on a fall)",
       "status": "done",
       "commit": "536823e"
+    },
+    {
+      "id": "B6",
+      "title": "Card skills: the gauge carried on each unit (ClashSim tracks it, fired skills empty it); src/game/skills.ts (which card has which skill, canFire = full gauge + ACE, why not, All In on play); 11 battle effects in ClashSim (19 tests); the battle holds at its opening for the choice with a guide (K fire / Space save, buttons for touch); the cut-in with the card's clip; hit-stop and shake on skill blows; SKL gauge in the unit panel; Pike Wall's text sharpened; check.mjs skill checks",
+      "status": "review",
+      "commit": "next"
     }
   ],
   "backlog": [

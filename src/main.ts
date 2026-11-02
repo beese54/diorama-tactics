@@ -296,11 +296,12 @@ async function main(): Promise<void> {
       surfacePoint: (tile, u, v) => mesh.surfacePoint(tile, u, v),
       focus: (point) => rig.focusOn(point),
       say: (text) => hud.say(text),
-      battle: (setup, chain) => {
+      battle: (setup, opts) => {
         battling = true;
         return new Promise((resolve) => {
           void BattleScene.open(setup, {
-            chain,
+            chain: opts?.chain,
+            card: opts?.card,
             onLeave: (outcome) => {
               battling = false;
               // The board's clock stood still with it: the time the battle took doesn't count.
@@ -524,7 +525,7 @@ async function main(): Promise<void> {
         /** CPU frame times since the last call, in ms. */
         takeFrameCpu: () => frameCpu.splice(0),
         /** The skirmish, for checks: units, the turn, the selection and what is marked. */
-        units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, gender: u.gender, x: u.x, y: u.y, morale: u.morale })) ?? null,
+        units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, gender: u.gender, x: u.x, y: u.y, morale: u.morale, gauge: u.gauge })) ?? null,
         /** The player's hand: its cards, which are used, and whether it is open on screen. */
         hand: () => skirmish?.handInfo(),
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },
@@ -543,7 +544,7 @@ async function main(): Promise<void> {
         /** Whether a battle is open over the board. */
         battling: () => battling,
         /** Moves a unit or sets its Morale, for checks (a foe next to a unit, a battle that leaves one at 0). */
-        setUnit(id: string, changes: { x?: number; y?: number; morale?: number }) {
+        setUnit(id: string, changes: { x?: number; y?: number; morale?: number; gauge?: number }) {
           const unit = skirmish?.units.find((u) => u.id === id);
           if (unit) Object.assign(unit, changes);
         },

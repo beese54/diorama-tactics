@@ -24,6 +24,47 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B6: Card skills
+![Firestorm's cut-in: Ember Rite's own clip sweeping across the battle](battles/b6-skills/firestorm-cut-in.jpg)
+
+| Firestorm: the choice, the cut-in, the blast | Ready: K fires, Space saves | Forced March's cut-in | The blast's aftermath |
+|---|---|---|---|
+| ![](battles/b6-skills/firestorm.gif) | ![](battles/b6-skills/firestorm-ready.jpg) | ![](battles/b6-skills/march-cut-in.jpg) | ![](battles/b6-skills/firestorm-result.jpg) |
+
+Videos: [`firestorm.mp4`](battles/b6-skills/firestorm.mp4) (Ilse, Ember Rite) and [`forced-march.mp4`](battles/b6-skills/forced-march.mp4) (Aria, Long Road).
+
+**What changed**
+- **The skill gauge carries over.** Each unit keeps its gauge from battle to battle, filling it with the blows it lands and the duels it wins (faster when Aggressive, not at all when Passive). The unit panel shows it as SKL.
+- **A skill fires only when it can.** The unit's gauge must be full, and it must wield the card's ACE (or the card must be for All).
+- **The battle stops to ask.** When it can fire, the battle holds at its opening with a guide: the card, its skill and what it does. K, or the guide's button, fires it now; Space saves the gauge for a later battle. When it can't fire, the guide says why: "Charging 60 / 100", or "Needs ACE LANCE".
+- **Firing plays the cut-in.** A band sweeps across with the card's own hover clip playing in it and the skill's name in gold, then leaves in a white flash. Then the battle plays with the effect.
+- **The effects:**
+  - Forced March: +3 edge.
+  - Lance Charge and Volley: the opening volley strikes twice.
+  - Blade Dance: each duel won fells a second foe.
+  - Pike Wall: the foe's charge and counter miss.
+  - Firestorm: a blast at every foe.
+  - Hold Fast: half the Morale lost.
+  - Rend: +20 Morale on a win.
+  - Parry: the first three blows at the leader miss.
+  - Trample: the charge fells the front rank.
+  - Executioner: duels with the foe's leader are won outright.
+- **Hit-stop and shake:** where a skill's blow lands, the battle freezes for a beat and shakes.
+- **King's Wager's All In** acts when the card is played: every ally's gauge fills.
+
+**Feedback**
+- "Player presses K, include a small user guide during battle so that users can choose to recharge to use".
+- On All In: "Keep it, fire on play". On the cut-in: "The card's clip in a band".
+
+**Decisions**
+- **The battle holds for the choice rather than asking at any time:** most skills act at the charge, so the choice comes before it. Saving is a real choice, as a gauge kept full can fire with a better card.
+- **The gauge lives in the rules** (ClashSim), and the scene only draws it, so every check compares the battle shown with the rules, skill included.
+- **Firestorm's blast hits by chance** (very likely, not certain). One sure blow on every foe would have felled whole squads and won every battle outright.
+- **Pike Wall's text sharpened** to "The foe's charge and counter miss.": when you attack, the foe's blows come in its counter.
+
+**Learned**
+- **A skill's effect needs a time before the battle starts.** The gauge used to begin each battle at zero and was thrown away after, so a charge skill could never be ready in time. Carrying the gauge on the unit fixed both.
+
 ### B5: Unions
 ![Aria selected: her Union of three marked violet, Gorran the target in red](battles/b5-unions/highlight.jpg)
 

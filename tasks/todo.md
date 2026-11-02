@@ -620,7 +620,11 @@ Proposed milestones (each one reviewed with screenshots before the next):
   - Selected, a unit's Union is marked violet (a hue no other mark uses), its shape's empty places edged; the unit panel reads UNION xN.
   - The attack plays each battle over the board in full, the HUD reading UNION n / N; one summary notice after.
   - check.mjs 135/135 (5 new union checks; the single-attack checks now isolate their hero, since any attack is a Union attack); identity 70/70.
-- [ ] **B6 Card skills:** cut-ins, flash, hit-stop, shake.
+- [x] **B6 Card skills:** cut-ins, flash, hit-stop, shake (built 2026-11-02, in review). The user chose: K to fire, with a guide in the battle to fire now or keep charging; King's Wager's All In fires on play; the cut-in plays the card's own clip.
+  - The skill gauge is carried on each unit from battle to battle; ClashSim fills it from what lands and empties it when a skill fires.
+  - `src/game/skills.ts`: each card's skill; `canFire` (full gauge + ACE or All) and why not; All In on play. 11 battle effects in ClashSim; Firestorm's blast hits by chance (the volley's + 0.2), as a sure hit on every foe won every battle outright. 19 tests.
+  - The battle holds at its opening while the player chooses (K fire, Space save; buttons for touch); the cut-in (card clip, gold name, flash); hit-stop and harder shake on skill blows; SKL gauge in the unit panel and a READY glow on the banner. Pike Wall reads "The foe's charge and counter miss."
+  - check.mjs 141/141 (6 new); identity 70/70.
 - [ ] **B7 Enemy AI and win/lose:** a full playable skirmish.
 - [ ] **B8 Polish:** transitions, audio, art pass.
 

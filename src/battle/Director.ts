@@ -15,6 +15,8 @@ type BodyAct = Extract<Timed, { who: Who }>;
 
 /** Quiet seconds before the charge, to take in the squads. */
 export const LEAD = 1;
+/** How long the battle holds still where a fired skill's blow lands: the hit-stop. */
+export const HIT_STOP = 0.14;
 /** At rest, breathing. */
 const IDLE: Beat[] = [{ pose: 'stance', seconds: 1.6, breathe: true }];
 /** The win, held once it is played. */
@@ -85,6 +87,10 @@ export class Director {
   private readonly gains: Record<ClashSide, { start: number; amount: number }[]> = { attacker: [], defender: [] };
   /** When the beats so far run out. */
   private end = LEAD;
+  /** When each blow a fired skill caused lands: the battle holds still there a moment, and shakes. */
+  private readonly stops: number[] = [];
+  /** Each side's gauge as the battle opened: what its unit carried in. */
+  private readonly carried: Record<ClashSide, number>;
 
   constructor(
     private readonly view: BattleView,
@@ -95,17 +101,27 @@ export class Director {
     private readonly names: Record<ClashSide, string>,
     /** The bottom line until the result: the matchup's edge. */
     private readonly matchup: string,
-  ) {}
+  ) {
+    this.carried = { attacker: sim.gauge('attacker'), defender: sim.gauge('defender') };
+  }
+
+  /** The clock the battle is drawn at: real time, held still a moment at each skill's blow. */
+  private warp(seconds: number): number {
+    // The stops are in order, each later one reached on the clock the earlier ones have held back.
+    let t = seconds;
+    for (const h of this.stops) if (t > h) t -= Math.min(t - h, HIT_STOP);
+    return t;
+  }
 
   /** Whether the battle is over and fully played by `seconds`. */
   over(seconds: number): boolean {
-    return this.sim.phase === 'done' && seconds >= this.end;
+    return this.sim.phase === 'done' && this.warp(seconds) >= this.end;
   }
 
   /** When the last beat ends: plays the whole battle out to know it (the stances as they are now). */
   length(): number {
     while (this.sim.phase !== 'done') this.next();
-    return this.end;
+    return this.end + this.stops.filter((h) => h < this.end).length * HIT_STOP;
   }
 
   private next(): void {
@@ -117,6 +133,8 @@ export class Director {
         if (amount) this.gains[side].push({ start: this.end + take.times[i], amount });
       }
     }
+    for (const [i, e] of events.entries()) if ('skill' in e && e.skill === true) this.stops.push(this.end + take.times[i]);
+    this.stops.sort((p, q) => p - q);
     for (const a of take.acts) {
       const t = { ...a, start: this.end + a.at } as Timed;
       this.acts.push(t);
@@ -195,13 +213,17 @@ export class Director {
   }
 
   /** Draws the battle as it stands `seconds` after it opens. */
-  draw(seconds: number): void {
-    while (this.sim.phase !== 'done' && seconds >= this.end) this.next();
+  draw(clock: number): void {
+    while (this.sim.phase !== 'done' && clock >= this.end) this.next();
+    // Held still a moment where a skill's blow lands (the hit-stop), and shaken harder there.
+    const seconds = this.warp(clock);
     let shake = 0;
     for (const side of ['attacker', 'defender'] as const) {
       for (const [n, f] of this.squads[side].fighters.entries()) shake = Math.max(shake, this.drawFighter({ side, fighter: n }, f, seconds));
     }
-    this.view.nudge(shake * Math.sin(seconds * 97), shake * 0.6 * Math.sin(seconds * 131));
+    const since = Math.min(...this.stops.map((h) => (seconds >= h ? seconds - h : Infinity)));
+    if (since < 0.35) shake = Math.max(shake, 9 * (1 - since / 0.35));
+    this.view.nudge(shake * Math.sin(clock * 97), shake * 0.6 * Math.sin(clock * 131));
     this.drawHud(seconds);
   }
 
@@ -269,7 +291,9 @@ export class Director {
       const total = this.squads[side].fighters.length;
       const down = [...this.fell].filter(([k, t]) => k.startsWith(side) && t <= seconds).length;
       const lost = result && result.winner !== side ? result.damage : 0;
-      const gauge = Math.min(GAUGE_MAX, this.gains[side].reduce((sum, g) => sum + (g.start <= seconds ? g.amount : 0), 0));
+      // What its unit carried in (none once its skill has fired), and what it has earned since.
+      const from = this.sim.squad(side).skill ? 0 : this.carried[side];
+      const gauge = Math.min(GAUGE_MAX, this.gains[side].reduce((sum, g) => sum + (g.start <= seconds ? g.amount : 0), from));
       // The stance and the edge are as they stand now: a change shows at once, and counts from the next beat.
       const { stance } = this.sim.squad(side);
       return {

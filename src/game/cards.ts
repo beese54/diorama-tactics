@@ -11,7 +11,7 @@ export interface Card {
   mov: number;
   /** The weapon a unit needs to fire the card's skill, or any. */
   ace: Weapon | 'all';
-  /** Named and described now; skills fire in B6. */
+  /** The skill a card can fire in battle (src/game/skills.ts), or on play (All In). */
   skill: { name: string; text: string };
 }
 
@@ -21,7 +21,7 @@ export const CARDS: readonly Card[] = [
   { id: 'swift-banner', name: 'Swift Banner', pow: 45, mov: 14, ace: 'lance', skill: { name: 'Lance Charge', text: 'The charge strikes twice.' } },
   { id: 'scouts-path', name: "Scout's Path", pow: 50, mov: 13, ace: 'bow', skill: { name: 'Volley', text: 'Every archer looses a second arrow.' } },
   { id: 'open-field', name: 'Open Field', pow: 55, mov: 12, ace: 'sword', skill: { name: 'Blade Dance', text: 'Each duel won fells a second foe.' } },
-  { id: 'iron-column', name: 'Iron Column', pow: 60, mov: 11, ace: 'spear', skill: { name: 'Pike Wall', text: "The foe's charge misses." } },
+  { id: 'iron-column', name: 'Iron Column', pow: 60, mov: 11, ace: 'spear', skill: { name: 'Pike Wall', text: "The foe's charge and counter miss." } },
   { id: 'ember-rite', name: 'Ember Rite', pow: 60, mov: 11, ace: 'staff', skill: { name: 'Firestorm', text: 'A blast strikes every foe at the charge.' } },
   { id: 'steady-line', name: 'Steady Line', pow: 65, mov: 10, ace: 'all', skill: { name: 'Hold Fast', text: 'Lose only half the Morale if the battle is lost.' } },
   { id: 'cleavers-oath', name: "Cleaver's Oath", pow: 70, mov: 9, ace: 'axe', skill: { name: 'Rend', text: '+20 Morale damage on a win.' } },
