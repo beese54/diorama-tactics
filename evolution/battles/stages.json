@@ -204,7 +204,7 @@
     {
       "id": "b7-foes",
       "date": "2026-11-03",
-      "commit": "next",
+      "commit": "ac08fb6",
       "image": "b7-foes/foe-attack.jpg",
       "title": "B7 · The foes play, and battles end",
       "note": "The foes take real turns under the player’s own rules: a card, moves on the shared pool (advancing together along real paths), Union attacks the player defends in, and their skills fired on their own. Easy is bold, Hard cautious and sharp (a menu picker). The battle ends in VICTORY or DEFEAT with the stats, Play again or New map. Battle banners now follow sides: the player’s blue, the foes’ red."
