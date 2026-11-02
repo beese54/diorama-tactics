@@ -612,9 +612,9 @@ The user approved M13–M16 and closed the map phase. All question-matrix defaul
 Proposed milestones (each one reviewed with screenshots before the next):
 - [x] **B0 Rules core** (pure TS, tests only): units, classes, stats, weapon triangle, terrain defence from `TERRAIN`, move range by `moveCost` on a shared MOV pool, Union shapes (`+`/`x`), clash maths, Morale.
 - [x] **B1 Units on the map:** procedural pixel units (heads, two sides), idle animation, deployment on any theme, select, move range and path preview, move tween, unit info panel. Shots in `evolution/characters/`.
-- [ ] **B2 Battle scene v0:** first a still style frame at full resolution for approval (the risk point: if code-drawn characters fall short, fall back to a licensed hi-res art pack or supplied art). Then: attack an adjacent enemy, transition to a side view (full resolution, not pixelated) whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
+- [x] **B2 Battle scene v0:** first a still style frame at full resolution for approval (the risk point: if code-drawn characters fall short, fall back to a licensed hi-res art pack or supplied art). Then: attack an adjacent enemy, transition to a side view (full resolution, not pixelated) whose ground and backdrop come from the two tiles' terrain and the theme; squads of 1 head + soldiers charge, clash and fall (scripted). Shots in `evolution/battles/`.
 - [x] **B3 Battle scene v1:** charge, counter and melee driven by stats; stance toggle; skill gauge; Morale result back on the map.
-- [ ] **B4 Cards and turns:** card hand (POW, MOV, ACE, skill), one card per turn, one attack per turn, end turn.
+- [x] **B4 Cards and turns:** card hand (POW, MOV, ACE, skill), one card per turn, one attack per turn, end turn. Then the card art round: 12 layered, animated cards with Seedance hover clips, and the animated hand (approved 2026-11-02).
 - [ ] **B5 Unions:** shape detection and highlight, chained clashes.
 - [ ] **B6 Card skills:** cut-ins, flash, hit-stop, shake.
 - [ ] **B7 Enemy AI and win/lose:** a full playable skirmish.

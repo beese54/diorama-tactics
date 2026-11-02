@@ -137,25 +137,25 @@
     {
       "id": "B0",
       "title": "Rules core: units, classes, weapon triangle, shared-MOV move range, Unions, step-by-step clash simulation, Morale",
-      "status": "review",
+      "status": "done",
       "commit": "3df296f"
     },
     {
       "id": "B1",
       "title": "Units on the map: deployment, select, move range, path preview, walk, shared MOV pool, turn",
-      "status": "review",
+      "status": "done",
       "commit": "622c005"
     },
     {
       "id": "B2-style",
       "title": "Battle style frame at full resolution from Google Flow art round 1",
-      "status": "review",
+      "status": "done",
       "commit": "8abc8c6"
     },
     {
       "id": "B2-style-r1",
       "title": "Style frame round 1: woman leader and soldier; squads mix soldier designs",
-      "status": "review",
+      "status": "done",
       "commit": "fa9c153"
     },
     {
@@ -167,43 +167,43 @@
     {
       "id": "B2-anim-r1",
       "title": "More poses for Aria (ready, recover, run-2, victory) and code motion between poses",
-      "status": "review",
+      "status": "done",
       "commit": "071c02f"
     },
     {
       "id": "B2-roster-bram",
       "title": "Bram: Flow standing image, 10 Seedream poses, the thrust streak, ?char= in the animation test",
-      "status": "review",
+      "status": "done",
       "commit": "cc376e1"
     },
     {
       "id": "B2-roster-edric",
       "title": "Edric: Flow standing image (4:3), 12 Seedream poses with the horse, gallop cycle, rider height and reach; sets in WebP from scripts/art/sets.json",
-      "status": "review",
+      "status": "done",
       "commit": "90be658"
     },
     {
       "id": "B2-roster-corin",
       "title": "Corin: Flow standing image, 10 Seedream poses (victory regenerated), the axe arc",
-      "status": "review",
+      "status": "done",
       "commit": "888ac00"
     },
     {
       "id": "B2-roster-ranged",
       "title": "Dela and Ilse: Flow standing images, 22 Seedream poses, Arrow and Bolt effects, ranged characters",
-      "status": "review",
+      "status": "done",
       "commit": "5173fae"
     },
     {
       "id": "B2-roster-rivals",
       "title": "Rival leaders: six Flow standing images, 65 Seedream poses (3 regenerated), Sabine and Gorran swings, Petra and Varek streaks, Ulric arrow, Morwen crimson bolt",
-      "status": "review",
+      "status": "done",
       "commit": "cf37184"
     },
     {
       "id": "B2-roster-soldiers",
       "title": "Twelve soldiers (man and woman per class): ten Flow standing images, 124 Seedream poses (3 regenerated), swings, streaks, arrows, azure bolts; generator timeout; keyer drops teal glow fringes",
-      "status": "review",
+      "status": "done",
       "commit": "308dddc"
     },
     {
@@ -269,13 +269,13 @@
     {
       "id": "cards-long-road-art",
       "title": "Card art round step 2: Long Road's layers by Seedream through the API (plate, Aria and a sword soldier from their standing images, a milestone and straw grass in front; $0.14) and scripts/art/cardart.py (key, defringe the rim light's glow, place, grade, contact shadow, depth map) -> public/cards/long-road/",
-      "status": "review",
+      "status": "done",
       "commit": "ee20ff9"
     },
     {
       "id": "cards-renderer",
       "title": "Card art round step 4: the card renderer (src/cards/: layout, looks, frameArt, ArtStage, CardView, showcase) and ?mode=card&id=: the painted frame, stats and crested back; the art window as a layer stack with depth parallax, sunbeams, dust, a sword glint and the hover clip; tilt toward the pointer, float, flip, touch and gyro; foil and emboss on the metal; the foes' crimson stock; check.mjs card checks",
-      "status": "review",
+      "status": "done",
       "commit": "26a0afc"
     },
     {
@@ -293,8 +293,8 @@
     {
       "id": "cards-hand",
       "title": "The animated cards replace the B4 pixel hand: handLayout (pure, tested: the fan, the focused card lifted, a clickable point per card), HandView (own full-resolution canvas, CardView per card, DOM hit boxes, used/in-play states, the focused card's clip, F and long-press flip, touch-aware keys line, the foes' card turning face up; idle when closed), lazily loaded clips, hand cards painted and loaded at their size on screen (paint scale, scaled-down layers, one back per side), the foes' cards pre-loaded; FOES_TURN 2.6 s; check.mjs hand checks",
-      "status": "review",
-      "commit": "next"
+      "status": "done",
+      "commit": "98bdf79"
     }
   ],
   "backlog": [

@@ -172,7 +172,7 @@
     {
       "id": "b4-cards-r5-hand",
       "date": "2026-11-02",
-      "commit": "next",
+      "commit": "98bdf79",
       "image": "b4-cards/r5-hand/focus.jpg",
       "title": "B4 r5 · The hand of animated cards",
       "note": "The B4 pixel menu hand is replaced by the animated cards, drawn on a canvas of their own at full resolution over the board. They fan along the bottom; the card the pointer is on rises, tilts and plays its clip; F or a long press turns it over; spent cards are greyed and stamped. On the foes’ turn their card slides in face down on crimson stock and turns face up. On a phone the chosen card lifts clear above the row."
