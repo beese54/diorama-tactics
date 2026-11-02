@@ -517,31 +517,38 @@
         pointer-events: none;
         overflow: hidden;
       }
+      /* The battle dims behind the band, so the card's clip is the focus. */
+      #cut-in .dim {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 50% 50%, rgba(5, 6, 14, 0.55), rgba(5, 6, 14, 0.82));
+        animation: cut-in-dim var(--cut-in) both;
+      }
       #cut-in .band {
         position: absolute;
         left: -10%;
         right: -10%;
-        top: 30%;
-        height: 40%;
+        top: 22%;
+        height: 56%;
         display: flex;
         align-items: center;
-        background: linear-gradient(90deg, rgba(10, 12, 26, 0), rgba(10, 12, 26, 0.94) 14%, rgba(10, 12, 26, 0.94) 86%, rgba(10, 12, 26, 0));
+        background: linear-gradient(90deg, rgba(10, 12, 26, 0), rgba(10, 12, 26, 0.95) 12%, rgba(10, 12, 26, 0.95) 88%, rgba(10, 12, 26, 0));
         border-top: 3px solid #ffe08a;
         border-bottom: 3px solid #ffe08a;
-        box-shadow: 0 0 60px rgba(255, 200, 90, 0.45);
-        animation: cut-in-band 1.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        box-shadow: 0 0 80px rgba(255, 200, 90, 0.45);
+        animation: cut-in-band var(--cut-in) cubic-bezier(0.25, 0.8, 0.25, 1) both;
       }
       #cut-in .art {
         position: relative;
         height: 112%;
         aspect-ratio: 1;
-        margin-left: 16%;
+        margin-left: 17%;
         background-size: cover;
         background-position: center;
-        border: 3px solid #ffe08a;
+        border: 4px solid #ffe08a;
         transform: skewY(6deg);
         overflow: hidden;
-        box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 210, 120, 0.35);
       }
       #cut-in .art video {
         position: absolute;
@@ -550,7 +557,7 @@
         height: 100%;
         object-fit: cover;
         opacity: 0;
-        transition: opacity 0.2s;
+        transition: opacity 0.25s;
       }
       #cut-in .art video.on {
         opacity: 1;
@@ -558,11 +565,12 @@
       #cut-in .words {
         margin-left: 4%;
         transform: skewY(6deg);
+        animation: cut-in-words var(--cut-in) both;
       }
       #cut-in .skill {
         font-family: 'Cinzel', serif;
         font-weight: 700;
-        font-size: min(7vw, 12vh);
+        font-size: min(6vw, 10.5vh);
         line-height: 1;
         letter-spacing: 0.05em;
         color: #ffe08a;
@@ -573,7 +581,7 @@
         font-family: 'Cormorant Garamond', serif;
         font-style: italic;
         font-weight: 600;
-        font-size: min(2.8vw, 4.6vh);
+        font-size: min(2.6vw, 4.4vh);
         color: #f4f1e8;
       }
       #cut-in .flash {
@@ -581,17 +589,28 @@
         inset: 0;
         background: #fff;
         opacity: 0;
-        animation: cut-in-flash 1.9s both;
+        animation: cut-in-flash var(--cut-in) both;
       }
+      /* In about half a second, then a slow drift while the clip plays, then out in the flash. */
       @keyframes cut-in-band {
         0% { transform: translateX(110%) skewY(-6deg); }
-        18% { transform: translateX(0) skewY(-6deg); }
-        78% { transform: translateX(-3%) skewY(-6deg); }
+        12% { transform: translateX(0) skewY(-6deg); }
+        88% { transform: translateX(-3%) skewY(-6deg); }
         100% { transform: translateX(-125%) skewY(-6deg); }
       }
+      @keyframes cut-in-words {
+        0%, 10% { opacity: 0; transform: skewY(6deg) translateX(4%); }
+        20% { opacity: 1; transform: skewY(6deg) translateX(0); }
+        100% { opacity: 1; transform: skewY(6deg) translateX(0); }
+      }
+      @keyframes cut-in-dim {
+        0% { opacity: 0; }
+        10%, 90% { opacity: 1; }
+        100% { opacity: 0; }
+      }
       @keyframes cut-in-flash {
-        0%, 76% { opacity: 0; }
-        84% { opacity: 0.85; }
+        0%, 88% { opacity: 0; }
+        93% { opacity: 0.85; }
         100% { opacity: 0; }
       }
       #battle-hud [hidden] { display: none; }

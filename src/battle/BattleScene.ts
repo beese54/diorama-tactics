@@ -191,6 +191,12 @@ export class BattleScene {
       else this.save();
       return;
     }
+    // Through the cut-in, K, Space or Enter skips it: the battle goes on at once.
+    if (this.held !== null && this.fired && (e.code === 'KeyK' || e.code === 'Space' || e.code === 'Enter')) {
+      e.preventDefault();
+      CutIn.skip();
+      return;
+    }
     if (this.held !== null) return;
     if (LEAVE_KEYS.has(e.code) && this.over() && this.onLeave) {
       e.preventDefault();

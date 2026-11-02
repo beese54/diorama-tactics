@@ -24,6 +24,29 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B6 r1: a slower cut-in, the card in focus
+![Before and after: the cut-in at 1.9 s, and at 4.2 s with the battle dimmed and the clip larger](battles/b6-skills/r1-slower/compare.jpg)
+
+| The new cut-in, as it plays | Mid-cut-in |
+|---|---|
+| ![](battles/b6-skills/r1-slower/cut-in.gif) | ![](battles/b6-skills/r1-slower/cut-in.jpg) |
+
+Video: [`firestorm.mp4`](battles/b6-skills/r1-slower/firestorm.mp4).
+
+**What changed**
+- **The cut-in lasts 4.2 s, not 1.9.** The band sweeps in for half a second, then holds with a slow drift while the card's clip plays, then leaves in the flash.
+- **The card's clip is the focus.** The battle behind dims, the band is taller, and the clip is about 40% larger with a gold glow. The skill's name eases in beside it, a little smaller than before.
+- **Skippable:** K, Space or Enter ends the cut-in at once, so it never slows a player who has seen it.
+
+**Feedback**
+- "i liked the card details and animation but i find the transition too fast, can we slow it down to have more focus on the card animation?"
+
+**Decisions**
+- **The length is set in one place,** `CUT_IN_SECONDS` in `CutIn.ts`, and the styles read it through a CSS variable, so the timing and the animation can't drift apart.
+
+**Learned**
+- **Screenshots taken during a screen recording stall the page,** so the recording stretches, and a timing read between shots is wrong. My first look said the cut-in ended after 2.25 s; a log in the page showed it lasted its full 4.2. The clean recordings take no shots while they record.
+
 ### B6: Card skills
 ![Firestorm's cut-in: Ember Rite's own clip sweeping across the battle](battles/b6-skills/firestorm-cut-in.jpg)
 

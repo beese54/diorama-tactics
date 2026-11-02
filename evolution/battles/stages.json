@@ -188,10 +188,18 @@
     {
       "id": "b6-skills",
       "date": "2026-11-02",
-      "commit": "next",
+      "commit": "99c9751",
       "image": "b6-skills/firestorm-cut-in.jpg",
       "title": "B6 · Card skills",
       "note": "Each unit now carries a skill gauge from battle to battle. When it is full and the unit wields the card’s ACE, the battle holds at its opening with a guide: K fires the skill, Space saves it. Firing plays a cut-in with the card’s own clip and the skill’s name, then the effect: Forced March’s +3 edge, Firestorm’s blast, and nine more, with a hit-stop and shake where a skill’s blow lands. King’s Wager fills every ally’s gauge as it is played."
+    },
+    {
+      "id": "b6-skills-r1-slower",
+      "date": "2026-11-02",
+      "commit": "next",
+      "image": "b6-skills/r1-slower/cut-in.jpg",
+      "title": "B6 r1 · A slower cut-in, the card in focus",
+      "note": "The skill cut-in lasts 4.2 s instead of 1.9: the battle dims, the band is taller and the card’s clip plays about 40% larger, the skill’s name easing in beside it, before the flash. K, Space or Enter skips it."
     }
   ]
 }

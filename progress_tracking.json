@@ -305,6 +305,12 @@
     {
       "id": "B6",
       "title": "Card skills: the gauge carried on each unit (ClashSim tracks it, fired skills empty it); src/game/skills.ts (which card has which skill, canFire = full gauge + ACE, why not, All In on play); 11 battle effects in ClashSim (19 tests); the battle holds at its opening for the choice with a guide (K fire / Space save, buttons for touch); the cut-in with the card's clip; hit-stop and shake on skill blows; SKL gauge in the unit panel; Pike Wall's text sharpened; check.mjs skill checks",
+      "status": "done",
+      "commit": "99c9751"
+    },
+    {
+      "id": "B6-r1",
+      "title": "B6 review round 1: the cut-in slower (4.2 s from 1.9) with the card's clip in focus: the battle dims, a taller band, the clip about 40% larger, the name easing in; K, Space or Enter skips it",
       "status": "review",
       "commit": "next"
     }
