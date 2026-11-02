@@ -1,3 +1,4 @@
+import { audio } from '../audio/Audio';
 import type { Outcome, Stats } from '../game/end';
 
 /**
@@ -41,6 +42,8 @@ export class ResultScreen {
   static show(result: Outcome, stats: Stats, again: () => void, newMap: () => void): void {
     ResultScreen.current?.dispose();
     ResultScreen.current = new ResultScreen(result, stats, again, newMap);
+    audio.play(result);
+    void audio.music(result);
   }
 
   /** Takes any result off the page (a new skirmish starting). */

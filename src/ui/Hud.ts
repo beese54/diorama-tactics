@@ -1,3 +1,4 @@
+import { audio } from '../audio/Audio';
 export interface HudActions {
   /** The maps the picker offers, and the one on screen. */
   maps: readonly { id: string; name: string }[];
@@ -82,6 +83,32 @@ export class Hud {
       picker.value = '';
       if (file) actions.load(file);
     });
+    // Sound (B8): the speaker mutes it all (M), the sliders set the music's and the effects' volumes.
+    const speaker = document.createElement('button');
+    speaker.type = 'button';
+    speaker.className = 'speaker';
+    speaker.addEventListener('click', () => audio.toggleMute());
+    buttons.appendChild(speaker);
+    const slider = (label: string, channel: 'music' | 'effects') => {
+      const l = document.createElement('label');
+      l.className = 'volume';
+      l.title = `${channel === 'music' ? 'Music' : 'Effects'} volume`;
+      const input = Object.assign(document.createElement('input'), { type: 'range', min: '0', max: '1', step: '0.05' });
+      input.addEventListener('input', () => audio.set({ [channel]: Number(input.value), muted: false }));
+      l.append(label, input);
+      buttons.appendChild(l);
+      return input;
+    };
+    const [musicInput, effectsInput] = [slider('MUS', 'music'), slider('SFX', 'effects')];
+    const showSound = () => {
+      const st = audio.settings;
+      speaker.textContent = st.muted ? 'Sound: off' : 'Sound: on';
+      speaker.title = st.muted ? 'Sound off: turn it on (M)' : 'Sound on: mute it (M)';
+      musicInput.value = String(st.music);
+      effectsInput.value = String(st.effects);
+    };
+    audio.onChange(showSound);
+    showSound();
     if (actions.newMap) button('New map', 'R', actions.newMap);
     button('Save', 'E', actions.save);
     button('Load', 'or drop a file', () => picker.click());

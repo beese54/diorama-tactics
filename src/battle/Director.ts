@@ -1,4 +1,6 @@
 import type { ClashSide, ClashSim, Phase } from '../game/clash';
+import { audio } from '../audio/Audio';
+import type { SfxName } from '../audio/sfx';
 import { gain, GAUGE_MAX } from '../game/gauge';
 import { CLASSES } from '../game/units';
 import type { BannerInfo, BattleHud } from '../ui/BattleHud';
@@ -91,6 +93,8 @@ export class Director {
   private readonly stops: number[] = [];
   /** Each side's gauge as the battle opened: what its unit carried in. */
   private readonly carried: Record<ClashSide, number>;
+  /** The battle time the sounds have been played up to (B8). */
+  private heard = 0;
 
   constructor(
     private readonly view: BattleView,
@@ -225,6 +229,38 @@ export class Director {
     if (since < 0.35) shake = Math.max(shake, 9 * (1 - since / 0.35));
     this.view.nudge(shake * Math.sin(clock * 97), shake * 0.6 * Math.sin(clock * 131));
     this.drawHud(seconds);
+    this.sound(seconds);
+  }
+
+  /**
+   * The sounds of the acts the clock has just passed (B8): a blow blocked clashes, one landing
+   * thuds, a crit or a flash rings out; arrows and spells sound as they are loosed; the charge
+   * rolls its drums. Only the last moment's acts sound (a skip to the result doesn't fire them
+   * all at once), and no more than two of a kind at a time.
+   */
+  private sound(seconds: number): void {
+    if (seconds <= this.heard) {
+      this.heard = Math.min(this.heard, seconds);
+      return;
+    }
+    const from = Math.max(this.heard, seconds - 0.25);
+    this.heard = seconds;
+    const count = new Map<SfxName, number>();
+    const play = (name: SfxName) => {
+      const n = count.get(name) ?? 0;
+      if (n < 2) audio.play(name);
+      count.set(name, n + 1);
+    };
+    const weapon = (side: ClashSide) => CLASSES[this.sim.squad(side).unit.cls].weapon;
+    for (const a of this.acts) {
+      if (a.start <= from || a.start > seconds) continue;
+      if (a.kind === 'phase' && a.phase === 'charge') play('charge');
+      else if (a.kind === 'attack' && a.ranged) play(weapon(a.who.side) === 'staff' ? 'spell' : 'arrow');
+      else if (a.kind === 'attack' && a.crit) play('crit');
+      else if (a.kind === 'block') play('clash');
+      else if (a.kind === 'hurt' || a.kind === 'fall') play('hit');
+      else if (a.kind === 'flash') play('crit');
+    }
   }
 
   /** Draws one fighter; returns the screen shake it calls for. */

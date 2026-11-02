@@ -1,3 +1,4 @@
+import { audio } from '../audio/Audio';
 import type { Card } from '../game/cards';
 
 /**
@@ -48,6 +49,7 @@ export class CutIn {
     CutIn.current?.finish();
     const cut = new CutIn(parent, card, skill);
     CutIn.current = cut;
+    audio.play('cutin');
     return new Promise((resolve) => {
       cut.done = resolve;
       cut.timer = window.setTimeout(() => cut.finish(), CUT_IN_SECONDS * 1000);

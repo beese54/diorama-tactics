@@ -1,3 +1,4 @@
+import { audio } from '../audio/Audio';
 import type { Card, Hand } from '../game/cards';
 import { HandView, type HandCardState } from '../cards/HandView';
 
@@ -20,7 +21,7 @@ export class CardHand {
       focus: (i) => this.focus(i),
       play: (i) => {
         const id = this.hand?.cards[i].id;
-        if (id && this.playable(id)) this.onPlay(id);
+        if (id && this.playable(id)) this.playCard(id);
       },
     });
   }
@@ -62,7 +63,7 @@ export class CardHand {
     if (code === 'ArrowLeft' || code === 'ArrowRight') this.focus((this.focused + (code === 'ArrowLeft' ? n - 1 : 1)) % n);
     else if (code === 'KeyZ') {
       const id = this.hand.cards[this.focused].id;
-      if (this.playable(id)) this.onPlay(id);
+      if (this.playable(id)) this.playCard(id);
     } else if (code === 'KeyF') this.view.flipFocused();
     else return code === 'ArrowUp' || code === 'ArrowDown';
     return true;
@@ -82,8 +83,15 @@ export class CardHand {
   }
 
   private focus(i: number): void {
+    if (i !== this.focused) audio.play('tick');
     this.focused = i;
     this.view.setFocus(i);
+  }
+
+  /** Plays card `id`, with its swish (B8). */
+  private playCard(id: string): void {
+    audio.play('card');
+    this.onPlay(id);
   }
 
   private states(): HandCardState[] {

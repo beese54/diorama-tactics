@@ -26,6 +26,7 @@ import { GpuTimer } from './render/GpuTimer';
 import { Skirmish } from './units/Skirmish';
 import type { Difficulty } from './game/ai';
 import { ResultScreen } from './ui/ResultScreen';
+import { audio } from './audio/Audio';
 import { animTest } from './battle/animTest';
 import { battlePreview } from './battle/preview';
 import { cardShowcase } from './cards/showcase';
@@ -303,6 +304,7 @@ async function main(): Promise<void> {
     skirmish = null;
     keyTile = null;
     ResultScreen.hide();
+    void audio.music('map');
     if (viewer) return;
     const { mesh } = board;
     skirmish = new Skirmish(board.map, {
@@ -317,12 +319,14 @@ async function main(): Promise<void> {
         }),
       battle: (setup, opts) => {
         battling = true;
+        void audio.music('battle');
         return new Promise((resolve) => {
           void BattleScene.open(setup, {
             chain: opts?.chain,
             card: opts?.card,
             onLeave: (outcome) => {
               battling = false;
+              void audio.music('map');
               // The board's clock stood still with it: the time the battle took doesn't count.
               timer.reset();
               resolve(outcome);
@@ -344,6 +348,11 @@ async function main(): Promise<void> {
   startSkirmish();
 
   window.addEventListener('keydown', (e) => {
+    // M mutes the sound anywhere, battles included (B8).
+    if (e.code === 'KeyM' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      audio.toggleMute();
+      return;
+    }
     if (battling || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'KeyR' && generated) void newMap();
     if (e.code === 'KeyE') save();
@@ -473,6 +482,8 @@ async function main(): Promise<void> {
   if (import.meta.env.DEV) {
     // Hooks for scripts/check.mjs (headless verification); stripped from production builds.
     Object.assign(window, {
+      /** The sound (B8), for checks: whether the context exists, the settings, the effects asked for, the music. */
+      __audio: { state: () => audio.state() },
       __map: {
         tile: (x: number, y: number) => tileAt(board.map, x, y),
         hovered: () => hovered,
