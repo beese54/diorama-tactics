@@ -208,6 +208,14 @@
       "image": "b7-foes/foe-attack.jpg",
       "title": "B7 · The foes play, and battles end",
       "note": "The foes take real turns under the player’s own rules: a card, moves on the shared pool (advancing together along real paths), Union attacks the player defends in, and their skills fired on their own. Easy is bold, Hard cautious and sharp (a menu picker). The battle ends in VICTORY or DEFEAT with the stats, Play again or New map. Battle banners now follow sides: the player’s blue, the foes’ red."
+    },
+    {
+      "id": "b8-polish-r0-review",
+      "date": "2026-11-03",
+      "commit": "next",
+      "image": "b8-polish/r0-review/4-sparks-1.jpg",
+      "title": "B8 r0 · Sound, the four transitions, and battle effects",
+      "note": "Sound effects made in code (blows, crits, arrows, spells, the charge, the cut-in, cards, the wipe, the result stings), muted with M, with Music and Effects volumes in the menu. Four transitions, all kept: a blade wipes the board into a battle and back, banners open each turn, the played card flies to the turn box, and battles open with the VS slam and end with the Morale loss punching in. Each blow bursts in sparks tinted by its weapon, the charge kicks up a dust trail, and a fired skill lights its squad."
     }
   ]
 }

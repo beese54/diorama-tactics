@@ -24,6 +24,42 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B8 r0: sound, the four transitions, and battle effects (for review)
+![A blow lands: sparks tinted by the axe, a ring and a star, and Forced March's light on Aria's squad](battles/b8-polish/r0-review/4-sparks-1.jpg)
+
+| The card flies to the turn box | The wipe into battle | The VS slam | The Morale loss punches in | The foes' banner |
+|---|---|---|---|---|
+| ![](battles/b8-polish/r0-review/1-card-flight.jpg) | ![](battles/b8-polish/r0-review/2-wipe.jpg) | ![](battles/b8-polish/r0-review/3-intro-vs-slam.jpg) | ![](battles/b8-polish/r0-review/5-outro.jpg) | ![](battles/b8-polish/r0-review/6-foes-banner.jpg) |
+
+Video with sound: [`b8-polish.mp4`](battles/b8-polish/r0-review/b8-polish.mp4), 33 s: a card played, an attack, the battle with a skill, and back to the foes' turn.
+
+**What changed**
+- **Sound, made in code:** steel on steel, blows landing, crits, arrows, spells, the charge, the skill cut-in, cards played and focused, the wipe, and the victory and defeat stings. Each sound varies a little in pitch, so repeats don't sound mechanical. No sound plays until the first click, tap or key, as browsers require.
+- **Sound controls:** the menu has a Sound button (M mutes from anywhere), plus Music (MUS) and Effects (SFX) sliders, kept between visits.
+- **Music is ready for your loops:** four prompts are in `scripts/art/prompts/music.md` (map, battle, victory, defeat). Until the files arrive there is simply no music, and the game asks for no missing files.
+- **Four transitions, all kept:**
+  - a blade wipes the board into a battle and back out (a Union's battles stay covered in between);
+  - "Your turn" (blue) or "Foes' turn" (red) sweeps across as each turn starts;
+  - the played card lifts out of the hand and flies to the turn box, which glows as it lands;
+  - battles open with the banners sliding in and the VS slamming down, and at the result the Morale loss punches in.
+- **Battle effects:**
+  - every blow bursts in sparks tinted by its weapon (steel white-gold, an axe orange, a spear's long streaks, a staff violet), with a ring, a flash and a star, bigger on a crit;
+  - a charging squad kicks up a dust trail;
+  - while a skill is in play, its squad glows in the skill's colour.
+
+**Feedback**
+- Audio: "Code SFX + your music"; transitions: "can you do all four and show it to me? i will then decide", then "keep all four transitions"; the art pass: "Battle effects"; controls: "Mute button + volume".
+
+**Decisions**
+- **The sound effects are synthesised, not recorded:** each is a small recipe of oscillators, filtered noise and envelopes, so the repo carries no audio assets.
+- **The battle's sounds and effects follow the clock,** like everything else in the scene: a capture at a given second always shows the same sparks and asks for the same sounds.
+- **The review video carries the game's own sound:** the game logs each effect with its time, the log is rendered offline to a WAV, and the WAV is laid under the recording.
+
+**Learned**
+- **An intro started when its HUD was built played unseen** under the wipe while the battle loaded. It starts now once the battle is ready.
+- **The first sparks were too faint on the bright meadow.** They needed a star, a larger flash and drawing over every fighter.
+- **A new button can catch a check's click.** An earlier check's click landed on the new speaker button and left the game muted, so the sound checks now start from cleared settings.
+
 ### B7: the foes play, and battles end
 ![A foe attack: Varek (red, left) charges, Aria (blue, right) defends with the stance keys](battles/b7-foes/foe-attack.jpg)
 
