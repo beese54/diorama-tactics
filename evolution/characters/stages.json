@@ -8,6 +8,14 @@
       "image": "b1-units/meadow/path.png",
       "title": "B1 · Units on the map",
       "note": "Five pixel units a side; select, move range, path preview, walk, shared MOV pool."
+    },
+    {
+      "id": "b8-layout",
+      "date": "2026-11-04",
+      "commit": "next",
+      "image": "b8-layout/1920x1080-1-tucked.jpg",
+      "title": "B8 · Layout round 1",
+      "note": "The map fills any screen in crisp pixels; the menu folds to a bar; the hand rests tucked and opens into a blurred focus mode with the card large in the middle."
     }
   ]
 }

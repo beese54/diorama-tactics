@@ -1,8 +1,16 @@
 import * as THREE from 'three';
 import { fitPixelScale } from './pixelScale';
 
+/** The base frame: the view on a 1920x1080 screen, and what the map's opening zoom is measured against. */
 export const BASE_WIDTH = 480;
 export const BASE_HEIGHT = 270;
+
+/**
+ * The map's drawing size now, in internal pixels: the base frame on a 1920x1080 screen, and on
+ * others whatever fills the window at the nearest whole pixel scale (see fitPixelScale). The
+ * camera and the backdrop follow it.
+ */
+export const view = { width: BASE_WIDTH, height: BASE_HEIGHT };
 
 /** Below this zoom a texel is smaller than a screen pixel, and the frame is supersampled so it doesn't shimmer. */
 export const SUPERSAMPLE_BELOW = 0.5;
@@ -25,8 +33,8 @@ export function samplesFor(zoom: number): number {
 export const pixelScale = { value: 1 };
 
 /**
- * Renders at a fixed 480x270 drawing buffer and lets CSS upscale it by an integer
- * factor with `image-rendering: pixelated`, so every internal pixel stays a hard square.
+ * Renders at a small drawing buffer (`view`) and lets CSS upscale it by an integer factor with
+ * `image-rendering: pixelated`, so every internal pixel stays a hard square, filling the window.
  * The stage element is sized to match and exposes `--px` (CSS px per internal pixel)
  * so HTML UI layered on top can scale in whole game pixels.
  *
@@ -67,7 +75,6 @@ export class PixelPipeline {
   constructor(private readonly stage: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: false });
     this.renderer.setPixelRatio(1);
-    this.renderer.setSize(BASE_WIDTH, BASE_HEIGHT, false);
     stage.prepend(this.renderer.domElement);
     this.screen.frustumCulled = false;
 
@@ -77,13 +84,16 @@ export class PixelPipeline {
 
   private fit(): void {
     const dpr = window.devicePixelRatio || 1;
-    const { scale, cssWidth, cssHeight } = fitPixelScale(
+    const { scale, width, height, cssWidth, cssHeight } = fitPixelScale(
       window.innerWidth,
       window.innerHeight,
       dpr,
       BASE_WIDTH,
       BASE_HEIGHT,
     );
+    view.width = width;
+    view.height = height;
+    this.renderer.setSize(width, height, false);
     for (const el of [this.stage, this.renderer.domElement]) {
       el.style.width = `${cssWidth}px`;
       el.style.height = `${cssHeight}px`;
@@ -98,8 +108,8 @@ export class PixelPipeline {
       this.renderer.render(scene, camera);
       return;
     }
-    const [width, height] = [BASE_WIDTH * samples, BASE_HEIGHT * samples];
-    if (this.target?.width !== width) {
+    const [width, height] = [view.width * samples, view.height * samples];
+    if (this.target?.width !== width || this.target.height !== height) {
       this.target?.dispose();
       // Linear and half-float, so averaging happens in linear light and dark colours don't band.
       this.target = new THREE.WebGLRenderTarget(width, height, { type: THREE.HalfFloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });

@@ -364,6 +364,12 @@ async function main(): Promise<void> {
       return;
     }
     if (battling || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    // Tab folds the menu out and away; Esc folds it away first, before anything else it does.
+    if (e.code === 'Tab') {
+      e.preventDefault();
+      return hud.toggleMenu();
+    }
+    if (e.code === 'Escape' && hud.menuOpen) return hud.closeMenu();
     if (e.code === 'KeyR' && generated) void newMap();
     if (e.code === 'KeyE') save();
     if (!skirmish) return;
@@ -536,7 +542,8 @@ async function main(): Promise<void> {
         },
         exportJson: () => serializeMap(board.map),
         loadJson: loadText,
-        hudText: () => document.getElementById('hud')?.textContent ?? '',
+        /** The menu's text and the notice showing, if any. */
+        hudText: () => ['hud', 'notice'].map((id) => document.getElementById(id)?.textContent ?? '').join(' '),
         setWeather: (kind: WeatherKind, instant = true) => weather.set(kind, instant),
         weather: () => ({ kind: weather.kind, look: weather.look, skyLight: hemi.intensity }),
         setTimeOfDay: (choice: TimeChoice, instant = true) => clock.set(choice, lastElapsed, instant),

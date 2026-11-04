@@ -22,6 +22,8 @@ const FOE_IN = 0.35;
 const FOE_FLIP_AT = 0.45;
 /** A played card's flight to the turn box (B8), in seconds. */
 const FLY_SECONDS = 0.6;
+/** The pointer off the hand this long ends the focus (crossing a gap between cards doesn't). */
+const LEAVE_MS = 250;
 
 /** Where a card flies to: a spot on screen and the height it shrinks to there. */
 export interface FlyTarget {
@@ -38,10 +40,13 @@ interface Placed {
 
 /**
  * The hand of animated cards (cards.md, Part 1: "In the hand"), drawn by the showcase's card
- * renderer on a canvas of its own at full device resolution, over the board. The cards fan along
- * the bottom; the focused one rises, grows, tilts toward the pointer and plays its clip. Spent
- * cards are greyed, the card in play is stamped. On the foes' turn their card slides in face
- * down and turns face up. The canvas draws only while the hand or the foes' card is up.
+ * renderer on a canvas of its own at full device resolution, over the board. At rest the cards
+ * lie tucked along the bottom, only their tops showing, so the board stays in view. Pointed at
+ * (or ←/→, or a tap), the hand comes into focus: the board blurs and dims behind it, the fan
+ * rises, and the focused card lifts into the middle of the screen, large enough to read, tilts
+ * toward the pointer and plays its clip. Spent cards are greyed, the card in play is stamped. On
+ * the foes' turn their card slides in face down and turns face up. The canvas draws only while
+ * the hand or the foes' card is up.
  */
 export class HandView {
   private readonly root: HTMLElement;
@@ -57,7 +62,14 @@ export class HandView {
   private placed: (Placed | null)[] = [];
   private states: HandCardState[] = [];
   private focused = -1;
+  /** Where each card is drawn, and the slot in the fan where each takes the pointer (handLayout). */
   private spots: CardSpot[] = [];
+  private slots: CardSpot[] = [];
+  /** In focus, while the player chooses: the board blurred, the focused card lifted to the middle. */
+  private browsing = false;
+  private leaveTimer = 0;
+  /** The pointer box over the focused card where it is drawn, lifted, in focus. */
+  private readonly spotBox: HTMLElement;
   private shown = false;
   private foe: (Placed & { card: Card; t: number; leaving: boolean }) | null = null;
   private frame = 0;
@@ -81,10 +93,14 @@ export class HandView {
     this.renderer.setClearColor(0x000000, 0);
     this.keysEl = document.createElement('div');
     this.keysEl.className = 'keys';
-    this.root.append(this.renderer.domElement, this.keysEl);
+    this.spotBox = document.createElement('div');
+    this.spotBox.className = 'card spot';
+    this.bind(this.spotBox, () => this.focused, true);
+    this.root.append(this.renderer.domElement, this.keysEl, this.spotBox);
     document.body.appendChild(this.root);
     void loadCardFonts();
     addEventListener('resize', this.onResize);
+    addEventListener('pointerdown', this.onPressAnywhere, true);
   }
 
   get open(): boolean {
@@ -125,8 +141,29 @@ export class HandView {
     if (!this.shown) return;
     this.shown = false;
     this.press = null;
+    this.browse(false);
     this.refresh();
     this.wake();
+  }
+
+  /**
+   * Brings the hand into focus (the board blurred and dimmed behind it, the fan up, the focused
+   * card lifted to the middle of the screen), or tucks it back down with the board clear.
+   */
+  browse(on: boolean): void {
+    clearTimeout(this.leaveTimer);
+    on &&= this.shown;
+    if (on === this.browsing) return;
+    this.browsing = on;
+    document.body.classList.toggle('hand-focus', on);
+    this.layout();
+    this.sizeArt();
+    this.wake();
+  }
+
+  /** Whether the hand is in focus. */
+  get focusing(): boolean {
+    return this.browsing;
   }
 
   /** Puts card `index` up: it rises and plays its clip; the one before goes back down. */
@@ -146,7 +183,7 @@ export class HandView {
     if (!p) return;
     p.view.flip();
     // A card turned face down stops its clip; turned back up while focused, it plays again.
-    p.view.hover(this.shown);
+    p.view.hover(this.shown && this.browsing);
   }
 
   /** The foes play `card`: it slides in face down at the right and turns face up. */
@@ -228,6 +265,8 @@ export class HandView {
     focused: number; flipped: boolean[]; playing: boolean[]; clip: { has: boolean; playing: boolean; mix: number } | null;
     aims: ({ x: number; y: number } | null)[]; foe: { id: string; side: string; faceUp: boolean } | null;
     flying: boolean; flights: number;
+    /** In focus or tucked; the focused card's height as drawn; the top of the hand as drawn (CSS px). */
+    browsing: boolean; focusedHeight: number; top: number;
   } {
     const f = this.placed[this.focused];
     return {
@@ -238,9 +277,12 @@ export class HandView {
       flipped: this.placed.map((p) => !!p?.view.flipped),
       playing: this.placed.map((p) => !!p?.view.stage.clipState().playing),
       clip: f ? f.view.stage.clipState() : null,
-      aims: this.spots.map((_, i) => visiblePoint(this.spots, i)),
+      aims: this.slots.map((_, i) => visiblePoint(this.slots, i, innerHeight)),
       flying: this.flight !== null,
       flights: this.flights,
+      browsing: this.browsing,
+      focusedHeight: this.spots[this.focused]?.h ?? 0,
+      top: Math.min(innerHeight, ...this.spots.map((s) => s.y - s.h / 2)),
       foe: this.foe && !this.foe.leaving ? { id: this.foe.card.id, side: this.foe.view.side, faceUp: !this.foe.view.flipped } : null,
     };
   }
@@ -249,6 +291,9 @@ export class HandView {
     this.disposed = true;
     cancelAnimationFrame(this.frame);
     removeEventListener('resize', this.onResize);
+    removeEventListener('pointerdown', this.onPressAnywhere, true);
+    clearTimeout(this.leaveTimer);
+    document.body.classList.remove('hand-focus', 'hand-shown');
     for (const v of this.views.values()) void v.then((view) => view.dispose());
     this.renderer.dispose();
     this.renderer.forceContextLoss();
@@ -303,45 +348,72 @@ export class HandView {
     this.placed.forEach((p, i) => p?.view.stage.resize(this.artFor(this.spots[i]?.h ?? 200)));
   }
 
-  /** One invisible box per card, over it, to take the pointer; with its stamp, if any. */
+  /** One invisible box per card, on its slot in the fan, to take the pointer; with its stamp, if any. */
   private buildBoxes(): void {
     for (const b of this.boxes) b.remove();
     this.boxes = this.cards.map((card, i) => {
       const b = document.createElement('div');
       b.className = 'card';
       b.dataset.id = card.id;
-      b.addEventListener('pointerenter', (e) => {
-        if (e.pointerType === 'mouse' && i !== this.focused) this.events.focus(i);
-      });
-      b.addEventListener('pointermove', (e) => this.aim(i, e));
-      b.addEventListener('pointerleave', () => this.placed[i]?.view.tiltGoal.set(0, 0));
-      b.addEventListener('pointerdown', (e) => {
-        b.setPointerCapture?.(e.pointerId);
-        const press = { index: i, flipped: false, timer: 0 };
-        press.timer = window.setTimeout(() => {
-          // A long press flips the card (focusing it first) instead of playing it.
-          press.flipped = true;
-          if (i !== this.focused) this.events.focus(i);
-          this.flipFocused();
-        }, LONG_PRESS_MS);
-        this.press = press;
-      });
-      const release = (e: PointerEvent, cancelled: boolean) => {
-        const press = this.press;
-        this.press = null;
-        if (!press || press.index !== i) return;
-        clearTimeout(press.timer);
-        if (press.flipped || cancelled) return;
-        // A mouse click plays the card; a tap focuses it first, and a second tap plays it.
-        if (e.pointerType === 'mouse' || i === this.focused) this.events.play(i);
-        else this.events.focus(i);
-      };
-      b.addEventListener('pointerup', (e) => release(e, false));
-      b.addEventListener('pointercancel', (e) => release(e, true));
-      this.root.appendChild(b);
+      this.bind(b, () => i, false);
+      this.root.insertBefore(b, this.spotBox);
       return b;
     });
   }
+
+  /**
+   * The pointer on a card's box: `index` gives the card (a slot's own, or the focused one for the
+   * box over the lifted card, `lifted`). Pointing at the hand brings it into focus and the card
+   * up; off the hand for LEAVE_MS, it tucks away. A click plays the card; a tap focuses it first,
+   * and a second tap plays it; a long press flips it instead.
+   */
+  private bind(b: HTMLElement, index: () => number, lifted: boolean): void {
+    b.addEventListener('pointerenter', (e) => {
+      clearTimeout(this.leaveTimer);
+      if (e.pointerType !== 'mouse') return;
+      this.browse(true);
+      if (index() !== this.focused) this.events.focus(index());
+    });
+    // Only the lifted card tilts toward the pointer: over a slot, the card is drawn elsewhere.
+    if (lifted) b.addEventListener('pointermove', (e) => this.aim(index(), e));
+    b.addEventListener('pointerleave', (e) => {
+      if (lifted) this.placed[index()]?.view.tiltGoal.set(0, 0);
+      if (e.pointerType === 'mouse' && this.browsing) this.leaveTimer = window.setTimeout(() => this.browse(false), LEAVE_MS);
+    });
+    b.addEventListener('pointerdown', (e) => {
+      b.setPointerCapture?.(e.pointerId);
+      const i = index();
+      const press = { index: i, flipped: false, timer: 0 };
+      press.timer = window.setTimeout(() => {
+        // A long press flips the card (focusing it first) instead of playing it.
+        press.flipped = true;
+        this.browse(true);
+        if (i !== this.focused) this.events.focus(i);
+        this.flipFocused();
+      }, LONG_PRESS_MS);
+      this.press = press;
+    });
+    const release = (e: PointerEvent, cancelled: boolean) => {
+      const press = this.press;
+      this.press = null;
+      if (!press || press.index !== index()) return;
+      clearTimeout(press.timer);
+      if (press.flipped || cancelled) return;
+      const i = press.index;
+      if (e.pointerType === 'mouse' || (this.browsing && i === this.focused)) this.events.play(i);
+      else {
+        this.browse(true);
+        if (i !== this.focused) this.events.focus(i);
+      }
+    };
+    b.addEventListener('pointerup', (e) => release(e, false));
+    b.addEventListener('pointercancel', (e) => release(e, true));
+  }
+
+  /** A press anywhere off the hand (a tap on the board, say) ends its focus. */
+  private readonly onPressAnywhere = (e: PointerEvent): void => {
+    if (this.browsing && !(e.target instanceof Node && this.root.contains(e.target))) this.browse(false);
+  };
 
   /** Tilts the focused card toward the pointer over it. */
   private aim(i: number, e: PointerEvent): void {
@@ -351,33 +423,57 @@ export class HandView {
     p.view.tiltGoal.set(THREE.MathUtils.clamp((e.clientX - s.x) / (s.w / 2), -1, 1), THREE.MathUtils.clamp(-(e.clientY - s.y) / (s.h / 2), -1, 1));
   }
 
-  /** Places the boxes, stamps and keys line for the current focus and screen. */
+  /** Places the boxes, stamps and keys line for the current focus, mode and screen. */
   private layout(): void {
-    this.spots = layoutHand(this.cards.length, this.focused, innerWidth, innerHeight);
-    this.boxes.forEach((b, i) => {
-      const s = this.spots[i];
-      Object.assign(b.style, {
-        width: `${s.w}px`, height: `${s.h}px`, zIndex: String(s.z), fontSize: `${s.h * 0.065}px`,
-        transform: `translate(${s.x - s.w / 2}px, ${s.y - s.h / 2}px) rotate(${s.rot}deg)`,
-      });
+    ({ cards: this.spots, slots: this.slots } = layoutHand(this.cards.length, this.focused, innerWidth, innerHeight, this.browsing ? 'focus' : 'tucked'));
+    const put = (b: HTMLElement, s: CardSpot, card: CardSpot) => Object.assign(b.style, {
+      width: `${s.w}px`, height: `${s.h}px`, zIndex: String(s.z), fontSize: `${card.h * 0.065}px`,
+      transform: `translate(${s.x - s.w / 2}px, ${s.y - s.h / 2}px) rotate(${s.rot}deg)`,
     });
-    const top = Math.min(...this.spots.map((s) => s.y - s.h / 2), innerHeight);
-    this.keysEl.style.top = `${Math.max(4, top - 34)}px`;
+    this.boxes.forEach((b, i) => put(b, this.slots[i], this.spots[i]));
+    const lifted = this.spots[this.focused];
+    if (lifted) put(this.spotBox, lifted, lifted);
     this.refresh();
+    // The line of keys beside the lifted card where there is room (it stands near the top), else above the hand.
+    const keysW = this.keysEl.offsetWidth;
+    const right = lifted ? lifted.x + lifted.w / 2 : innerWidth;
+    if (this.browsing && lifted && innerWidth - right >= keysW + 32) {
+      Object.assign(this.keysEl.style, { left: `${right + 16}px`, top: `${lifted.y - lifted.h / 2}px`, transform: 'none' });
+    } else {
+      const top = Math.min(...this.spots.map((s) => s.y - s.h / 2), innerHeight);
+      Object.assign(this.keysEl.style, { left: '', top: `${Math.max(4, top - 34)}px`, transform: '' });
+    }
   }
 
   /** The cards' states: dim, stamps, the clip on the focused card only. */
   private refresh(): void {
     // Put away, the cards take no pointer while they sink (the foes' card never takes one).
-    this.keysEl.hidden = !this.shown;
+    this.keysEl.hidden = !this.shown || !this.browsing;
+    this.root.classList.toggle('tucked', !this.browsing);
+    // The panels at the screen's bottom stand clear of the tucked cards while the hand is up.
+    document.body.classList.toggle('hand-shown', this.shown);
+    const stampOf = (i: number) => {
+      const state = this.states[i] ?? '';
+      const stamp = state === 'played' ? 'IN PLAY' : state === 'used' ? 'USED' : '';
+      return { state, html: stamp ? `<div class="stamp">${stamp}</div>` : '' };
+    };
+    // In focus, the focused card's stamp goes with it to the middle; its slot keeps a faint outline.
+    const lifted = this.shown && this.browsing && !!this.spots[this.focused];
     this.boxes.forEach((b, i) => {
       b.style.display = this.shown ? '' : 'none';
-      const state = this.states[i] ?? '';
-      b.className = `card${state ? ` ${state}` : ''}${i === this.focused ? ' focus' : ''}`;
-      const stamp = state === 'played' ? 'IN PLAY' : state === 'used' ? 'USED' : '';
-      b.innerHTML = stamp ? `<div class="stamp">${stamp}</div>` : '';
+      const { state, html } = stampOf(i);
+      const up = lifted && i === this.focused;
+      b.className = `card${state ? ` ${state}` : ''}${i === this.focused ? ' focus' : ''}${up ? ' lifted' : ''}`;
+      b.innerHTML = up ? '' : html;
     });
-    this.placed.forEach((p, i) => p?.view.hover(this.shown && i === this.focused && !p.view.flipped));
+    this.spotBox.style.display = lifted ? '' : 'none';
+    if (lifted) {
+      const { state, html } = stampOf(this.focused);
+      this.spotBox.className = `card spot${state ? ` ${state}` : ''}`;
+      this.spotBox.innerHTML = html;
+    }
+    // The focused card plays its clip while the hand is in focus.
+    this.placed.forEach((p, i) => p?.view.hover(this.shown && this.browsing && i === this.focused && !p.view.flipped));
   }
 
   private foeSpot(): { x: number; y: number; h: number } {

@@ -24,9 +24,10 @@ function glow(el: HTMLElement): void {
 }
 
 /**
- * The player's hand of cards, drawn as the animated cards (src/cards/HandView.ts) along the
- * bottom of the screen. Point at a card (or ←/→) to bring it up: it plays its clip; click it (or
- * Z) to play it, F or a long press to turn it over. Used cards are greyed and can't be played.
+ * The player's hand of cards, drawn as the animated cards (src/cards/HandView.ts), tucked along
+ * the bottom of the screen. Point at a card (or ←/→) to bring the hand into focus and the card up
+ * in the middle: it plays its clip; click it (or Z) to play it, F or a long press to turn it
+ * over, Esc or the pointer off the hand to tuck it away again. Used cards are greyed and can't be played.
  * Shown locked (to look at only) once the turn is under way. It also shows the card the foes play.
  */
 export class CardHand {
@@ -80,11 +81,18 @@ export class CardHand {
     this.view.prefetch(cards, 'enemy');
   }
 
-  /** A key while the hand is open: ←/→ move along it, Z plays the focused card, F turns it over. Returns whether the hand took it. */
+  /**
+   * A key while the hand is open: ←/→ bring it into focus and move along it, Esc tucks it back
+   * down, Z plays the focused card, F turns it over. Returns whether the hand took it.
+   */
   key(code: string): boolean {
     if (!this.open || !this.hand) return false;
     const n = this.hand.cards.length;
-    if (code === 'ArrowLeft' || code === 'ArrowRight') this.focus((this.focused + (code === 'ArrowLeft' ? n - 1 : 1)) % n);
+    if (code === 'ArrowLeft' || code === 'ArrowRight') {
+      // The first arrow brings the hand into focus on the card already up; the next ones move along.
+      if (this.view.focusing) this.focus((this.focused + (code === 'ArrowLeft' ? n - 1 : 1)) % n);
+      else this.view.browse(true);
+    } else if (code === 'Escape' && this.view.focusing) this.view.browse(false);
     else if (code === 'KeyZ') {
       const id = this.hand.cards[this.focused].id;
       if (this.playable(id)) this.playCard(id);
@@ -117,6 +125,8 @@ export class CardHand {
     audio.play('card');
     const box = fx.cardfly ? turnBox() : null;
     if (box && this.hand) this.view.fly(this.hand.cards.findIndex((c) => c.id === id), box.to, () => glow(box.el));
+    // Played, the hand tucks back down and the board comes clear.
+    this.view.browse(false);
     this.onPlay(id);
   }
 
@@ -130,6 +140,6 @@ export class CardHand {
     if (matchMedia('(pointer: coarse)').matches) {
       return this.locked ? 'HOLD A CARD TO FLIP IT' : this.played ? 'TAP TO CHOOSE · TAP AGAIN TO SWAP · HOLD TO FLIP' : 'TAP TO CHOOSE · TAP AGAIN TO PLAY · HOLD TO FLIP';
     }
-    return this.locked ? 'F FLIP · C CLOSE' : this.played ? '←→ CHOOSE · Z SWAP · X TAKE BACK · F FLIP · C CLOSE' : '←→ CHOOSE · Z PLAY · F FLIP · C CLOSE';
+    return this.locked ? '←→ CHOOSE · F FLIP · ESC BACK · C CLOSE' : this.played ? '←→ CHOOSE · Z SWAP · X TAKE BACK · F FLIP · ESC BACK' : '←→ CHOOSE · Z PLAY · F FLIP · ESC BACK · C CLOSE';
   }
 }

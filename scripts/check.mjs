@@ -34,6 +34,15 @@ const shot = (name) => page.screenshot({ path: join(outDir, `${name}.png`) });
 const canvasSize = await page.$eval('canvas', (c) => ({ w: c.width, h: c.height, cssW: c.clientWidth, cssH: c.clientHeight }));
 check('internal resolution 480x270', canvasSize.w === 480 && canvasSize.h === 270, JSON.stringify(canvasSize));
 check('integer upscale', canvasSize.cssW % 480 === 0 && canvasSize.cssW / 480 === canvasSize.cssH / 270, JSON.stringify(canvasSize));
+// A laptop screen is filled edge to edge, no bars, at the whole pixel scale nearest the 1080p one.
+await page.setViewport({ width: 1366, height: 768, deviceScaleFactor: 1 });
+await new Promise((r) => setTimeout(r, 300));
+const laptopCanvas = await page.$eval('canvas', (c) => { const r = c.getBoundingClientRect(); return { w: c.width, h: c.height, x: r.x, y: r.y, cssW: r.width, cssH: r.height }; });
+await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
+await new Promise((r) => setTimeout(r, 300));
+check('a laptop screen (1366x768) is filled edge to edge, at 456x256 pixels of 3',
+  laptopCanvas.w === 456 && laptopCanvas.h === 256 && laptopCanvas.cssW === 1368 && laptopCanvas.cssH === 768 && laptopCanvas.x <= 0 && laptopCanvas.y <= 0 && laptopCanvas.x + laptopCanvas.cssW >= 1366,
+  JSON.stringify(laptopCanvas));
 
 await shot('01-default');
 
@@ -173,9 +182,12 @@ await page.evaluate(() => window.__map.newMap(1234));
 await new Promise((r) => setTimeout(r, 300));
 const returned = await page.evaluate(() => window.__map.gpuMemory());
 check('regrowing frees the old map', returned.geometries <= memory.geometries && returned.textures <= memory.textures, JSON.stringify({ before: memory, after: returned }));
-await page.click('#hud button');
-await page.waitForFunction((s) => window.__map.seed() !== s, { timeout: 10000 }, regrown.seed).catch(() => {});
-check('New map button grows another', (await page.evaluate(() => window.__map.seed())) !== regrown.seed);
+// The New map button is in the menu: folded out, then clicked.
+const seedBefore = await page.evaluate(() => window.__map.seed());
+await page.click('#hud .menu-toggle');
+await page.click('#hud button[title^="New map"]');
+await page.waitForFunction((s) => window.__map.seed() !== s, { timeout: 10000 }, seedBefore).catch(() => {});
+check('New map button (in the menu) grows another', (await page.evaluate(() => window.__map.seed())) !== seedBefore);
 await page.goto(`${url}?map=world&seed=1234&mode=view`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map);
 check('the same seed gives the same map', (await tilesNow()) === first);
@@ -398,7 +410,7 @@ const untilPlayerTurn = async () => {
   }
   throw new Error("the foes' turn never passed back");
 };
-const dealt = { turn: await turnNow(), hand: await handNow(), shown: await page.evaluate(() => document.querySelectorAll('#card-hand .card').length) };
+const dealt = { turn: await turnNow(), hand: await handNow(), shown: await page.evaluate(() => document.querySelectorAll('#card-hand .card:not(.spot)').length) };
 check('cards: the turn opens on a hand of 8, with no card in play and nothing to move with',
   dealt.hand.open && dealt.shown === 8 && dealt.hand.cards.every((c) => !c.used) && dealt.turn.card === null && dealt.turn.pool === 0, JSON.stringify(dealt));
 await shot('12a-cards-hand');
@@ -407,10 +419,19 @@ await page.waitForFunction(() => window.__map.hand().view.drawing, { timeout: 10
 const view0 = await handView();
 const dpr = await page.evaluate(() => devicePixelRatio);
 check('hand: the cards draw on their own canvas, at full device resolution', view0.open && view0.drawing && view0.canvas.width === Math.round(view0.canvas.css * dpr), JSON.stringify({ dpr, canvas: view0.canvas }));
-// Pointing at a card brings it up and plays its clip; the one before stops.
+// At rest the cards lie tucked along the bottom, only their tops showing, and the board is clear.
+const stageFilter = () => page.evaluate(() => getComputedStyle(document.getElementById('stage')).filter);
+const tuckedAt = { browsing: view0.browsing, top: view0.top, filter: await stageFilter() };
+check('hand: at rest the cards lie tucked, only their tops showing (the bottom 12%), and the board is clear',
+  !tuckedAt.browsing && tuckedAt.top >= 1080 * 0.87 && tuckedAt.filter === 'none', JSON.stringify(tuckedAt));
+// Pointing at a card brings the hand into focus and the card up, and plays its clip; the one before stops.
 await page.mouse.move(view0.aims[3].x, view0.aims[3].y);
 await page.waitForFunction(() => { const v = window.__map.hand().view; return v.focused === 3 && v.playing[3]; }, { timeout: 15000 }).catch(() => {});
 const focus3 = await handView();
+await new Promise((r) => setTimeout(r, 400)); // the blur eases in
+const focusLook = { browsing: focus3.browsing, focusedHeight: focus3.focusedHeight, filter: await stageFilter() };
+check('hand: pointing at it brings it into focus: the board blurs and dims, and the card lifts to the middle, over half the screen high',
+  focusLook.browsing && focusLook.focusedHeight >= 1080 * 0.55 && /blur/.test(focusLook.filter), JSON.stringify(focusLook));
 await page.mouse.move(focus3.aims[5].x, focus3.aims[5].y);
 await page.waitForFunction(() => { const v = window.__map.hand().view; return v.focused === 5 && v.playing[5] && !v.playing[3]; }, { timeout: 15000 }).catch(() => {});
 const focus5 = await handView();
@@ -428,7 +449,13 @@ await frames(40);
 const handUnflipped = (await handView()).flipped;
 check('hand: F turns the focused card over, and F again turns it back',
   handFlipped[5] && handFlipped.filter(Boolean).length === 1 && handUnflipped.every((f) => !f), JSON.stringify({ handFlipped, handUnflipped }));
-await page.mouse.move(5, 5);
+await page.mouse.move(5, 540);
+// Off the hand, it tucks back down after a moment and the board comes clear.
+await page.waitForFunction(() => !window.__map.hand().view.browsing, { timeout: 5000 }).catch(() => {});
+await new Promise((r) => setTimeout(r, 400)); // the blur eases out
+const leftLook = { browsing: (await handView()).browsing, top: (await handView()).top, filter: await stageFilter() };
+check('hand: with the pointer off it, the hand tucks back down and the board comes clear',
+  !leftLook.browsing && leftLook.top >= 1080 * 0.87 && leftLook.filter === 'none', JSON.stringify(leftLook));
 const mover = army[0];
 await page.keyboard.press('KeyC');
 await clickTile(mover.x, mover.y);
@@ -1055,6 +1082,20 @@ const unmuted = await sound();
 check('sound: the first key starts it, M mutes it, and the setting comes back after a reload',
   muted.ready && muted.settings.muted && muted.speaker === 'Sound: off' && !kept.ready && kept.settings.muted && kept.speaker === 'Sound: off' && unmuted.ready && !unmuted.settings.muted,
   JSON.stringify({ muted, kept, unmuted }));
+// The menu folds into a bar: Tab or its button folds it out, Esc or a click on the board folds it away.
+const menuNow = () => page.evaluate(() => ({ open: !document.querySelector('#hud .menu').hidden, h: Math.round(document.getElementById('hud').getBoundingClientRect().height) }));
+const menuFolded = await menuNow();
+await page.keyboard.press('Tab');
+const menuTabbed = await menuNow();
+await page.keyboard.press('Escape');
+const menuEscaped = await menuNow();
+await page.click('#hud .menu-toggle');
+const menuClicked = await menuNow();
+await page.mouse.click(1915, 540);
+const menuAway = await menuNow();
+check('menu: folded into a bar at start; Tab or its button folds it out, Esc or a click elsewhere folds it away',
+  !menuFolded.open && menuFolded.h <= 100 && menuTabbed.open && menuTabbed.h > 200 && !menuEscaped.open && menuClicked.open && !menuAway.open,
+  JSON.stringify({ menuFolded, menuTabbed, menuEscaped, menuClicked, menuAway }));
 const opening8 = await seenNow();
 check('transitions: the first turn opens with its banner', opening8.some((s) => s.id === 'turn-banner' && s.cls === 'player' && /Your turn/i.test(s.text) && /Turn 1/.test(s.text)), JSON.stringify(opening8));
 // The card played lifts out of the hand and flies to the turn box.

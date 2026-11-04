@@ -35,36 +35,56 @@ export interface HudActions {
 const NOTICE_MS = 5000;
 
 /**
- * FFT-style box in the top-left corner: the map's name and seed, pickers for the map, the
- * mode (skirmish or map viewer), the weather, the time of day and (on generated maps) the board size, buttons to grow a new map, save it as JSON or load a saved one, and a line for
- * short notices.
+ * FFT-style bar in the top-left corner, kept small so the board shows: the map's name and seed, a
+ * MENU button (Tab) and the sound switch (M). The menu folds out beneath it: pickers for the map,
+ * the mode (skirmish or map viewer), the foes, the weather, the time of day and (on generated
+ * maps) the board size, the volumes, and buttons to grow a new map, save it as JSON or load a
+ * saved one. It folds away again on a click outside, Tab or Esc, or once a choice is made. Short
+ * notices show on their own at the top of the screen.
  */
 export class Hud {
+  private readonly el: HTMLElement;
   private readonly title: HTMLElement;
+  private readonly menu: HTMLElement;
+  private readonly toggle: HTMLButtonElement;
   private readonly notice: HTMLElement;
   private noticeTimer = 0;
 
   constructor(parent: HTMLElement, actions: HudActions) {
-    const el = document.createElement('div');
+    const el = (this.el = document.createElement('div'));
     el.id = 'hud';
-    el.innerHTML = '<div class="title"></div><div class="buttons"></div><div class="notice" hidden></div>';
+    el.innerHTML = '<div class="bar"><span class="title"></span></div><div class="menu" hidden><div class="buttons"></div></div>';
     this.title = el.querySelector('.title')!;
-    this.notice = el.querySelector('.notice')!;
+    this.menu = el.querySelector('.menu')!;
+    const bar = el.querySelector('.bar')!;
     const buttons = el.querySelector('.buttons')!;
+    this.notice = Object.assign(document.createElement('div'), { id: 'notice', hidden: true });
+
+    this.toggle = Object.assign(document.createElement('button'), { type: 'button', className: 'menu-toggle', textContent: 'Menu', title: 'Menu (Tab)' });
+    this.toggle.addEventListener('click', () => this.toggleMenu());
+    bar.appendChild(this.toggle);
+    // A click anywhere else folds the menu away.
+    addEventListener('pointerdown', (e) => this.menuOpen && !el.contains(e.target as Node) && this.closeMenu(), true);
 
     const button = (label: string, key: string, onClick: () => void) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = label;
       b.title = `${label} (${key})`;
-      b.addEventListener('click', onClick);
+      b.addEventListener('click', () => {
+        this.closeMenu();
+        onClick();
+      });
       buttons.appendChild(b);
     };
     const select = (title: string, options: readonly { id: string; name: string }[], current: string, onChange: (id: string) => void) => {
       const s = document.createElement('select');
       s.title = title;
       for (const { id, name } of options) s.add(new Option(name, id, false, id === current));
-      s.addEventListener('change', () => onChange(s.value));
+      s.addEventListener('change', () => {
+        this.closeMenu();
+        onChange(s.value);
+      });
       buttons.appendChild(s);
     };
     select('Switch map', actions.maps, actions.current, actions.pick);
@@ -83,12 +103,12 @@ export class Hud {
       picker.value = '';
       if (file) actions.load(file);
     });
-    // Sound (B8): the speaker mutes it all (M), the sliders set the music's and the effects' volumes.
+    // Sound (B8): the speaker on the bar mutes it all (M); the menu's sliders set the music's and the effects' volumes.
     const speaker = document.createElement('button');
     speaker.type = 'button';
     speaker.className = 'speaker';
     speaker.addEventListener('click', () => audio.toggleMute());
-    buttons.appendChild(speaker);
+    bar.appendChild(speaker);
     const slider = (label: string, channel: 'music' | 'effects') => {
       const l = document.createElement('label');
       l.className = 'volume';
@@ -114,6 +134,28 @@ export class Hud {
     button('Load', 'or drop a file', () => picker.click());
     el.appendChild(picker);
     parent.appendChild(el);
+    parent.appendChild(this.notice);
+  }
+
+  /** Whether the menu is folded out. */
+  get menuOpen(): boolean {
+    return !this.menu.hidden;
+  }
+
+  toggleMenu(): void {
+    if (this.menuOpen) this.closeMenu();
+    else {
+      this.menu.hidden = false;
+      this.el.classList.add('open');
+      this.toggle.classList.add('on');
+    }
+  }
+
+  closeMenu(): void {
+    if (!this.menuOpen) return;
+    this.menu.hidden = true;
+    this.el.classList.remove('open');
+    this.toggle.classList.remove('on');
   }
 
   setTitle(name: string, seed?: number): void {
@@ -124,6 +166,10 @@ export class Hud {
   say(text: string): void {
     this.notice.textContent = text;
     this.notice.hidden = false;
+    // Its fade starts again with each notice.
+    this.notice.style.animation = 'none';
+    void this.notice.offsetWidth;
+    this.notice.style.animation = '';
     clearTimeout(this.noticeTimer);
     this.noticeTimer = window.setTimeout(() => (this.notice.hidden = true), NOTICE_MS);
   }

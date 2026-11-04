@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { BASE_HEIGHT, BASE_WIDTH } from './PixelPipeline';
+import { BASE_HEIGHT, BASE_WIDTH, view } from './PixelPipeline';
 
 /** Internal pixels per world unit at zoom 1: one 16 px texel per screen pixel. */
 const PIXELS_PER_UNIT = 16;
@@ -32,9 +32,8 @@ export class CameraRig {
 
   /** `panLimit`: how far the orbit centre may stray from the middle, in world units (half the board). */
   constructor(domElement: HTMLElement, public panLimit: number) {
-    const halfW = BASE_WIDTH / PIXELS_PER_UNIT / 2;
-    const halfH = BASE_HEIGHT / PIXELS_PER_UNIT / 2;
-    this.camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.1, 400);
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
+    this.fitView();
 
     // Classic isometric start: azimuth 45°, 30° above the horizon.
     const azimuth = THREE.MathUtils.degToRad(45);
@@ -102,7 +101,16 @@ export class CameraRig {
     this.goal = new THREE.Vector3(point.x, 0, point.z);
   }
 
+  /** Sizes the view to the drawing buffer: one 16 px texel per internal pixel at zoom 1, however much of the world fits. */
+  private fitView(): void {
+    const [halfW, halfH] = [view.width / PIXELS_PER_UNIT / 2, view.height / PIXELS_PER_UNIT / 2];
+    if (this.camera.right === halfW && this.camera.top === halfH) return;
+    Object.assign(this.camera, { left: -halfW, right: halfW, top: halfH, bottom: -halfH });
+    this.camera.updateProjectionMatrix();
+  }
+
   update(): void {
+    this.fitView();
     if (this.goal) {
       const t = this.controls.target;
       const step = this.goal.clone().sub(t).multiplyScalar(0.12);

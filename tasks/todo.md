@@ -636,6 +636,11 @@ Proposed milestones (each one reviewed with screenshots before the next):
   - Battle effects (`src/battle/Impact.ts`): sparks tinted by weapon with a ring, a flash and a star on each blow, a dust trail on the charge, the skill's light around its squad.
   - check.mjs 159/159 (11 new: sound unlock, mute kept over a reload, the card's flight, the wipe both ways, the banners, the intro, the outro, sparks and sounds on blows, `?fx=none`, no errors); identity 70/70.
   - Waiting on: the user's verdict on the effects and sounds, and the four music loops.
+  - [ ] **Layout round 1** (in review, 2026-11-04), after the user's feedback that the cards, the menu and the turn box hid the map:
+    - The map fills the window in crisp pixels: the step is the whole number nearest the window's height over 270, the view is the window over that step (480x270 at 1080p as before; 456x256 at x3 on a 1366x768 laptop, which had black bars). The camera and the backdrop follow the view; the map opens at the same zoom.
+    - The menu folds into a bar (Menu or Tab opens it; Esc, a click elsewhere or a choice closes it). Notices show at the top centre and fade. The menu bar sits at 55% opacity and the turn box at 85%, both solid under the pointer; the tile and unit panels at 85%.
+    - The hand rests tucked (the top 12% of the screen). Pointing at it, the arrows or a tap open focus mode: the board blurs and dims, the hand rises, and the card in focus lifts to the middle at 58% of the screen's height. Leaving the cards (after 250 ms), Esc or playing a card tucks it again.
+    - Tests 1628 (47 new); check.mjs 164/164 (5 new; the New map check now really clicks New map); identity 70/70.
 
 - **Art (approved 2026-10-27):** the user generates the battle art in Google Flow from prompts I write. Round 1 is one sword leader, one sword soldier and one meadow background, on flat #00FF00; I key them and build a still style frame in the engine. Round 2 tests animation on the sword class, pose images against Flow video, side by side in the engine. Then the rest: 18 designs (6 leaders per side, 6 shared soldier designs, recoloured for the enemy), portraits, backgrounds, card art. Smears between poses are drawn in code. Sources go in `art/source/`.
 

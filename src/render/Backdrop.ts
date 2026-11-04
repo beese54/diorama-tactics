@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BASE_HEIGHT, pixelScale } from './PixelPipeline';
+import { BASE_HEIGHT, pixelScale, view } from './PixelPipeline';
 
 export interface BackdropLayers {
   /** The scenery: wraps horizontally, BASE_HEIGHT tall. */
@@ -53,6 +53,7 @@ export class Backdrop {
       haze: { value: 0 },
       flash: { value: 0 },
       stars: { value: 0 },
+      viewHeight: { value: view.height },
       pixelScale,
     };
     const material = new THREE.ShaderMaterial({
@@ -76,10 +77,12 @@ export class Backdrop {
         uniform float flash;
         uniform float stars;
         uniform float pixelScale;
+        uniform float viewHeight;
         void main() {
           // Whole drawing-buffer pixels, counted from the top-left, so texels map one to one (also when supersampled).
           vec2 at = floor(gl_FragCoord.xy / pixelScale);
-          vec2 px = vec2(at.x, ${BASE_HEIGHT.toFixed(1)} - 1.0 - at.y);
+          // The scenery is BASE_HEIGHT tall, its middle on the view's: a taller view carries its top and bottom rows on.
+          vec2 px = vec2(at.x, viewHeight - 1.0 - at.y - floor((viewHeight - ${BASE_HEIGHT.toFixed(1)}) / 2.0));
           vec2 p = px + scroll;
           p.y = clamp(p.y, 0.0, farSize.y - 1.0);
           vec4 color = texture2D(farTex, vec2((p.x + 0.5) / farSize.x, 1.0 - (p.y + 0.5) / farSize.y));
@@ -122,6 +125,7 @@ export class Backdrop {
     // Looking more steeply down lifts the horizon off the top of the screen.
     const tilt = Math.round((REST_POLAR_DEG - THREE.MathUtils.radToDeg(polar)) * TILT_PX_PER_DEG);
     this.uniforms.scroll.value.set(turn, tilt);
+    this.uniforms.viewHeight.value = view.height;
     const [vx, vy] = this.overlayVelocity;
     this.uniforms.overScroll.value.set(turn - Math.round(vx * elapsed), tilt - Math.round(vy * elapsed));
   }

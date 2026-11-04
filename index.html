@@ -66,11 +66,65 @@
         left: calc(var(--px) * 8);
         top: calc(var(--px) * 8);
         max-width: calc(var(--px) * 200);
-        padding: calc(var(--px) * 4) calc(var(--px) * 6);
+        padding: calc(var(--px) * 3) calc(var(--px) * 5);
         background: linear-gradient(#34488a, #18224d);
         border: var(--px) solid #c9d4f0;
         border-radius: calc(var(--px) * 2);
         box-shadow: 0 0 0 var(--px) #0a0f24;
+        pointer-events: auto;
+      }
+      /* The panels let the board show through while they rest, and turn solid under the pointer:
+         the menu bar, rarely needed, the more see-through; the turn and unit boxes, read in play, the less. */
+      #hud,
+      #turn-info,
+      #unit-info,
+      #tile-info {
+        transition: opacity 150ms ease-out;
+      }
+      #hud { opacity: 0.55; }
+      #turn-info,
+      #unit-info,
+      #tile-info {
+        opacity: 0.85;
+      }
+      /* The menu bar and the turn box take the pointer; the tile and unit boxes don't, as they
+         follow the tile under it and mustn't cover it. */
+      #turn-info {
+        pointer-events: auto;
+      }
+      #hud:hover,
+      #hud.open,
+      #turn-info:hover {
+        opacity: 1;
+      }
+      #hud .bar {
+        display: flex;
+        align-items: center;
+        gap: calc(var(--px) * 6);
+      }
+      #hud .bar .title {
+        margin-right: auto;
+      }
+      #hud .menu-toggle.on {
+        background: #3a4f9a;
+      }
+      #notice {
+        position: absolute;
+        top: calc(var(--px) * 8);
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: calc(var(--px) * 160);
+        padding: calc(var(--px) * 2) calc(var(--px) * 5);
+        color: #ffe27a;
+        text-align: center;
+        background: rgba(16, 22, 52, 0.85);
+        border: var(--px) solid #8fa0d8;
+        border-radius: calc(var(--px) * 2);
+        animation: notice-fade 5s ease-in forwards;
+      }
+      @keyframes notice-fade {
+        0%, 80% { opacity: 1; }
+        100% { opacity: 0; }
       }
       #hud .buttons {
         display: flex;
@@ -113,10 +167,6 @@
       #hud select:focus-visible {
         background: #3a4f9a;
         outline: none;
-      }
-      #hud .notice {
-        margin-top: calc(var(--px) * 3);
-        color: #ffb8a8;
       }
       #unit-info,
       #turn-info {
@@ -210,6 +260,27 @@
       #card-hand .card.played,
       #card-hand .card.locked {
         cursor: default;
+      }
+      /* In focus, the focused card is drawn lifted in the middle; its slot in the fan keeps a faint outline. */
+      #card-hand .card.lifted {
+        outline: 2px dashed rgba(255, 224, 138, 0.5);
+        outline-offset: -6px;
+        background: rgba(10, 12, 26, 0.22);
+      }
+      /* Tucked, only the cards' tops show: a stamp sits near the top, where it can be seen. */
+      #card-hand.tucked .card .stamp {
+        top: 9%;
+      }
+      /* The hand in focus: the board and its panels blur and dim behind it, so the cards hold the eye. */
+      #stage {
+        transition: filter 200ms ease-out;
+      }
+      body.hand-shown #tile-info,
+      body.hand-shown #unit-info {
+        bottom: calc(12vh + var(--px) * 6);
+      }
+      body.hand-focus #stage {
+        filter: blur(6px) brightness(0.55) saturate(0.8);
       }
       #card-hand .card .stamp {
         position: absolute;

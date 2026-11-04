@@ -325,6 +325,12 @@
       "title": "Polish: sound effects synthesised in code (src/audio: 13 recipes, one context unlocked on the first input, mute on M, Music and Effects volumes kept in localStorage, music from a manifest so none is asked for until the user's loops arrive); all four transitions kept by the user (the wipe into and out of battles, turn banners, the played card flying to the turn box, the battle intro and outro); battle effects (sparks tinted by weapon, a ring, a flash and a star on each blow, a dust trail on the charge, the skill's light); check.mjs B8 section (11 checks)",
       "status": "in review: the effects and sounds await the user's verdict; the music awaits the user's loops",
       "commit": "bf13905, d576f2b, and this one"
+    },
+    {
+      "id": "B8-layout",
+      "title": "Layout round 1 (the user's feedback that the cards and panels hid the map): the pixel view follows the window (fillPixelScale: the step nearest height/270, 480x270 at 1080p as before, 456x256 at x3 on a 1366x768 laptop, no black bars; the camera frustum and the backdrop follow the view); the menu folds into a bar (Menu button or Tab, Esc or a click outside folds it away; notices in their own box at the top centre); the menu bar at 55% and the turn box at 85% opacity, solid under the pointer; the hand rests tucked (the top 12% of the screen) and opens into focus mode on pointing, arrows or a tap: the board blurs and dims, and the card in focus lifts to the middle at 58% of the screen's height; check.mjs 164/164 (laptop fill, tucked, focus, back, the menu); identity 70/70",
+      "status": "review",
+      "commit": "this one"
     }
   ],
   "backlog": [

@@ -749,6 +749,32 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ![Timeline of every character version](characters/timeline.gif)
 
+### B8 layout round 1: the map fills the screen, and the hand gets a focus mode (for review)
+![Before and after at 1366x768: the map in a box with black bars and the hand over half the screen, then edge to edge with the hand tucked](characters/b8-layout/before-after-1366x768.jpg)
+
+| Focus mode (1920x1080) | The menu folded out |
+|---|---|
+| ![](characters/b8-layout/1920x1080-2-focus.jpg) | ![](characters/b8-layout/1920x1080-3-menu.jpg) |
+
+| 1366x768: focus mode | Before and after at 1920x1080 |
+|---|---|
+| ![](characters/b8-layout/1366x768-2-focus.jpg) | ![](characters/b8-layout/before-after-1920x1080.jpg) |
+
+A short video of pointing onto the cards, along them and off again, then the menu: [layout.mp4](characters/b8-layout/layout.mp4).
+
+- **What changed:**
+  - The map fills the window in crisp pixels, with no black bars. The pixel step is the whole number nearest the window's height over 270, so pixels stay the same size as at 1080p: 1920x1080 is 480x270 at x4, unchanged; a 1366x768 laptop is 456x256 at x3, where it was a 960x540 box. Wider or taller windows see more of the world; the backdrop carries on past its edges.
+  - The menu folds into a bar: MEADOW VALE, Menu, Sound. Menu or Tab opens it; Esc, a click elsewhere or a choice folds it away. Notices ("Long Road: MOV 15") show at the top centre and fade.
+  - The menu bar is see-through (55%) and the turn box less so (85%); both turn solid under the pointer.
+  - The hand rests tucked, only the cards' tops showing (12% of the screen). Pointing at it opens focus mode: the board blurs and dims, the hand rises, and the card in focus lifts to the middle at 58% of the screen's height. Leaving the cards, Esc or playing a card tucks it again.
+- **Feedback:** "the cards and meadow vale and turn 1 occupies a lot space on the screen such that the pixelated map and characters get blocked ... it uses the full screen of the user's laptop ... when the user is hovering over the cards and is deciding what card to choose, ideally we should blur out the background and other details so that the full focus is on the card and we can look at the cards on a bigger scale." On the panels: "the transparency for menu should be lighter while the turn 1 allies pick a card should be more translucent".
+- **Decisions:**
+  - The row keeps its size and only the card in focus grows, lifted to the middle. A row that grew under the pointer moved the cards as the pointer moved, so focus jumped between neighbours.
+  - The tucked cards' click areas reach down to the screen's edge and stay where the cards sit in the fan, so a card risen into focus is still under the pointer and focus doesn't flicker.
+  - Notices sit at the top centre, as the turn box changes height. The tile and unit panels are see-through but take no pointer, so tiles under them can still be hovered.
+  - At 1080p the map view is pixel for pixel what it was: the 70 identity captures are unchanged.
+- **Learned:** a check that "passes" on a button it never pressed proves nothing. The New map check clicked the first button in the menu; it now opens the menu and clicks New map by name.
+
 ### B1: Units on the map
 ![Aria selected: her move range in blue, the path to a tile in gold](characters/b1-units/meadow/path.png)
 
