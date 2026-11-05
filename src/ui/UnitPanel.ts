@@ -3,12 +3,10 @@ import { CLASSES, type Unit } from '../game/units';
 import { placeWindow } from './placeWindow';
 
 /**
- * Where a hero's portrait is kept: public/portraits/<set>/<name>.webp, the set 'painted' (made for
- * the window) or 'crop' (cut from the hero's battle art), picked with ?portraits= for the preview.
- * A missing one just leaves the portrait out.
+ * Where a hero's portrait is kept: public/portraits/<name>.webp, painted for the window
+ * (scripts/art/prompts/portraits.json). A missing one just leaves the portrait out.
  */
-const PORTRAITS = typeof location !== 'undefined' && new URLSearchParams(location.search).get('portraits') === 'crop' ? 'crop' : 'painted';
-export const portraitUrl = (name: string) => `${import.meta.env.BASE_URL}portraits/${PORTRAITS}/${name.toLowerCase()}.webp`;
+export const portraitUrl = (name: string) => `${import.meta.env.BASE_URL}portraits/${name.toLowerCase()}.webp`;
 
 /**
  * FFT-style box: the unit's portrait, name and side, class, Morale, stats, and whether it has

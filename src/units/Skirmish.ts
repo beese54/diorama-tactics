@@ -154,6 +154,11 @@ export class Skirmish {
     return unit ? tileAt(this.map, unit.x, unit.y) ?? null : null;
   }
 
+  /** The unit sheet as an image, for review captures. */
+  sheetImage(): string {
+    return this.layer.sheetImage();
+  }
+
   /** How tall the figure on `tile` stands, in world units (0: no one there), so the cursor floats over its head. */
   figureHeight(tile: Tile | null): number {
     const unit = this.unitAt(tile);

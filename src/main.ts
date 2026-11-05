@@ -521,6 +521,8 @@ async function main(): Promise<void> {
         hovered: () => hovered,
         /** The cursor's pointer height over its tile, in world units (over a unit, clear of its head). */
         cursorHeight: () => cursor.pointerHeight,
+        /** The units' sprite sheet as a data URL (review captures of the idle and walk frames). */
+        unitSheet: () => skirmish?.sheetImage() ?? null,
         tileScreenPos(x: number, y: number) {
           const t = tileAt(board.map, x, y)!;
           const p = board.mesh.tileCenter(t).project(rig.camera);
@@ -529,7 +531,8 @@ async function main(): Promise<void> {
         },
         /**
          * A screen point that picks tile (x, y) as hover and click do: its centre if that picks it,
-         * else a point up the figure standing there (a unit in front may cover the centre).
+         * else the middle of the stretch up the figure standing there that picks it (a unit in front
+         * may cover the centre; the middle, not the edge, so a breath or a step doesn't lose it).
          */
         aimAt(x: number, y: number) {
           const t = tileAt(board.map, x, y);
@@ -537,12 +540,19 @@ async function main(): Promise<void> {
           const p = board.mesh.tileCenter(t).project(rig.camera);
           const rect = canvas.getBoundingClientRect();
           const toScreen = (nx: number, ny: number) => ({ x: rect.left + ((nx + 1) / 2) * rect.width, y: rect.top + ((1 - ny) / 2) * rect.height });
-          const step = 2 / rect.height; // a CSS pixel in NDC, vertically
-          for (let up = 0; up <= 160; up += 6) {
-            for (const side of [0, -10, 10]) {
-              const at = new THREE.Vector2(p.x + side * step * (rect.height / rect.width), p.y + up * step);
-              const got = pickTile(at);
-              if (got && got.x === x && got.y === y) return toScreen(at.x, at.y);
+          const [stepX, stepY] = [2 / rect.width, 2 / rect.height]; // a CSS pixel in NDC
+          const picks = (at: THREE.Vector2) => { const got = pickTile(at); return !!got && got.x === x && got.y === y; };
+          if (picks(new THREE.Vector2(p.x, p.y))) return toScreen(p.x, p.y);
+          for (const side of [0, -10, 10]) {
+            const hits: THREE.Vector2[] = [];
+            for (let up = 2; up <= 160; up += 2) {
+              const at = new THREE.Vector2(p.x + side * stepX, p.y + up * stepY);
+              if (picks(at)) hits.push(at);
+              else if (hits.length) break;
+            }
+            if (hits.length) {
+              const mid = hits[Math.floor(hits.length / 2)];
+              return toScreen(mid.x, mid.y);
             }
           }
           return toScreen(p.x, p.y);

@@ -341,7 +341,13 @@
     {
       "id": "B8-hover",
       "title": "Pointing at a unit (the user's feedback that the pointer never showed over a crowded character): UnitLayer.pickAt picks the figure under the pointer (src/units/unitPick.ts: the quad as the shader builds it, the sheet pixel, the nearest unit); Cursor.setLift floats the pointer over its head; UnitPanel floats a compact window up and to the side (src/ui/placeWindow.ts) with a portrait (public/portraits/painted|crop, ?portraits=); portraits.json for Seedream; __map.aimAt for checks; check.mjs 169/169, identity 70/70",
-      "status": "review: awaiting the user's choice of portrait kind",
+      "status": "done: the user chose the painted portraits (2026-11-05)",
+      "commit": "17c49d2"
+    },
+    {
+      "id": "B8-roster",
+      "title": "All ten heroes hand-drawn at 20x26 in their battle costumes (heroArt.ts: Dela, Ilse, Varek, Sabine, Gorran, Petra, Ulric added), the default sprite set; idle and walk worked from each drawing (heroAnim.ts, 5 tests); painted portraits for all ten (public/portraits, $0.77 for eight, round $11.42 of the $12 cap); the crop set and ?portraits= removed; __map.aimAt aims at the middle of a figure; __map.unitSheet for review captures; check.mjs 169/169, identity 70/70",
+      "status": "review",
       "commit": "this one"
     }
   ],

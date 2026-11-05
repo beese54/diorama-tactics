@@ -3,6 +3,7 @@ import type { SpriteRect } from '../render/SpriteField';
 import { Gfx, nearestTexture, shade } from '../map/propSprites';
 import type { ClassId, Gender, Side, Unit } from '../game/units';
 import { HAIR as HERO_HAIR, HERO_ART, PALETTE } from './heroArt';
+import { animateHero } from './heroAnim';
 
 /** What a unit looks like on the map: its class, side, and a few traits of its own. */
 export interface UnitLook {
@@ -210,15 +211,15 @@ const PAD = 1;
 const ORDER: UnitClip[] = ['idle', 'walk', 'rest'];
 
 /**
- * Which map sprites to draw, for the detail preview: today's ('now'), the hand-drawn heroes at
- * today's size ('detail'), hand-drawn at 1.3x the height ('tall'), or at today's size with twice
- * the pixels each way ('fine': drawn by the pixel pipeline at twice the map's resolution).
- * Set with ?sprites=.
+ * Which map sprites to draw: the hand-drawn heroes at the map's pixel size ('detail', the
+ * default, chosen 2026-11-05), or for comparison the earlier shapes in code ('now'), hand-drawn
+ * at 1.3x the height ('tall'), or at today's size with twice the pixels each way ('fine': drawn by
+ * the pixel pipeline at twice the map's resolution). Set with ?sprites=.
  */
 export type SpriteSet = 'now' | 'detail' | 'tall' | 'fine';
 export const spriteSet = (): SpriteSet => {
   const asked = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('sprites');
-  return asked === 'detail' || asked === 'tall' || asked === 'fine' ? asked : 'now';
+  return asked === 'now' || asked === 'tall' || asked === 'fine' ? asked : 'detail';
 };
 /** Sheet pixels per map pixel, each way. */
 export const DENSITY: Record<SpriteSet, number> = { now: 1, detail: 1, tall: 1, fine: 2 };
@@ -264,20 +265,23 @@ const blocks = (px: Pixels, k: number): Pixels => px.flatMap((row) => Array.from
  * A hero's hand-drawn art for the set, or null for today's sprite. The fine set takes the hero's
  * fine art, outlined at the fine size, or else their same-size art in 2x2 blocks.
  */
-function heroPixels(look: UnitLook, set: SpriteSet): Pixels | null {
+function heroPixels(look: UnitLook, set: SpriteSet, clip: UnitClip, frame: number): Pixels | null {
   const art = set === 'now' ? undefined : HERO_ART[look.name];
   if (!art) return null;
   const keys: Record<string, string> = { ...PALETTE, ...HERO_HAIR[look.name] };
   CLOTH[look.side].forEach((c, i) => (keys[String(i + 1)] = c));
-  if (set === 'detail' || set === 'tall') return outlined(art[set], keys);
-  return art.fine ? outlined(art.fine, keys) : blocks(outlined(art.detail, keys), 2);
+  // The breath and the stride are worked from the drawing itself (heroAnim); 'rest' stands still.
+  const moving = (grid: readonly string[], legRows: number) => (clip === 'rest' ? [...grid] : animateHero(grid, clip, frame, { legRows }));
+  if (set === 'detail') return outlined(moving(art.detail, 7), keys);
+  if (set === 'tall') return art.tall ? outlined(moving(art.tall, 9), keys) : null;
+  return art.fine ? outlined(art.fine, keys) : blocks(outlined(moving(art.detail, 7), keys), 2);
 }
 
 /** One frame into a cell of `cw` x `ch`: the hero's own art, standing on the cell's bottom row, or today's sprite. */
 function paintFrame(look: UnitLook, clip: UnitClip, frame: number, set: SpriteSet, cw: number, ch: number): Gfx {
   const g = new Gfx(cw, ch);
   const k = DENSITY[set];
-  const hero = heroPixels(look, set);
+  const hero = heroPixels(look, set, clip, frame);
   if (hero) {
     let bottom = hero.length - 1;
     while (bottom > 0 && hero[bottom].every((c) => !c)) bottom--;

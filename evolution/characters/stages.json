@@ -36,10 +36,18 @@
     {
       "id": "b8-hover",
       "date": "2026-11-05",
-      "commit": "next",
+      "commit": "17c49d2",
       "image": "b8-hover/portraits-compare.jpg",
       "title": "B8 · Pointing at a unit, and its window",
       "note": "Hover and click pick the unit whose figure is under the pointer; the pointer floats over its head; a compact window with a portrait floats beside it. Portraits two ways: painted for the window, or cut from the battle art."
+    },
+    {
+      "id": "b8-roster",
+      "date": "2026-11-05",
+      "commit": "next",
+      "image": "b8-roster/roster.png",
+      "title": "B8 · All ten heroes drawn by hand",
+      "note": "Every hero on the map hand-drawn in their battle costume at the map's pixel size, breathing and striding; painted portraits for all ten in the unit window."
     }
   ]
 }

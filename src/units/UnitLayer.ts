@@ -157,6 +157,11 @@ export class UnitLayer {
     return drawn ? drawn.root.clone().setY(drawn.root.y + drawn.rect.h / PX).project(camera) : null;
   }
 
+  /** The unit sheet as an image (for review captures): a row per unit, idle, walk and rest frames. */
+  sheetImage(): string {
+    return (this.sheet.texture.image as HTMLCanvasElement).toDataURL();
+  }
+
   /** How tall a unit's sprite stands, in world units (0 once it has fallen). */
   heightOf(unit: Unit): number {
     const drawn = this.pose(unit).drawn;

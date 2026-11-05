@@ -5,13 +5,83 @@
   "poses": {
     "aria-portrait": {
       "out": "aria-portrait",
-      "refs": ["leader-f.jpg", "portrait-refs/long-road.jpg"],
+      "refs": [
+        "leader-f.jpg",
+        "portrait-refs/long-road.jpg"
+      ],
       "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same golden ponytail tied with a blue band, the same blue and silver ornate plate armour, the same colours. Three-quarter view facing right, looking ahead with calm resolve. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus dawn landscape of green hills in warm gold and pale blue light, like the second reference. Square composition, the head and shoulders filling most of the frame, the eyes in the upper third. One person only, no weapon in front of her, no text, no border, no frame."
     },
     "corin-portrait": {
       "out": "corin-portrait",
-      "refs": ["corin-stand.jpg", "portrait-refs/cleavers-oath.jpg"],
+      "refs": [
+        "corin-stand.jpg",
+        "portrait-refs/cleavers-oath.jpg"
+      ],
       "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same wild auburn hair tied back in a topknot, the same brown fur mantle over the shoulders, the same amber-gold leather armour with round iron plates, the same colours. Three-quarter view facing right, a bold confident grin. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus battlefield at dusk with glowing embers in the air, deep blue and ember orange, like the second reference. Square composition, the head and shoulders filling most of the frame, the eyes in the upper third. One person only, no weapon in front of him, no text, no border, no frame."
+    },
+    "bram-portrait": {
+      "out": "bram-portrait",
+      "refs": [
+        "bram-stand.jpg",
+        "portrait-refs/iron-column.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same short dark brown hair and short dark beard, the same bronze and charcoal grey riveted armour, the same short white scarf and the blue sash across his chest, the same colours. Three-quarter view facing right, a steady, watchful look. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus column of marching soldiers and banners under a pale overcast sky, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of him, no text, no border, no frame."
+    },
+    "dela-portrait": {
+      "out": "dela-portrait",
+      "refs": [
+        "dela-stand.jpg",
+        "portrait-refs/scouts-path.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same black bob haircut with one white feather, the same rose pink and white light leather armour, the same short white hooded cloak pushed back and the quiver on her back, the same colours. Three-quarter view facing right, a keen, alert look. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus forest path in dappled green and gold light, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of her, no text, no border, no frame."
+    },
+    "ilse-portrait": {
+      "out": "ilse-portrait",
+      "refs": [
+        "ilse-stand.jpg",
+        "portrait-refs/ember-rite.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same long straight silver-white hair, the same flowing white and violet robes with gold trim and the short blue capelet, the same colours. Three-quarter view facing right, a calm, serene look. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: soft, out-of-focus standing stones at dusk with warm embers drifting in violet light, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of her, no text, no border, no frame."
+    },
+    "varek-portrait": {
+      "out": "varek-portrait",
+      "refs": [
+        "varek-stand.jpg",
+        "portrait-refs/thunder-hoof.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same knight in black heavy plate armour with sharp angular edges and crimson trim, the same closed horned great helm with a crimson plume, the same long crimson cape; no horse in the frame, the same colours. Three-quarter view facing right, a menacing, imposing stance. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus stormy battlefield under purple thunderclouds, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of him, no text, no border, no frame."
+    },
+    "sabine-portrait": {
+      "out": "sabine-portrait",
+      "refs": [
+        "sabine-stand.jpg",
+        "portrait-refs/kings-wager.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face with cold narrow eyes, the same long black hair in a severe single braid, the same thin silver circlet, the same dark crimson and black half-plate armour with sharp angular pauldrons, the same black high collar and the long black cape with a crimson lining, the same colours. Three-quarter view facing right, a cold, haughty look. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus candlelit hall in deep crimson and gold, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of her, no text, no border, no frame."
+    },
+    "gorran-portrait": {
+      "out": "gorran-portrait",
+      "refs": [
+        "gorran-stand.jpg",
+        "portrait-refs/grave-toll.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same bald scarred head, the same thick black beard, the same spiked black iron armour with tattered crimson cloth and the tattered crimson cape, the same colours. Three-quarter view facing right, a fierce snarl. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus moonlit graveyard in cold blue light, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of him, no text, no border, no frame."
+    },
+    "petra-portrait": {
+      "out": "petra-portrait",
+      "refs": [
+        "petra-stand.jpg",
+        "portrait-refs/shield-wall.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face with a stern expression, the same short ash-blonde hair, the same crested helm with a crimson and black crest and the visor raised, the same black and crimson lamellar armour with gold trim and the crimson cape, the same colours. Three-quarter view facing right, a stern, resolute look. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus line of shields and spears under a grey sky, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of her, no text, no border, no frame."
+    },
+    "ulric-portrait": {
+      "out": "ulric-portrait",
+      "refs": [
+        "ulric-stand.jpg",
+        "portrait-refs/open-field.jpg"
+      ],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same cold eyes, the same deep black hood, the same black cloth mask over his lower face, the same dark leather armour over black chainmail and the quiver of crimson-fletched arrows on his back, the same colours. Three-quarter view facing right, a cold, silent stare. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus open field at dusk under a darkening sky, like the second reference. Square composition, the head and shoulders filling most of the frame, the face in the upper third. One person only, no weapon in front of him, no text, no border, no frame."
     }
   }
 }

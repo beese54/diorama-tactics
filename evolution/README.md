@@ -749,7 +749,35 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ![Timeline of every character version](characters/timeline.gif)
 
-### B8 pointing at a unit: the pointer over its head, and its window (for review)
+### B8 all ten heroes: drawn by hand, with painted portraits (for review)
+![The ten heroes as the game draws them: Aria, Bram, Corin, Dela, Ilse; Varek, Sabine, Gorran, Petra, Ulric](characters/b8-roster/roster.png)
+
+| Idle (top) and walk (bottom), from the game's sheet | The ten portraits |
+|---|---|
+| ![](characters/b8-roster/idle-walk.gif) | ![](characters/b8-roster/portraits.jpg) |
+
+| A foe pointed at | Ilse, behind Aria, pointed at |
+|---|---|
+| ![](characters/b8-roster/hover-varek.jpg) | ![](characters/b8-roster/hover-ilse.jpg) |
+
+- **What changed:**
+  - All ten heroes are hand-drawn at the map's pixel size in their battle costumes (`src/units/heroArt.ts`), and they are the game's default now:
+    - Dela: bob, feather, white cloak, longbow;
+    - Ilse: silver hair, violet robe, crystal staff;
+    - Varek: horned black helm, crimson plume, tower shield, lance;
+    - Sabine: braid, circlet, sabre;
+    - Gorran: bald, scarred, bearded, cleaver axe;
+    - Petra: crested helm, glaive;
+    - Ulric: hood, mask, black bow.
+  - Each one breathes and strides, worked from the drawing itself (`src/units/heroAnim.ts`): the idle settles the body a pixel; the walk swings the legs, the feet furthest, while a spear or bow stays put. `?sprites=now|tall|fine` still shows the others.
+  - Portraits: the painted kind (the user's choice), for all ten (`public/portraits/<name>.webp`), $0.77 for the other eight. The cut-from-the-art kind and its switch are gone.
+- **Feedback:** "painted is better"; earlier, "details is better" (the polished same-size drawings).
+- **Decisions:**
+  - The foes' crimson is their team cloth, so it follows the side, as the soldiers' does.
+  - Varek is drawn on foot: a horse can't be drawn near true scale on a tile.
+- **Learned:** a check that aims at the first pixel of a figure loses it when the figure breathes. `__map.aimAt` now aims at the middle of the stretch that picks it.
+
+### B8 pointing at a unit: the pointer over its head, and its window
 ![Aria and Corin pointed at in the starting crowd: the window with a painted portrait, and with one cut from the battle art](characters/b8-hover/portraits-compare.jpg)
 
 | Bram in the crowd (no portrait yet) | 1366x768 | The four portraits |
