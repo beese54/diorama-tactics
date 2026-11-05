@@ -258,7 +258,7 @@
     "map_units": {
       "art": "procedural pixel art drawn in code like the props, rendered through the map's pixel pipeline; about one tile tall (~28 px)",
       "animation": "idle loop, walk, hop on height steps; facing follows movement",
-      "deployment": "auto-placed on walkable, reachable, prop-free tiles: player near the front edge (nearest the opening camera), enemy near the back",
+      "deployment": "auto-placed on walkable, reachable, prop-free tiles: player near the front edge (nearest the opening camera), enemy a short march away towards the middle of the board: every unit has a foe within 12 tiles' walk, none closer than 4 (2026-11-05)",
       "interaction": "mouse click or arrows + Z select; move range highlight; path preview on hover; Z/click confirm; X cancel; Enter end turn; camera eases to the selected unit; unit panel shows name, class, Morale, stats, tile defence",
       "viewer_mode": "the map viewer (no units) stays available from the menu"
     },

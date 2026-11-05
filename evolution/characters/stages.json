@@ -44,10 +44,18 @@
     {
       "id": "b8-roster",
       "date": "2026-11-05",
-      "commit": "next",
+      "commit": "08a9c7b",
       "image": "b8-roster/roster.png",
       "title": "B8 · All ten heroes drawn by hand",
       "note": "Every hero on the map hand-drawn in their battle costume at the map's pixel size, breathing and striding; painted portraits for all ten in the unit window."
+    },
+    {
+      "id": "b8-deploy",
+      "date": "2026-11-05",
+      "commit": "next",
+      "image": "b8-deploy/before-after.jpg",
+      "title": "B8 · The armies start a short march apart",
+      "note": "Every unit starts with a foe within 12 tiles' walk (and none closer than 4), the enemy towards the middle of the board, so both sides are on screen from the first turn."
     }
   ]
 }

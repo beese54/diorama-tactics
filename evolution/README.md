@@ -749,7 +749,22 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ![Timeline of every character version](characters/timeline.gif)
 
-### B8 all ten heroes: drawn by hand, with painted portraits (for review)
+### B8 the armies start a short march apart (for review)
+![Before: the foes far off at the other corner, off screen. After: twelve tiles away, across the meadow's hill](characters/b8-deploy/before-after.jpg)
+
+| Castle Courtyard |
+|---|
+| ![](characters/b8-deploy/courtyard.jpg) |
+
+- **What changed:** the enemy no longer starts at the far corner. `deploy` puts it a short march from the player, towards the middle of the board. Every unit has a foe within 12 tiles' walk (`START_REACH`), and no two foes stand closer than 4 (`START_GAP`), so no fight starts before anyone moves. Both sides are on screen from the first turn.
+- **Feedback:** "can we make the players and opponents stand closer? otherwise it will take too long to reach the opponents, lets calculate the distance by allowing them to be within 12 grids". On cards: the user kept today's rule, where all eight come back once every card has been played.
+- **Decisions:**
+  - 12 tiles is a walk on foot, not a straight line, so a river or a cliff between the armies counts.
+  - The enemy gathers towards the middle of the board, not along an edge, so the two sides face each other across open ground.
+  - The minimum gap is 4, not 5. On one generated map (world seed 11) a narrow strip strings the player's five out, and no gathering point keeps the head of the line in reach while the tail stays 5 away.
+- **Learned:** a bash heredoc broke a Python edit script on its quotes again. Edit scripts go through Write, as `tasks/lessons.md` already says.
+
+### B8 all ten heroes: drawn by hand, with painted portraits
 ![The ten heroes as the game draws them: Aria, Bram, Corin, Dela, Ilse; Varek, Sabine, Gorran, Petra, Ulric](characters/b8-roster/roster.png)
 
 | Idle (top) and walk (bottom), from the game's sheet | The ten portraits |

@@ -348,6 +348,12 @@
       "id": "B8-roster",
       "title": "All ten heroes hand-drawn at 20x26 in their battle costumes (heroArt.ts: Dela, Ilse, Varek, Sabine, Gorran, Petra, Ulric added), the default sprite set; idle and walk worked from each drawing (heroAnim.ts, 5 tests); painted portraits for all ten (public/portraits, $0.77 for eight, round $11.42 of the $12 cap); the crop set and ?portraits= removed; __map.aimAt aims at the middle of a figure; __map.unitSheet for review captures; check.mjs 169/169, identity 70/70",
       "status": "review",
+      "commit": "08a9c7b"
+    },
+    {
+      "id": "B8-deploy",
+      "title": "The armies start a short march apart (the user's feedback that reaching the foes took too long): deploy places the enemy towards the middle of the board so every unit has a foe within START_REACH = 12 tiles' walk and none closer than START_GAP = 4; cards unchanged at the user's choice; deploy tests over 30 themes and 20 seeds; check.mjs 169/169",
+      "status": "review",
       "commit": "this one"
     }
   ],
