@@ -16,6 +16,14 @@
       "image": "b8-layout/1920x1080-1-tucked.jpg",
       "title": "B8 · Layout round 1",
       "note": "The map fills any screen in crisp pixels; the menu folds to a bar; the hand rests tucked and opens into a blurred focus mode with the card large in the middle."
+    },
+    {
+      "id": "b8-sprites-r0",
+      "date": "2026-11-05",
+      "commit": "next",
+      "image": "b8-sprites/r0-preview/closeups.jpg",
+      "title": "B8 · Map sprites, preview",
+      "note": "Aria, Corin and Bram hand-drawn in their battle costumes, at today's size and 1.3x taller, beside today's sprites (?sprites=detail, ?sprites=tall)."
     }
   ]
 }

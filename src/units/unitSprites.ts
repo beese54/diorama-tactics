@@ -2,9 +2,11 @@ import * as THREE from 'three';
 import type { SpriteRect } from '../render/SpriteField';
 import { Gfx, nearestTexture, shade } from '../map/propSprites';
 import type { ClassId, Gender, Side, Unit } from '../game/units';
+import { HAIR as HERO_HAIR, HERO_ART, PALETTE } from './heroArt';
 
 /** What a unit looks like on the map: its class, side, and a few traits of its own. */
 export interface UnitLook {
+  name: string;
   cls: ClassId;
   side: Side;
   gender: Gender;
@@ -25,7 +27,7 @@ const HAIR: Record<string, string> = {
   Varek: '#3a3030', Sabine: '#4a2c52', Gorran: '#6a4a2a', Petra: '#c8a050', Ulric: '#4a3a30',
 };
 
-export const lookOf = (unit: Unit): UnitLook => ({ cls: unit.cls, side: unit.side, gender: unit.gender, hair: HAIR[unit.name] ?? '#5a3a22' });
+export const lookOf = (unit: Unit): UnitLook => ({ name: unit.name, cls: unit.cls, side: unit.side, gender: unit.gender, hair: HAIR[unit.name] ?? '#5a3a22' });
 
 const W = 20;
 const H = 26;
@@ -209,9 +211,75 @@ const SHEET_H = 512;
 const PAD = 1;
 const ORDER: UnitClip[] = ['idle', 'walk', 'rest'];
 
+/**
+ * Which map sprites to draw, for the detail preview: today's ('now'), the hand-drawn heroes at
+ * today's size ('detail'), or hand-drawn at 1.3x the height ('tall'). Set with ?sprites=.
+ */
+export type SpriteSet = 'now' | 'detail' | 'tall';
+export const spriteSet = (): SpriteSet => {
+  const asked = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('sprites');
+  return asked === 'detail' || asked === 'tall' ? asked : 'now';
+};
+/** Cell sizes: the art with a pixel of outline round it, and a row spare above for the walk's bob. */
+const CELL: Record<SpriteSet, [number, number]> = { now: [W, H], detail: [22, 29], tall: [28, 37] };
+
+const luma = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  return 0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255);
+};
+
+/**
+ * A hero's hand-drawn grid as colours, padded by a pixel and outlined: each clear pixel beside the
+ * figure takes a deep shade of its darkest neighbour, so the rim follows the colours it borders.
+ */
+function heroPixels(look: UnitLook, set: SpriteSet): (string | null)[][] | null {
+  const art = set === 'now' ? undefined : HERO_ART[look.name]?.[set];
+  if (!art) return null;
+  const keys: Record<string, string> = { ...PALETTE, ...HERO_HAIR[look.name] };
+  CLOTH[look.side].forEach((c, i) => (keys[String(i + 1)] = c));
+  const [w, h] = [art[0].length + 2, art.length + 2];
+  const px: (string | null)[][] = Array.from({ length: h }, (_, y) =>
+    Array.from({ length: w }, (_, x) => {
+      const ch = art[y - 1]?.[x - 1];
+      return ch && ch !== '.' ? keys[ch] : null;
+    }),
+  );
+  const rim: [number, number, string][] = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (px[y][x]) continue;
+      const nb = [px[y][x + 1], px[y][x - 1], px[y + 1]?.[x], px[y - 1]?.[x]].filter((c): c is string => !!c);
+      if (nb.length) rim.push([x, y, shade(nb.reduce((a, b) => (luma(b) < luma(a) ? b : a)), 0.32)]);
+    }
+  }
+  for (const [x, y, c] of rim) px[y][x] = c;
+  return px;
+}
+
+/** One frame into a cell of `cw` x `ch`: the hero's own art, standing on the cell's bottom row, or today's sprite. */
+function paintFrame(look: UnitLook, clip: UnitClip, frame: number, set: SpriteSet, cw: number, ch: number): Gfx {
+  const g = new Gfx(cw, ch);
+  const hero = heroPixels(look, set);
+  if (hero) {
+    let bottom = hero.length - 1;
+    while (bottom > 0 && hero[bottom].every((c) => !c)) bottom--;
+    const bob = clip === 'walk' && frame % 2 ? 1 : 0;
+    const dy = ch - 1 - bottom - bob;
+    const dx = Math.round((cw - hero[0].length) / 2);
+    hero.forEach((row, y) => row.forEach((c, x) => c && g.set(x + dx, y + dy, c)));
+    return g;
+  }
+  const old = new Gfx(W, H);
+  paintUnit(old, look, clip, frame);
+  const [dx, dy] = [Math.round((cw - W) / 2), ch - H];
+  old.color.forEach((c, i) => c && g.set((i % W) + dx, Math.floor(i / W) + dy, c, old.glow[i]));
+  return g;
+}
+
 /** Every unit's clips in one sheet: a row per unit, its idle, walk and rest frames side by side. */
-export function buildUnitSheet(looks: readonly UnitLook[]): UnitSheet {
-  if (looks.length * (H + PAD) > SHEET_H) throw new Error('Too many units for the unit sheet.');
+export function buildUnitSheet(looks: readonly UnitLook[], set: SpriteSet = spriteSet()): UnitSheet {
+  const [CW, CH] = CELL[set];
+  if (looks.length * (CH + PAD) > SHEET_H) throw new Error('Too many units for the unit sheet.');
   const canvas = document.createElement('canvas');
   const glowCanvas = document.createElement('canvas');
   canvas.width = glowCanvas.width = SHEET_W;
@@ -224,23 +292,22 @@ export function buildUnitSheet(looks: readonly UnitLook[]): UnitSheet {
   let x0 = 0;
   for (const clip of ORDER) {
     column[clip] = x0;
-    x0 += CLIPS[clip].frames * (W + PAD);
+    x0 += CLIPS[clip].frames * (CW + PAD);
   }
   looks.forEach((look, row) => {
     for (const clip of ORDER) {
       for (let frame = 0; frame < CLIPS[clip].frames; frame++) {
-        const g = new Gfx(W, H);
-        paintUnit(g, look, clip === 'rest' ? 'idle' : clip, frame);
-        const x = column[clip] + frame * (W + PAD);
-        const y = row * (H + PAD);
+        const g = paintFrame(look, clip === 'rest' ? 'idle' : clip, frame, set, CW, CH);
+        const x = column[clip] + frame * (CW + PAD);
+        const y = row * (CH + PAD);
         g.color.forEach((c, i) => {
           if (!c) return;
           // Resting units are dimmed, as in FFT, so the ones still to move stand out.
           ctx.fillStyle = clip === 'rest' ? shade(c, 0.62) : c;
-          ctx.fillRect(x + (i % W), y + Math.floor(i / W), 1, 1);
+          ctx.fillRect(x + (i % CW), y + Math.floor(i / CW), 1, 1);
           if (!g.glow[i] || clip === 'rest') return;
           glowCtx.fillStyle = c;
-          glowCtx.fillRect(x + (i % W), y + Math.floor(i / W), 1, 1);
+          glowCtx.fillRect(x + (i % CW), y + Math.floor(i / CW), 1, 1);
         });
       }
     }
@@ -250,11 +317,11 @@ export function buildUnitSheet(looks: readonly UnitLook[]): UnitSheet {
     glow: nearestTexture(glowCanvas),
     cell(index, clip) {
       const x = column[clip];
-      const y = index * (H + PAD);
+      const y = index * (CH + PAD);
       // CanvasTexture is flipped: canvas y = 0 is v = 1.
       return {
-        u0: x / SHEET_W, u1: (x + W) / SHEET_W, v0: 1 - (y + H) / SHEET_H, v1: 1 - y / SHEET_H, w: W, h: H,
-        frames: CLIPS[clip].frames, fps: CLIPS[clip].fps, stride: (W + PAD) / SHEET_W,
+        u0: x / SHEET_W, u1: (x + CW) / SHEET_W, v0: 1 - (y + CH) / SHEET_H, v1: 1 - y / SHEET_H, w: CW, h: CH,
+        frames: CLIPS[clip].frames, fps: CLIPS[clip].fps, stride: (CW + PAD) / SHEET_W,
       };
     },
   };

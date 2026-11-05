@@ -749,6 +749,18 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ![Timeline of every character version](characters/timeline.gif)
 
+### B8 map sprites, preview: the heroes drawn by hand (for review)
+![Today's sprites, hand-drawn at the same size, and hand-drawn 1.3x taller, on the meadow](characters/b8-sprites/r0-preview/closeups.jpg)
+
+| The drawings (Aria, Corin, Bram) | The board, 1.3x taller |
+|---|---|
+| ![](characters/b8-sprites/r0-preview/drawings.jpg) | ![](characters/b8-sprites/r0-preview/tall-board.jpg) |
+
+- **What changed:** three heroes drawn pixel by pixel in their battle costumes: Aria's ponytail, blue cape and plate; Corin's red topknot, grin, fur mantle, orange leather and double axe; Bram's beard, white scarf, blue sash, bronze plate and spear. Each comes in two sizes, today's 20x26 and 26x34 (1.3x taller), with a rim of colour-matched outline. The game still draws today's sprites; `?sprites=detail` and `?sprites=tall` show the drafts.
+- **Feedback:** "the pixelated versions of the characters do little justice compared to the battle animations and cards ... they look overwhelmingly plain at the pixelated level".
+- **Decisions:** the sprites are drawn by hand as grids rather than built from shapes in code, so every pixel can carry a detail. Shrinking the battle art down was ruled out, as at this size it turns to mud. The drafts stand still for now: walking and breathing come once a size is chosen.
+- **Learned:** the plainness came from the drawing, not the pixel size. Every hero wore the same blue tunic on the map, while in battle each has their own costume.
+
 ### B8 layout round 1: the map fills the screen, and the hand gets a focus mode
 ![Before and after at 1366x768: the map in a box with black bars and the hand over half the screen, then edge to edge with the hand tucked](characters/b8-layout/before-after-1366x768.jpg)
 
