@@ -20,10 +20,18 @@
     {
       "id": "b8-sprites-r0",
       "date": "2026-11-05",
-      "commit": "next",
+      "commit": "2ab05eb",
       "image": "b8-sprites/r0-preview/closeups.jpg",
       "title": "B8 · Map sprites, preview",
       "note": "Aria, Corin and Bram hand-drawn in their battle costumes, at today's size and 1.3x taller, beside today's sprites (?sprites=detail, ?sprites=tall)."
+    },
+    {
+      "id": "b8-sprites-r1",
+      "date": "2026-11-05",
+      "commit": "next",
+      "image": "b8-sprites/r1-fine/closeup.jpg",
+      "title": "B8 · Map sprites, finer pixels",
+      "note": "Aria polished at the map's pixel size beside Aria at twice the pixels each way in the same footprint, drawn in a second, finer pass (?sprites=fine)."
     }
   ]
 }

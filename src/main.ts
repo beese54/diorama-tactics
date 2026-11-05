@@ -34,13 +34,14 @@ import { animTest } from './battle/animTest';
 import { battlePreview } from './battle/preview';
 import { cardShowcase } from './cards/showcase';
 import { BattleScene } from './battle/BattleScene';
+import { DENSITY, spriteSet } from './units/unitSprites';
 
 /** Map files larger than this are refused unread; a full 64×64 map is well under it. */
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
 function createPipeline(stage: HTMLElement): PixelPipeline | null {
   try {
-    return new PixelPipeline(stage);
+    return new PixelPipeline(stage, DENSITY[spriteSet()]);
   } catch {
     const msg = document.createElement('p');
     msg.id = 'fallback';

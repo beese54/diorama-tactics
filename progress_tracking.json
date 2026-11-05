@@ -335,8 +335,8 @@
     {
       "id": "B8-sprites",
       "title": "Map sprites with detail (the user's feedback that the map characters look plain beside the battles and cards): Aria, Corin and Bram hand-drawn as pixel grids in their battle costumes, at 20x26 and at 26x34 (1.3x taller), with a colour-matched outline; src/units/heroArt.ts, unitSprites.ts paintFrame and spriteSet (?sprites=now|detail|tall, today's by default)",
-      "status": "preview: awaiting the user's choice of size",
-      "commit": "this one"
+      "status": "preview r1: the user chose same size; awaiting a choice between polished 20x26 and fine 40x52 (?sprites=fine: PixelPipeline.renderFine, the units on FINE_LAYER drawn at twice the map's resolution over its depth)",
+      "commit": "2ab05eb, and this one"
     }
   ],
   "backlog": [

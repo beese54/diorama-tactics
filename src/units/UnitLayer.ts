@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import type { Unit } from '../game/units';
 import { SpriteField } from '../render/SpriteField';
 import { tileAt, type MapFile, type Tile } from '../map/types';
-import { buildUnitSheet, lookOf, type UnitSheet } from './unitSprites';
+import { FINE_LAYER } from '../render/PixelPipeline';
+import { buildUnitSheet, DENSITY, lookOf, spriteSet, type UnitSheet } from './unitSprites';
 
 /** Seconds to walk from one tile to the next. */
 const STEP_SECONDS = 0.16;
@@ -52,6 +53,8 @@ export class UnitLayer {
       this.sheet.glow,
     );
     this.group.add(this.field.group);
+    // Finer than the map: drawn in the pipeline's second, finer pass.
+    if (DENSITY[spriteSet()] > 1) this.field.mesh.layers.set(FINE_LAYER);
     const shadowGeometry = new THREE.CircleGeometry(0.3, 14).rotateX(-Math.PI / 2).scale(1, 1, 0.7);
     const shadowMaterial = new THREE.MeshBasicMaterial({
       color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4,

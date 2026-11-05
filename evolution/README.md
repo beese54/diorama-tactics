@@ -749,7 +749,24 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ![Timeline of every character version](characters/timeline.gif)
 
-### B8 map sprites, preview: the heroes drawn by hand (for review)
+### B8 map sprites r1: finer pixels in the same footprint (for review)
+![Aria up close in the game: polished at the map's pixel size, and at twice the pixels each way](characters/b8-sprites/r1-fine/closeup.jpg)
+
+| At the size you play it | The drawings: first draft, polished, twice the pixels |
+|---|---|
+| ![](characters/b8-sprites/r1-fine/actual-size.jpg) | ![](characters/b8-sprites/r1-fine/drawings.jpg) |
+
+- **What changed:**
+  - **Polished, same pixels:** Aria's 20x26 drawing gets a sheen on her hair, a blush, a mouth, gold trim at the collar and on the cape's hem, a gem in the guard, and a shine on the pauldron, gauntlet and knees.
+  - **Twice the pixels:** a 40x52 drawing in the same footprint. Its face has a brow, a lashed eye with a blue iris and a catch-light, a blush and a mouth. The sword has an edge, a fuller and an ornate guard; there are a chest emblem, rivets, banded faulds, cape folds and a thinner outline.
+  - **The finer pass (`?sprites=fine`):** the map is drawn at its own resolution with its depth, spread over a drawing buffer twice as fine, and the units are drawn over it at that resolution. They are still hidden behind hills and props exactly as before (checked from behind the meadow's hill). The map itself is unchanged.
+- **Feedback:** "is it possible to increase the pixels count but keep overall size same and still provide richer fine details"; chose same size over 1.3x taller.
+- **Decisions:**
+  - Same size (the user's choice). Today's sprites stay the default until the user picks between the two; Corin and Bram are shown in 2x2 blocks in the fine set.
+  - A three.js colour background clears the frame before every render, whatever autoClear says, so the fine pass sets it aside.
+- **Learned:** Scale2x gives a clean 2x base from the small drawing, but the face has to be redrawn by hand. Scaled, it came out squeezed, with a lock of hair over it and a jutting nose.
+
+### B8 map sprites, preview: the heroes drawn by hand
 ![Today's sprites, hand-drawn at the same size, and hand-drawn 1.3x taller, on the meadow](characters/b8-sprites/r0-preview/closeups.jpg)
 
 | The drawings (Aria, Corin, Bram) | The board, 1.3x taller |

@@ -206,39 +206,40 @@ export interface UnitSheet {
   cell(index: number, clip: UnitClip): SpriteRect;
 }
 
-const SHEET_W = 256;
-const SHEET_H = 512;
 const PAD = 1;
 const ORDER: UnitClip[] = ['idle', 'walk', 'rest'];
 
 /**
  * Which map sprites to draw, for the detail preview: today's ('now'), the hand-drawn heroes at
- * today's size ('detail'), or hand-drawn at 1.3x the height ('tall'). Set with ?sprites=.
+ * today's size ('detail'), hand-drawn at 1.3x the height ('tall'), or at today's size with twice
+ * the pixels each way ('fine': drawn by the pixel pipeline at twice the map's resolution).
+ * Set with ?sprites=.
  */
-export type SpriteSet = 'now' | 'detail' | 'tall';
+export type SpriteSet = 'now' | 'detail' | 'tall' | 'fine';
 export const spriteSet = (): SpriteSet => {
   const asked = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('sprites');
-  return asked === 'detail' || asked === 'tall' ? asked : 'now';
+  return asked === 'detail' || asked === 'tall' || asked === 'fine' ? asked : 'now';
 };
-/** Cell sizes: the art with a pixel of outline round it, and a row spare above for the walk's bob. */
-const CELL: Record<SpriteSet, [number, number]> = { now: [W, H], detail: [22, 29], tall: [28, 37] };
+/** Sheet pixels per map pixel, each way. */
+export const DENSITY: Record<SpriteSet, number> = { now: 1, detail: 1, tall: 1, fine: 2 };
+/** Cell sizes in sheet pixels: the art with its outline round it, and room above for the walk's bob. */
+const CELL: Record<SpriteSet, [number, number]> = { now: [W, H], detail: [22, 29], tall: [28, 37], fine: [44, 58] };
+const SHEET: Record<SpriteSet, [number, number]> = { now: [256, 512], detail: [256, 512], tall: [256, 512], fine: [512, 1024] };
 
 const luma = (hex: string) => {
   const n = parseInt(hex.slice(1), 16);
   return 0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255);
 };
 
+type Pixels = (string | null)[][];
+
 /**
- * A hero's hand-drawn grid as colours, padded by a pixel and outlined: each clear pixel beside the
+ * A hand-drawn grid as colours, padded by a pixel and outlined: each clear pixel beside the
  * figure takes a deep shade of its darkest neighbour, so the rim follows the colours it borders.
  */
-function heroPixels(look: UnitLook, set: SpriteSet): (string | null)[][] | null {
-  const art = set === 'now' ? undefined : HERO_ART[look.name]?.[set];
-  if (!art) return null;
-  const keys: Record<string, string> = { ...PALETTE, ...HERO_HAIR[look.name] };
-  CLOTH[look.side].forEach((c, i) => (keys[String(i + 1)] = c));
+function outlined(art: readonly string[], keys: Record<string, string>): Pixels {
   const [w, h] = [art[0].length + 2, art.length + 2];
-  const px: (string | null)[][] = Array.from({ length: h }, (_, y) =>
+  const px: Pixels = Array.from({ length: h }, (_, y) =>
     Array.from({ length: w }, (_, x) => {
       const ch = art[y - 1]?.[x - 1];
       return ch && ch !== '.' ? keys[ch] : null;
@@ -256,14 +257,31 @@ function heroPixels(look: UnitLook, set: SpriteSet): (string | null)[][] | null 
   return px;
 }
 
+/** Each pixel as a k x k block. */
+const blocks = (px: Pixels, k: number): Pixels => px.flatMap((row) => Array.from({ length: k }, () => row.flatMap((c) => Array<string | null>(k).fill(c))));
+
+/**
+ * A hero's hand-drawn art for the set, or null for today's sprite. The fine set takes the hero's
+ * fine art, outlined at the fine size, or else their same-size art in 2x2 blocks.
+ */
+function heroPixels(look: UnitLook, set: SpriteSet): Pixels | null {
+  const art = set === 'now' ? undefined : HERO_ART[look.name];
+  if (!art) return null;
+  const keys: Record<string, string> = { ...PALETTE, ...HERO_HAIR[look.name] };
+  CLOTH[look.side].forEach((c, i) => (keys[String(i + 1)] = c));
+  if (set === 'detail' || set === 'tall') return outlined(art[set], keys);
+  return art.fine ? outlined(art.fine, keys) : blocks(outlined(art.detail, keys), 2);
+}
+
 /** One frame into a cell of `cw` x `ch`: the hero's own art, standing on the cell's bottom row, or today's sprite. */
 function paintFrame(look: UnitLook, clip: UnitClip, frame: number, set: SpriteSet, cw: number, ch: number): Gfx {
   const g = new Gfx(cw, ch);
+  const k = DENSITY[set];
   const hero = heroPixels(look, set);
   if (hero) {
     let bottom = hero.length - 1;
     while (bottom > 0 && hero[bottom].every((c) => !c)) bottom--;
-    const bob = clip === 'walk' && frame % 2 ? 1 : 0;
+    const bob = clip === 'walk' && frame % 2 ? k : 0;
     const dy = ch - 1 - bottom - bob;
     const dx = Math.round((cw - hero[0].length) / 2);
     hero.forEach((row, y) => row.forEach((c, x) => c && g.set(x + dx, y + dy, c)));
@@ -271,14 +289,19 @@ function paintFrame(look: UnitLook, clip: UnitClip, frame: number, set: SpriteSe
   }
   const old = new Gfx(W, H);
   paintUnit(old, look, clip, frame);
-  const [dx, dy] = [Math.round((cw - W) / 2), ch - H];
-  old.color.forEach((c, i) => c && g.set((i % W) + dx, Math.floor(i / W) + dy, c, old.glow[i]));
+  const [dx, dy] = [Math.round((cw - W * k) / 2), ch - H * k];
+  old.color.forEach((c, i) => {
+    if (!c) return;
+    for (let j = 0; j < k * k; j++) g.set((i % W) * k + (j % k) + dx, Math.floor(i / W) * k + Math.floor(j / k) + dy, c, old.glow[i]);
+  });
   return g;
 }
 
 /** Every unit's clips in one sheet: a row per unit, its idle, walk and rest frames side by side. */
 export function buildUnitSheet(looks: readonly UnitLook[], set: SpriteSet = spriteSet()): UnitSheet {
   const [CW, CH] = CELL[set];
+  const [SHEET_W, SHEET_H] = SHEET[set];
+  const k = DENSITY[set];
   if (looks.length * (CH + PAD) > SHEET_H) throw new Error('Too many units for the unit sheet.');
   const canvas = document.createElement('canvas');
   const glowCanvas = document.createElement('canvas');
@@ -320,7 +343,7 @@ export function buildUnitSheet(looks: readonly UnitLook[], set: SpriteSet = spri
       const y = index * (CH + PAD);
       // CanvasTexture is flipped: canvas y = 0 is v = 1.
       return {
-        u0: x / SHEET_W, u1: (x + CW) / SHEET_W, v0: 1 - (y + CH) / SHEET_H, v1: 1 - y / SHEET_H, w: CW, h: CH,
+        u0: x / SHEET_W, u1: (x + CW) / SHEET_W, v0: 1 - (y + CH) / SHEET_H, v1: 1 - y / SHEET_H, w: CW / k, h: CH / k,
         frames: CLIPS[clip].frames, fps: CLIPS[clip].fps, stride: (CW + PAD) / SHEET_W,
       };
     },

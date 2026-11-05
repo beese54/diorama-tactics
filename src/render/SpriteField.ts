@@ -102,6 +102,8 @@ const SWAY_VERTEX = /* glsl */ `
  */
 export class SpriteField {
   readonly group = new THREE.Group();
+  /** The one mesh that draws every sprite. */
+  readonly mesh: THREE.Mesh;
   readonly count: number;
   private readonly time = { value: 0 };
   /** Wind strength: 1 is a breeze; weather turns it up or down. */
@@ -176,7 +178,7 @@ export class SpriteField {
         'attribute vec3 frameInfo;\n#define frameCount frameInfo.x\n#define frameRate frameInfo.y\n#define frameStride frameInfo.z\n' +
         shader.vertexShader.replace('#include <uv_vertex>', FRAME_VERTEX).replace('#include <begin_vertex>', SWAY_VERTEX);
     };
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = (this.mesh = new THREE.Mesh(geometry, material));
     mesh.frustumCulled = false; // vertices move in the shader; positions are only the roots
     mesh.receiveShadow = true; // trees and flowers darken in the shadow of a wall or a cliff
     this.group.add(mesh);
