@@ -377,7 +377,8 @@ check('skirmish: five a side on the board', army.filter((u) => u.side === 'playe
 const clickTile = async (x, y) => {
   await page.evaluate((x, y) => window.__map.setPose(45, 55, 1.6, x, y), x, y);
   await frames();
-  const pos = await page.evaluate((x, y) => window.__map.tileScreenPos(x, y), x, y);
+  // Where a click picks that tile: its centre, or up the figure standing there if one in front covers it.
+  const pos = await page.evaluate((x, y) => window.__map.aimAt(x, y), x, y);
   await page.mouse.click(pos.x, pos.y);
   await frames();
 };
@@ -457,10 +458,44 @@ const leftLook = { browsing: (await handView()).browsing, top: (await handView()
 check('hand: with the pointer off it, the hand tucks back down and the board comes clear',
   !leftLook.browsing && leftLook.top >= 1080 * 0.87 && leftLook.filter === 'none', JSON.stringify(leftLook));
 const mover = army[0];
+// Pointing at a unit's figure (its head, well above its tile) points at that unit, in a crowd too:
+// the cursor takes its tile, the pointer floats over its head, and its window floats beside it.
+const headOf = (u) => page.evaluate((u) => { const p = window.__map.tileScreenPos(u.x, u.y); return { x: p.x, y: p.y - 64 }; }, u);
+const pointedAt = [];
+const crowd = army.filter((u) => u.side === 'player');
+for (const u of crowd) {
+  const head = await headOf(u);
+  await page.mouse.move(head.x, head.y);
+  await new Promise((r) => setTimeout(r, 250));
+  pointedAt.push(await page.evaluate((u, head) => {
+    const t = window.__map.hovered();
+    const el = document.getElementById('unit-info');
+    const r = el.getBoundingClientRect();
+    const covers = head.x >= r.left && head.x <= r.right && head.y >= r.top && head.y <= r.bottom;
+    return { name: u.name, on: !!t && t.x === u.x && t.y === u.y, lift: +window.__map.cursorHeight().toFixed(2), window: !el.hidden && el.classList.contains('floating'), named: el.querySelector('.name')?.textContent === u.name, covers };
+  }, u, head));
+}
+check("units: pointing at a unit's head, above its tile, points at that unit, for each of the army in its starting crowd",
+  pointedAt.length === crowd.length && pointedAt.every((p) => p.on), JSON.stringify(pointedAt.map((p) => [p.name, p.on])));
+check("units: over a unit, the cursor's pointer floats above its head", pointedAt.every((p) => p.lift > 1.4), JSON.stringify(pointedAt.map((p) => [p.name, p.lift])));
+check('units: a unit pointed at shows its window beside it, with its name, clear of its head',
+  pointedAt.every((p) => p.window && p.named && !p.covers), JSON.stringify(pointedAt));
+const ariaHead = await headOf(crowd.find((u) => u.name === 'Aria') ?? mover);
+await page.mouse.move(ariaHead.x, ariaHead.y);
+const portrait = await page.waitForFunction(() => { const img = document.querySelector('#unit-info .portrait'); return img?.complete && img.naturalWidth > 0 && img.naturalWidth; }, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => 0);
+check("units: the window shows the hero's portrait", portrait > 0, `naturalWidth ${portrait}`);
+await page.mouse.move(5, 540);
 await page.keyboard.press('KeyC');
 await clickTile(mover.x, mover.y);
 const cardless = await page.evaluate(() => ({ selected: window.__map.selected(), marked: window.__map.marked() }));
 check('cards: without a card a unit can be picked but goes nowhere', cardless.selected === mover.id && cardless.marked.reach === 0, JSON.stringify(cardless));
+// A click on a unit's head, above its tile, selects that unit, not whoever stands behind it.
+const other = crowd.find((u) => u.id !== mover.id);
+const otherHead = await headOf(other);
+await page.mouse.click(otherHead.x, otherHead.y);
+const headPicked = await page.evaluate(() => window.__map.selected());
+check("units: a click on a unit's head selects that unit", headPicked === other.id, JSON.stringify({ want: other.id, got: headPicked }));
+await clickTile(mover.x, mover.y);
 // Put away, the cards sink off the screen, and their canvas stops drawing and gets out of the way.
 await page.waitForFunction(() => !window.__map.hand().view.drawing, { timeout: 5000 }).catch(() => {});
 const closedView = { view: await handView(), hidden: await page.evaluate(() => document.getElementById('card-hand').hidden) };
@@ -678,7 +713,7 @@ const stillCamera = async () => {
 };
 /** Clicks a tile without moving the camera. */
 const clickInPlace = async (x, y) => {
-  const pos = await page.evaluate((x, y) => window.__map.tileScreenPos(x, y), x, y);
+  const pos = await page.evaluate((x, y) => window.__map.aimAt(x, y), x, y);
   await page.mouse.click(pos.x, pos.y);
 };
 /** Skips a battle that is open to its result, and goes back to the board. */

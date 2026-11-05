@@ -223,9 +223,45 @@
         background: linear-gradient(#fffbe0, #ffd34a);
         box-shadow: 0 0 var(--px) #ffe27a;
       }
-      /* The hand: menu-style cards along the bottom; the tile and unit panels step aside while it is open. */
+      /* Pointed at, the unit box floats beside the unit, its portrait at the left. */
+      #unit-info {
+        display: flex;
+        gap: calc(var(--px) * 4);
+        align-items: flex-start;
+      }
+      #unit-info[hidden] { display: none; }
+      #unit-info .info { flex: 1; min-width: 0; }
+      #unit-info .portrait {
+        width: calc(var(--px) * 30);
+        height: calc(var(--px) * 30);
+        flex: none;
+        object-fit: cover;
+        image-rendering: auto;
+        border: var(--px) solid #c9d4f0;
+        border-radius: calc(var(--px) * 1.5);
+        box-shadow: 0 0 0 var(--px) #0a0f24;
+        background: #0a0f24;
+      }
+      #unit-info.floating,
+      body.hand-shown #unit-info.floating {
+        right: auto;
+        bottom: auto;
+        z-index: 6;
+        opacity: 0.96;
+        /* Compact beside the unit: three-quarter size type, so it covers little of the board. */
+        font-size: calc(var(--px) * 6);
+        min-width: 0;
+        padding: calc(var(--px) * 3) calc(var(--px) * 4);
+      }
+      #unit-info.floating .portrait {
+        width: calc(var(--px) * 24);
+        height: calc(var(--px) * 24);
+      }
+      #unit-info.floating .bar { height: calc(var(--px) * 3); }
+      /* The hand: menu-style cards along the bottom; the tile and unit panels step aside while it is open
+         (a unit pointed at still shows its box, beside it). */
       #ui.choosing #tile-info,
-      #ui.choosing #unit-info {
+      #ui.choosing #unit-info:not(.floating) {
         display: none;
       }
       /* The hand: the animated cards on their own canvas, at full resolution and smooth like the

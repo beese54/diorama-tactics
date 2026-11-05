@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Unit } from '../game/units';
-import { SpriteField } from '../render/SpriteField';
+import { PX, SpriteField, type SpriteRect } from '../render/SpriteField';
+import { frameAt, nearest, quadUV, sheetPixel } from './unitPick';
 import { tileAt, type MapFile, type Tile } from '../map/types';
 import { FINE_LAYER } from '../render/PixelPipeline';
 import { buildUnitSheet, DENSITY, lookOf, spriteSet, type UnitSheet } from './unitSprites';
@@ -25,7 +26,12 @@ interface Pose {
   walk: Walk | null;
   rested: boolean;
   shadow: THREE.Mesh;
+  /** What it showed last frame, for picking: where it stood, its cell, and whether mirrored. */
+  drawn: { root: THREE.Vector3; rect: SpriteRect; mirrored: boolean } | null;
 }
+
+/** Each sprite's own phase in its animation (as SpriteField plays it). */
+const phaseOf = (i: number) => (i * 0.37) % 1;
 
 /**
  * The units on the board as upright pixel sprites, like the props (one draw call), each with a
@@ -39,6 +45,9 @@ export class UnitLayer {
   private readonly field: SpriteField;
   private readonly poses: Pose[];
   private readonly right = new THREE.Vector3();
+  /** The sheet's pixels, to tell a sprite's figure from its clear surround. */
+  private readonly sheetPixels: ImageData;
+  private elapsed = 0;
 
   constructor(
     private readonly map: MapFile,
@@ -48,11 +57,13 @@ export class UnitLayer {
     this.sheet = buildUnitSheet(units.map(lookOf));
     const centre = new THREE.Vector2(map.width / 2, map.height / 2);
     this.field = new SpriteField(
-      units.map((unit, i) => ({ root: this.standPoint(unit), rect: this.sheet.cell(i, 'idle'), sway: 0, phase: (i * 0.37) % 1 })),
+      units.map((unit, i) => ({ root: this.standPoint(unit), rect: this.sheet.cell(i, 'idle'), sway: 0, phase: phaseOf(i) })),
       this.sheet.texture,
       this.sheet.glow,
     );
     this.group.add(this.field.group);
+    const canvas = this.sheet.texture.image as HTMLCanvasElement;
+    this.sheetPixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
     // Finer than the map: drawn in the pipeline's second, finer pass.
     if (DENSITY[spriteSet()] > 1) this.field.mesh.layers.set(FINE_LAYER);
     const shadowGeometry = new THREE.CircleGeometry(0.3, 14).rotateX(-Math.PI / 2).scale(1, 1, 0.7);
@@ -64,7 +75,7 @@ export class UnitLayer {
       this.group.add(shadow);
       // Everyone starts facing the middle of the board, so the two sides face each other.
       const heading = centre.clone().sub(new THREE.Vector2(unit.x + 0.5, unit.y + 0.5)).normalize();
-      return { unit, index, heading, walk: null, rested: false, shadow };
+      return { unit, index, heading, walk: null, rested: false, shadow, drawn: null };
     });
   }
 
@@ -100,6 +111,7 @@ export class UnitLayer {
         // Fallen units leave the board: their sprite shrinks to nothing.
         this.field.place(index, new THREE.Vector3(), { ...this.sheet.cell(index, 'idle'), w: 0, h: 0 });
         p.shadow.visible = false;
+        p.drawn = null;
         continue;
       }
       let root: THREE.Vector3;
@@ -129,10 +141,51 @@ export class UnitLayer {
       const clip = p.walk ? 'walk' : p.rested ? 'rest' : 'idle';
       // Facing a ground direction (x, z) that points left on screen: mirror the sprite.
       const mirrored = this.right.x * p.heading.x + this.right.z * p.heading.y < 0;
-      this.field.place(index, root, this.sheet.cell(index, clip), mirrored);
+      const rect = this.sheet.cell(index, clip);
+      this.field.place(index, root, rect, mirrored);
+      p.drawn = { root, rect, mirrored };
       p.shadow.visible = true;
       p.shadow.position.set(root.x, ground + 0.01, root.z);
     }
     this.field.update(elapsed);
+    this.elapsed = elapsed;
+  }
+
+  /** The point just over a unit's head, in normalised device coordinates (null once it has fallen). */
+  headAt(unit: Unit, camera: THREE.Camera): THREE.Vector3 | null {
+    const drawn = this.pose(unit).drawn;
+    return drawn ? drawn.root.clone().setY(drawn.root.y + drawn.rect.h / PX).project(camera) : null;
+  }
+
+  /** How tall a unit's sprite stands, in world units (0 once it has fallen). */
+  heightOf(unit: Unit): number {
+    const drawn = this.pose(unit).drawn;
+    return drawn ? drawn.rect.h / PX : 0;
+  }
+
+  /**
+   * The unit whose figure is under `ndc` (the pointer in normalised device coordinates), or null:
+   * its sprite's quad, as last drawn, must hold the point and the sheet pixel there must be part of
+   * the figure. Of several, the nearest the camera, so the one in front wins in a crowd.
+   */
+  pickAt(ndc: THREE.Vector2, camera: THREE.Camera): Unit | null {
+    const e = camera.matrixWorldInverse.elements;
+    // The quad's right is the camera's, flattened onto the ground (as SpriteField's shader has it).
+    const right = new THREE.Vector3(e[0], 0, e[8]).normalize();
+    const { width, height, data } = this.sheetPixels;
+    const hits: { item: Unit; depth: number }[] = [];
+    for (const p of this.poses) {
+      if (!p.drawn) continue;
+      const { root, rect, mirrored } = p.drawn;
+      const o = root.clone().project(camera);
+      const r = root.clone().add(right).project(camera);
+      const u = root.clone().setY(root.y + 1).project(camera);
+      const uv = quadUV([ndc.x, ndc.y], [o.x, o.y], [r.x - o.x, r.y - o.y], [u.x - o.x, u.y - o.y], rect.w / PX, rect.h / PX);
+      if (!uv) continue;
+      const [x, y] = sheetPixel(rect, width, height, uv.u, uv.v, frameAt(rect, this.elapsed, phaseOf(p.index)), mirrored);
+      if (data[(y * width + x) * 4 + 3] < 128) continue;
+      hits.push({ item: p.unit, depth: o.z });
+    }
+    return nearest(hits);
   }
 }

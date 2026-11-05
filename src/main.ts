@@ -406,6 +406,16 @@ async function main(): Promise<void> {
   const pointer = new THREE.Vector2();
   const raycaster = new THREE.Raycaster();
   let pointerInside = false;
+  /**
+   * The tile under a point (normalised device coordinates): a unit's figure stands up off its tile,
+   * so where one is under the point, it is what is meant; else the board's tile there.
+   */
+  const pickTile = (ndc: THREE.Vector2): Tile | null => {
+    const unitTile = skirmish?.unitTileAt(ndc, rig.camera);
+    if (unitTile) return unitTile;
+    raycaster.setFromCamera(ndc, rig.camera);
+    return board.mesh.pick(raycaster);
+  };
   canvas.addEventListener('pointermove', (e) => {
     const rect = canvas.getBoundingClientRect();
     pointer.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
@@ -420,9 +430,8 @@ async function main(): Promise<void> {
       // Picked from where the click landed, not the last frame's hover: the two can differ on a quick click.
       const rect = canvas.getBoundingClientRect();
       const at = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
-      raycaster.setFromCamera(at, rig.camera);
       keyTile = null;
-      skirmish.click(board.mesh.pick(raycaster));
+      skirmish.click(pickTile(at));
     }
     pressedAt = null;
   });
@@ -475,8 +484,7 @@ async function main(): Promise<void> {
     if (keyTile) {
       hovered = keyTile;
     } else if (pointerInside) {
-      raycaster.setFromCamera(pointer, rig.camera);
-      hovered = board.mesh.pick(raycaster);
+      hovered = pickTile(pointer);
     } else {
       hovered = null;
     }
@@ -487,6 +495,7 @@ async function main(): Promise<void> {
       const { mesh } = board;
       cursor.setTarget(tile && ((u, v) => mesh.surfacePoint(tile, u, v)));
     }
+    cursor.setLift(skirmish?.figureHeight(hovered) ?? 0);
     cursor.update(elapsed);
     tileInfo.show(hovered);
 
@@ -510,11 +519,33 @@ async function main(): Promise<void> {
       __map: {
         tile: (x: number, y: number) => tileAt(board.map, x, y),
         hovered: () => hovered,
+        /** The cursor's pointer height over its tile, in world units (over a unit, clear of its head). */
+        cursorHeight: () => cursor.pointerHeight,
         tileScreenPos(x: number, y: number) {
           const t = tileAt(board.map, x, y)!;
           const p = board.mesh.tileCenter(t).project(rig.camera);
           const rect = canvas.getBoundingClientRect();
           return { x: rect.left + ((p.x + 1) / 2) * rect.width, y: rect.top + ((1 - p.y) / 2) * rect.height };
+        },
+        /**
+         * A screen point that picks tile (x, y) as hover and click do: its centre if that picks it,
+         * else a point up the figure standing there (a unit in front may cover the centre).
+         */
+        aimAt(x: number, y: number) {
+          const t = tileAt(board.map, x, y);
+          if (!t) return null;
+          const p = board.mesh.tileCenter(t).project(rig.camera);
+          const rect = canvas.getBoundingClientRect();
+          const toScreen = (nx: number, ny: number) => ({ x: rect.left + ((nx + 1) / 2) * rect.width, y: rect.top + ((1 - ny) / 2) * rect.height });
+          const step = 2 / rect.height; // a CSS pixel in NDC, vertically
+          for (let up = 0; up <= 160; up += 6) {
+            for (const side of [0, -10, 10]) {
+              const at = new THREE.Vector2(p.x + side * step * (rect.height / rect.width), p.y + up * step);
+              const got = pickTile(at);
+              if (got && got.x === x && got.y === y) return toScreen(at.x, at.y);
+            }
+          }
+          return toScreen(p.x, p.y);
         },
         setPose(azimuthDeg: number, polarDeg: number, zoom: number, x?: number, y?: number) {
           const t = x === undefined || y === undefined ? undefined : tileAt(board.map, x, y);

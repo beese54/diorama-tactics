@@ -335,8 +335,14 @@
     {
       "id": "B8-sprites",
       "title": "Map sprites with detail (the user's feedback that the map characters look plain beside the battles and cards): Aria, Corin and Bram hand-drawn as pixel grids in their battle costumes, at 20x26 and at 26x34 (1.3x taller), with a colour-matched outline; src/units/heroArt.ts, unitSprites.ts paintFrame and spriteSet (?sprites=now|detail|tall, today's by default)",
-      "status": "preview r1: the user chose same size; awaiting a choice between polished 20x26 and fine 40x52 (?sprites=fine: PixelPipeline.renderFine, the units on FINE_LAYER drawn at twice the map's resolution over its depth)",
-      "commit": "2ab05eb, and this one"
+      "status": "chosen 2026-11-05: the polished 20x26 drawings ('details is better'); next, all ten heroes with walk and idle (the fine pass stays in code, off)",
+      "commit": "2ab05eb, fab07f5"
+    },
+    {
+      "id": "B8-hover",
+      "title": "Pointing at a unit (the user's feedback that the pointer never showed over a crowded character): UnitLayer.pickAt picks the figure under the pointer (src/units/unitPick.ts: the quad as the shader builds it, the sheet pixel, the nearest unit); Cursor.setLift floats the pointer over its head; UnitPanel floats a compact window up and to the side (src/ui/placeWindow.ts) with a portrait (public/portraits/painted|crop, ?portraits=); portraits.json for Seedream; __map.aimAt for checks; check.mjs 169/169, identity 70/70",
+      "status": "review: awaiting the user's choice of portrait kind",
+      "commit": "this one"
     }
   ],
   "backlog": [

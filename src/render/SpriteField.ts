@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { addSkyShadow, skyShadow } from './skyShadow';
 
 /** Pixels per world unit: sprites keep one texel per ground texel. */
-const PX = 16;
+export const PX = 16;
 
 /** Wind: direction (world xz), a wave that travels with it, slower gusts, and a per-sprite flutter. All periods divide 4 s, so the motion loops. */
 const WIND_DIR = new THREE.Vector2(1, 0.35).normalize();

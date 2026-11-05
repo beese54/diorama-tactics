@@ -1,10 +1,24 @@
 import { GAUGE_MAX } from '../game/gauge';
 import { CLASSES, type Unit } from '../game/units';
+import { placeWindow } from './placeWindow';
 
-/** FFT-style box in the bottom-right corner: the unit's name, class and side, Morale, stats, and whether it has moved. */
+/**
+ * Where a hero's portrait is kept: public/portraits/<set>/<name>.webp, the set 'painted' (made for
+ * the window) or 'crop' (cut from the hero's battle art), picked with ?portraits= for the preview.
+ * A missing one just leaves the portrait out.
+ */
+const PORTRAITS = typeof location !== 'undefined' && new URLSearchParams(location.search).get('portraits') === 'crop' ? 'crop' : 'painted';
+export const portraitUrl = (name: string) => `${import.meta.env.BASE_URL}portraits/${PORTRAITS}/${name.toLowerCase()}.webp`;
+
+/**
+ * FFT-style box: the unit's portrait, name and side, class, Morale, stats, and whether it has
+ * moved. Pointed at, it floats beside the unit; otherwise (the selected unit) it sits in the
+ * bottom-right corner.
+ */
 export class UnitPanel {
   private readonly el: HTMLElement;
   private current: string | null = null;
+  private placedAt: string | null = null;
 
   constructor(parent: HTMLElement) {
     this.el = document.createElement('div');
@@ -28,12 +42,40 @@ export class UnitPanel {
     const { atk, tec, gen, luk } = unit.stats;
     this.el.className = unit.side;
     this.el.innerHTML =
+      `<img class="portrait" alt="">` +
+      `<div class="info">` +
       `<div class="head"><span class="name"></span><span class="side">${unit.side === 'player' ? 'ALLY' : 'FOE'}</span></div>` +
       `<div class="cls">${def.name}${unit.gender === 'female' ? ' · +' : ' · x'}${union > 1 ? ` · UNION ×${union}` : ''}${moved ? ' · MOVED' : ''}</div>` +
       `<div class="morale"><span>MRL</span><span class="bar"><span style="width:${(share * 100).toFixed(1)}%"></span></span><span>${unit.morale}</span></div>` +
       // The skill gauge it carries from battle to battle: full, its card's skill can fire (B6).
       `<div class="morale skl${unit.gauge >= GAUGE_MAX ? ' full' : ''}"><span>SKL</span><span class="bar"><span style="width:${Math.min(100, (unit.gauge / GAUGE_MAX) * 100).toFixed(1)}%"></span></span><span>${Math.floor(unit.gauge)}</span></div>` +
-      `<div class="stats">ATK ${atk}  TEC ${tec}  GEN ${gen}  LUK ${luk}</div>`;
+      `<div class="stats">ATK ${atk}  TEC ${tec}  GEN ${gen}  LUK ${luk}</div>` +
+      `</div>`;
     this.el.querySelector('.name')!.textContent = unit.name;
+    const img = this.el.querySelector<HTMLImageElement>('.portrait')!;
+    img.onerror = () => img.remove();
+    img.src = portraitUrl(unit.name);
+    this.placedAt = null;
+  }
+
+  /**
+   * Floats the box beside `at` (a unit's head, in CSS px within the parent), `gap` px off it and
+   * clear of `bottom` px below; or with null puts it back in its corner.
+   */
+  place(at: { x: number; y: number } | null, view: { w: number; h: number }, bottom = 0, gap = 24): void {
+    if (this.el.hidden) return;
+    if (!at) {
+      if (this.placedAt === 'corner') return;
+      this.placedAt = 'corner';
+      this.el.classList.remove('floating');
+      Object.assign(this.el.style, { left: '', top: '' });
+      return;
+    }
+    this.el.classList.add('floating');
+    const { left, top } = placeWindow(at, { w: this.el.offsetWidth, h: this.el.offsetHeight }, view, { bottom, gap });
+    const key = `${left},${top}`;
+    if (key === this.placedAt) return;
+    this.placedAt = key;
+    Object.assign(this.el.style, { left: `${left}px`, top: `${top}px` });
   }
 }

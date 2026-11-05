@@ -749,7 +749,28 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ![Timeline of every character version](characters/timeline.gif)
 
-### B8 map sprites r1: finer pixels in the same footprint (for review)
+### B8 pointing at a unit: the pointer over its head, and its window (for review)
+![Aria and Corin pointed at in the starting crowd: the window with a painted portrait, and with one cut from the battle art](characters/b8-hover/portraits-compare.jpg)
+
+| Bram in the crowd (no portrait yet) | 1366x768 | The four portraits |
+|---|---|---|
+| ![](characters/b8-hover/crowd-bram.jpg) | ![](characters/b8-hover/1366x768-hover-corin.jpg) | ![](characters/b8-hover/portraits.jpg) |
+
+- **What changed:**
+  - Hover and click pick the unit whose figure is under the pointer (`UnitLayer.pickAt`, `src/units/unitPick.ts`). The figure's quad is projected as the shader builds it, the sheet pixel there must be part of the figure, and the nearest unit wins. Off a figure, the board's tile is picked as before.
+  - Over a unit, the pointer floats clear of its head (`Cursor.setLift`).
+  - The unit box floats up and to the right of the unit pointed at, or to the left near the edge, compact at three-quarter size. It keeps clear of the crowd and the tucked hand, and shows a portrait beside the name, class, Morale, SKL and stats (`src/ui/placeWindow.ts`, `UnitPanel.place`). With nothing pointed at, the selected unit's box keeps its corner.
+  - Portraits, two ways for the preview (`?portraits=painted|crop`):
+    - painted for the window by Seedream from the hero's own image and a card's art, $0.19 for four;
+    - cut from the hero's standing art, at no cost.
+- **Feedback:** "when i hover my mouse over the character, i do not see that inverse triangle above the character ... i need to be able to see which character to select if they all crowd around each other. Can we also have a small window to display the character's name and details ... a profile picture ... or ... custom profile picture that follow very closely to the design card animation, just that it has a more close up view". On the sprites: "details is better" (the polished same-size drawings).
+- **Decisions:**
+  - Picking is what you see: a figure in front covers the tiles behind it, as it does on screen.
+  - The window sits diagonally off the unit, not level with it, as level it covered the very crowd it was meant to sort out.
+  - The checks aim through the game's own pick path (`__map.aimAt`).
+- **Learned:** in a Union shape an ally's head covers the leader's tile centre, so a click on that centre now picks the ally (see `tasks/lessons.md`).
+
+### B8 map sprites r1: finer pixels in the same footprint
 ![Aria up close in the game: polished at the map's pixel size, and at twice the pixels each way](characters/b8-sprites/r1-fine/closeup.jpg)
 
 | At the size you play it | The drawings: first draft, polished, twice the pixels |

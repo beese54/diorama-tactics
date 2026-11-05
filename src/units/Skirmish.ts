@@ -10,7 +10,7 @@ import { onPlay } from '../game/skills';
 import { fightUnion, unionOf, unionShape } from '../game/union';
 import type { Side, Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
-import type { MapFile, Tile } from '../map/types';
+import { tileAt, type MapFile, type Tile } from '../map/types';
 import { CardHand } from '../ui/CardHand';
 import { fx } from '../ui/transitions';
 import { TurnBanner } from '../ui/TurnBanner';
@@ -148,6 +148,18 @@ export class Skirmish {
   }
 
   /** The living unit standing on `tile`, if any. */
+  /** The tile of the unit whose figure is under `ndc` (the pointer), or null: see UnitLayer.pickAt. */
+  unitTileAt(ndc: THREE.Vector2, camera: THREE.Camera): Tile | null {
+    const unit = this.layer.pickAt(ndc, camera);
+    return unit ? tileAt(this.map, unit.x, unit.y) ?? null : null;
+  }
+
+  /** How tall the figure on `tile` stands, in world units (0: no one there), so the cursor floats over its head. */
+  figureHeight(tile: Tile | null): number {
+    const unit = this.unitAt(tile);
+    return unit ? this.layer.heightOf(unit) : 0;
+  }
+
   unitAt(tile: Tile | null): Unit | undefined {
     return tile ? this.units.find((u) => u.morale > 0 && u.x === tile.x && u.y === tile.y) : undefined;
   }
@@ -377,8 +389,13 @@ export class Skirmish {
   update(elapsed: number, dt: number, camera: THREE.Camera): void {
     this.layer.update(elapsed, dt, camera);
     this.marks.update(elapsed);
-    const shown = this.unitAt(this.hovered) ?? this.selected;
+    const pointed = this.unitAt(this.hovered);
+    const shown = pointed ?? this.selected;
     this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id), shown ? unionOf(shown, this.units).length : 1);
+    // Pointed at, the box floats beside the unit's head, clear of the tucked hand; else it keeps its corner.
+    const head = pointed && this.layer.headAt(pointed, camera);
+    const [w, h] = [this.ui.clientWidth, this.ui.clientHeight];
+    this.panel.place(head ? { x: ((head.x + 1) / 2) * w, y: ((1 - head.y) / 2) * h } : null, { w: Math.min(w, innerWidth), h: Math.min(h, innerHeight) }, this.cards.open ? innerHeight * 0.13 : 0, innerHeight / 270 * 12);
     this.box.show(this.turn);
     // While the hand is open it has the bottom of the screen: the tile and unit panels step aside.
     this.ui.classList.toggle('choosing', this.cards.open);

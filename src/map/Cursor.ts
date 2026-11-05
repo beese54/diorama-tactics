@@ -17,6 +17,10 @@ function canvasTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2
 /** Down-pointing arrow, 7x6 px, drawn row by row ('#' = fill, 'o' = outline). */
 const ARROW = ['ooooooo', 'o#####o', 'oo###oo', ' oo#oo ', '  ooo  ', '   o   '];
 
+/** The pointer's height over an empty tile, and its gap above a unit's head. */
+const POINTER_LIFT = 0.75;
+const HEAD_GAP = 0.3;
+
 /** Outline grid resolution; fine enough to follow a tile's rounded lips. */
 const DRAPE_SEGMENTS = 16;
 
@@ -28,6 +32,8 @@ export class Cursor {
   readonly group = new THREE.Group();
   private readonly outline: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly pointer: THREE.Sprite;
+  /** How high the pointer floats over the tile, in world units: over a unit, clear of its head. */
+  private lift = POINTER_LIFT;
 
   constructor() {
     const outlineTex = canvasTexture(TILE_PX, TILE_PX, (ctx) => {
@@ -80,8 +86,18 @@ export class Cursor {
     geometry.computeBoundingSphere();
   }
 
+  /** Floats the pointer clear of a figure `height` world units tall standing on the tile (0: none). */
+  setLift(height: number): void {
+    this.lift = height > 0 ? Math.max(POINTER_LIFT, height + HEAD_GAP) : POINTER_LIFT;
+  }
+
+  /** The pointer's height over the tile now, for checks. */
+  get pointerHeight(): number {
+    return this.pointer.position.y;
+  }
+
   update(timeSeconds: number): void {
     this.outline.material.opacity = 0.6 + 0.4 * Math.sin(timeSeconds * 6);
-    this.pointer.position.y = 0.75 + 0.08 * Math.sin(timeSeconds * 4);
+    this.pointer.position.y = this.lift + 0.08 * Math.sin(timeSeconds * 4);
   }
 }

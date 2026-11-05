@@ -1,0 +1,17 @@
+{
+  "about": "Close-up portraits for the unit window (public/portraits/<name>.webp), for scripts/art/generate.mjs. Each takes the hero's own image (art/source/) for the likeness and a card's art (art/source/portrait-refs/, copied from public/cards/) for the painted style and light.",
+  "size": "1536x1536",
+  "base": "{pose}",
+  "poses": {
+    "aria-portrait": {
+      "out": "aria-portrait",
+      "refs": ["leader-f.jpg", "portrait-refs/long-road.jpg"],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same golden ponytail tied with a blue band, the same blue and silver ornate plate armour, the same colours. Three-quarter view facing right, looking ahead with calm resolve. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus dawn landscape of green hills in warm gold and pale blue light, like the second reference. Square composition, the head and shoulders filling most of the frame, the eyes in the upper third. One person only, no weapon in front of her, no text, no border, no frame."
+    },
+    "corin-portrait": {
+      "out": "corin-portrait",
+      "refs": ["corin-stand.jpg", "portrait-refs/cleavers-oath.jpg"],
+      "prompt": "Close-up character portrait, chest up, of the exact same character as the first reference image: the same face, the same wild auburn hair tied back in a topknot, the same brown fur mantle over the shoulders, the same amber-gold leather armour with round iron plates, the same colours. Three-quarter view facing right, a bold confident grin. Painted in the style of the second reference image: a painterly 2D anime fantasy card illustration, cel-shaded with soft painted light and crisp clean line art. Background: a soft, out-of-focus battlefield at dusk with glowing embers in the air, deep blue and ember orange, like the second reference. Square composition, the head and shoulders filling most of the frame, the eyes in the upper third. One person only, no weapon in front of him, no text, no border, no frame."
+    }
+  }
+}

@@ -28,10 +28,18 @@
     {
       "id": "b8-sprites-r1",
       "date": "2026-11-05",
-      "commit": "next",
+      "commit": "fab07f5",
       "image": "b8-sprites/r1-fine/closeup.jpg",
       "title": "B8 · Map sprites, finer pixels",
       "note": "Aria polished at the map's pixel size beside Aria at twice the pixels each way in the same footprint, drawn in a second, finer pass (?sprites=fine)."
+    },
+    {
+      "id": "b8-hover",
+      "date": "2026-11-05",
+      "commit": "next",
+      "image": "b8-hover/portraits-compare.jpg",
+      "title": "B8 · Pointing at a unit, and its window",
+      "note": "Hover and click pick the unit whose figure is under the pointer; the pointer floats over its head; a compact window with a portrait floats beside it. Portraits two ways: painted for the window, or cut from the battle art."
     }
   ]
 }
