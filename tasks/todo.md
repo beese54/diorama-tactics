@@ -636,7 +636,7 @@ Proposed milestones (each one reviewed with screenshots before the next):
   - Battle effects (`src/battle/Impact.ts`): sparks tinted by weapon with a ring, a flash and a star on each blow, a dust trail on the charge, the skill's light around its squad.
   - check.mjs 159/159 (11 new: sound unlock, mute kept over a reload, the card's flight, the wipe both ways, the banners, the intro, the outro, sparks and sounds on blows, `?fx=none`, no errors); identity 70/70.
   - Waiting on: the user's verdict on the effects and sounds, and the four music loops.
-  - [ ] **Layout round 1** (in review, 2026-11-04), after the user's feedback that the cards, the menu and the turn box hid the map:
+  - [x] **Layout round 1** (approved 2026-11-05), after the user's feedback that the cards, the menu and the turn box hid the map:
     - The map fills the window in crisp pixels: the step is the whole number nearest the window's height over 270, the view is the window over that step (480x270 at 1080p as before; 456x256 at x3 on a 1366x768 laptop, which had black bars). The camera and the backdrop follow the view; the map opens at the same zoom.
     - The menu folds into a bar (Menu or Tab opens it; Esc, a click elsewhere or a choice closes it). Notices show at the top centre and fade. The menu bar sits at 55% opacity and the turn box at 85%, both solid under the pointer; the tile and unit panels at 85%.
     - The hand rests tucked (the top 12% of the screen). Pointing at it, the arrows or a tap open focus mode: the board blurs and dims, the hand rises, and the card in focus lifts to the middle at 58% of the screen's height. Leaving the cards (after 250 ms), Esc or playing a card tucks it again.

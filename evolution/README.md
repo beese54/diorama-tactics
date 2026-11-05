@@ -749,7 +749,7 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ![Timeline of every character version](characters/timeline.gif)
 
-### B8 layout round 1: the map fills the screen, and the hand gets a focus mode (for review)
+### B8 layout round 1: the map fills the screen, and the hand gets a focus mode
 ![Before and after at 1366x768: the map in a box with black bars and the hand over half the screen, then edge to edge with the hand tucked](characters/b8-layout/before-after-1366x768.jpg)
 
 | Focus mode (1920x1080) | The menu folded out |

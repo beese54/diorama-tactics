@@ -12,7 +12,7 @@
     {
       "id": "b8-layout",
       "date": "2026-11-04",
-      "commit": "next",
+      "commit": "f9cc853",
       "image": "b8-layout/1920x1080-1-tucked.jpg",
       "title": "B8 · Layout round 1",
       "note": "The map fills any screen in crisp pixels; the menu folds to a bar; the hand rests tucked and opens into a blurred focus mode with the card large in the middle."
