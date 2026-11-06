@@ -7,10 +7,12 @@ import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn
 import { planTurn, type Difficulty } from '../game/ai';
 import { outcome, stats, type Outcome, type Stats } from '../game/end';
 import { onPlay } from '../game/skills';
+import { audio } from '../audio/Audio';
 import { fightUnion, unionOf, unionShape } from '../game/union';
 import { freshTurn, type Side, type Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
 import { tileAt, type MapFile, type Tile } from '../map/types';
+import { AllInFx } from '../ui/AllInFx';
 import { CardHand } from '../ui/CardHand';
 import { fx } from '../ui/transitions';
 import { TurnBanner } from '../ui/TurnBanner';
@@ -71,6 +73,8 @@ export class Skirmish {
   private readonly panel: UnitPanel;
   private readonly box: TurnBox;
   private readonly cards: CardHand;
+  /** All In's burst over the units it fills, as its card is played. */
+  private readonly allIn: AllInFx;
   private hovered: Tile | null = null;
   /** The range the path preview was last drawn for: a new selection redraws it. */
   private previewed: Map<number, Step> | null = null;
@@ -97,6 +101,7 @@ export class Skirmish {
     this.panel = new UnitPanel(ui);
     this.box = new TurnBox(ui);
     this.cards = new CardHand((id) => this.play(id));
+    this.allIn = new AllInFx(ui);
     this.begin(this.turn);
     this.cards.prefetchFoes(this.hands.enemy.cards);
   }
@@ -128,7 +133,20 @@ export class Skirmish {
     const card = this.turn.card!;
     // All In acts as it is played: every ally's skill gauge fills.
     const filled = onPlay(card, 'player', this.units);
+    this.burst(filled);
     this.host.say(`${card.name}: MOV ${card.mov}, POW ${card.pow}.${filled.length ? ` ${card.skill.name}: every ally's skill gauge is full.` : ''}`);
+  }
+
+  /** All In's burst over the units whose gauges it filled, with a ring of sound; none filled, none. */
+  private burst(filled: readonly Unit[]): void {
+    if (!filled.length) return;
+    this.allIn.play(filled);
+    audio.play('cutin');
+  }
+
+  /** How many All In bursts are playing (for checks). */
+  get allInPlaying(): number {
+    return this.allIn.playing;
   }
 
   /** C: shows the hand, or puts it away. Once the turn is under way it is there to look at only. */
@@ -352,6 +370,7 @@ export class Skirmish {
     this.cards.showFoeCard(plan.card);
     // The same rules for both sides: the foes' All In fills their gauges as it is played.
     const filled = onPlay(plan.card, 'enemy', this.units);
+    this.burst(filled);
     this.host.say(`The foes play ${plan.card.name}.${filled.length ? ` ${plan.card.skill.name}: their skill gauges are full.` : ''}`);
     await pause(FOES_CARD_MS);
     if (this.idle) {
@@ -403,6 +422,12 @@ export class Skirmish {
     const head = pointed && this.layer.headAt(pointed, camera);
     const [w, h] = [this.ui.clientWidth, this.ui.clientHeight];
     this.panel.place(head ? { x: ((head.x + 1) / 2) * w, y: ((1 - head.y) / 2) * h } : null, { w: Math.min(w, innerWidth), h: Math.min(h, innerHeight) }, this.cards.open ? innerHeight * 0.13 : 0, innerHeight / 270 * 12);
+    // All In's bursts stay on their units as the camera moves.
+    const css = (v: THREE.Vector3) => ({ x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h });
+    this.allIn.place((u) => {
+      const [top, feet] = [this.layer.headAt(u, camera), this.layer.feetAt(u, camera)];
+      return top && feet ? { head: css(top), feet: css(feet) } : null;
+    });
     this.box.show(this.turn);
     // While the hand is open it has the bottom of the screen: the tile and unit panels step aside.
     this.ui.classList.toggle('choosing', this.cards.open);

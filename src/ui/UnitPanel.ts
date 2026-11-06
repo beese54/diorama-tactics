@@ -1,6 +1,7 @@
 import { GAUGE_MAX } from '../game/gauge';
 import { CLASSES, type Unit } from '../game/units';
 import { placeWindow } from './placeWindow';
+import { weaponIcon } from './weaponIcon';
 
 /**
  * Where a hero's portrait is kept: public/portraits/<name>.webp, painted for the window
@@ -43,7 +44,7 @@ export class UnitPanel {
       `<img class="portrait" alt="">` +
       `<div class="info">` +
       `<div class="head"><span class="name"></span><span class="side">${unit.side === 'player' ? 'ALLY' : 'FOE'}</span></div>` +
-      `<div class="cls">${def.name}${unit.gender === 'female' ? ' · +' : ' · x'}${union > 1 ? ` · UNION ×${union}` : ''}${moved ? ' · MOVED' : ''}</div>` +
+      `<div class="cls"><span class="wicon w-${def.weapon}">${weaponIcon(def.weapon)}</span>${def.name}${unit.gender === 'female' ? ' · +' : ' · x'}${union > 1 ? ` · UNION ×${union}` : ''}${moved ? ' · MOVED' : ''}</div>` +
       `<div class="morale"><span>MRL</span><span class="bar"><span style="width:${(share * 100).toFixed(1)}%"></span></span><span>${unit.morale}</span></div>` +
       // The skill gauge it carries from battle to battle: full, its card's skill can fire (B6).
       `<div class="morale skl${unit.gauge >= GAUGE_MAX ? ' full' : ''}"><span>SKL</span><span class="bar"><span style="width:${Math.min(100, (unit.gauge / GAUGE_MAX) * 100).toFixed(1)}%"></span></span><span>${Math.floor(unit.gauge)}</span></div>` +

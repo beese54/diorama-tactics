@@ -38,6 +38,63 @@
         color: #eef2ff;
         text-shadow: var(--px) var(--px) 0 #0a0f24;
       }
+      /* All In (B8): a pillar of gold light shoots up through each unit it fills, "SKILL FULL" rising over it. */
+      #all-in .burst {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+      #all-in .pillar {
+        position: absolute;
+        left: calc(var(--px) * -6);
+        bottom: 0;
+        width: calc(var(--px) * 12);
+        height: calc(var(--tall) + var(--px) * 40);
+        background: linear-gradient(to top, rgba(255, 226, 122, 0.95), rgba(255, 244, 196, 0.7) 60%, rgba(255, 244, 196, 0));
+        box-shadow: 0 0 calc(var(--px) * 6) rgba(255, 210, 90, 0.9);
+        transform-origin: bottom;
+        animation: all-in-pillar var(--all-in) ease-out var(--delay) both;
+      }
+      #all-in .ring {
+        position: absolute;
+        left: calc(var(--px) * -20);
+        top: calc(var(--px) * -6);
+        width: calc(var(--px) * 40);
+        height: calc(var(--px) * 12);
+        border: var(--px) solid #ffe27a;
+        border-radius: 50%;
+        box-shadow: 0 0 calc(var(--px) * 4) #ffd25a, inset 0 0 calc(var(--px) * 4) #ffd25a;
+        animation: all-in-ring var(--all-in) ease-out var(--delay) both;
+      }
+      #all-in b {
+        position: absolute;
+        left: 0;
+        bottom: calc(var(--tall) + var(--px) * 6);
+        white-space: nowrap;
+        color: #ffe27a;
+        font-weight: normal;
+        animation: all-in-words var(--all-in) ease-out both;
+      }
+      /* One word for the side, over the highest unit: crowded units' words piled up unread. */
+      #all-in .burst:not(.lead) b { display: none; }
+      #all-in .enemy b { color: #ffb0a0; }
+      @keyframes all-in-pillar {
+        0% { transform: scaleY(0); opacity: 1; }
+        18% { transform: scaleY(1); opacity: 1; }
+        60% { transform: scaleY(1) scaleX(0.6); opacity: 0.8; }
+        100% { transform: scaleY(1.1) scaleX(0.1); opacity: 0; }
+      }
+      @keyframes all-in-ring {
+        0% { transform: scale(0.2); opacity: 1; }
+        50% { opacity: 0.9; }
+        100% { transform: scale(1.6); opacity: 0; }
+      }
+      @keyframes all-in-words {
+        0%, 10% { transform: translate(-50%, calc(var(--px) * 8)); opacity: 0; }
+        25% { transform: translate(-50%, 0); opacity: 1; }
+        80% { transform: translate(-50%, calc(var(--px) * -6)); opacity: 1; }
+        100% { transform: translate(-50%, calc(var(--px) * -10)); opacity: 0; }
+      }
       #tile-info {
         position: absolute;
         left: calc(var(--px) * 8);
@@ -230,6 +287,18 @@
         align-items: flex-start;
       }
       #unit-info[hidden] { display: none; }
+      /* The unit's weapon symbol before its class (B8), in the type's colour as on the battle banners. */
+      #unit-info .wicon {
+        display: inline-grid;
+        place-items: center;
+        width: calc(var(--px) * 10);
+        height: calc(var(--px) * 10);
+        margin-right: calc(var(--px) * 2);
+        vertical-align: middle;
+        border-radius: 50%;
+        border: var(--px) solid #f2dc9a;
+      }
+      #unit-info .wicon svg { width: 82%; height: 82%; }
       #unit-info .info { flex: 1; min-width: 0; }
       #unit-info .portrait {
         width: calc(var(--px) * 30);
@@ -488,6 +557,57 @@
         border: calc(var(--u) * 0.1) solid currentColor;
       }
       #battle-hud .skill .bar span { background: linear-gradient(#fff0b0, #e0a530); }
+      /* The weapon's symbol (B8): a medallion at the banner's inner edge, in the type's colour (sword
+         blue beats axe red, axe red beats spear and lance green, they beat sword blue; bow amber and
+         staff violet stand outside), tagged STRONG or WEAK by the triangle. */
+      #battle-hud .weapon {
+        position: absolute;
+        top: 50%;
+        width: calc(var(--u) * 6.6);
+        height: calc(var(--u) * 6.6);
+        transform: translateY(-50%);
+        border-radius: 50%;
+        border: calc(var(--u) * 0.3) solid #f2dc9a;
+        box-shadow: 0 calc(var(--u) * 0.25) calc(var(--u) * 0.9) rgba(0, 0, 0, 0.55), inset 0 0 calc(var(--u) * 0.8) rgba(0, 0, 0, 0.5);
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+      /* Just outside the banner, between it and the VS, clear of the banner's own figures. */
+      #battle-hud .left .weapon { right: calc(var(--u) * -7.8); }
+      #battle-hud .right .weapon { left: calc(var(--u) * -7.8); }
+      #battle-hud .weapon svg { width: 76%; height: 76%; filter: drop-shadow(0 calc(var(--u) * 0.12) calc(var(--u) * 0.15) rgba(0, 0, 0, 0.6)); }
+      /* The weapon types' colours, on the battle banners and in the map's unit window alike. */
+      .w-sword { background: radial-gradient(circle at 40% 35%, #5d8ee8, #1d3570); }
+      .w-axe { background: radial-gradient(circle at 40% 35%, #e0644a, #6e1a12); }
+      .w-spear,
+      .w-lance { background: radial-gradient(circle at 40% 35%, #5cbf6c, #1a5428); }
+      .w-bow { background: radial-gradient(circle at 40% 35%, #e8b04a, #6e4a10); }
+      .w-staff { background: radial-gradient(circle at 40% 35%, #a874e8, #3a1a6e); }
+      #battle-hud .weapon .tag {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translate(-50%, calc(var(--u) * 0.2));
+        padding: calc(var(--u) * 0.1) calc(var(--u) * 0.7);
+        border-radius: calc(var(--u) * 1);
+        font-size: calc(var(--u) * 1.15);
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        text-shadow: none;
+        color: #f4f1e8;
+        background: rgba(12, 16, 32, 0.8);
+        border: calc(var(--u) * 0.1) solid rgba(255, 244, 214, 0.6);
+      }
+      /* A steady glow, not a pulse: the HUD is redrawn as the battle goes, which would restart one. */
+      #battle-hud .weapon.strong { border-color: #ffe27a; box-shadow: 0 calc(var(--u) * 0.25) calc(var(--u) * 0.9) rgba(0, 0, 0, 0.55), 0 0 calc(var(--u) * 1.6) rgba(255, 226, 122, 0.9); }
+      #battle-hud .weapon.strong .tag { color: #1c2a08; background: linear-gradient(#e8ff9a, #8fd448); border-color: #f4ffd0; }
+      #battle-hud .weapon.strong .tag::before { content: '▲ '; }
+      #battle-hud .weapon.weak { border-color: #9a9488; filter: saturate(0.6) brightness(0.85); }
+      #battle-hud .weapon.weak .tag { color: #ffd8d0; background: rgba(90, 20, 20, 0.9); border-color: #e08070; }
+      #battle-hud .weapon.weak .tag::before { content: '▼ '; }
       #battle-hud .vs {
         position: absolute;
         top: calc(var(--u) * 3.2);

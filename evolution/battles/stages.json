@@ -220,10 +220,18 @@
     {
       "id": "b8-skills-r0",
       "date": "2026-11-05",
-      "commit": "next",
+      "commit": "f9b73a8",
       "image": "b8-skills/r0/firestorm.jpg",
       "title": "B8 · Skill animations, the first three",
       "note": "A fired skill now plays its own animation where its blows land: Firestorm rains flaming bolts that burst in fireballs and flames over an orange wash; Volley sends a second sky of arrows down on the foes; Lance Charge streams speed lines past the riders and lands its second blows in golden crescents."
+    },
+    {
+      "id": "b8-skills-r1",
+      "date": "2026-11-06",
+      "commit": "next",
+      "image": "b8-skills/r1/all-skills.jpg",
+      "title": "B8 · Every skill animated, and the weapon symbols",
+      "note": "All eleven battle skills play their own animation where they act (Forced March's gold chevrons, Blade Dance's blue flurry, Pike Wall's glowing pikes, Parry's gold X, Executioner's falling blade and crimson X, Rend's claws, Hold Fast's golden shield, Trample's burst of earth), drawn over the fighters now, not behind them; All In bursts in gold pillars on the map. Each banner carries its weapon's symbol in the type's colour, tagged STRONG or WEAK by the triangle."
     }
   ]
 }

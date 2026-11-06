@@ -624,6 +624,8 @@ async function main(): Promise<void> {
         units: () => skirmish?.units.map((u) => ({ id: u.id, name: u.name, side: u.side, cls: u.cls, gender: u.gender, x: u.x, y: u.y, morale: u.morale, gauge: u.gauge })) ?? null,
         /** The player's hand: its cards, which are used, and whether it is open on screen. */
         hand: () => skirmish?.handInfo(),
+        /** All In's bursts playing on the map now. */
+        allIn: () => skirmish?.allInPlaying ?? 0,
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },
         selected: () => skirmish?.selected?.id ?? null,
         /** The result screen, if the skirmish has ended (B7), and the foes' difficulty. */

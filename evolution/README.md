@@ -22,6 +22,41 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ## Battles
 
+### B8 skill animations r1: every skill, and the weapon symbols (for review)
+![All eleven battle skills at their fullest, and the banners with their weapon symbols](battles/b8-skills/r1/all-skills.jpg)
+
+| Pike Wall | Parry | Executioner |
+|---|---|---|
+| ![](battles/b8-skills/r1/pike-wall.jpg) | ![](battles/b8-skills/r1/parry.jpg) | ![](battles/b8-skills/r1/executioner.jpg) |
+| **Hold Fast** | **Trample** | **Weapon symbols** |
+| ![](battles/b8-skills/r1/hold-fast.jpg) | ![](battles/b8-skills/r1/trample.jpg) | ![](battles/b8-skills/r1/hud-sword-axe.jpg) |
+
+Videos, one a skill: [forced-march](battles/b8-skills/r1/forced-march.mp4), [blade-dance](battles/b8-skills/r1/blade-dance.mp4), [pike-wall](battles/b8-skills/r1/pike-wall.mp4), [parry](battles/b8-skills/r1/parry.mp4), [executioner](battles/b8-skills/r1/executioner.mp4), [rend](battles/b8-skills/r1/rend.mp4), [hold-fast](battles/b8-skills/r1/hold-fast.mp4), [trample](battles/b8-skills/r1/trample.mp4), and the first three again: [firestorm](battles/b8-skills/r1/firestorm.mp4), [volley](battles/b8-skills/r1/volley.mp4), [lance-charge](battles/b8-skills/r1/lance-charge.mp4). All In, on the map: ![](characters/b8-allin/all-in.jpg)
+
+- **What changed:**
+  - **The other eight battle skills** (`src/battle/SkillFx.ts`):
+    - **Forced March:** gold chevrons rise over every marcher's head as the charge sets off.
+    - **Blade Dance:** a flurry of five blue slashes across the second foe, and blue petals whirling up.
+    - **Pike Wall:** glowing pikes spring up in a blue wall before each struck soldier, angled at the striker, and the blow glances off with a clang of sparks.
+    - **Parry:** the leader's blades cross in a gold X, and a gold arc turns the blow aside.
+    - **Executioner:** the field darkens, a crimson blade drops through the foe's leader and leaves a crimson X.
+    - **Rend:** three crimson claws tear across the beaten leader as the battle ends.
+    - **Hold Fast:** a golden shield rises over the beaten leader, and holds.
+    - **Trample:** the ground bursts under each trampled soldier: a shockwave, a crack, dust and stones.
+  - **All In** acts on the map, as King's Wager is played: a pillar of gold light shoots up through every unit it fills, with SKILL FULL rising over each (`src/ui/AllInFx.ts`).
+  - **The rules name the skill** behind each blow (`skill` on a strike, duel or flash is now the skill's id, not just "a skill"), and `src/battle/skillBlows.ts` turns each event into the animation's moment: the blow, the march at the charge, Rend and Hold Fast at the end. A turned blow is drawn on the one who turned it.
+  - **Over the fighters:** every effect used to be drawn behind them (see Learned); now ground pieces sit behind the fighters, the rest in front, and the first three look stronger for it.
+  - **Weapon symbols:** each banner carries a medallion with its weapon (sword, axe, spear, lance, bow, staff) in the type's colour, outside the banner beside the VS. The side whose weapon beats the other's is tagged **▲ STRONG** and glows; the other **▼ WEAK** and greys; an even match shows the weapon's name. The map's unit window shows the same symbol before the class.
+  - The battle preview takes `&dfire=<skill>` for the defender's skill (Pike Wall and Parry act when attacked).
+- **Feedback:** "do the other nine skills. i realised there is not type symbol on the character's card during the fighting scene, i had troubles seeing which type is which type in order to tell who has the upper hand".
+- **Decisions:**
+  - Colours follow each skill's light (gold march, blue dance, steel-blue wall, crimson for the killing skills), and every piece that has to read over armour gets a dark edge or its own colour, not added light.
+  - Pike Wall draws three pikes a blow, not five: a whole charge turned aside lands eight blows at once, and five each made a fence that hid the squad.
+  - The triangle reads by colour as well: sword blue beats axe red, axe red beats spear and lance green, they beat sword blue; bow amber and staff violet stand outside.
+  - The STRONG glow is steady, not a pulse: the HUD is redrawn as the battle goes, which would restart a pulse every few frames.
+  - Still made in code: no API credit spent.
+- **Learned:** three.js sorts transparent things by the nearest **group's** render order before a mesh's own. Each fighter's figure is a group ordered by its rank, so the effects' group (order 0) drew before every fighter, whatever its meshes' orders: Parry's X was hidden behind Aria. An effect layer over grouped figures needs its own group's order set, not just its meshes'.
+
 ![Timeline of every battle version](battles/timeline.gif)
 
 ### B8 skill animations: the first three (for review)
@@ -766,6 +801,13 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
   - A shadow drawn only under the feet hides behind them. It has to be wider than the stance and sit a little below it to read.
 
 ## Characters
+
+### B8 All In on the map (for review)
+![King's Wager played: gold pillars ripple up through the allies, one SKILL FULL over them](characters/b8-allin/all-in.jpg)
+
+- **What changed:** All In, the one card skill that acts as its card is played, now shows it: a pillar of gold light shoots up through every unit whose gauge it fills, one after another, with a ring at the feet and SKILL FULL rising over the side (`src/ui/AllInFx.ts`, in the map's pixel font and scale, kept on the units as the camera moves). The foes' All In plays it over theirs. The unit window shows the unit's weapon symbol before its class, in the type's colour as on the battle banners.
+- **Feedback:** "do the other nine skills" (All In is the ninth).
+- **Decisions:** one SKILL FULL for the side, over the highest unit: the allies start crowded, and a word each piled up into an unreadable stack in the first capture.
 
 ![Timeline of every character version](characters/timeline.gif)
 

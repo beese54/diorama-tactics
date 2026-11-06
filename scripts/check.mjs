@@ -975,8 +975,10 @@ check('skills: Space saves a ready skill (the gauge stays full), and a unit whos
 await untilPlayerTurn();
 for (const u of (await mapUnits()).filter((u) => u.side === 'player')) await page.evaluate((id) => window.__map.setUnit(id, { gauge: 0 }), u.id);
 await clickCard(kHand.indexOf('kings-wager'));
+const allInBursts = await page.evaluate(() => window.__map.allIn());
 const k4 = (await mapUnits()).filter((u) => u.side === 'player' && u.morale > 0);
-check("skills: King's Wager (All In) fills every ally's gauge as it is played", k4.length > 0 && k4.every((u) => u.gauge === 100), JSON.stringify(k4.map((u) => [u.name, u.gauge])));
+check("skills: King's Wager (All In) fills every ally's gauge as it is played, a burst of gold over each", k4.length > 0 && k4.every((u) => u.gauge === 100) && allInBursts === k4.length,
+  JSON.stringify({ bursts: allInBursts, units: k4.map((u) => [u.name, u.gauge]) }));
 check('skills: no console errors', errors.length === 0, errors.join(' | '));
 
 // ---- The foes' AI and the end (B7) ---------------------------------------------------------------
@@ -1202,11 +1204,18 @@ check('transitions: with ?fx=none there is no flight, wipe, banner or intro, and
   bareCard.played && bareCard.flights === 0 && !bareSeen.some((s) => s.id !== 'battle-hud' || /intro|outro/.test(s.cls)) && bareTurn.side === 'player' && bareTurn.number === 2,
   JSON.stringify({ bareCard, bareSeen, bareTurn }));
 await page.removeScriptToEvaluateOnNewDocument(watcher.identifier);
-// Each of the first three skill animations (Firestorm, Volley, Lance Charge) is scheduled where its
-// blows land, and shows on screen while they do: scanned on the battle's own clock.
+// Every battle skill's animation is scheduled where the skill acts, and shows on screen while it
+// does: scanned on the battle's own clock (Pike Wall and Parry are the defender's; the seeds are
+// ones where Executioner meets the leader, Rend wins and Hold Fast loses).
 const skillShows = {};
-for (const [a, skill] of [['mage', 'firestorm'], ['bow', 'volley'], ['knight', 'lance-charge']]) {
-  await page.goto(`${url}?mode=battle&a=${a}&d=sword&fire=${skill}&seed=3&at=0`, { waitUntil: 'networkidle0' });
+const skillCases = [
+  ['firestorm', 'a=mage&d=sword&fire=firestorm&seed=3'], ['volley', 'a=bow&d=sword&fire=volley&seed=3'], ['lance-charge', 'a=knight&d=sword&fire=lance-charge&seed=3'],
+  ['forced-march', 'a=sword&d=axe&fire=forced-march&seed=3'], ['blade-dance', 'a=sword&d=axe&fire=blade-dance&seed=3'], ['pike-wall', 'a=sword&d=spear&dfire=pike-wall&seed=3'],
+  ['parry', 'a=sword&d=spear&dfire=parry&seed=3'], ['executioner', 'a=axe&d=sword&fire=executioner&seed=1'], ['rend', 'a=axe&d=spear&fire=rend&seed=1'],
+  ['hold-fast', 'a=sword&d=spear&fire=hold-fast&seed=1'], ['trample', 'a=knight&d=sword&fire=trample&seed=3'],
+];
+for (const [skill, query] of skillCases) {
+  await page.goto(`${url}?mode=battle&${query}&at=0`, { waitUntil: 'networkidle0' });
   await page.waitForFunction(() => window.__battle?.ready, { timeout: 60000 });
   skillShows[skill] = await page.evaluate(() => {
     const length = window.__battle.length();
@@ -1218,8 +1227,20 @@ for (const [a, skill] of [['mage', 'firestorm'], ['bow', 'volley'], ['knight', '
     return { shows: window.__battle.fx().skillShows, lit };
   });
 }
-check('skills: Firestorm, Volley and Lance Charge each play their own animation where their blows land',
-  Object.values(skillShows).every((s) => s.shows > 0 && s.lit > 4), JSON.stringify(skillShows));
+check('skills: every battle skill plays its own animation where it acts (all eleven)',
+  Object.keys(skillShows).length === 11 && Object.values(skillShows).every((s) => s.shows > 0 && s.lit > 4), JSON.stringify(skillShows));
+// The weapon symbols on the banners: each side's type, STRONG for the one whose weapon beats the other's.
+await page.goto(`${url}?mode=battle&a=sword&d=axe&seed=3&at=0`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__battle?.ready, { timeout: 60000 });
+await page.evaluate(() => window.__battle.at(2));
+const weaponBadges = await page.evaluate(() => [...document.querySelectorAll('#battle-hud .banner')].map((b) => {
+  const w = b.querySelector('.weapon');
+  const [r, br] = [w?.getBoundingClientRect(), b.getBoundingClientRect()];
+  return { weapon: w?.dataset.weapon, tag: w?.querySelector('.tag')?.textContent, svg: !!w?.querySelector('svg path'), clear: !!r && (r.left >= br.right || r.right <= br.left) };
+}));
+check('hud: each banner shows its weapon symbol, outside the banner, sword tagged STRONG and axe WEAK',
+  weaponBadges.length === 2 && weaponBadges[0].weapon === 'sword' && weaponBadges[0].tag === 'strong' && weaponBadges[1].weapon === 'axe' && weaponBadges[1].tag === 'weak' && weaponBadges.every((b) => b.svg && b.clear),
+  JSON.stringify(weaponBadges));
 check('polish: no console or HTTP errors', errors.length === 0, errors.join(' | '));
 
 // ---- The card showcase (?mode=card): the layered, animated card --------------------------------

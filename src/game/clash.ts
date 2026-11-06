@@ -41,14 +41,14 @@ export type SkillId =
   | 'forced-march' | 'lance-charge' | 'volley' | 'blade-dance' | 'pike-wall' | 'firestorm'
   | 'hold-fast' | 'rend' | 'parry' | 'trample' | 'executioner';
 
-/** What happened, in order, for the battle scene to play back. Fighter numbers index `Squad.fighters`. `skill` marks what a fired skill caused. */
+/** What happened, in order, for the battle scene to play back. Fighter numbers index `Squad.fighters`. `skill` names the fired skill that caused it. */
 export type ClashEvent =
   | { kind: 'phase'; phase: Phase }
   | { kind: 'skill'; side: ClashSide; skill: SkillId }
-  | { kind: 'strike'; by: ClashSide; fighter: number; target: number; hit: boolean; crit: boolean; felled: boolean; skill?: boolean }
+  | { kind: 'strike'; by: ClashSide; fighter: number; target: number; hit: boolean; crit: boolean; felled: boolean; skill?: SkillId }
   | { kind: 'panic'; side: ClashSide }
-  | { kind: 'duel'; winner: ClashSide; attacker: number; defender: number; felled: boolean; skill?: boolean }
-  | { kind: 'flash'; by: ClashSide; fighter: number; target: number; skill?: boolean }
+  | { kind: 'duel'; winner: ClashSide; attacker: number; defender: number; felled: boolean; skill?: SkillId }
+  | { kind: 'flash'; by: ClashSide; fighter: number; target: number; skill?: SkillId }
   | { kind: 'end'; winner: ClashSide; damage: number };
 
 export interface ClashSetup {
@@ -238,13 +238,13 @@ export class ClashSim {
         const hit = this.rand() < Math.min(0.9, p + 0.2);
         const body = them.fighters[foe];
         if (hit) body.hp -= 1;
-        events.push({ kind: 'strike', by, fighter: 0, target: foe, hit, crit: false, felled: body.hp <= 0, skill: true });
+        events.push({ kind: 'strike', by, fighter: 0, target: foe, hit, crit: false, felled: body.hp <= 0, skill: 'firestorm' });
       }
     }
     if (me.skill === 'trample') {
       for (const foe of standing(them).filter((i) => i > 0).slice(0, 3)) {
         them.fighters[foe].hp = 0;
-        events.push({ kind: 'strike', by, fighter: 0, target: foe, hit: true, crit: true, felled: true, skill: true });
+        events.push({ kind: 'strike', by, fighter: 0, target: foe, hit: true, crit: true, felled: true, skill: 'trample' });
       }
     }
     const passes = me.skill === 'lance-charge' || me.skill === 'volley' ? 2 : 1;
@@ -255,11 +255,13 @@ export class ClashSim {
         let hit = this.rand() < p;
         const crit = hit && this.rand() < me.unit.stats.luk / 100;
         // The foe's Pike Wall, or its Parry while it lasts at its leader, turns the blow aside.
-        const turned = them.skill === 'pike-wall' || (foe === 0 && this.parries(them));
+        const turned = them.skill === 'pike-wall' ? 'pike-wall' : foe === 0 && this.parries(them) ? 'parry' : null;
         if (turned) hit = false;
+        // What a fired skill made of the blow: turned aside, or the second blow of a double pass.
+        const skill = turned ?? (pass > 0 ? me.skill : null);
         const body = them.fighters[foe];
         if (hit) body.hp = crit ? 0 : body.hp - 1;
-        events.push({ kind: 'strike', by, fighter, target: foe, hit, crit: hit && crit, felled: body.hp <= 0, ...(pass > 0 || turned ? { skill: true } : {}) });
+        events.push({ kind: 'strike', by, fighter, target: foe, hit, crit: hit && crit, felled: body.hp <= 0, ...(skill ? { skill } : {}) });
         // A crit in the charge throws the defenders into panic: they won't counter.
         if (hit && crit && by === 'attacker' && !this.panic) {
           this.panic = true;
@@ -303,18 +305,18 @@ export class ClashSim {
       const [won, lost] = winner === 'attacker' ? [a, d] : [d, a];
       // Parry: a duel lost by its leader is a blow turned aside instead (three in all).
       if (lost === 0 && this.parries(loser)) {
-        events.push({ kind: 'strike', by: winner, fighter: won, target: 0, hit: false, crit: false, felled: false, skill: true });
+        events.push({ kind: 'strike', by: winner, fighter: won, target: 0, hit: false, crit: false, felled: false, skill: 'parry' });
         continue;
       }
       const body = loser.fighters[lost];
       body.hp -= 1;
-      events.push({ kind: 'duel', winner, attacker: a, defender: d, felled: body.hp <= 0, ...(executed ? { skill: true } : {}) });
+      events.push({ kind: 'duel', winner, attacker: a, defender: d, felled: body.hp <= 0, ...(executed ? { skill: 'executioner' as const } : {}) });
       // Blade Dance: each duel won fells a second foe.
       if (this.squad(winner).skill === 'blade-dance') {
         const foe = target(won, loser, lost);
         if (foe !== undefined) {
           loser.fighters[foe].hp = 0;
-          events.push({ kind: 'flash', by: winner, fighter: won, target: foe, skill: true });
+          events.push({ kind: 'flash', by: winner, fighter: won, target: foe, skill: 'blade-dance' });
         }
       } else if (this.rand() < this.squad(winner).unit.stats.luk / 200) {
         const foe = target(won, loser, lost);

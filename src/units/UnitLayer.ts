@@ -157,6 +157,12 @@ export class UnitLayer {
     return drawn ? drawn.root.clone().setY(drawn.root.y + drawn.rect.h / PX).project(camera) : null;
   }
 
+  /** Where the unit's feet are on screen (normalised device coordinates), or null if it isn't drawn. */
+  feetAt(unit: Unit, camera: THREE.Camera): THREE.Vector3 | null {
+    const drawn = this.pose(unit).drawn;
+    return drawn ? drawn.root.clone().project(camera) : null;
+  }
+
   /** The unit sheet as an image (for review captures): a row per unit, idle, walk and rest frames. */
   sheetImage(): string {
     return (this.sheet.texture.image as HTMLCanvasElement).toDataURL();

@@ -1,15 +1,21 @@
 import type { Stance } from '../game/clash';
 import { audio } from '../audio/Audio';
 import { GAUGE_MAX } from '../game/gauge';
+import type { Weapon } from '../game/units';
 import { fx } from './transitions';
+import { weaponIcon } from './weaponIcon';
 
 /** How long the intro's classes stay on the HUD (ms): the banners slide in, the VS slams down, the HUD shakes. */
 const INTRO_MS = 1500;
 
-/** One side's banner: its head's name and class, Morale, soldiers standing, stance, edge and skill gauge. */
+/** One side's banner: its head's name, class and weapon, Morale, soldiers standing, stance, edge and skill gauge. */
 export interface BannerInfo {
   name: string;
   cls: string;
+  /** Its weapon type, shown as a symbol on the banner. */
+  weapon: Weapon;
+  /** The weapon triangle against the other side: above 0 it beats it (STRONG), below 0 it loses to it (WEAK). */
+  upper: number;
   morale: number;
   maxMorale: number;
   /** Fighters standing, the head included, and the squad's full count. */
@@ -117,7 +123,10 @@ export class BattleHud {
       // Only the player picks a stance, so only its chips show their keys: on the left when it
       // attacks, on the right when it defends against the foes' attack (B7).
       const chips = STANCES.map((s) => `<b class="${s.stance === b.stance ? 'on' : ''}" data-stance="${s.stance}">${b.ally ? `<kbd>${s.key}</kbd>` : ''}${s.label}</b>`).join('');
-      return `<div class="banner ${side} ${b.ally ? 'ally' : 'foe'}"><div class="who"><span class="name"></span><span class="cls"></span><span class="edge">EDGE ${b.edge > 0 ? '+' : b.edge < 0 ? '−' : ''}${Math.abs(b.edge)}</span></div>` +
+      // The weapon's symbol on a medallion at the banner's inner edge, tagged STRONG or WEAK by the triangle.
+      const tag = b.upper > 0 ? 'strong' : b.upper < 0 ? 'weak' : 'even';
+      const weapon = `<div class="weapon w-${b.weapon} ${tag}" data-weapon="${b.weapon}">${weaponIcon(b.weapon)}<span class="tag">${tag === 'even' ? b.weapon : tag}</span></div>`;
+      return `<div class="banner ${side} ${b.ally ? 'ally' : 'foe'}">${weapon}<div class="who"><span class="name"></span><span class="cls"></span><span class="edge">EDGE ${b.edge > 0 ? '+' : b.edge < 0 ? '−' : ''}${Math.abs(b.edge)}</span></div>` +
         `<div class="morale"><span class="label">MORALE</span><span class="bar"><span style="width:${share.toFixed(1)}%"></span></span><span class="value">${b.morale}</span></div>` +
         `<div class="troops">${pips}</div>` +
         `<div class="stance"><span class="label">STANCE</span>${chips}</div>` +

@@ -52,10 +52,18 @@
     {
       "id": "b8-deploy",
       "date": "2026-11-05",
-      "commit": "next",
+      "commit": "1a70429",
       "image": "b8-deploy/before-after.jpg",
       "title": "B8 · The armies start a short march apart",
       "note": "Every unit starts with a foe within 12 tiles' walk (and none closer than 4), the enemy towards the middle of the board, so both sides are on screen from the first turn."
+    },
+    {
+      "id": "b8-allin",
+      "date": "2026-11-06",
+      "commit": "next",
+      "image": "b8-allin/all-in.jpg",
+      "title": "B8 · All In's gold pillars, and the weapon symbol in the unit window",
+      "note": "As King's Wager is played, a pillar of gold light ripples up through every unit whose gauge it fills, with one SKILL FULL over the side; the unit window shows the unit's weapon symbol before its class."
     }
   ]
 }

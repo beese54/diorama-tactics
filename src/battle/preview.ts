@@ -15,7 +15,8 @@ const title = (id: string) => id[0].toUpperCase() + id.slice(1);
 
 /**
  * The battle scene on its own (`?mode=battle&a=<class>&d=<class>&seed=<n>`, with `&am=`/`&dm=`
- * for each side's Morale, `&fire=<skill>` for the attacker's skill fired from the start, and
+ * for each side's Morale, `&fire=<skill>` and `&dfire=<skill>` for the attacker's and the
+ * defender's skill fired from the start, and
  * `&at=<seconds>` to open it still): the player's squad of class `a` attacks the rival army's
  * squad of class `d`. With no map behind it, a finished battle stays on its result.
  */
@@ -34,7 +35,10 @@ export async function battlePreview(): Promise<void> {
     defender: unit('enemy', pick('d', 'axe'), params.get('dm')),
     pow: FIXED_POW,
     seed: Number(params.get('seed')) || 1,
-    ...(params.get('fire') ? { fire: { attacker: params.get('fire') as SkillId } } : {}),
+    fire: {
+      ...(params.get('fire') ? { attacker: params.get('fire') as SkillId } : {}),
+      ...(params.get('dfire') ? { defender: params.get('dfire') as SkillId } : {}),
+    },
   };
   await BattleScene.open(setup, { at: params.has('at') ? Number(params.get('at')) || 0 : null });
 }

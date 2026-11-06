@@ -2,7 +2,7 @@ import type { ClashSide, ClashSim, Phase } from '../game/clash';
 import { audio } from '../audio/Audio';
 import type { SfxName } from '../audio/sfx';
 import { gain, GAUGE_MAX } from '../game/gauge';
-import { CLASSES } from '../game/units';
+import { CLASSES, triangleEdge } from '../game/units';
 import type { BannerInfo, BattleHud } from '../ui/BattleHud';
 import type { BattleView } from './BattleView';
 import { smooth } from './cast';
@@ -10,6 +10,7 @@ import { BLOCK, charge, FALL, FOLLOW, HURT, RUN_FROM, STRIDES, SWING, VICTORY } 
 import { clipSeconds, sample, type Beat, type Body, type Cue } from './poseClip';
 import { AURA, TRAIL } from './Impact';
 import { SkillFx } from './SkillFx';
+import { skillBlows } from './skillBlows';
 import { DESIGN_H } from './BattleView';
 import { actSeconds, STRIKE, type Act, type BattleScript, type Who } from './script';
 import type { FighterView, SquadLayer } from './SquadLayer';
@@ -144,13 +145,12 @@ export class Director {
         if (amount) this.gains[side].push({ start: this.end + take.times[i], amount });
       }
     }
-    for (const [i, e] of events.entries()) if ('skill' in e && e.skill === true) this.stops.push(this.end + take.times[i]);
-    // A skill's blows get its own animation, landing as they do.
+    // A blow a skill shaped holds the battle still a moment (not the firing itself: its cut-in has played).
+    for (const [i, e] of events.entries()) if (e.kind !== 'skill' && 'skill' in e && e.skill) this.stops.push(this.end + take.times[i]);
+    // Each skill's own animation, where and when it acts.
     for (const [i, e] of events.entries()) {
-      const skill = e.kind === 'strike' && e.skill ? this.sim.squad(e.by).skill : null;
-      if (e.kind !== 'strike' || !skill) continue;
-      const foes: ClashSide = e.by === 'attacker' ? 'defender' : 'attacker';
-      this.skillFx.add({ skill, by: e.by, at: this.end + take.times[i], fighter: { side: e.by, fighter: e.fighter }, target: { side: foes, fighter: e.target }, hit: e.hit });
+      const blows = skillBlows(e, this.end + take.times[i], (side) => this.sim.squad(side).skill, (side) => this.squads[side].fighters.length);
+      for (const b of blows) this.skillFx.add(b);
     }
     this.stops.sort((p, q) => p - q);
     for (const a of take.acts) {
@@ -390,8 +390,10 @@ export class Director {
       const gauge = Math.min(GAUGE_MAX, this.gains[side].reduce((sum, g) => sum + (g.start <= seconds ? g.amount : 0), from));
       // The stance and the edge are as they stand now: a change shows at once, and counts from the next beat.
       const { stance } = this.sim.squad(side);
+      const weapon = CLASSES[unit.cls].weapon;
+      const foe = CLASSES[this.sim.squad(side === 'attacker' ? 'defender' : 'attacker').unit.cls].weapon;
       return {
-        name: this.names[side], cls: CLASSES[unit.cls].name, morale: Math.max(0, unit.morale - lost), maxMorale: unit.maxMorale,
+        name: this.names[side], cls: CLASSES[unit.cls].name, weapon, upper: triangleEdge(weapon, foe), morale: Math.max(0, unit.morale - lost), maxMorale: unit.maxMorale,
         standing: total - down, total, stance, edge: this.sim.edge(side), gauge, ally: unit.side === 'player',
       };
     };

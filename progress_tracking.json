@@ -360,11 +360,23 @@
       "id": "B8-full-strength",
       "title": "A squad brings its full soldiers to every battle whatever its Morale, one fewer for each battle already fought this turn (Unit.fought, markFought in fightUnion and the forecast, freshTurn at each turn's start); the AI's forecast counts a fallen unit as lost whole; tests updated (clash, script, union chain), the Hard-declines check now pairs Varek with Corin",
       "status": "review",
-      "commit": "this one"
+      "commit": "f9b73a8"
     },
     {
       "id": "B8-skills-r0",
       "title": "Skill animations, the first three: src/battle/SkillFx.ts (Firestorm bolts, fireballs, embers, flames and an orange wash; Volley's second sky of arrows; Lance Charge's speed lines and golden crescents), scheduled by the Director from the skill blows, a pure function of the battle's clock; the battle preview takes &fire=<skill>; check.mjs checks all three",
+      "status": "review",
+      "commit": "f9b73a8"
+    },
+    {
+      "id": "B8-skills-r1",
+      "title": "Every skill animated: Forced March, Blade Dance, Pike Wall, Parry, Executioner, Rend, Hold Fast and Trample in SkillFx (back and front layers, over the fighters), moments from skillBlows.ts (the rules name each blow's skill), All In's gold pillars on the map (AllInFx); the preview takes &dfire=; check.mjs checks all eleven and the All In bursts",
+      "status": "review",
+      "commit": "this one"
+    },
+    {
+      "id": "B8-weapon-symbols",
+      "title": "Weapon symbols: each battle banner carries its weapon's medallion in the type's colour (weaponIcon.ts), tagged STRONG or WEAK by the triangle; the map's unit window shows it before the class; check.mjs checks the badges",
       "status": "review",
       "commit": "this one"
     }

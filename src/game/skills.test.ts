@@ -78,7 +78,7 @@ describe('each skill changes the battle as its card says', () => {
     const plain = strikes(charge(setup(2, 'knight', 'sword')), 'attacker').length;
     const twice = strikes(charge(setup(2, 'knight', 'sword', 'lance-charge')), 'attacker');
     expect(twice.length).toBe(plain * 2);
-    expect(twice.slice(plain).every((e) => e.skill)).toBe(true);
+    expect(twice.slice(plain).every((e) => e.skill === 'lance-charge')).toBe(true);
   });
 
   it('Volley: every archer looses a second arrow', () => {
@@ -93,7 +93,7 @@ describe('each skill changes the battle as its card says', () => {
     for (const [, i] of won) {
       const next = events[i + 1];
       // A second foe falls after every duel won, unless that duel felled the last one.
-      if (next && next.kind !== 'end') expect(next).toMatchObject({ kind: 'flash', by: 'attacker', skill: true });
+      if (next && next.kind !== 'end') expect(next).toMatchObject({ kind: 'flash', by: 'attacker', skill: 'blade-dance' });
     }
   });
 
@@ -102,7 +102,7 @@ describe('each skill changes the battle as its card says', () => {
     for (let seed = 1; seed <= 30; seed++) {
       const counter = strikes(new ClashSim(setup(seed, 'spear', 'sword', 'pike-wall')).run(), 'defender');
       countered += counter.length;
-      expect(counter.every((e) => !e.hit)).toBe(true);
+      expect(counter.every((e) => !e.hit && e.skill === 'pike-wall')).toBe(true);
     }
     expect(countered).toBeGreaterThan(0);
   });
@@ -110,7 +110,7 @@ describe('each skill changes the battle as its card says', () => {
   it('Firestorm: a blast strikes every foe at the charge', () => {
     const s = setup(6, 'mage', 'sword', 'firestorm');
     const foes = new ClashSim(s).defender.fighters.length;
-    const blast = strikes(charge(s), 'attacker').filter((e) => e.skill);
+    const blast = strikes(charge(s), 'attacker').filter((e) => e.skill === 'firestorm');
     expect(new Set(blast.map((e) => e.target)).size).toBe(foes);
     expect(blast.filter((e) => e.hit).length).toBeGreaterThan(foes / 2);
   });
@@ -137,13 +137,13 @@ describe('each skill changes the battle as its card says', () => {
       const atLeader = events.filter((e) => (e.kind === 'strike' && e.by === 'defender' && e.target === 0) || (e.kind === 'duel' && e.winner === 'defender' && e.attacker === 0));
       // Up to the third, every blow at the leader is turned aside; none of them harms it.
       const turned = atLeader.slice(0, 3);
-      expect(turned.every((e) => e.kind === 'strike' && !e.hit)).toBe(true);
+      expect(turned.every((e) => e.kind === 'strike' && !e.hit && e.skill === 'parry')).toBe(true);
       expect(sim.attacker.parried).toBe(Math.min(3, atLeader.length));
     }
   });
 
   it('Trample: the charge fells the front rank', () => {
-    const trampled = strikes(charge(setup(8, 'knight', 'sword', 'trample')), 'attacker').filter((e) => e.skill);
+    const trampled = strikes(charge(setup(8, 'knight', 'sword', 'trample')), 'attacker').filter((e) => e.skill === 'trample');
     expect(trampled.map((e) => e.target)).toEqual([1, 2, 3]);
     expect(trampled.every((e) => e.felled)).toBe(true);
   });
@@ -151,7 +151,7 @@ describe('each skill changes the battle as its card says', () => {
   it("Executioner: a duel with the foe's leader is won outright", () => {
     for (let seed = 1; seed <= 20; seed++) {
       const duels = new ClashSim(setup(seed, 'axe', 'sword', 'executioner')).run().filter((e) => e.kind === 'duel' && e.defender === 0);
-      expect(duels.every((e) => e.kind === 'duel' && e.winner === 'attacker')).toBe(true);
+      expect(duels.every((e) => e.kind === 'duel' && e.winner === 'attacker' && e.skill === 'executioner')).toBe(true);
     }
   });
 
