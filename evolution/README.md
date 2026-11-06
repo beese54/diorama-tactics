@@ -24,6 +24,26 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ![Timeline of every battle version](battles/timeline.gif)
 
+### B8 skill animations: the first three (for review)
+![Firestorm: flaming bolts fall on Sabine's squad and burst, the field washed orange](battles/b8-skills/r0/firestorm.jpg)
+
+| Volley | Lance Charge |
+|---|---|
+| ![](battles/b8-skills/r0/volley.jpg) | ![](battles/b8-skills/r0/lance-charge.jpg) |
+
+Videos: [firestorm.mp4](battles/b8-skills/r0/firestorm.mp4), [volley.mp4](battles/b8-skills/r0/volley.mp4), [lance-charge.mp4](battles/b8-skills/r0/lance-charge.mp4).
+
+- **What changed:** a fired skill plays its own animation where its blows land (`src/battle/SkillFx.ts`, scheduled by the Director from the rules' skill blows, and drawn as a pure function of the battle's clock):
+  - **Firestorm:** a flaming bolt falls from the mage's side onto each foe and bursts in a fireball, with a ring of fire, embers and flames at the feet, while the field washes orange.
+  - **Volley:** a second sheaf of arrows arcs over from each archer and rains down round the foe, each landing in a glint.
+  - **Lance Charge:** speed lines stream past the riders, and each second blow lands in a golden crescent with dust thrown up round the foe's feet.
+  - The battle preview takes `&fire=<skill>`, so a skill can be filmed on its own.
+- **Feedback:** "Do we have any special effects if we use the skill of the card itself? can we have some special animations and skills when the user want to use the skill card (provided their type matches)". The user agreed to three first, to settle the style, then the other nine and a SKILL READY marker on the map.
+- **Decisions:**
+  - Fire, arrows and the crescent are drawn in their own colours. Light added to the bright painted sky washed them out white; only hot cores and glints add light.
+  - Everything is made in code, so it costs no API credit.
+- **Learned:** additive light that sings on a dark night scene vanishes on a daylit one. A battle effect has to be judged against the brightest backdrop it will play on.
+
 ### B8 r0: sound, the four transitions, and battle effects (for review)
 ![A blow lands: sparks tinted by the axe, a ring and a star, and Forced March's light on Aria's squad](battles/b8-polish/r0-review/4-sparks-1.jpg)
 

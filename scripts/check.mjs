@@ -1025,12 +1025,18 @@ const b7Lost = b7Before.find((u) => u.id === b7Loser).morale - b7After.find((u) 
 check("foes: on their turn a foe beside an ally attacks it; the foe on the left, the player defending on the right, D sets the defender's stance",
   b7Side(b7Result.attacker) === 'enemy' && b7Side(b7Result.defender) === 'player' && b7Stances.defender === 'passive', JSON.stringify({ b7Result, b7Stances }));
 check("foes: the board shows the foe battle's own result", b7Lost === b7Result.damage, JSON.stringify({ b7Result, b7Lost }));
-// Hard turns down a fight it forecasts to lose: Varek on 5 Morale beside a full-strength Aria.
+// Hard turns down a fight it forecasts to lose: Varek on 5 Morale beside Corin, whose axe beats his
+// lance. (A battle starts at full strength whatever the Morale, so the low Morale alone isn't a loss:
+// it is what a loss would cost him, the whole unit.)
 await page.goto(`${url}?map=meadow&foes=hard`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());
-({ aria: b7Aria, varek: b7Varek } = await b7());
+({ varek: b7Varek } = await b7());
+const b7Corin = (await mapUnits()).find((u) => u.name === 'Corin');
 await clickCard(0);
-await standPair(b7Aria.id, b7Varek.id, {}, { morale: 5 });
+await standPair(b7Corin.id, b7Varek.id, {}, { morale: 5 });
+// Varek and Corin alone: the armies start close now, and with full soldiers whatever his Morale,
+// Varek would rightly march on an ally his lance beats (or another foe fight its own fight).
+for (const u of (await mapUnits()).filter((u) => u.id !== b7Varek.id && u.id !== b7Corin.id)) await page.evaluate((id) => window.__map.setUnit(id, { morale: 0 }), u.id);
 await page.evaluate(() => {
   window.__fought = false;
   const watch = () => {
@@ -1196,6 +1202,24 @@ check('transitions: with ?fx=none there is no flight, wipe, banner or intro, and
   bareCard.played && bareCard.flights === 0 && !bareSeen.some((s) => s.id !== 'battle-hud' || /intro|outro/.test(s.cls)) && bareTurn.side === 'player' && bareTurn.number === 2,
   JSON.stringify({ bareCard, bareSeen, bareTurn }));
 await page.removeScriptToEvaluateOnNewDocument(watcher.identifier);
+// Each of the first three skill animations (Firestorm, Volley, Lance Charge) is scheduled where its
+// blows land, and shows on screen while they do: scanned on the battle's own clock.
+const skillShows = {};
+for (const [a, skill] of [['mage', 'firestorm'], ['bow', 'volley'], ['knight', 'lance-charge']]) {
+  await page.goto(`${url}?mode=battle&a=${a}&d=sword&fire=${skill}&seed=3&at=0`, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => window.__battle?.ready, { timeout: 60000 });
+  skillShows[skill] = await page.evaluate(() => {
+    const length = window.__battle.length();
+    let lit = 0;
+    for (let t = 0; t <= length; t += 0.1) {
+      window.__battle.at(t);
+      lit = Math.max(lit, window.__battle.fx().skillLit);
+    }
+    return { shows: window.__battle.fx().skillShows, lit };
+  });
+}
+check('skills: Firestorm, Volley and Lance Charge each play their own animation where their blows land',
+  Object.values(skillShows).every((s) => s.shows > 0 && s.lit > 4), JSON.stringify(skillShows));
 check('polish: no console or HTTP errors', errors.length === 0, errors.join(' | '));
 
 // ---- The card showcase (?mode=card): the layered, animated card --------------------------------

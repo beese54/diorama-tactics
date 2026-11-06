@@ -9,6 +9,8 @@ import { smooth } from './cast';
 import { BLOCK, charge, FALL, FOLLOW, HURT, RUN_FROM, STRIDES, SWING, VICTORY } from './clips';
 import { clipSeconds, sample, type Beat, type Body, type Cue } from './poseClip';
 import { AURA, TRAIL } from './Impact';
+import { SkillFx } from './SkillFx';
+import { DESIGN_H } from './BattleView';
 import { actSeconds, STRIKE, type Act, type BattleScript, type Who } from './script';
 import type { FighterView, SquadLayer } from './SquadLayer';
 
@@ -96,6 +98,8 @@ export class Director {
   private readonly carried: Record<ClashSide, number>;
   /** The battle time the sounds have been played up to (B8). */
   private heard = 0;
+  /** Each fired skill's own animation, where its blows land. */
+  private readonly skillFx: SkillFx;
 
   constructor(
     private readonly view: BattleView,
@@ -108,6 +112,8 @@ export class Director {
     private readonly matchup: string,
   ) {
     this.carried = { attacker: sim.gauge('attacker'), defender: sim.gauge('defender') };
+    this.skillFx = new SkillFx(() => view.width, DESIGN_H);
+    view.add(this.skillFx.group);
   }
 
   /** The clock the battle is drawn at: real time, held still a moment at each skill's blow. */
@@ -139,6 +145,13 @@ export class Director {
       }
     }
     for (const [i, e] of events.entries()) if ('skill' in e && e.skill === true) this.stops.push(this.end + take.times[i]);
+    // A skill's blows get its own animation, landing as they do.
+    for (const [i, e] of events.entries()) {
+      const skill = e.kind === 'strike' && e.skill ? this.sim.squad(e.by).skill : null;
+      if (e.kind !== 'strike' || !skill) continue;
+      const foes: ClashSide = e.by === 'attacker' ? 'defender' : 'attacker';
+      this.skillFx.add({ skill, by: e.by, at: this.end + take.times[i], fighter: { side: e.by, fighter: e.fighter }, target: { side: foes, fighter: e.target }, hit: e.hit });
+    }
     this.stops.sort((p, q) => p - q);
     for (const a of take.acts) {
       const t = { ...a, start: this.end + a.at } as Timed;
@@ -226,6 +239,10 @@ export class Director {
     for (const side of ['attacker', 'defender'] as const) {
       for (const [n, f] of this.squads[side].fighters.entries()) shake = Math.max(shake, this.drawFighter({ side, fighter: n }, f, seconds));
     }
+    this.skillFx.draw(seconds, (w) => {
+      const f = this.fighter(w);
+      return { x: f.figure.group.position.x, y: f.figure.group.position.y, h: f.character.height * f.scale };
+    });
     const since = Math.min(...this.stops.map((h) => (seconds >= h ? seconds - h : Infinity)));
     if (since < 0.35) shake = Math.max(shake, 9 * (1 - since / 0.35));
     this.view.nudge(shake * Math.sin(clock * 97), shake * 0.6 * Math.sin(clock * 131));
@@ -349,12 +366,14 @@ export class Director {
     f.impact.glow(skill && !fallen ? AURA[skill] : null, seconds, x, alpha);
   }
 
-  /** The effects drawn so far, for checks: blows' bursts, and the fighters lit by a skill now. */
-  fx(): { bursts: number; lit: number } {
+  /** The effects drawn so far, for checks: blows' bursts, the fighters lit by a skill now, and the skill animations (scheduled, and pieces showing now). */
+  fx(): { bursts: number; lit: number; skillShows: number; skillLit: number } {
     const all = [...this.squads.attacker.fighters, ...this.squads.defender.fighters];
     return {
       bursts: all.reduce((n, f) => n + f.impact.bursts, 0),
       lit: all.filter((f) => f.impact.group.children[0].visible).length,
+      skillShows: this.skillFx.count.shows,
+      skillLit: this.skillFx.count.lit,
     };
   }
 

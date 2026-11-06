@@ -1,6 +1,6 @@
 import { mulberry32 } from '../util/rng';
 import { fill } from './gauge';
-import { applyDamage, CLASSES, triangleEdge, type Unit } from './units';
+import { applyDamage, CLASSES, markFought, triangleEdge, type Unit } from './units';
 
 /** The stance a side fights in, toggled during the battle: aggressive presses harder, passive holds back. */
 export type Stance = 'aggressive' | 'neutral' | 'passive';
@@ -71,9 +71,12 @@ export interface ClashSetup {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const other = (side: ClashSide): ClashSide => (side === 'attacker' ? 'defender' : 'attacker');
 
-/** The soldiers a unit brings to a battle: its class's full count scaled by the Morale it has left, at least one. */
+/**
+ * The soldiers a unit brings to a battle: its class's full count, whatever its Morale (the user's
+ * rule, 2026-11-05), less one for each battle it has already fought this turn, at least one.
+ */
 export function soldiersFor(unit: Unit): number {
-  return Math.max(1, Math.round((CLASSES[unit.cls].soldiers * unit.morale) / unit.maxMorale));
+  return Math.max(1, CLASSES[unit.cls].soldiers - (unit.fought ?? 0));
 }
 
 export function makeSquad(unit: Unit, stance: Stance = 'neutral', defense = 0, bonus = 0): Squad {
@@ -352,7 +355,8 @@ export function resolveClash(setup: ClashSetup): ClashResult {
   return { winner: sim.winner!, damage: sim.damage, events };
 }
 
-/** Takes the Morale off the battle's loser; the winner loses none. */
+/** Takes the Morale off the battle's loser (the winner loses none), and counts the battle for both. */
 export function applyResult(setup: ClashSetup, result: ClashResult): void {
   applyDamage(result.winner === 'attacker' ? setup.defender : setup.attacker, result.damage);
+  markFought(setup.attacker, setup.defender);
 }

@@ -1,4 +1,4 @@
-import { applyDamage, type Unit } from './units';
+import { applyDamage, markFought, type Unit } from './units';
 
 /** A woman leads a + of her four edge neighbours, a man an x of his four corners; clockwise from the top. */
 const PLUS = [[0, -1], [1, 0], [0, 1], [-1, 0]] as const;
@@ -50,6 +50,8 @@ export async function fightUnion(
     if (attacker.morale <= 0) continue;
     const { winner, damage } = await fight(attacker, battles.length);
     applyDamage(winner === 'attacker' ? foe : attacker, damage);
+    // The foe fights the whole chain: each battle behind it costs it a soldier in the next.
+    markFought(attacker, foe);
     battles.push({ attacker, winner, damage, attackerMorale: attacker.morale, foeMorale: foe.morale });
   }
   return battles;

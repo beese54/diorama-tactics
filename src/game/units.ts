@@ -48,11 +48,23 @@ export interface Unit {
   stats: Stats;
   /** The skill gauge, 0 to GAUGE_MAX: filled by fighting, carried from battle to battle, spent when a card's skill fires (B6). */
   gauge: number;
+  /** Battles fought this turn: each one already behind it this turn costs it a soldier in the next (see soldiersFor). */
+  fought?: number;
 }
 
 export function makeUnit(o: { id: string; name: string; side: Side; cls: ClassId; gender: Gender; x: number; y: number }): Unit {
   const def = CLASSES[o.cls];
-  return { ...o, morale: def.morale, maxMorale: def.morale, stats: { ...def.stats }, gauge: 0 };
+  return { ...o, morale: def.morale, maxMorale: def.morale, stats: { ...def.stats }, gauge: 0, fought: 0 };
+}
+
+/** Counts a battle for each of `units` (both sides of it): the next one this turn, they bring a soldier fewer. */
+export function markFought(...units: Unit[]): void {
+  for (const u of units) u.fought = (u.fought ?? 0) + 1;
+}
+
+/** A new turn: every unit comes to its next battle at full strength again. */
+export function freshTurn(units: readonly Unit[]): void {
+  for (const u of units) u.fought = 0;
 }
 
 /** Morale is a unit's life: at zero it is defeated and leaves the map. */

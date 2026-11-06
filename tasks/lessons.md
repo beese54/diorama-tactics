@@ -115,3 +115,7 @@
 ## 2026-11-05: a check aimed at the edge of a figure that breathes (self-caught)
 - **What happened:** `__map.aimAt` returned the first point up a unit's figure that picked it, which was the figure's very edge. Once the heroes breathed (the idle settles the body a pixel), that edge pixel was clear on every other frame. Pointing at Ilse then picked Aria, in front of her, and pointing at Varek picked Petra.
 - **Rule:** When aiming at an animated target, aim at the middle of the stretch that hits it, not the first hit. A target that moves by a pixel must still be under the aim on every frame.
+
+## 2026-11-06: a check whose setup assumed the old rules (self-caught)
+- **What happened:** "Hard turns down a fight it forecasts to lose" set Varek to 5 Morale. That made him weak only because Morale used to set the soldiers. Once battles started at full strength, he wasn't weak at all. My first two fixes each handled one cause and missed the next. The armies now start close, so another foe could fight. Varek, at full strength, then rightly marched past Corin to an ally his lance beats.
+- **Rule:** When a rule changes, reread every check that builds a situation from that rule. Ask what its setup relied on, not only what it asserts. When a "nobody fights" check fails, first find out who fought whom (the battle's attacker, the morale before and after), then fix the premise once.

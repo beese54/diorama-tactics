@@ -8,7 +8,7 @@ import { planTurn, type Difficulty } from '../game/ai';
 import { outcome, stats, type Outcome, type Stats } from '../game/end';
 import { onPlay } from '../game/skills';
 import { fightUnion, unionOf, unionShape } from '../game/union';
-import type { Side, Unit } from '../game/units';
+import { freshTurn, type Side, type Unit } from '../game/units';
 import { tileStats } from '../map/terrain';
 import { tileAt, type MapFile, type Tile } from '../map/types';
 import { CardHand } from '../ui/CardHand';
@@ -109,6 +109,8 @@ export class Skirmish {
     // The turn banner (B8): whose turn it is, sweeping across the board.
     if (fx.banners) TurnBanner.show(turn.side, turn.number);
     refill(this.hands[turn.side]);
+    // Every unit comes to its first battle of the turn at full strength.
+    freshTurn(this.units);
     if (turn.side === 'player') this.cards.show(this.hands.player, null, false);
     return turn;
   }

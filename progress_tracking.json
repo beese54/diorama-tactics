@@ -354,6 +354,18 @@
       "id": "B8-deploy",
       "title": "The armies start a short march apart (the user's feedback that reaching the foes took too long): deploy places the enemy towards the middle of the board so every unit has a foe within START_REACH = 12 tiles' walk and none closer than START_GAP = 4; cards unchanged at the user's choice; deploy tests over 30 themes and 20 seeds; check.mjs 169/169",
       "status": "review",
+      "commit": "1a70429"
+    },
+    {
+      "id": "B8-full-strength",
+      "title": "A squad brings its full soldiers to every battle whatever its Morale, one fewer for each battle already fought this turn (Unit.fought, markFought in fightUnion and the forecast, freshTurn at each turn's start); the AI's forecast counts a fallen unit as lost whole; tests updated (clash, script, union chain), the Hard-declines check now pairs Varek with Corin",
+      "status": "review",
+      "commit": "this one"
+    },
+    {
+      "id": "B8-skills-r0",
+      "title": "Skill animations, the first three: src/battle/SkillFx.ts (Firestorm bolts, fireballs, embers, flames and an orange wash; Volley's second sky of arrows; Lance Charge's speed lines and golden crescents), scheduled by the Director from the skill blows, a pure function of the battle's clock; the battle preview takes &fire=<skill>; check.mjs checks all three",
+      "status": "review",
       "commit": "this one"
     }
   ],

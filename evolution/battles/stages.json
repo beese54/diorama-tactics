@@ -212,10 +212,18 @@
     {
       "id": "b8-polish-r0-review",
       "date": "2026-11-03",
-      "commit": "next",
+      "commit": "d576f2b",
       "image": "b8-polish/r0-review/4-sparks-1.jpg",
       "title": "B8 r0 · Sound, the four transitions, and battle effects",
       "note": "Sound effects made in code (blows, crits, arrows, spells, the charge, the cut-in, cards, the wipe, the result stings), muted with M, with Music and Effects volumes in the menu. Four transitions, all kept: a blade wipes the board into a battle and back, banners open each turn, the played card flies to the turn box, and battles open with the VS slam and end with the Morale loss punching in. Each blow bursts in sparks tinted by its weapon, the charge kicks up a dust trail, and a fired skill lights its squad."
+    },
+    {
+      "id": "b8-skills-r0",
+      "date": "2026-11-05",
+      "commit": "next",
+      "image": "b8-skills/r0/firestorm.jpg",
+      "title": "B8 · Skill animations, the first three",
+      "note": "A fired skill now plays its own animation where its blows land: Firestorm rains flaming bolts that burst in fireballs and flames over an orange wash; Volley sends a second sky of arrows down on the foes; Lance Charge streams speed lines past the riders and lands its second blows in golden crescents."
     }
   ]
 }

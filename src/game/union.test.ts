@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { resolveClash, type ClashSetup } from './clash';
+import { resolveClash, soldiersFor, type ClashSetup } from './clash';
 import { canAttack, fightUnion, unionOf } from './union';
-import { applyDamage, CLASSES, isDefeated, makeUnit, triangleEdge, type Gender, type Side } from './units';
+import { applyDamage, CLASSES, freshTurn, isDefeated, makeUnit, triangleEdge, type Gender, type Side } from './units';
 
 const unit = (x: number, y: number, side: Side = 'player', gender: Gender = 'female') =>
   makeUnit({ id: `${side}${x},${y}`, name: `${x},${y}`, side, cls: 'sword', gender, x, y });
@@ -76,6 +76,20 @@ describe('units', () => {
 });
 
 describe('fightUnion', () => {
+  it('wears the foe down a soldier a battle down the chain, and a new turn brings it back to full', async () => {
+    const members = [unit(1, 1), unit(0, 1), unit(2, 1)];
+    const foe = unit(1, 2, 'enemy');
+    const brought: number[][] = [];
+    await fightUnion(members, foe, (attacker) => {
+      brought.push([soldiersFor(attacker), soldiersFor(foe)]);
+      return { winner: 'attacker', damage: 1 };
+    });
+    // Each member comes fresh; the foe brings 7, then 6, then 5.
+    expect(brought).toEqual([[7, 7], [7, 6], [7, 5]]);
+    freshTurn([...members, foe]);
+    expect(soldiersFor(foe)).toBe(7);
+  });
+
   /** A woman at (1, 1) with allies above and to her right (a Union of 3), and a foe below her. */
   const scene = () => {
     const leader = unit(1, 1);

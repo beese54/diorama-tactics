@@ -96,10 +96,10 @@ describe('BattleScript', () => {
     }
   });
 
-  it('plays a wounded squad with the soldiers its Morale brings', () => {
+  it('plays a squad worn down by battles this turn with the soldiers it has left', () => {
     for (const seed of SEEDS.slice(0, 20)) {
       const s = setup('axe', 'spear', seed);
-      s.attacker.morale = 50;
+      s.attacker.fought = 5;
       const sim = new ClashSim(s);
       const sizes = { attacker: sim.attacker.fighters.length, defender: sim.defender.fighters.length };
       const script = new BattleScript({ attacker: 'axe', defender: 'spear' }, sizes);

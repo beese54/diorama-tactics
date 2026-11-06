@@ -5,7 +5,7 @@ import { resolveClash, type ClashSetup } from './clash';
 import { isOpen, moveRange, pathTo, stopsIn } from './movement';
 import { battleSkill, canFire } from './skills';
 import { unionOf, unionShape } from './union';
-import { applyDamage, type Side, type Unit } from './units';
+import { applyDamage, markFought, type Side, type Unit } from './units';
 
 /**
  * The foes' AI (B7): it plans a whole turn under exactly the player's rules (the card's shared
@@ -44,7 +44,8 @@ const defenceAt = (map: MapFile, u: Unit) => tileStats(map.tiles[u.y * map.width
 /**
  * Forecasts `attacker`'s Union attack on `target` (both among `units`), played to the end by the
  * rules over a few fixed seeds, with any skill its members could fire with `card` fired. It
- * "pays off" when the target loses more Morale than the Union does. The units aren't touched.
+ * "pays off" when the target loses more than the Union does: the Morale lost, and a unit that
+ * falls counted as its whole Morale again. The units aren't touched.
  */
 export function forecast(map: MapFile, units: readonly Unit[], attacker: Unit, target: Unit, card: Card): Forecast {
   let wins = 0;
@@ -67,8 +68,13 @@ export function forecast(map: MapFile, units: readonly Unit[], attacker: Unit, t
       };
       const { winner, damage } = resolveClash(setup);
       applyDamage(winner === 'attacker' ? foe : m, damage);
+      markFought(m, foe);
     }
-    const [d, t] = [before - foe.morale, lost - members.reduce((sum, m) => sum + m.morale, 0)];
+    // A unit that falls is lost whole, not just the Morale it had left: since a battle starts at full
+    // strength whatever the Morale, a unit near its end would otherwise risk next to nothing.
+    const fell = (u: Unit) => (u.morale <= 0 ? u.maxMorale : 0);
+    const d = before - foe.morale + (before > 0 ? fell(foe) : 0);
+    const t = lost - members.reduce((sum, m) => sum + m.morale, 0) + members.reduce((sum, m) => sum + fell(m), 0);
     if (d > t) wins++;
     dealt += d;
     taken += t;

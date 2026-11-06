@@ -104,22 +104,28 @@ describe('resolveClash', () => {
     expect(target(5, knights, 0)).toBeUndefined();
   });
 
-  it('brings soldiers in proportion to Morale, at least one, and a wounded unit loses more often', () => {
-    const at = (cls: ClassId, morale: number) => {
+  it('brings its full soldiers whatever its Morale, one fewer for each battle already fought this turn, at least one', () => {
+    const at = (cls: ClassId, morale: number, fought = 0) => {
       const u = unit(cls, 'enemy');
       u.morale = morale;
+      u.fought = fought;
       return makeSquad(u).fighters.length - 1;
     };
     expect(at('sword', 160)).toBe(7);
-    expect(at('sword', 80)).toBe(4);
-    expect(at('sword', 10)).toBe(1);
-    expect(at('knight', 100)).toBe(2);
-    const wounded = (seed: number) => {
+    expect(at('sword', 80)).toBe(7);
+    expect(at('sword', 10)).toBe(7);
+    expect(at('sword', 160, 1)).toBe(6);
+    expect(at('sword', 160, 3)).toBe(4);
+    expect(at('sword', 160, 20)).toBe(1);
+    expect(at('knight', 100)).toBe(3);
+    expect(at('knight', 200, 2)).toBe(1);
+    // Worn down by battles this turn, a squad loses more often.
+    const worn = (seed: number) => {
       const s = setup('sword', 'sword', seed);
-      s.defender.morale = 60;
+      s.defender.fought = 4;
       return s;
     };
-    expect(winRate(wounded)).toBeGreaterThan(winRate((s) => setup('sword', 'sword', s)) + 0.1);
+    expect(winRate(worn)).toBeGreaterThan(winRate((s) => setup('sword', 'sword', s)) + 0.1);
   });
 
   it('gives knights three large soldiers that take two blows each', () => {
