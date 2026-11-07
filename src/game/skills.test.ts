@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CARDS } from './cards';
 import { ClashSim, resolveClash, type ClashEvent, type ClashSetup, type SkillId } from './clash';
 import { GAUGE_MAX } from './gauge';
-import { battleSkill, canFire, onPlay, skillOf, whyNot } from './skills';
+import { battleSkill, canFire, onPlay, skillMark, skillOf, whyNot } from './skills';
 import { makeUnit, type ClassId, type Side } from './units';
 
 const card = (id: string) => CARDS.find((c) => c.id === id)!;
@@ -40,6 +40,24 @@ describe('canFire', () => {
     expect(whyNot(unit('sword', 'player', 60), card('open-field'))).toEqual({ why: 'charging', gauge: 60 });
     expect(whyNot(unit('bow', 'player', GAUGE_MAX), card('open-field'))).toEqual({ why: 'ace', ace: 'sword' });
     expect(whyNot(unit('bow', 'player', GAUGE_MAX), card('kings-wager'))).toEqual({ why: 'on-play' });
+  });
+});
+
+describe('skillMark: the marker over a unit on the map', () => {
+  it('shows nothing below a full gauge, or once the unit has fallen', () => {
+    expect(skillMark(unit('sword', 'player', GAUGE_MAX - 1), null)).toBeNull();
+    const fallen = unit('sword', 'player', GAUGE_MAX);
+    fallen.morale = 0;
+    expect(skillMark(fallen, card('long-road'))).toBeNull();
+  });
+  it('is ready with a full gauge and no card in play yet, or a card whose skill the unit can fire', () => {
+    expect(skillMark(unit('axe', 'enemy', GAUGE_MAX), null)).toBe('ready');
+    expect(skillMark(unit('sword', 'player', GAUGE_MAX), card('long-road'))).toBe('ready');
+    expect(skillMark(unit('knight', 'player', GAUGE_MAX), card('swift-banner'))).toBe('ready');
+  });
+  it("is held when the card in play can't fire it: another weapon's ACE, or All In, which acts on play", () => {
+    expect(skillMark(unit('sword', 'player', GAUGE_MAX), card('swift-banner'))).toBe('held');
+    expect(skillMark(unit('sword', 'player', GAUGE_MAX), card('kings-wager'))).toBe('held');
   });
 });
 

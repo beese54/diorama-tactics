@@ -95,6 +95,29 @@
         80% { transform: translate(-50%, calc(var(--px) * -6)); opacity: 1; }
         100% { transform: translate(-50%, calc(var(--px) * -10)); opacity: 0; }
       }
+      /* SKILL READY (B8): a gold sparkle by the head of each unit whose gauge is full; dim when the card in play can't fire it. */
+      #skill-marks .mark {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+      #skill-marks svg {
+        position: absolute;
+        left: calc(var(--px) * 4);
+        top: calc(var(--px) * -7);
+        width: calc(var(--px) * 7);
+        height: calc(var(--px) * 7);
+        fill: #ffd34a;
+        filter: drop-shadow(var(--px) 0 0 #3a2600) drop-shadow(calc(var(--px) * -1) 0 0 #3a2600) drop-shadow(0 var(--px) 0 #3a2600) drop-shadow(0 calc(var(--px) * -1) 0 #3a2600);
+      }
+      #skill-marks svg .core { fill: #fffbe0; }
+      #skill-marks .ready svg { animation: skill-twinkle 1.2s steps(1) infinite; }
+      #skill-marks .held svg { fill: #9a927e; opacity: 0.75; }
+      #skill-marks .held svg .core { fill: #c4bca8; }
+      @keyframes skill-twinkle {
+        0% { transform: translateY(0); fill: #ffd34a; }
+        50% { transform: translateY(calc(var(--px) * -1)); fill: #fff0a0; }
+      }
       #tile-info {
         position: absolute;
         left: calc(var(--px) * 8);
@@ -280,6 +303,9 @@
         background: linear-gradient(#fffbe0, #ffd34a);
         box-shadow: 0 0 var(--px) #ffe27a;
       }
+      #unit-info .skl.ready > span:last-child { color: #ffe27a; }
+      #unit-info .skl.held > span:last-child { color: #c4bca8; }
+      #unit-info .skl.held .bar span { background: linear-gradient(#d8d0bc, #9a927e); box-shadow: none; }
       /* Pointed at, the unit box floats beside the unit, its portrait at the left. */
       #unit-info {
         display: flex;

@@ -1,4 +1,5 @@
 import { GAUGE_MAX } from '../game/gauge';
+import type { SkillMark } from '../game/skills';
 import { CLASSES, type Unit } from '../game/units';
 import { placeWindow } from './placeWindow';
 import { weaponIcon } from './weaponIcon';
@@ -28,10 +29,12 @@ export class UnitPanel {
 
   /**
    * Shows `unit` (null hides the box); `moved` greys out a unit that has used its move this turn;
-   * `union` is how many units its Union counts, itself included (1 when it stands alone).
+   * `union` is how many units its Union counts, itself included (1 when it stands alone); `skill`
+   * is its SKILL READY mark: the full gauge reads READY when the card in play can fire it, SAVED
+   * when it can't (kept for a later card).
    */
-  show(unit: Unit | null, moved = false, union = 1): void {
-    const key = unit && `${unit.id}:${unit.morale}:${moved}:${union}:${Math.floor(unit.gauge)}`;
+  show(unit: Unit | null, moved = false, union = 1, skill: SkillMark | null = null): void {
+    const key = unit && `${unit.id}:${unit.morale}:${moved}:${union}:${Math.floor(unit.gauge)}:${skill}`;
     if (key === this.current) return;
     this.current = key;
     this.el.hidden = !unit;
@@ -47,7 +50,7 @@ export class UnitPanel {
       `<div class="cls"><span class="wicon w-${def.weapon}">${weaponIcon(def.weapon)}</span>${def.name}${unit.gender === 'female' ? ' · +' : ' · x'}${union > 1 ? ` · UNION ×${union}` : ''}${moved ? ' · MOVED' : ''}</div>` +
       `<div class="morale"><span>MRL</span><span class="bar"><span style="width:${(share * 100).toFixed(1)}%"></span></span><span>${unit.morale}</span></div>` +
       // The skill gauge it carries from battle to battle: full, its card's skill can fire (B6).
-      `<div class="morale skl${unit.gauge >= GAUGE_MAX ? ' full' : ''}"><span>SKL</span><span class="bar"><span style="width:${Math.min(100, (unit.gauge / GAUGE_MAX) * 100).toFixed(1)}%"></span></span><span>${Math.floor(unit.gauge)}</span></div>` +
+      `<div class="morale skl${unit.gauge >= GAUGE_MAX ? ' full' : ''}${skill ? ` ${skill}` : ''}"><span>SKL</span><span class="bar"><span style="width:${Math.min(100, (unit.gauge / GAUGE_MAX) * 100).toFixed(1)}%"></span></span><span>${skill === 'ready' ? 'READY' : skill === 'held' ? 'SAVED' : Math.floor(unit.gauge)}</span></div>` +
       `<div class="stats">ATK ${atk}  TEC ${tec}  GEN ${gen}  LUK ${luk}</div>` +
       `</div>`;
     this.el.querySelector('.name')!.textContent = unit.name;

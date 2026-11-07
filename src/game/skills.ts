@@ -58,6 +58,19 @@ export function whyNot(unit: Unit, card: Card): NotReady | null {
 export const canFire = (unit: Unit, card: Card): boolean => whyNot(unit, card) === null;
 
 /**
+ * The marker over a unit on the map: 'ready' when its gauge is full and the card its side has in
+ * play can fire the skill (or the side has no card in play yet: any card for All will); 'held'
+ * when the gauge is full but this card can't (another weapon's ACE, or All In, which acts on
+ * play); null below a full gauge, or once the unit has fallen.
+ */
+export type SkillMark = 'ready' | 'held';
+
+export function skillMark(unit: Unit, card: Card | null): SkillMark | null {
+  if (unit.morale <= 0 || unit.gauge < GAUGE_MAX) return null;
+  return !card || canFire(unit, card) ? 'ready' : 'held';
+}
+
+/**
  * Plays `card`'s on-play effect for `side`, if it has one: All In fills the gauge of every
  * unit of the side still standing. Returns the units it filled.
  */

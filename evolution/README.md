@@ -22,7 +22,7 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ## Battles
 
-### B8 skill animations r1: every skill, and the weapon symbols (for review)
+### B8 skill animations r1: every skill (approved 2026-11-07), and the weapon symbols (for review)
 ![All eleven battle skills at their fullest, and the banners with their weapon symbols](battles/b8-skills/r1/all-skills.jpg)
 
 | Pike Wall | Parry | Executioner |
@@ -59,7 +59,7 @@ Videos, one a skill: [forced-march](battles/b8-skills/r1/forced-march.mp4), [bla
 
 ![Timeline of every battle version](battles/timeline.gif)
 
-### B8 skill animations: the first three (for review)
+### B8 skill animations: the first three (approved 2026-11-07)
 ![Firestorm: flaming bolts fall on Sabine's squad and burst, the field washed orange](battles/b8-skills/r0/firestorm.jpg)
 
 | Volley | Lance Charge |
@@ -801,6 +801,25 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
   - A shadow drawn only under the feet hides behind them. It has to be wider than the stance and sit a little below it to read.
 
 ## Characters
+
+### B8 SKILL READY on the map (for review)
+![Full gauges sparkle by the units' heads; with a lance's card in play the other allies' sparkles dim; the window reads SAVED](characters/b8-skill-ready/skill-ready.jpg)
+
+| Ready (no card yet) | Held (Swift Banner, a lance's card) | The window |
+|---|---|---|
+| ![](characters/b8-skill-ready/ready.jpg) | ![](characters/b8-skill-ready/held.jpg) | ![](characters/b8-skill-ready/window-saved.jpg) |
+
+- **What changed:**
+  - A gold sparkle (a 7×7 pixel star in the map's own pixels) twinkles by the head of every unit whose skill gauge is full, foes included, so the board shows who can fire a skill in their next battle (`src/ui/SkillMarks.ts`).
+  - It **shines** when the card that unit's side has in play can fire the skill (or the side has no card in play yet), and **dims** to grey when it can't: a card for another weapon, or King's Wager, whose All In acts as it is played. The rule is `skillMark` in `src/game/skills.ts`.
+  - The unit window's SKL gauge reads **READY** or **SAVED** (full, kept for a later card).
+  - The marks stand aside while All In's pillars play, and the map's windows draw over them.
+- **Feedback:** "the skills look good, do the SKILL READY marker".
+- **Decisions:**
+  - A sparkle, not a word: the units stand crowded, and a word over each piled up unread (All In's lesson).
+  - Beside the head, not over it: the pointer's ▼ sits over the head of the unit pointed at.
+  - Gold for both sides: gold means a skill, whoever holds it.
+- **Learned:** a mark drawn over the map should sit under its windows: the first draft's sparkles showed through the message bar.
 
 ### B8 All In on the map (for review)
 ![King's Wager played: gold pillars ripple up through the allies, one SKILL FULL over them](characters/b8-allin/all-in.jpg)

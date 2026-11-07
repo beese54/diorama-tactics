@@ -6,7 +6,7 @@ import { deal, refill, unused, type Card, type Hand } from '../game/cards';
 import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from '../game/turn';
 import { planTurn, type Difficulty } from '../game/ai';
 import { outcome, stats, type Outcome, type Stats } from '../game/end';
-import { onPlay } from '../game/skills';
+import { onPlay, skillMark, type SkillMark } from '../game/skills';
 import { audio } from '../audio/Audio';
 import { fightUnion, unionOf, unionShape } from '../game/union';
 import { freshTurn, type Side, type Unit } from '../game/units';
@@ -14,6 +14,7 @@ import { tileStats } from '../map/terrain';
 import { tileAt, type MapFile, type Tile } from '../map/types';
 import { AllInFx } from '../ui/AllInFx';
 import { CardHand } from '../ui/CardHand';
+import { SkillMarks } from '../ui/SkillMarks';
 import { fx } from '../ui/transitions';
 import { TurnBanner } from '../ui/TurnBanner';
 import { TurnBox } from '../ui/TurnBox';
@@ -75,6 +76,7 @@ export class Skirmish {
   private readonly cards: CardHand;
   /** All In's burst over the units it fills, as its card is played. */
   private readonly allIn: AllInFx;
+  private readonly skillMarks: SkillMarks;
   private hovered: Tile | null = null;
   /** The range the path preview was last drawn for: a new selection redraws it. */
   private previewed: Map<number, Step> | null = null;
@@ -102,6 +104,7 @@ export class Skirmish {
     this.box = new TurnBox(ui);
     this.cards = new CardHand((id) => this.play(id));
     this.allIn = new AllInFx(ui);
+    this.skillMarks = new SkillMarks(ui);
     this.begin(this.turn);
     this.cards.prefetchFoes(this.hands.enemy.cards);
   }
@@ -142,6 +145,16 @@ export class Skirmish {
     if (!filled.length) return;
     this.allIn.play(filled);
     audio.play('cutin');
+  }
+
+  /** A unit's SKILL READY mark: judged by the card its side has in play this turn (none on the other side's turn). */
+  private markOf(unit: Unit): SkillMark | null {
+    return skillMark(unit, unit.side === this.turn.side ? this.turn.card : null);
+  }
+
+  /** The SKILL READY marks showing on the map, by kind (for checks). */
+  get skillMarksShown(): { ready: number; held: number } {
+    return this.skillMarks.count();
   }
 
   /** How many All In bursts are playing (for checks). */
@@ -417,7 +430,7 @@ export class Skirmish {
     this.marks.update(elapsed);
     const pointed = this.unitAt(this.hovered);
     const shown = pointed ?? this.selected;
-    this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id), shown ? unionOf(shown, this.units).length : 1);
+    this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id), shown ? unionOf(shown, this.units).length : 1, shown ? this.markOf(shown) : null);
     // Pointed at, the box floats beside the unit's head, clear of the tucked hand; else it keeps its corner.
     const head = pointed && this.layer.headAt(pointed, camera);
     const [w, h] = [this.ui.clientWidth, this.ui.clientHeight];
@@ -428,6 +441,11 @@ export class Skirmish {
       const [top, feet] = [this.layer.headAt(u, camera), this.layer.feetAt(u, camera)];
       return top && feet ? { head: css(top), feet: css(feet) } : null;
     });
+    // SKILL READY: a sparkle by each full gauge's head; held back while All In's burst plays.
+    this.skillMarks.show(this.units, (u) => this.markOf(u), (u) => {
+      const top = this.layer.headAt(u, camera);
+      return top ? css(top) : null;
+    }, this.allIn.playing > 0);
     this.box.show(this.turn);
     // While the hand is open it has the bottom of the screen: the tile and unit panels step aside.
     this.ui.classList.toggle('choosing', this.cards.open);

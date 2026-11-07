@@ -365,18 +365,24 @@
     {
       "id": "B8-skills-r0",
       "title": "Skill animations, the first three: src/battle/SkillFx.ts (Firestorm bolts, fireballs, embers, flames and an orange wash; Volley's second sky of arrows; Lance Charge's speed lines and golden crescents), scheduled by the Director from the skill blows, a pure function of the battle's clock; the battle preview takes &fire=<skill>; check.mjs checks all three",
-      "status": "review",
+      "status": "done",
       "commit": "f9b73a8"
     },
     {
       "id": "B8-skills-r1",
       "title": "Every skill animated: Forced March, Blade Dance, Pike Wall, Parry, Executioner, Rend, Hold Fast and Trample in SkillFx (back and front layers, over the fighters), moments from skillBlows.ts (the rules name each blow's skill), All In's gold pillars on the map (AllInFx); the preview takes &dfire=; check.mjs checks all eleven and the All In bursts",
-      "status": "review",
-      "commit": "this one"
+      "status": "done",
+      "commit": "38ca246"
     },
     {
       "id": "B8-weapon-symbols",
       "title": "Weapon symbols: each battle banner carries its weapon's medallion in the type's colour (weaponIcon.ts), tagged STRONG or WEAK by the triangle; the map's unit window shows it before the class; check.mjs checks the badges",
+      "status": "review",
+      "commit": "38ca246"
+    },
+    {
+      "id": "B8-skill-ready",
+      "title": "SKILL READY on the map: a gold sparkle by every full gauge (SkillMarks.ts), shining when the side's card in play can fire the skill, dim when it can't (skillMark in skills.ts); the unit window reads READY or SAVED; check.mjs checks held and ready marks",
       "status": "review",
       "commit": "this one"
     }

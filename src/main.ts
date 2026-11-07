@@ -626,6 +626,8 @@ async function main(): Promise<void> {
         hand: () => skirmish?.handInfo(),
         /** All In's bursts playing on the map now. */
         allIn: () => skirmish?.allInPlaying ?? 0,
+        /** The SKILL READY marks on the map now, by kind. */
+        skillMarks: () => skirmish?.skillMarksShown ?? null,
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },
         selected: () => skirmish?.selected?.id ?? null,
         /** The result screen, if the skirmish has ended (B7), and the foes' difficulty. */

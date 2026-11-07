@@ -979,6 +979,19 @@ const allInBursts = await page.evaluate(() => window.__map.allIn());
 const k4 = (await mapUnits()).filter((u) => u.side === 'player' && u.morale > 0);
 check("skills: King's Wager (All In) fills every ally's gauge as it is played, a burst of gold over each", k4.length > 0 && k4.every((u) => u.gauge === 100) && allInBursts === k4.length,
   JSON.stringify({ bursts: allInBursts, units: k4.map((u) => [u.name, u.gauge]) }));
+// SKILL READY: once the burst has played, a sparkle by every full gauge's head. All In acts on play,
+// so with King's Wager in play the allies' marks are held (SAVED); a foe's full gauge shows ready.
+// The foes' gauges are emptied first: their own cards and battles may have filled them by now.
+await page.waitForFunction(() => window.__map.allIn() === 0, { timeout: 10000 });
+const kFoes2 = (await mapUnits()).filter((u) => u.side === 'enemy' && u.morale > 0);
+for (const u of kFoes2) await page.evaluate((id) => window.__map.setUnit(id, { gauge: 0 }), u.id);
+await frames(3);
+const k5 = await page.evaluate(() => window.__map.skillMarks());
+await page.evaluate((id) => window.__map.setUnit(id, { gauge: 100 }), kFoes2[0].id);
+await frames(3);
+const k6 = await page.evaluate(() => window.__map.skillMarks());
+check("skills: SKILL READY marks every full gauge on the map: held by the card in play (King's Wager), ready for a foe",
+  k5.held === k4.length && k5.ready === 0 && k6.ready === 1 && k6.held === k4.length, JSON.stringify({ k5, k6 }));
 check('skills: no console errors', errors.length === 0, errors.join(' | '));
 
 // ---- The foes' AI and the end (B7) ---------------------------------------------------------------
