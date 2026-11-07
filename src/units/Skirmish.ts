@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { ClashSetup, ClashSide } from '../game/clash';
 import { deploy } from '../game/deploy';
-import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
+import { moveRange, pathTo, roughStopsIn, stopsIn, type Step } from '../game/movement';
 import { deal, refill, unused, type Card, type Hand } from '../game/cards';
 import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from '../game/turn';
 import { planTurn, type Difficulty } from '../game/ai';
@@ -14,6 +14,7 @@ import { tileStats } from '../map/terrain';
 import { tileAt, type MapFile, type Tile } from '../map/types';
 import { AllInFx } from '../ui/AllInFx';
 import { CardHand } from '../ui/CardHand';
+import { PathCost } from '../ui/PathCost';
 import { SkillMarks } from '../ui/SkillMarks';
 import { fx } from '../ui/transitions';
 import { TurnBanner } from '../ui/TurnBanner';
@@ -77,6 +78,9 @@ export class Skirmish {
   /** All In's burst over the units it fills, as its card is played. */
   private readonly allIn: AllInFx;
   private readonly skillMarks: SkillMarks;
+  private readonly pathCost: PathCost;
+  /** The tile the previewed path ends on, for its cost label. */
+  private pathEnd: Tile | null = null;
   private hovered: Tile | null = null;
   /** The range the path preview was last drawn for: a new selection redraws it. */
   private previewed: Map<number, Step> | null = null;
@@ -105,6 +109,7 @@ export class Skirmish {
     this.cards = new CardHand((id) => this.play(id));
     this.allIn = new AllInFx(ui);
     this.skillMarks = new SkillMarks(ui);
+    this.pathCost = new PathCost(ui);
     this.begin(this.turn);
     this.cards.prefetchFoes(this.hands.enemy.cards);
   }
@@ -150,6 +155,11 @@ export class Skirmish {
   /** A unit's SKILL READY mark: judged by the card its side has in play this turn (none on the other side's turn). */
   private markOf(unit: Unit): SkillMark | null {
     return skillMark(unit, unit.side === this.turn.side ? this.turn.card : null);
+  }
+
+  /** The path's cost label, as shown, or null (for checks). */
+  get pathCostText(): string | null {
+    return this.pathCost.text;
   }
 
   /** The SKILL READY marks showing on the map, by kind (for checks). */
@@ -224,8 +234,11 @@ export class Skirmish {
     this.selected = unit;
     this.range = null;
     this.marks.mark('reach', []);
+    this.marks.mark('rough', []);
     this.marks.mark('foe', []);
     this.marks.mark('path', []);
+    this.pathEnd = null;
+    this.pathCost.show(null);
     this.marks.mark('target', []);
     this.marks.mark('union', []);
     this.marks.mark('shape', []);
@@ -235,6 +248,8 @@ export class Skirmish {
     if (canMove(this.turn, unit)) {
       this.range = moveRange(this.map, this.units, unit, this.turn.pool);
       this.marks.mark('reach', tiles(this.range));
+      // Stripes where a step costs more than 1 MOV: the reach is a budget the ground spends.
+      this.marks.mark('rough', roughStopsIn(this.map, this.range).map((i) => this.map.tiles[i]));
     } else if (unit.side !== this.turn.side) {
       // How far a foe could come on its longest card.
       this.marks.mark('foe', tiles(moveRange(this.map, this.units, unit, this.reach(unit.side))));
@@ -423,6 +438,9 @@ export class Skirmish {
     this.previewed = this.range;
     const path = this.range && tile ? pathTo(this.range, this.index(tile)) : [];
     this.marks.mark('path', path.length > 1 ? path.map((i) => this.map.tiles[i]) : []);
+    // The move's cost and what the side's pool keeps after it, by the tile the path ends on.
+    this.pathEnd = path.length > 1 ? this.map.tiles[path.at(-1)!] : null;
+    this.pathCost.show(this.pathEnd && this.range ? { cost: this.range.get(this.index(this.pathEnd))!.cost, pool: this.turn.pool } : null);
   }
 
   update(elapsed: number, dt: number, camera: THREE.Camera): void {
@@ -441,6 +459,7 @@ export class Skirmish {
       const [top, feet] = [this.layer.headAt(u, camera), this.layer.feetAt(u, camera)];
       return top && feet ? { head: css(top), feet: css(feet) } : null;
     });
+    this.pathCost.place(this.pathEnd ? css(this.host.surfacePoint(this.pathEnd, 0.5, 0.5).project(camera)) : null);
     // SKILL READY: a sparkle by each full gauge's head; held back while All In's burst plays.
     this.skillMarks.show(this.units, (u) => this.markOf(u), (u) => {
       const top = this.layer.headAt(u, camera);
@@ -471,12 +490,13 @@ export class Skirmish {
   }
 
   /** Counts for checks: tiles marked, and the rules' own count for the selected unit. */
-  marked(): { reach: number; foe: number; path: number; target: number; union: number; shape: number; rules: number } {
+  marked(): { reach: number; rough: number; foe: number; path: number; target: number; union: number; shape: number; rules: number; roughRules: number } {
     const s = this.selected;
     return {
-      reach: this.marks.count('reach'), foe: this.marks.count('foe'), path: this.marks.count('path'), target: this.marks.count('target'),
+      reach: this.marks.count('reach'), rough: this.marks.count('rough'), foe: this.marks.count('foe'), path: this.marks.count('path'), target: this.marks.count('target'),
       union: this.marks.count('union'), shape: this.marks.count('shape'),
       rules: s && canMove(this.turn, s) ? stopsIn(moveRange(this.map, this.units, s, this.turn.pool)).length : 0,
+      roughRules: s && canMove(this.turn, s) ? roughStopsIn(this.map, moveRange(this.map, this.units, s, this.turn.pool)).length : 0,
     };
   }
 

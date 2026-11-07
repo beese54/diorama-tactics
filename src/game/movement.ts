@@ -57,6 +57,12 @@ export function moveRange(map: MapFile, units: readonly Unit[], mover: Unit, poo
 /** The tiles the mover may end its move on. */
 export const stopsIn = (range: Map<number, Step>): number[] => [...range].filter(([, s]) => s.stop).map(([i]) => i);
 
+/** Rough ground: what costs more than 1 MOV a tile (woods, hills, sand, snow, scree, water...). */
+export const isRough = (tile: Tile): boolean => tileStats(tile).moveCost > 1;
+
+/** The stops in `range` on rough ground, so the reach can show where a step costs more. */
+export const roughStopsIn = (map: MapFile, range: Map<number, Step>): number[] => stopsIn(range).filter((i) => isRough(map.tiles[i]));
+
 /** The tiles walked from the start to `index` (both included), or [] if the mover can't end there. */
 export function pathTo(range: Map<number, Step>, index: number): number[] {
   if (!range.get(index)?.stop) return [];

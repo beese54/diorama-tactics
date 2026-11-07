@@ -626,6 +626,8 @@ async function main(): Promise<void> {
         hand: () => skirmish?.handInfo(),
         /** All In's bursts playing on the map now. */
         allIn: () => skirmish?.allInPlaying ?? 0,
+        /** The path preview's cost label ("-7 MOV 3 LEFT"), or null. */
+        pathCost: () => skirmish?.pathCostText ?? null,
         /** The SKILL READY marks on the map now, by kind. */
         skillMarks: () => skirmish?.skillMarksShown ?? null,
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },

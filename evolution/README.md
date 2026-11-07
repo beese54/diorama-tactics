@@ -802,6 +802,24 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ## Characters
 
+### B8 What a move costs (for review)
+![Aria's reach on the meadow: rough ground striped, and the path across the hills reading -10 MOV, 0 LEFT](characters/b8-move-cost/move-cost.jpg)
+
+| The path's cost | The tile box |
+|---|---|
+| ![](characters/b8-move-cost/move-cost-close.jpg) | ![](characters/b8-move-cost/tile-cost.jpg) |
+
+- **What changed:**
+  - **Rough ground is striped** in the reach: every tile where a step costs more than 1 MOV (woods, hills, sand, snow, scree, water) carries dark blue stripes over the blue (`roughStopsIn` in `src/game/movement.ts`, the `rough` mark in `src/units/RangeLayer.ts`).
+  - **The path says what it costs:** beside the tile it ends on, "-10 MOV" and what the side's pool keeps after it, "0 LEFT" (`src/ui/PathCost.ts`).
+  - **The tile box reads COST**, not MOV: what a step onto that tile spends from the card.
+- **Feedback:** "the number of steps the player can take seems to be lesser than the total number of moves in the card. I thought the player should move according to how much the card moves provide?" The rule was working: a card's MOV is a budget the ground spends, shared by the side; the meadow's start (scree and hills, about 2.4 a tile) let MOV 10 reach only about 6 tiles. The user chose to keep the costs and the shared pool, and show them.
+- **Decisions:**
+  - Stripes, not another colour: the reach stays blue (where you can go), and the stripes say "this costs more" on top of it.
+  - The label beside the path's end, not under it: under it, it covered the path it was about.
+  - Costs and the shared pool unchanged.
+- **Learned:** a rule the screen doesn't show reads as a bug. The cost was in the tile box all along, labelled MOV like the card, which said the opposite of what it meant.
+
 ### B8 SKILL READY on the map (for review)
 ![Full gauges sparkle by the units' heads; with a lance's card in play the other allies' sparkles dim; the window reads SAVED](characters/b8-skill-ready/skill-ready.jpg)
 

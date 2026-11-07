@@ -2,12 +2,25 @@ import { describe, expect, it } from 'vitest';
 import { tileStats } from '../map/terrain';
 import { THEMES } from '../themes';
 import { mulberry32 } from '../util/rng';
-import { isOpen, moveRange, pathTo, stopsIn } from './movement';
+import { isOpen, isRough, moveRange, pathTo, roughStopsIn, stopsIn } from './movement';
 import { board } from './testBoard';
 import { makeUnit, type Side } from './units';
 
 const unit = (x: number, y: number, side: Side = 'player', id = `${side}${x},${y}`) =>
   makeUnit({ id, name: id, side, cls: 'sword', gender: 'female', x, y });
+
+describe('rough ground', () => {
+  it('is any tile costing more than 1 MOV, and the reach lists the stops on it', () => {
+    const map = board(Array(5).fill('.....'));
+    const rough = map.tiles.find((t) => t.x === 3 && t.y === 2)!;
+    rough.terrain = 'hills';
+    expect(isRough(rough)).toBe(true);
+    expect(isRough(map.tiles[0])).toBe(false);
+    const me = unit(2, 2);
+    const range = moveRange(map, [me], me, 3);
+    expect(roughStopsIn(map, range)).toEqual([2 * 5 + 3]);
+  });
+});
 
 describe('moveRange', () => {
   it('reaches a diamond on open plains, the start included', () => {

@@ -37,6 +37,7 @@ export class TileInfo {
     this.cover.hidden = !stats.cover;
     const move = stats.moveCost === IMPASSABLE ? '--' : String(stats.moveCost);
     const sign = stats.defense > 0 ? '+' : '';
-    this.stats.textContent = `MOV ${move}  DEF ${sign}${stats.defense}%`;
+    // What a step onto the tile spends from the card's MOV (rough ground costs more than 1).
+    this.stats.textContent = `COST ${move}  DEF ${sign}${stats.defense}%`;
   }
 }

@@ -68,10 +68,18 @@
     {
       "id": "b8-skill-ready",
       "date": "2026-11-07",
-      "commit": "next",
+      "commit": "08aa537",
       "image": "b8-skill-ready/skill-ready.jpg",
       "title": "B8 · SKILL READY: a sparkle by every full gauge",
       "note": "A gold pixel sparkle twinkles by the head of every unit whose skill gauge is full, the foes' too. It shines when the card its side has in play can fire the skill and dims when it can't (another weapon's ACE, or All In); the unit window's gauge reads READY or SAVED."
+    },
+    {
+      "id": "b8-move-cost",
+      "date": "2026-11-07",
+      "commit": "next",
+      "image": "b8-move-cost/move-cost.jpg",
+      "title": "B8 · What a move costs",
+      "note": "A card's MOV is a budget the ground spends, and now the map says so: rough ground in the reach is striped, the path's last tile reads '-10 MOV · 0 LEFT', and the tile box's MOV is now COST."
     }
   ]
 }

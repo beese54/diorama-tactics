@@ -95,6 +95,23 @@
         80% { transform: translate(-50%, calc(var(--px) * -6)); opacity: 1; }
         100% { transform: translate(-50%, calc(var(--px) * -10)); opacity: 0; }
       }
+      /* A move's cost (B8): by the path's last tile, what it spends of the card's MOV and what is left. */
+      #path-cost {
+        position: absolute;
+        /* Beside the tile, to its right: below it, it covered the path it was about. */
+        transform: translate(calc(var(--px) * 12), -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: var(--px) calc(var(--px) * 3);
+        background: rgba(10, 15, 36, 0.82);
+        border: var(--px) solid #fff4c4;
+        border-radius: calc(var(--px) * 2);
+        white-space: nowrap;
+      }
+      #path-cost[hidden] { display: none; }
+      #path-cost b { font-weight: normal; color: #ffd660; }
+      #path-cost span { color: #cfe6ff; }
       /* SKILL READY (B8): a gold sparkle by the head of each unit whose gauge is full; dim when the card in play can't fire it. */
       #skill-marks .mark {
         position: absolute;
