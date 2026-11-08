@@ -36,7 +36,9 @@ check('internal resolution 480x270', canvasSize.w === 480 && canvasSize.h === 27
 check('integer upscale', canvasSize.cssW % 480 === 0 && canvasSize.cssW / 480 === canvasSize.cssH / 270, JSON.stringify(canvasSize));
 // A laptop screen is filled edge to edge, no bars, at the whole pixel scale nearest the 1080p one.
 await page.setViewport({ width: 1366, height: 768, deviceScaleFactor: 1 });
-await new Promise((r) => setTimeout(r, 300));
+// Waits for the resize to land (about 60 ms at rest; longer while the board is still building), not a fixed time.
+await page.waitForFunction(() => document.querySelector('canvas')?.getBoundingClientRect().width < 1400, { timeout: 5000 }).catch(() => {});
+await new Promise((r) => setTimeout(r, 100));
 const laptopCanvas = await page.$eval('canvas', (c) => { const r = c.getBoundingClientRect(); return { w: c.width, h: c.height, x: r.x, y: r.y, cssW: r.width, cssH: r.height }; });
 await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
 await new Promise((r) => setTimeout(r, 300));
@@ -1239,6 +1241,13 @@ await page.keyboard.press('Enter');
 await untilPlayerTurn();
 const b7Hard = { difficulty: await page.evaluate(() => window.__map.difficulty()), fought: await page.evaluate(() => window.__fought), varek: (await unitNow(b7Varek.id)).morale };
 check('foes: on Hard they turn down a fight they forecast to lose', b7Hard.difficulty === 'hard' && !b7Hard.fought && b7Hard.varek === 5, JSON.stringify(b7Hard));
+// What the AI weighed (shown in the demo video, scripts/trailer.mjs) is what it did: the fight it
+// turned down is there, forecast below the nerve, and no attack passed.
+const b7Thinking = await page.evaluate(() => window.__map.foeThinking());
+check("foes: the AI's trace matches its turn: Varek on Corin forecast below 60% and turned down, no attack passed, the cards it weighed scored",
+  !!b7Thinking && b7Thinking.cards.length > 0 && b7Thinking.cards.every((c) => c.score >= c.pow) &&
+  b7Thinking.attacks.some((a) => a.unit === b7Varek.id && a.target === b7Corin.id && !a.passed && a.forecast.win < 0.6) && b7Thinking.attacks.every((a) => !a.passed),
+  JSON.stringify(b7Thinking));
 // VICTORY: the last foe, on its last Morale, falls to Aria; the result screen, then Play again.
 await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());

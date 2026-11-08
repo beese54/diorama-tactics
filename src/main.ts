@@ -640,6 +640,10 @@ async function main(): Promise<void> {
         difficulty: () => skirmish?.difficulty ?? null,
         /** Checks of other things than the AI: the foes play their card and hold their ground. */
         holdFoes: (on: boolean) => skirmish && (skirmish.idle = on),
+        /** What the AI weighed for the foes' last turn (cards scored, fights forecast), for the demo video. */
+        foeThinking: () => skirmish?.thinking ?? null,
+        /** Deals a side the cards `ids` in place of its hand, for the demo video. */
+        setHand: (side: 'player' | 'enemy', ids: string[]) => skirmish?.setHand(side, ids),
         /** The rules' Union for the selected unit, leader first, as ids. */
         union: () => skirmish?.unionIds() ?? [],
         marked: () => skirmish?.marked() ?? null,

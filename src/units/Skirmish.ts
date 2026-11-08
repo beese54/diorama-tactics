@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import type { ClashSetup, ClashSide } from '../game/clash';
 import { deploy } from '../game/deploy';
 import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
-import { deal, refill, unused, type Card, type Hand } from '../game/cards';
+import { CARDS, deal, refill, unused, type Card, type Hand } from '../game/cards';
 import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, undoMove, type TurnState } from '../game/turn';
-import { planTurn, type Difficulty } from '../game/ai';
+import { newTrace, planTurn, type Difficulty, type PlanTrace } from '../game/ai';
 import { outcome, stats, type Outcome, type Stats } from '../game/end';
 import { onPlay, skillMark, type SkillMark } from '../game/skills';
 import { audio } from '../audio/Audio';
@@ -101,6 +101,8 @@ export class Skirmish {
   difficulty: Difficulty = 'easy';
   /** How the skirmish ended, once it has. */
   ended: Outcome | null = null;
+  /** What the AI weighed for the foes' last turn (dev hook: its thinking shown in the demo video). */
+  thinking: PlanTrace | null = null;
   /** For checks of other things than the AI: the foes play their card and hold their ground (dev hook). */
   idle = false;
   /** Battles fought, and won by the player's side, for the result screen. */
@@ -122,6 +124,13 @@ export class Skirmish {
     this.confirmBox = new MoveConfirm(ui, () => this.confirm(), () => this.undo());
     this.begin(this.turn);
     this.cards.prefetchFoes(this.hands.enemy.cards);
+  }
+
+  /** Deals `side` the cards `ids` in place of its hand (dev hook: a demo played the same way each time). */
+  setHand(side: Side, ids: readonly string[]): void {
+    this.hands[side] = { cards: CARDS.filter((c) => ids.includes(c.id)), used: new Set() };
+    if (side === 'enemy') this.cards.prefetchFoes(this.hands.enemy.cards);
+    else if (this.turn.side === 'player' && !this.turn.card) this.cards.show(this.hands.player, null, false);
   }
 
   /**
@@ -463,7 +472,9 @@ export class Skirmish {
    * player's turn.
    */
   private async foesTurn(): Promise<void> {
-    const plan = planTurn(this.map, this.units, this.hands.enemy, 'enemy', this.difficulty);
+    const trace = newTrace();
+    const plan = planTurn(this.map, this.units, this.hands.enemy, 'enemy', this.difficulty, trace);
+    this.thinking = trace;
     playCard(this.turn, this.hands.enemy, plan.card.id);
     this.cards.showFoeCard(plan.card);
     // The same rules for both sides: the foes' All In fills their gauges as it is played.

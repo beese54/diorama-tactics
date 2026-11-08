@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseCard, forecast, HARD_NERVE, planTurn, type Difficulty, type Plan } from './ai';
+import { chooseCard, forecast, HARD_NERVE, newTrace, planTurn, type Difficulty, type Plan } from './ai';
 import { CARDS, type Hand } from './cards';
 import { outcome, stats } from './end';
 import { board } from './testBoard';
@@ -95,6 +95,45 @@ describe('planTurn', () => {
     const a = summary(make());
     n = 100;
     expect(summary(make())).toBe(a);
+  });
+});
+
+describe('the trace (what the AI weighed)', () => {
+  const make = () => [unit('player', 3, 3, 'bow', 'male', 30), unit('player', 2, 5, 'spear', 'male'), unit('enemy', 6, 3, 'knight', 'male'), unit('enemy', 7, 2, 'axe', 'male')];
+  const summary = (p: Plan) => JSON.stringify([p.card.id, p.moves.map((m) => [m.unit.name, m.path]), p.attack && [p.attack.unit.name, p.attack.target.name]]);
+
+  for (const difficulty of ['easy', 'hard'] as const) {
+    it(`leaves the plan as it is (${difficulty})`, () => {
+      n = 200;
+      const plain = summary(planTurn(OPEN, make(), hand('long-road', 'thunder-hoof', 'kings-wager'), 'enemy', difficulty));
+      n = 200;
+      expect(summary(planTurn(OPEN, make(), hand('long-road', 'thunder-hoof', 'kings-wager'), 'enemy', difficulty, newTrace()))).toBe(plain);
+    });
+  }
+
+  it("scores the cards as the pick does: Hard adds 30 for a skill a full gauge could fire, naming who", () => {
+    const units = make();
+    units[2].gauge = 100;
+    const trace = newTrace();
+    const plan = planTurn(OPEN, units, hand('long-road', 'thunder-hoof', 'kings-wager'), 'enemy', 'hard', trace);
+    const hoof = trace.cards.find((c) => c.id === 'thunder-hoof')!;
+    expect(hoof).toEqual({ id: 'thunder-hoof', pow: 80, score: 110, firer: units[2].id });
+    expect(trace.cards.find((c) => c.id === 'kings-wager')!.score).toBe(90);
+    expect(plan.card.id).toBe(trace.cards.reduce((a, c) => (c.score > a.score ? c : a)).id);
+  });
+
+  it('lists every fight it forecast; the attack is the best that passed the nerve', () => {
+    const units = make();
+    const trace = newTrace();
+    const plan = planTurn(OPEN, units, hand('long-road'), 'enemy', 'hard', trace);
+    expect(trace.setups.length).toBeGreaterThan(0);
+    for (const s of [...trace.setups, ...trace.attacks]) expect(s.passed).toBe(s.forecast.win >= HARD_NERVE);
+    const passed = trace.attacks.filter((a) => a.passed);
+    if (!plan.attack) expect(passed).toHaveLength(0);
+    else {
+      const best = passed.reduce((a, b) => (b.forecast.dealt - b.forecast.taken > a.forecast.dealt - a.forecast.taken ? b : a));
+      expect([plan.attack.unit.id, plan.attack.target.id]).toEqual([best.unit, best.target]);
+    }
   });
 });
 

@@ -2,6 +2,8 @@ node_modules/
 dist/
 *.log
 shots/
+# Recorded videos (scripts/trailer.mjs): large, made again on demand.
+media/
 .claude/
 CLAUDE.local.md
 art/source/*

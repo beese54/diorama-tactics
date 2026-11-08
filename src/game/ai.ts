@@ -32,6 +32,24 @@ export interface Forecast {
   taken: number;
 }
 
+/**
+ * What the AI weighed for a turn, for showing its thinking (a dev hook; the demo video). Filled
+ * in by `planTurn` when one is passed; the plan is the same with or without it.
+ */
+export interface PlanTrace {
+  /** The cards in its hand it weighed and each one's score (Easy: POW; Hard: POW, +30 when `firer` could fire its skill). */
+  cards: { id: string; pow: number; score: number; firer: string | null }[];
+  /** Whether it picked by score among the cards that reach a fight ('reach') or, none reaching, the most MOV ('mov'). */
+  pick: 'reach' | 'mov';
+  /** Hard: each fight it could set up this turn (attacker moved beside the target), forecast, and whether it passed the nerve. */
+  setups: { unit: string; target: string; forecast: Forecast; passed: boolean }[];
+  /** The attacks open once everyone has moved, forecast, and whether each passed (Easy takes any). */
+  attacks: { unit: string; target: string; forecast: Forecast; passed: boolean }[];
+}
+
+/** An empty trace to pass to `planTurn`. */
+export const newTrace = (): PlanTrace => ({ cards: [], pick: 'reach', setups: [], attacks: [] });
+
 /** Hard attacks only at or above this forecast chance of coming out ahead. */
 export const HARD_NERVE = 0.6;
 const FORECAST_SEEDS = 8;
@@ -131,20 +149,26 @@ function canReach(map: MapFile, units: readonly Unit[], side: Side, pool: number
 }
 
 /** The card to play. Easy: the most POW that can reach a fight, else the most MOV. Hard: also counts a skill a full-gauge foe could fire. */
-export function chooseCard(map: MapFile, units: readonly Unit[], hand: Hand, side: Side, difficulty: Difficulty): Card {
+export function chooseCard(map: MapFile, units: readonly Unit[], hand: Hand, side: Side, difficulty: Difficulty, trace?: PlanTrace): Card {
   const cards = unused(hand);
   const reaching = cards.filter((c) => canReach(map, units, side, c.mov));
+  const firer = (c: Card) => (difficulty === 'hard' ? living(units, side).find((f) => canFire(f, c)) ?? null : null);
+  const score = (c: Card) => c.pow + (firer(c) ? 30 : 0);
+  if (trace) {
+    trace.pick = reaching.length ? 'reach' : 'mov';
+    trace.cards = reaching.map((c) => ({ id: c.id, pow: c.pow, score: score(c), firer: firer(c)?.id ?? null }));
+  }
   if (!reaching.length) return cards.reduce((a, c) => (c.mov > a.mov ? c : a));
-  const score = (c: Card) => c.pow + (difficulty === 'hard' && living(units, side).some((f) => canFire(f, c)) ? 30 : 0);
   return reaching.reduce((a, c) => (score(c) > score(a) ? c : a));
 }
 
 /**
  * Plans the turn for `side` (the foes) on `map`: the card from `hand`, the moves, the attack. The
- * plan's units are the ones passed in; nothing is changed (the skirmish plays it out).
+ * plan's units are the ones passed in; nothing is changed (the skirmish plays it out). A `trace`
+ * passed in is filled with what was weighed (`PlanTrace`).
  */
-export function planTurn(map: MapFile, units: readonly Unit[], hand: Hand, side: Side, difficulty: Difficulty): Plan {
-  const card = chooseCard(map, units, hand, side, difficulty);
+export function planTurn(map: MapFile, units: readonly Unit[], hand: Hand, side: Side, difficulty: Difficulty, trace?: PlanTrace): Plan {
+  const card = chooseCard(map, units, hand, side, difficulty, trace);
   const sim = clone(units);
   const real = (u: Unit) => units.find((o) => o.id === u.id)!;
   const theirs = side === 'enemy' ? 'player' : 'enemy';
@@ -180,6 +204,7 @@ export function planTurn(map: MapFile, units: readonly Unit[], hand: Hand, side:
         const trial = clone(sim);
         Object.assign(trial.find((u) => u.id === f.id)!, at(spot));
         const fc = forecast(map, trial, trial.find((u) => u.id === f.id)!, trial.find((u) => u.id === target.id)!, card);
+        trace?.setups.push({ unit: f.id, target: target.id, forecast: fc, passed: fc.win >= HARD_NERVE });
         if (fc.win >= HARD_NERVE && (!best || fc.dealt - fc.taken > best.f.dealt - best.f.taken)) best = { unit: f, target, spot, f: fc };
       }
     }
@@ -234,7 +259,9 @@ export function planTurn(map: MapFile, units: readonly Unit[], hand: Hand, side:
   for (const f of living(sim, side)) {
     for (const target of living(sim, theirs).filter((a) => dist(f, a) === 1)) {
       const fc = forecast(map, sim, f, target, card);
-      if (difficulty === 'hard' && fc.win < HARD_NERVE) continue;
+      const passed = difficulty !== 'hard' || fc.win >= HARD_NERVE;
+      trace?.attacks.push({ unit: f.id, target: target.id, forecast: fc, passed });
+      if (!passed) continue;
       const score = difficulty === 'hard' ? fc.dealt - fc.taken : fc.dealt;
       if (score > bestScore) [bestScore, attack] = [score, { unit: real(f), target: real(target) }];
     }

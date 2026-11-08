@@ -8,6 +8,10 @@ This folder shows how the game's look has improved over time, one version after 
 | [characters/](#characters) | Units on the map | B1 in review |
 | [battles/](#battles) | Battle scenes | B2 style frame in review |
 
+**The demo video** (84 s, 1920x1080, made for a LinkedIn post): `node scripts/trailer.mjs media/trailer all` records it from the real game, frame by frame on a virtual clock, with captions, a cursor and the AI's thinking drawn over it, and the game's own sound effects. The MP4 is not committed (it lands in the gitignored `media/`); the poster frame is:
+
+![The demo video: Thunder Hoof's card, the terrains, a Union battle and the Hard AI thinking its turn through](demo/poster.jpg)
+
 **How the pictures are made.** Every version is rendered from its own git commit, using the same camera views each time, so the pictures can be compared side by side. The script is `scripts/snapshot.mjs`. Animated versions also get a GIF from `scripts/gif.mjs`.
 
 **Every stage is kept, not only the milestones.** Review rounds and fixes are stages too:
