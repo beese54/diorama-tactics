@@ -236,7 +236,7 @@
     {
       "id": "b8-skill-mid-battle",
       "date": "2026-11-08",
-      "commit": "next",
+      "commit": "3ef5faf",
       "image": "b8-skill-mid-battle/ready-mid-battle.jpg",
       "title": "B8 · Fire a skill mid-battle; the stance charges the gauge",
       "note": "The stance now drives the SKILL bar, beat by beat: Passive +40, Neutral +20, Aggressive -20. When it fills mid-battle, READY lights with a K FIRE button and the skill acts from the next beat; a volley skill fired after the charge makes a volley of its own. Defenders fire too, with the card their side played last."
