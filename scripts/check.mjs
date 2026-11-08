@@ -718,8 +718,11 @@ const besides = async (heroes, foe) => {
   }
   throw new Error('no player unit has a free tile beside it');
 };
-/** A woman's Union is a + of her edge neighbours, a man's an x of his corners (src/game/union.ts). */
-const UNION_SHAPE = { female: [[0, -1], [1, 0], [0, 1], [-1, 0]], male: [[1, -1], [1, 1], [-1, 1], [-1, -1]] };
+/** A woman's Union is a + two tiles along each edge, a man's an x two tiles along each diagonal (src/game/union.ts). */
+const UNION_SHAPE = {
+  female: [[0, -1], [1, 0], [0, 1], [-1, 0], [0, -2], [2, 0], [0, 2], [-2, 0]],
+  male: [[1, -1], [1, 1], [-1, 1], [-1, -1], [2, -2], [2, 2], [-2, 2], [-2, -2]],
+};
 /**
  * Makes `hero` stand alone, so its attack is a single battle (Unions are checked on their own):
  * any ally on its Union shape moves to a free tile at least three tiles away.
@@ -868,9 +871,10 @@ check('attack: a unit at 0 Morale leaves the board', left.morale === 0 && left.s
 check('attack: no console errors', errors.length === 0, errors.join(' | '));
 
 // ---- Unions (B5): the highlight is the rules' Union, and an attack plays one battle per member -
-// Aria (a woman: a + Union) stands with an ally above her and one to her right, and a foe below.
-// Selected, her two allies are marked gold and the shape's two other places edged; attacking, she
-// and then each ally fight the foe in turn, the foe carrying its Morale losses down the chain.
+// Aria (a woman: a + Union reaching two tiles) stands with an ally above her, one to her right, and
+// one two tiles above her (2026-11-08: the far ring), and a foe below. Selected, her three allies
+// are marked and the shape's five other places edged; attacking, she and then each ally fight the
+// foe in turn (the near ring first), the foe carrying its Morale losses down the chain.
 errors.length = 0;
 await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
 await page.waitForFunction(() => window.__map?.units());
@@ -878,17 +882,17 @@ await page.waitForFunction(() => window.__map?.units());
 await page.evaluate(() => window.__map.holdFoes(true));
 const uStart = await mapUnits();
 const aria = uStart.find((u) => u.side === 'player' && u.gender === 'female' && u.cls === 'sword');
-const [allyTop, allyRight] = uStart.filter((u) => u.side === 'player' && u !== aria).slice(0, 2);
+const [allyTop, allyRight, allyFar] = uStart.filter((u) => u.side === 'player' && u !== aria).slice(0, 3);
 const uFoe = uStart.find((u) => u.side === 'enemy');
-/** A centre near Aria whose + places are all on the board and clear of every other unit. */
+/** A centre near Aria whose + places (both rings) are all on the board and clear of every other unit. */
 const unionSpot = async () => {
-  const mine = new Set([aria.id, allyTop.id, allyRight.id, uFoe.id]);
+  const mine = new Set([aria.id, allyTop.id, allyRight.id, allyFar.id, uFoe.id]);
   const taken = new Set((await mapUnits()).filter((u) => u.morale > 0 && !mine.has(u.id)).map((u) => `${u.x},${u.y}`));
   for (let r = 0; r < 8; r++) {
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         const [x, y] = [aria.x + dx, aria.y + dy];
-        const spots = [[x, y], [x, y - 1], [x + 1, y], [x, y + 1], [x - 1, y]];
+        const spots = [[x, y], ...UNION_SHAPE.female.map(([a, b]) => [x + a, y + b])];
         if (spots.some(([a, b]) => taken.has(`${a},${b}`))) continue;
         if ((await page.evaluate((s) => s.every(([a, b]) => !!window.__map.tile(a, b)), spots))) return [x, y];
       }
@@ -896,14 +900,32 @@ const unionSpot = async () => {
   }
   throw new Error('no room for a Union near Aria');
 };
-/** Stands the Union and its foe: Aria at the centre, allies above and to the right, the foe below. */
-const standUnion = async (foeMorale) => {
+/**
+ * Stands the Union and its foe: Aria at the centre, allies above and to the right, the foe below;
+ * with `far`, a third ally two tiles above (else it is sent off the shape).
+ */
+const standUnion = async (foeMorale, far = false) => {
   const [x, y] = await unionSpot();
   for (const [u, ux, uy, morale] of [[aria, x, y, aria.morale], [allyTop, x, y - 1, allyTop.morale], [allyRight, x + 1, y, allyRight.morale], [uFoe, x, y + 1, foeMorale]]) {
     await page.evaluate((id, c) => window.__map.setUnit(id, c), u.id, { x: ux, y: uy, morale });
   }
+  if (far) {
+    await page.evaluate((id, c) => window.__map.setUnit(id, c), allyFar.id, { x, y: y - 2 });
+  } else if ((await unitNow(allyFar.id)).morale > 0) {
+    // Off the shape: anywhere on the board three or more tiles from Aria.
+    const taken = new Set((await mapUnits()).filter((u) => u.morale > 0).map((u) => `${u.x},${u.y}`));
+    placed: for (let r = 3; r < 12; r++) {
+      for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r], [r, r], [-r, -r], [r, -r], [-r, r]]) {
+        if (!taken.has(`${x + dx},${y + dy}`) && (await page.evaluate((a, b) => !!window.__map.tile(a, b), x + dx, y + dy))) {
+          await page.evaluate((id, c) => window.__map.setUnit(id, c), allyFar.id, { x: x + dx, y: y + dy });
+          break placed;
+        }
+      }
+    }
+  }
   return [x, y];
 };
+const unitNow = async (id) => (await mapUnits()).find((u) => u.id === id);
 /** Plays every battle of the attack now opening, skipping each to its result; returns what each showed. */
 const playChain = async () => {
   const seen = [];
@@ -921,19 +943,19 @@ const playChain = async () => {
   }
 };
 await clickCard(0);
-const [ux, uy] = await standUnion(9000);
+const [ux, uy] = await standUnion(9000, true);
 await clickTile(ux, uy);
 const unionMarks = { marked: await page.evaluate(() => window.__map.marked()), ids: await page.evaluate(() => window.__map.union()) };
-check('union: selected, the leader\'s allies on its shape are marked, and its empty places edged: exactly the rules\' Union',
-  unionMarks.marked.union === 2 && unionMarks.marked.shape === 2 && JSON.stringify(unionMarks.ids) === JSON.stringify([aria.id, allyTop.id, allyRight.id]), JSON.stringify(unionMarks));
+check('union: selected, the leader\'s allies on its shape (an ally two tiles out too) are marked, and its empty places edged: exactly the rules\' Union, the near ring first',
+  unionMarks.marked.union === 3 && unionMarks.marked.shape === 5 && JSON.stringify(unionMarks.ids) === JSON.stringify([aria.id, allyTop.id, allyRight.id, allyFar.id]), JSON.stringify(unionMarks));
 await shot('21-union-highlight');
 await clickInPlace(ux, uy + 1);
 const chain = await playChain();
 const foeAfter = (await mapUnits()).find((u) => u.id === uFoe.id).morale;
 const carried = chain.every((b, i) => i === 0 || b.defenderMorale === chain[i - 1].defenderMorale - (chain[i - 1].rules.winner === 'attacker' ? chain[i - 1].rules.damage : 0));
 const last = chain[chain.length - 1];
-check('union: the attack plays one battle per member, in the Union\'s order, labelled UNION 1 / 3 to 3 / 3',
-  chain.length === 3 && chain.map((b) => b.attacker).join() === unionMarks.ids.join() && chain.map((b) => `${b.chain.index + 1}/${b.chain.count}`).join() === '1/3,2/3,3/3', JSON.stringify(chain.map((b) => [b.attacker, b.chain])));
+check('union: the attack plays one battle per member, in the Union\'s order, labelled UNION 1 / 4 to 4 / 4',
+  chain.length === 4 && chain.map((b) => b.attacker).join() === unionMarks.ids.join() && chain.map((b) => `${b.chain.index + 1}/${b.chain.count}`).join() === '1/4,2/4,3/4,4/4', JSON.stringify(chain.map((b) => [b.attacker, b.chain])));
 check('union: the foe carries its Morale losses from one battle to the next, and the board shows the end of the chain',
   carried && foeAfter === last.defenderMorale - (last.rules.winner === 'attacker' ? last.rules.damage : 0), JSON.stringify({ morale: chain.map((b) => [b.defenderMorale, b.rules.winner, b.rules.damage]), foeAfter }));
 // Next turn, against a foe on its last Morale: the chain stops at the first battle that fells it.
@@ -962,7 +984,6 @@ const kAriaId = kStart.find((u) => u.name === 'Aria').id;
 const kFoes = kStart.filter((u) => u.side === 'enemy');
 const kHand = (await handNow()).cards.map((c) => c.id);
 const skillNow = () => page.evaluate(() => window.__battle.skill());
-const unitNow = async (id) => (await mapUnits()).find((u) => u.id === id);
 /** On the player's turn: plays card `id`, stands `hero` (Aria by default) alone beside `foe` with `gauge`, and attacks; resolves with the battle up. */
 const skillBattle = async (id, gauge, foe, hero = kAriaId) => {
   await untilPlayerTurn();
@@ -1011,7 +1032,8 @@ const k2After = await skillNow();
 await finishBattle();
 check("skills: a card whose ACE the unit can't wield neither holds nor fires, the guide says what it needs, and the gauge stays full",
   k2.state === 'ace' && !k2.held && k2After.fired === null && (await unitNow(kAriaId)).gauge === 100, JSON.stringify({ k2, k2After }));
-// Turn 3, Steady Line as a Union attack: Aria (full) saves her gauge with Space; her two allies are charging.
+// Turn 3, Steady Line as a Union attack: Aria (full) saves her gauge with Space. The Union hands it
+// down the chain (2026-11-08), so each ally, on 40 of its own, opens full too and saves it the same way.
 await untilPlayerTurn();
 await clickCard(kHand.indexOf('steady-line'));
 const [kx, ky] = await standUnion(9000);
@@ -1025,7 +1047,7 @@ for (let i = 0; i < 3; i++) {
   await frames(6);
   const s = await skillNow();
   k3.push({ ...s, attacker: await page.evaluate(() => window.__battle.attacker) });
-  // The leader's battle holds for the choice: Space fights on, the skill kept (still ready to fire).
+  // A full gauge holds the battle for the choice: Space fights on, the skill kept (still ready to fire).
   if (s.state === 'ready') {
     await page.keyboard.press('Space');
     await frames(3);
@@ -1035,9 +1057,10 @@ for (let i = 0; i < 3; i++) {
   await leaveBattle();
 }
 await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
-check('skills: Space at the opening fights on with the skill kept (still READY, the gauge full), and a unit whose gauge isn\'t full fights on, charging',
-  k3[0].state === 'ready' && k3[0].choosing && k3[0].after?.state === 'ready' && !k3[0].after.choosing && !k3[0].after.held && k3[0].fired === null && (await unitNow(kAriaId)).gauge === 100 &&
-  k3.slice(1).every((b) => b.state === 'charging' && !b.choosing && (!b.held || (b.foeFired && b.cutIn.on))), JSON.stringify(k3));
+const k3Gauges = { aria: (await unitNow(kAriaId)).gauge, top: (await unitNow(allyTop.id)).gauge, right: (await unitNow(allyRight.id)).gauge };
+check('skills: Space at the opening fights on with the skill kept (still READY, the gauge full); the Union hands the full gauge down, so each ally opens full and holds for its choice too',
+  k3.every((b) => b.state === 'ready' && b.choosing && b.after?.state === 'ready' && !b.after.choosing && b.fired === null && b.opened === 100) &&
+  k3Gauges.aria === 0 && k3Gauges.top === 0 && k3Gauges.right === 100, JSON.stringify({ k3, k3Gauges }));
 // Turn 4, King's Wager: All In fills every ally's gauge as it is played.
 await untilPlayerTurn();
 for (const u of (await mapUnits()).filter((u) => u.side === 'player')) await page.evaluate((id) => window.__map.setUnit(id, { gauge: 0 }), u.id);
@@ -1087,13 +1110,40 @@ await page.waitForFunction(() => !window.__battle.skill().held, { timeout: 15000
 // The battle's next beat: the blast, whatever the phase.
 await page.waitForFunction((b) => window.__battle.skill().played > b, { timeout: 20000 }, m2.played).catch(() => {});
 const mFx = await page.evaluate(() => window.__battle.fx());
-check('skills mid-battle: a gauge below full opens charging with no hold; Passive charges it from 80 to READY mid-battle',
-  m0.state === 'charging' && !m0.held && mStance.attacker === 'passive' && m1.state === 'ready' && !m1.held && !m1.choosing && m1.played >= 1,
+check('skills mid-battle: a gauge below full opens charging with no hold; from 80, READY lights within the first beat (shown full while it plays, before the next is decided)',
+  m0.state === 'charging' && !m0.held && mStance.attacker === 'passive' && m1.state === 'ready' && !m1.held && !m1.choosing && m1.played === 1,
   JSON.stringify({ m0, mStance, m1 }));
 check("skills mid-battle: K fires it there, with its cut-in; the gauge shows empty, and the late Firestorm says it acts at once and blasts",
   m2.fired === 'firestorm' && m2.firedBeat >= 1 && m2.cutIn.on && m2.gauge.player === 0 && /at once/.test(m1.late ?? '') && mFx.skillShows > 0,
   JSON.stringify({ m1, m2, mFx }));
 await finishBattle();
+// A Union of Aria (40), the ally above her (20) and the one to her right (0), on Long Road: each
+// member's battle opens on the gauge the one before ended on, added to its own (at most full).
+await untilPlayerTurn();
+await clickCard((await handNow()).cards.findIndex((c) => c.id === 'long-road'));
+const [gx, gy] = await standUnion(9000);
+for (const [id, g] of [[aria.id, 40], [allyTop.id, 20], [allyRight.id, 0], [uFoe.id, 0]]) await page.evaluate((id, g) => window.__map.setUnit(id, { gauge: g }), id, g);
+await clickTile(gx, gy);
+await clickInPlace(gx, gy + 1);
+const g3 = [];
+for (let i = 0; i < 3; i++) {
+  const next = await page.waitForFunction((i) => (window.__map.battling() && window.__battle?.chain?.index === i ? 'battle' : !window.__map.battling() ? 'done' : null), { timeout: 30000 }, i);
+  if ((await next.jsonValue()) === 'done') break;
+  await frames(4);
+  const opened = (await skillNow()).opened;
+  // Played out (a full gauge's hold, or a foe's cut-in, each taking a press), its gauge read in the rules at the end.
+  for (let n = 0; n < 8 && !(await page.evaluate(() => !!window.__battle?.result?.())); n++) {
+    await page.keyboard.press('Space');
+    await frames(4);
+  }
+  const s = await skillNow();
+  g3.push({ opened, ended: s.rulesGauge, fired: s.fired });
+  await leaveBattle();
+}
+await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
+const own = [40, 20, 0];
+check("union gauge: each member's battle opens on the gauge the one before ended on, added to its own (at most full)",
+  g3.length >= 2 && g3[0].opened === 40 && g3.every((b, i) => i === 0 || b.opened === Math.min(100, g3[i - 1].ended + own[i])), JSON.stringify(g3));
 check('skills mid-battle: no console errors', errors.length === 0, errors.join(' | '));
 
 // ---- The foes' AI and the end (B7) ---------------------------------------------------------------

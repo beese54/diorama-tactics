@@ -240,6 +240,14 @@
       "image": "b8-skill-mid-battle/ready-mid-battle.jpg",
       "title": "B8 · Fire a skill mid-battle; the stance charges the gauge",
       "note": "The stance now drives the SKILL bar, beat by beat: Passive +40, Neutral +20, Aggressive -20. When it fills mid-battle, READY lights with a K FIRE button and the skill acts from the next beat; a volley skill fired after the charge makes a volley of its own. Defenders fire too, with the card their side played last."
+    },
+    {
+      "id": "b8-union-gauge",
+      "date": "2026-11-08",
+      "commit": "next",
+      "image": "b8-union-gauge/union-two-tiles.jpg",
+      "title": "B8 · A Union reaches two tiles; its skill gauge is handed down the chain; READY in time",
+      "note": "A woman's + and a man's x now reach two tiles (up to 9 battles). Each member's battle opens on the gauge the one before ended on, added to its own. The bar shows a beat's charge over the beat's first half, so READY lights while the next beat can still be changed: from an empty bar on Passive, a skill can be fired in 60% of battles, up from 17%."
     }
   ]
 }

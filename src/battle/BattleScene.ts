@@ -325,6 +325,7 @@ export class BattleScene {
         /**
          * The card skill: the guide's state, whether the clock holds (for the choice, or a cut-in),
          * the skill the player fired and the foes', when (in beats), each side's gauge as shown,
+         * the player's gauge as the battle opened and in the rules now (the beats played so far),
          * and the cut-in.
          */
         skill: () => {
@@ -334,6 +335,7 @@ export class BattleScene {
             state: this.guide?.state ?? null, held: this.held !== null, choosing: this.choosing, late: this.guide?.late ?? null,
             fired: this.fired[this.player]?.skill ?? null, firedBeat: this.fired[this.player]?.beat ?? null, foeFired: this.fired[foe]?.skill ?? null,
             gauge: { player: director.gauge(this.player, t), foe: director.gauge(foe, t) }, played: this.sim.played, phase: this.sim.phase,
+            opened: (this.player === 'attacker' ? this.setup.attacker : this.setup.defender).gauge, rulesGauge: this.sim.gauge(this.player),
             cutIn: CutIn.state(),
           };
         },

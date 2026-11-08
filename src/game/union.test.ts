@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveClash, soldiersFor, type ClashSetup } from './clash';
-import { canAttack, fightUnion, unionOf } from './union';
+import { canAttack, fightUnion, handOn, unionOf } from './union';
 import { applyDamage, CLASSES, freshTurn, isDefeated, makeUnit, triangleEdge, type Gender, type Side } from './units';
 
 const unit = (x: number, y: number, side: Side = 'player', gender: Gender = 'female') =>
@@ -10,6 +10,12 @@ const unit = (x: number, y: number, side: Side = 'player', gender: Gender = 'fem
 const block = (gender: Gender) => {
   const all = [];
   for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) all.push(unit(x, y, 'player', x === 1 && y === 1 ? gender : 'male'));
+  return all;
+};
+/** Units on every tile of a 5×5 block around (2, 2), the leader at index 12. */
+const wide = (gender: Gender) => {
+  const all = [];
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) all.push(unit(x, y, 'player', x === 2 && y === 2 ? gender : 'male'));
   return all;
 };
 
@@ -24,12 +30,24 @@ describe('unionOf', () => {
     expect(unionOf(all[4], all).map((u) => [u.x, u.y])).toEqual([[1, 1], [2, 0], [2, 2], [0, 2], [0, 0]]);
   });
 
-  it('takes only living allies, and never more than five', () => {
+  it('takes only living allies', () => {
     const all = block('female');
     all[1].side = 'enemy';
     all[3].morale = 0;
     expect(unionOf(all[4], all).map((u) => [u.x, u.y])).toEqual([[1, 1], [2, 1], [1, 2]]);
-    expect(unionOf(all[4], block('female')).length).toBe(5);
+  });
+
+  it("reaches two tiles out: a woman's + and a man's x, the near ring first, never more than nine", () => {
+    const her = wide('female');
+    expect(unionOf(her[12], her).map((u) => [u.x, u.y])).toEqual([[2, 2], [2, 1], [3, 2], [2, 3], [1, 2], [2, 0], [4, 2], [2, 4], [0, 2]]);
+    const him = wide('male');
+    expect(unionOf(him[12], him).map((u) => [u.x, u.y])).toEqual([[2, 2], [3, 1], [3, 3], [1, 3], [1, 1], [4, 0], [4, 4], [0, 4], [0, 0]]);
+  });
+
+  it('takes an ally two tiles out with nobody between, and nobody off its shape', () => {
+    const lead = unit(2, 2);
+    const far = unit(2, 0, 'player', 'male');
+    expect(unionOf(lead, [lead, far, unit(3, 0), unit(4, 3), unit(2, 5)])).toEqual([lead, far]);
   });
 
   it('stands alone with nobody on its shape', () => {
@@ -145,6 +163,56 @@ describe('fightUnion', () => {
     const fought = await fightUnion(members, foe, (a) => (a === members[0] ? { winner: 'defender', damage: 999 } : { winner: 'attacker', damage: 5 }));
     expect(fought.map((b) => b.attacker.id)).toEqual([members[0].id, members[2].id]);
     expect(members[0].morale).toBe(0);
+  });
+
+  it("hands the skill gauge down the chain: each member starts on the last one's added to its own", async () => {
+    const { members, foe } = scene();
+    foe.morale = foe.maxMorale = 10_000;
+    [members[0].gauge, members[1].gauge, members[2].gauge] = [0, 20, 30];
+    const startedOn: number[] = [];
+    // Each battle ends 40 up on what it started with (as a Passive battle might).
+    await fightUnion(members, foe, (a) => {
+      startedOn.push(a.gauge);
+      return { winner: 'attacker', damage: 1, gauges: { attacker: Math.min(100, a.gauge + 40), defender: 10 } };
+    });
+    // 0 -> 40, handed on: 40 + 20 = 60 -> 100, handed on: 100 + 30, at most 100.
+    expect(startedOn).toEqual([0, 60, 100]);
+    // Each gauge handed on is spent; the last to fight keeps what is left; the foe keeps its own.
+    expect(members.map((m) => m.gauge)).toEqual([0, 0, 100]);
+    expect(foe.gauge).toBe(10);
+  });
+
+  it('hands on an empty gauge after a skill fired, so the next starts on its own', async () => {
+    const { members, foe } = scene();
+    foe.morale = foe.maxMorale = 10_000;
+    [members[0].gauge, members[1].gauge] = [100, 30];
+    const startedOn: number[] = [];
+    await fightUnion(members.slice(0, 2), foe, (a) => {
+      startedOn.push(a.gauge);
+      return { winner: 'attacker', damage: 1, gauges: { attacker: a === members[0] ? 0 : a.gauge, defender: 0 } };
+    });
+    expect(startedOn).toEqual([100, 30]);
+  });
+
+  it('hands the gauge past a member who has fallen by its turn: that one keeps its own', async () => {
+    const { members, foe } = scene();
+    foe.morale = foe.maxMorale = 10_000;
+    [members[0].gauge, members[1].gauge, members[2].gauge] = [50, 70, 10];
+    members[1].morale = 0;
+    const startedOn: number[] = [];
+    await fightUnion(members, foe, (a) => {
+      startedOn.push(a.gauge);
+      return { winner: 'attacker', damage: 1, gauges: { attacker: a.gauge, defender: 0 } };
+    });
+    expect(startedOn).toEqual([50, 60]);
+    expect(members[1].gauge).toBe(70);
+  });
+
+  it("handOn adds the two gauges, at most full, and spends the giver's", () => {
+    const [a, b] = [unit(0, 0), unit(1, 0)];
+    [a.gauge, b.gauge] = [70, 50];
+    handOn(a, b);
+    expect([a.gauge, b.gauge]).toEqual([0, 100]);
   });
 
   it('replays exactly with the same seeds', async () => {

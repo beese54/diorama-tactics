@@ -347,20 +347,23 @@
     {
       "id": "B8-roster",
       "title": "All ten heroes hand-drawn at 20x26 in their battle costumes (heroArt.ts: Dela, Ilse, Varek, Sabine, Gorran, Petra, Ulric added), the default sprite set; idle and walk worked from each drawing (heroAnim.ts, 5 tests); painted portraits for all ten (public/portraits, $0.77 for eight, round $11.42 of the $12 cap); the crop set and ?portraits= removed; __map.aimAt aims at the middle of a figure; __map.unitSheet for review captures; check.mjs 169/169, identity 70/70",
-      "status": "review",
-      "commit": "08a9c7b"
+      "status": "done",
+      "commit": "08a9c7b",
+      "note": "Approved 2026-11-08: \"i'm okay with them\"."
     },
     {
       "id": "B8-deploy",
       "title": "The armies start a short march apart (the user's feedback that reaching the foes took too long): deploy places the enemy towards the middle of the board so every unit has a foe within START_REACH = 12 tiles' walk and none closer than START_GAP = 4; cards unchanged at the user's choice; deploy tests over 30 themes and 20 seeds; check.mjs 169/169",
-      "status": "review",
-      "commit": "1a70429"
+      "status": "done",
+      "commit": "1a70429",
+      "note": "Approved 2026-11-08: \"i'm okay with them\"."
     },
     {
       "id": "B8-full-strength",
       "title": "A squad brings its full soldiers to every battle whatever its Morale, one fewer for each battle already fought this turn (Unit.fought, markFought in fightUnion and the forecast, freshTurn at each turn's start); the AI's forecast counts a fallen unit as lost whole; tests updated (clash, script, union chain), the Hard-declines check now pairs Varek with Corin",
-      "status": "review",
-      "commit": "f9b73a8"
+      "status": "done",
+      "commit": "f9b73a8",
+      "note": "Approved 2026-11-08: \"i'm okay with them\"."
     },
     {
       "id": "B8-skills-r0",
@@ -383,8 +386,9 @@
     {
       "id": "B8-skill-ready",
       "title": "SKILL READY on the map: a gold sparkle by every full gauge (SkillMarks.ts), shining when the side's card in play can fire the skill, dim when it can't (skillMark in skills.ts); the unit window reads READY or SAVED; check.mjs checks held and ready marks",
-      "status": "review",
-      "commit": "08aa537"
+      "status": "done",
+      "commit": "08aa537",
+      "note": "Approved 2026-11-08: \"i'm okay with them\"."
     },
     {
       "id": "B8-move-cost",
@@ -403,8 +407,15 @@
     {
       "id": "B8-skill-mid-battle",
       "title": "Skills fire mid-battle: the stance drives the gauge (Passive +40, Neutral +20, Aggressive -20 a beat; STANCE_CHARGE in gauge.ts), READY lights with K FIRE whenever it is full (ClashSim.fire between beats, once a side), a late volley skill makes its own volley and a late Pike Wall turns a melee round, defenders fire with their side's last card (Skirmish.lastCard), the foes fire as soon as full; check.mjs checks mid-battle firing and defending",
+      "status": "done",
+      "commit": "3ef5faf",
+      "note": "Approved 2026-11-08: \"i'm okay with them\"."
+    },
+    {
+      "id": "B8-union-gauge",
+      "title": "A Union reaches two tiles (PLUS / CROSS in union.ts, up to 9 battles, the near ring first); its skill gauge is handed down the chain (handOn in fightUnion, also in the AI forecast); the bar shows each beat's charge over its first half (CHARGE_SHOWN in Director.ts) so READY lights while the next beat can still be changed; check.mjs checks the 2-tile Union, the handed-on gauge and READY in the first beat",
       "status": "review",
-      "commit": "3ef5faf"
+      "commit": "this one"
     }
   ],
   "backlog": [

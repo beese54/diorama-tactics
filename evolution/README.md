@@ -22,6 +22,23 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ## Battles
 
+### B8 a Union reaches two tiles; the gauge is handed down it; READY in time (for review)
+![Aria's Union on the map: allies one and two tiles out marked, the empty places of the + edged](battles/b8-union-gauge/union-two-tiles.jpg)
+
+| READY mid-beat, from 40 on Passive | Battle 2 opens on the handed-on gauge | Fired at once |
+|---|---|---|
+| ![](battles/b8-union-gauge/ready-mid-beat.jpg) | ![](battles/b8-union-gauge/handed-on.jpg) | ![](battles/b8-union-gauge/handed-on-fires.jpg) |
+
+- **What changed:**
+  - **READY in time** (`CHARGE_SHOWN` in `src/battle/Director.ts`): the bar now shows each beat's charge over the beat's first half, not all of it. It used to reach full only as the next beat was being decided, so a skill fired then acted two beats later, usually after the battle had ended. From an empty bar on Passive, battles with room to fire went from 17% to 60% (1440 battles measured); from 40, from 60% to 94%. The rules are unchanged.
+  - **A Union reaches two tiles** (`PLUS` and `CROSS` in `src/game/union.ts`): a woman's + and a man's x go two tiles out, the near ring fighting first, up to 9 battles. An ally two tiles out joins with nobody between. The map's Union marks, the AI's lining up and its forecast all follow.
+  - **The gauge is handed down the Union** (`handOn` in `fightUnion`): each member's battle opens on the gauge the one before ended on, added to its own (at most full); the giver's is spent on it, and the last to fight keeps what is left. A skill fired empties it, so the next starts on its own. The Hard AI's forecast hands it on the same way.
+- **Feedback:** "i do not see myself being able to use the skill function. also i want the union to spread out at least 2 grids so that we can have more battles in place. Also, i want the gauge to be cumulative. If the first character has the skill gauge set at 40, the next union battle, it should be 40 plus a little more, that way subsequent players can use the skill on opponents." The user chose the shapes stretched to two tiles, and the two gauges added.
+- **Decisions:**
+  - The card's ACE still decides who can fire (Aria's sword can't wield Swift Banner's lance skill); the Union's shared gauge lets the member who can fire it do so.
+  - The gauge moves rather than copies: a Union builds one gauge between its members, not one each.
+- **Learned:** the check that proved mid-battle firing started at 80, so it passed while a real game, starting empty, almost never allowed it. A feature is checked from the state the player actually starts in, and measured over many battles.
+
 ### B8 fire a skill mid-battle; the stance charges the gauge (for review)
 ![Mid-battle, Aria's SKILL bar full on Passive: READY and K Fire now in the guide](battles/b8-skill-mid-battle/ready-mid-battle.jpg)
 

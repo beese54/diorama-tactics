@@ -1,10 +1,10 @@
 import { tileStats } from '../map/terrain';
 import type { MapFile } from '../map/types';
 import { unused, type Card, type Hand } from './cards';
-import { resolveClash, type ClashSetup } from './clash';
+import { ClashSim, type ClashSetup } from './clash';
 import { isOpen, moveRange, pathTo, STEP_COST, stopsIn } from './movement';
 import { battleSkill, canFire } from './skills';
-import { unionOf, unionShape } from './union';
+import { handOn, unionOf, unionShape } from './union';
 import { applyDamage, markFought, type Side, type Unit } from './units';
 
 /**
@@ -57,17 +57,23 @@ export function forecast(map: MapFile, units: readonly Unit[], attacker: Unit, t
     const foe = copy.find((u) => u.id === target.id)!;
     const [before, members] = [foe.morale, unionOf(lead, copy)];
     const lost = members.reduce((sum, m) => sum + m.morale, 0);
-    // The same chain the battle plays (fightUnion), run here without waiting on a screen.
+    // The same chain the battle plays (fightUnion), run here without waiting on a screen: the
+    // gauge handed down it, and a member's skill fired when it starts full.
+    let last: Unit | null = null;
     for (const [i, m] of members.entries()) {
       if (foe.morale <= 0) break;
       if (m.morale <= 0) continue;
+      if (last) handOn(last, m);
       const skill = canFire(m, card) ? battleSkill(card) : null;
       const setup: ClashSetup = {
         attacker: m, defender: foe, pow: card.pow, seed: 7919 * (s + 1) + i * 104729,
         attackerDefense: defenceAt(map, m), defenderDefense: defenceAt(map, foe), ...(skill ? { fire: { attacker: skill } } : {}),
       };
-      const { winner, damage } = resolveClash(setup);
-      applyDamage(winner === 'attacker' ? foe : m, damage);
+      const sim = new ClashSim(setup);
+      sim.run();
+      [m.gauge, foe.gauge] = [sim.gauge('attacker'), sim.gauge('defender')];
+      last = m;
+      applyDamage(sim.winner === 'attacker' ? foe : m, sim.damage);
       markFought(m, foe);
     }
     // A unit that falls is lost whole, not just the Morale it had left: since a battle starts at full

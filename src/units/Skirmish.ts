@@ -386,12 +386,10 @@ export class Skirmish {
     this.panel.show(null);
     if (members.length > 1) this.host.say(`${unit.name}'s Union attacks: ${members.length} battles.`);
     const before = foe.morale;
-    const battles = await fightUnion(members, foe, async (attacker, index) => {
-      const out = await this.host.battle(this.setupFor(attacker, foe), { chain: { index, count: members.length }, cards: this.battleCards(attacker, foe) });
-      // Each fighter carries its skill gauge on from the battle (spent, if its skill fired).
-      if (out.gauges) [attacker.gauge, foe.gauge] = [out.gauges.attacker, out.gauges.defender];
-      return out;
-    });
+    // Each fighter carries its skill gauge on from the battle (spent, if its skill fired), and the
+    // Union hands its gauge down the chain (fightUnion).
+    const battles = await fightUnion(members, foe, (attacker, index) =>
+      this.host.battle(this.setupFor(attacker, foe), { chain: { index, count: members.length }, cards: this.battleCards(attacker, foe) }));
     for (const b of battles) {
       this.layer.setRested(b.attacker, true);
       this.battles++;

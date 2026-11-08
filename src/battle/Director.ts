@@ -23,6 +23,8 @@ type BodyAct = Extract<Timed, { who: Who }>;
 export const LEAD = 1;
 /** How long the battle holds still where a fired skill's blow lands: the hit-stop. */
 export const HIT_STOP = 0.14;
+/** The share of each beat the skill gauge's charge is shown over, from the beat's start. */
+export const CHARGE_SHOWN = 0.5;
 /** At rest, breathing. */
 const IDLE: Beat[] = [{ pose: 'stance', seconds: 1.6, breathe: true }];
 /** The win, held once it is played. */
@@ -90,8 +92,8 @@ export class Director {
   private readonly advances: Record<ClashSide, Extract<Timed, { kind: 'advance' }>[]> = { attacker: [], defender: [] };
   private readonly fell = new Map<string, number>();
   /**
-   * Each side's skill gauge over the battle, a stretch at a time: across each beat it runs evenly
-   * from what it was to what the beat's stance made it (charging or draining), and a skill fired
+   * Each side's skill gauge over the battle, a stretch at a time: across each beat's first half
+   * (CHARGE_SHOWN) it runs evenly from what it was to what the beat's stance made it (charging or draining), and a skill fired
    * empties it from that moment. The latest stretch begun by a moment is the one shown.
    */
   private readonly charge: Record<ClashSide, { start: number; end: number; from: number; to: number }[]> = { attacker: [], defender: [] };
@@ -143,8 +145,11 @@ export class Director {
     const from = { attacker: this.sim.gauge('attacker'), defender: this.sim.gauge('defender') };
     const events = this.sim.step();
     const take = this.script.beat(events);
+    // The beat's charge shows over its first half (2026-11-08): a bar that fills shows full while
+    // the beat still plays and the next is not yet decided, so a skill fired then acts in the next
+    // beat. Shown over the whole beat, it filled only as the next beat was decided, too late.
     for (const side of ['attacker', 'defender'] as const) {
-      this.charge[side].push({ start: this.end, end: this.end + take.seconds, from: from[side], to: this.sim.gauge(side) });
+      this.charge[side].push({ start: this.end, end: this.end + take.seconds * CHARGE_SHOWN, from: from[side], to: this.sim.gauge(side) });
     }
     // A blow a skill shaped holds the battle still a moment (not the firing itself: its cut-in has played).
     for (const [i, e] of events.entries()) if (e.kind !== 'skill' && 'skill' in e && e.skill) this.stops.push(this.end + take.times[i]);
