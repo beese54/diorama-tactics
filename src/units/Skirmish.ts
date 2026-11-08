@@ -365,6 +365,8 @@ export class Skirmish {
     const members = unionOf(unit, this.units);
     this.select(null);
     this.fighting = true;
+    // The map stops drawing under a battle: its unit window goes now, not left over the battle.
+    this.panel.show(null);
     if (members.length > 1) this.host.say(`${unit.name}'s Union attacks: ${members.length} battles.`);
     const before = foe.morale;
     const battles = await fightUnion(members, foe, async (attacker, index) => {
@@ -499,8 +501,9 @@ export class Skirmish {
   update(elapsed: number, dt: number, camera: THREE.Camera): void {
     this.layer.update(elapsed, dt, camera);
     this.marks.update(elapsed);
-    const pointed = this.unitAt(this.hovered);
-    const shown = pointed ?? this.selected;
+    // In a battle the map's windows stand down: nothing pointed at, nothing shown.
+    const pointed = this.fighting ? undefined : this.unitAt(this.hovered);
+    const shown = this.fighting ? undefined : pointed ?? this.selected;
     this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id), shown ? unionOf(shown, this.units).length : 1, shown ? this.markOf(shown) : null);
     // Pointed at, the box floats beside the unit's head, clear of the tucked hand; else it keeps its corner.
     // While CONFIRM / UNDO shows beside the mover, the window keeps to its corner, clear of it.

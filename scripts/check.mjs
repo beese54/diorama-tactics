@@ -787,6 +787,15 @@ const { canvas: bc } = fight;
 check('attack: the battle opens over the board at full resolution, and the board stops drawing',
   bc.w === Math.round(bc.cssW * bc.dpr) && bc.h === Math.round(bc.cssH * bc.dpr) && bc.cssW === 1920 && bc.cssH === 1080 && drawnLater === fight.drawn,
   JSON.stringify({ ...fight, drawnLater }));
+// The foe was under the pointer as it was clicked: its unit window must not stay over the battle.
+const overBattle = await page.evaluate(() => {
+  const el = document.getElementById('unit-info');
+  const r = el.getBoundingClientRect();
+  const shown = !el.hidden && getComputedStyle(el).display !== 'none' && r.width > 0;
+  return { shown, z: { battle: getComputedStyle(document.getElementById('battle')).zIndex, hud: getComputedStyle(document.getElementById('battle-hud')).zIndex } };
+});
+check("attack: the map's unit window is gone in the battle, and the battle stands above every map window",
+  !overBattle.shown && Number(overBattle.z.battle) >= 20 && Number(overBattle.z.hud) > Number(overBattle.z.battle), JSON.stringify(overBattle));
 await shot('15-attack-battle');
 // Whether coming back from the battle passed the turn to the foes is watched from inside the page:
 // holding their ground, their turn lasts only as long as their card shows.
