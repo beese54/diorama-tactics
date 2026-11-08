@@ -389,6 +389,13 @@
     {
       "id": "B8-move-cost",
       "title": "What a move costs: rough ground striped in the reach (roughStopsIn, the rough mark), the path's cost and what the shared pool keeps by its last tile (PathCost.ts), the tile box reads COST; costs and the shared pool kept (the user's choice); check.mjs checks the stripes and the label",
+      "status": "done",
+      "commit": "36273a2",
+      "note": "Superseded 2026-11-08 by B8-undo-move: the user still read MOV as tiles, and chose 1 MOV = 1 tile."
+    },
+    {
+      "id": "B8-undo-move",
+      "title": "1 MOV = 1 tile (STEP_COST in movement.ts, the AI's travel field too; stripes and the tile box's COST gone, DEF or BLOCKED instead), and CONFIRM / UNDO after the player's walk (MoveConfirm.ts, undoMove in turn.ts; Z/X, Enter keeps; a click on a red foe keeps and attacks); check.mjs checks the box, UNDO's refund and CONFIRM",
       "status": "review",
       "commit": "this one"
     }

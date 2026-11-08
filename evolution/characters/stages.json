@@ -76,10 +76,18 @@
     {
       "id": "b8-move-cost",
       "date": "2026-11-07",
-      "commit": "next",
+      "commit": "36273a2",
       "image": "b8-move-cost/move-cost.jpg",
       "title": "B8 · What a move costs",
       "note": "A card's MOV is a budget the ground spends, and now the map says so: rough ground in the reach is striped, the path's last tile reads '-10 MOV · 0 LEFT', and the tile box's MOV is now COST."
+    },
+    {
+      "id": "b8-undo-move",
+      "date": "2026-11-08",
+      "commit": "next",
+      "image": "b8-undo-move/confirm.jpg",
+      "title": "B8 · 1 MOV = 1 tile, and CONFIRM / UNDO after a move",
+      "note": "Every open tile now costs 1 MOV, so an 11-MOV card walks 11 tiles (Aria reached 7 from the meadow's corner before). After a walk, CONFIRM and UNDO show by the unit: UNDO walks it back and refunds the MOV."
     }
   ]
 }

@@ -286,7 +286,7 @@ await page.evaluate((r) => window.__map.setPose(45, 60, 2.5, r.x, r.y), roof);
 await new Promise((r) => setTimeout(r, 300));
 const onRoof = await hoverAt(roof.x, roof.y);
 const roofPanel = await page.evaluate(() => document.querySelector('#tile-info')?.textContent ?? '');
-check('world: a village rooftop can be picked, and the panel names it', onRoof?.x === roof.x && onRoof?.y === roof.y && /Roof/.test(roofPanel) && roofPanel.includes(`HT ${roof.height}`) && !roofPanel.includes('COST --'), JSON.stringify({ roof, onRoof, roofPanel }));
+check('world: a village rooftop can be picked, and the panel names it', onRoof?.x === roof.x && onRoof?.y === roof.y && /Roof/.test(roofPanel) && roofPanel.includes(`HT ${roof.height}`) && !roofPanel.includes('BLOCKED'), JSON.stringify({ roof, onRoof, roofPanel }));
 await shot('08-world-village');
 await page.mouse.move(0, 0);
 await bridgeCheck('market', 'Wooden Bridge');
@@ -514,7 +514,6 @@ await clickCard(0);
 await clickTile(mover.x, mover.y);
 const marks = await page.evaluate(() => ({ selected: window.__map.selected(), marked: window.__map.marked() }));
 check('skirmish: a click selects the unit and marks exactly its range', marks.selected === mover.id && marks.marked.reach > 1 && marks.marked.reach === marks.marked.rules, JSON.stringify(marks));
-check('skirmish: rough ground in the range (a step costing more than 1 MOV) is striped: exactly the rough stops of the rules', marks.marked.rough === marks.marked.roughRules, JSON.stringify(marks.marked));
 await shot('12-skirmish-select');
 const reach = await page.evaluate(() => window.__map.reachable());
 // With nothing selected there is nowhere to go: aim at the unit's own tile, so the walk check
@@ -527,14 +526,49 @@ const goalAim = await page.evaluate((x, y) => window.__map.aimAt(x, y), goal[0],
 await page.mouse.move(goalAim.x, goalAim.y);
 await frames(3);
 const costLabel = await page.evaluate(() => window.__map.pathCost());
-await clickTile(goal[0], goal[1]);
-await page.waitForFunction(() => !window.__map.busy(), { timeout: 20000 });
-const after = await page.evaluate(() => ({ units: window.__map.units(), turn: window.__map.turn() }));
+const pathTiles = await page.evaluate(() => window.__map.marked().path);
+// The walk waits on CONFIRM or UNDO beside the mover.
+const walkTo = async () => {
+  await clickTile(goal[0], goal[1]);
+  await page.waitForFunction(() => !window.__map.busy() && !!window.__map.pendingMove(), { timeout: 20000 }).catch(() => {});
+  return page.evaluate(() => ({ units: window.__map.units(), turn: window.__map.turn(), pending: window.__map.pendingMove() }));
+};
+const walked = await walkTo();
+const there = walked.units.find((u) => u.id === mover.id);
+check('skirmish: a click on a marked tile walks there and spends the pool, then CONFIRM and UNDO show by the unit',
+  there.x === goal[0] && there.y === goal[1] && walked.turn.pool < walked.turn.card.mov && walked.pending?.id === mover.id && !!walked.pending?.aims,
+  JSON.stringify({ goal, there, turn: walked.turn, pending: walked.pending }));
+await shot('13-skirmish-confirm');
+const spent = walked.turn.card.mov - walked.turn.pool;
+check('skirmish: every tile costs 1 MOV: the path preview says the tiles walked and what is left, and the walk spends exactly that',
+  costLabel === `-${spent} MOV${walked.turn.pool} LEFT` && spent === pathTiles - 1, JSON.stringify({ costLabel, spent, pathTiles, pool: walked.turn.pool }));
+// UNDO walks it back: the MOV comes back, it may move again, and it is selected with its reach.
+const undoAt = walked.pending?.aims?.undo;
+if (undoAt) await page.mouse.click(undoAt.x, undoAt.y);
+await page.waitForFunction(() => !window.__map.busy() && !window.__map.pendingMove() && window.__map.selected(), { timeout: 20000 }).catch(() => {});
+const undone = await page.evaluate(() => ({ units: window.__map.units(), turn: window.__map.turn(), selected: window.__map.selected(), marked: window.__map.marked() }));
+const wentBack = undone.units.find((u) => u.id === mover.id);
+check('skirmish: UNDO walks the unit back, refunds the MOV, and shows its reach again',
+  wentBack.x === mover.x && wentBack.y === mover.y && undone.turn.pool === undone.turn.card.mov && undone.turn.moved.length === 0 && undone.selected === mover.id && undone.marked.reach === undone.marked.rules && undone.marked.reach > 1,
+  JSON.stringify({ wentBack, from: [mover.x, mover.y], turn: undone.turn, selected: undone.selected, marked: undone.marked }));
+// Again, and CONFIRM keeps it, once the camera has eased back over the unit (else the aim lands
+// on a tile the moving camera has since slid away from).
+for (let i = 0, last = null; i < 60; i++) {
+  const m = JSON.stringify((await page.evaluate(() => window.__map.camera())).matrix);
+  if (m === last) break;
+  last = m;
+  await frames(5);
+}
+const walkedAgain = await walkTo();
+const confirmAt = walkedAgain.pending?.aims?.confirm;
+if (confirmAt) await page.mouse.click(confirmAt.x, confirmAt.y);
+await frames(2);
+const after = await page.evaluate(() => ({ units: window.__map.units(), turn: window.__map.turn(), pending: window.__map.pendingMove() }));
 const moved = after.units.find((u) => u.id === mover.id);
-check('skirmish: a click on a marked tile walks there and spends the pool', moved.x === goal[0] && moved.y === goal[1] && after.turn.pool < after.turn.card.mov && after.turn.moved.includes(mover.id), JSON.stringify({ goal, moved, turn: after.turn }));
+check('skirmish: CONFIRM keeps the move: the box goes, the unit stays and has moved',
+  moved.x === goal[0] && moved.y === goal[1] && after.pending === null && after.turn.moved.includes(mover.id) && after.turn.pool === walked.turn.pool,
+  JSON.stringify({ goal, moved, turn: after.turn, pending: after.pending }));
 await shot('13-skirmish-moved');
-const spent = after.turn.card.mov - after.turn.pool;
-check('skirmish: the path preview says what the move costs and what is left, and the walk spends exactly that', costLabel === `-${spent} MOV${after.turn.pool} LEFT`, JSON.stringify({ costLabel, spent, pool: after.turn.pool }));
 await clickTile(moved.x, moved.y);
 check('skirmish: a unit that has moved gets no range', (await page.evaluate(() => window.__map.marked().reach)) === 0);
 await page.keyboard.press('KeyX');

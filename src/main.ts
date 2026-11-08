@@ -376,7 +376,8 @@ async function main(): Promise<void> {
     if (!skirmish) return;
     if (skirmish.key(e.code)) return e.preventDefault();
     if (e.code === 'KeyC') skirmish.toggleHand();
-    if (e.code === 'KeyZ') skirmish.click(keyTile ?? hovered);
+    // Z keeps a move waiting on CONFIRM, or else clicks the tile under the cursor.
+    if (e.code === 'KeyZ' && !skirmish.confirm()) skirmish.click(keyTile ?? hovered);
     if (e.code === 'KeyX') skirmish.cancel();
     if (e.code === 'Enter') skirmish.endTurn();
     const arrow = ({ ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] } as Record<string, [number, number]>)[e.code];
@@ -628,6 +629,8 @@ async function main(): Promise<void> {
         allIn: () => skirmish?.allInPlaying ?? 0,
         /** The path preview's cost label ("-7 MOV 3 LEFT"), or null. */
         pathCost: () => skirmish?.pathCostText ?? null,
+        /** The move waiting on CONFIRM or UNDO: the unit, its cost, and the buttons' centres on the page; or null. */
+        pendingMove: () => skirmish?.pendingMove ?? null,
         /** The SKILL READY marks on the map now, by kind. */
         skillMarks: () => skirmish?.skillMarksShown ?? null,
         turn: () => skirmish && { side: skirmish.turn.side, number: skirmish.turn.number, card: skirmish.turn.card, pool: skirmish.turn.pool, moved: [...skirmish.turn.moved], attacked: skirmish.turn.attacked },

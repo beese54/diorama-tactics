@@ -1,26 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { tileStats } from '../map/terrain';
 import { THEMES } from '../themes';
 import { mulberry32 } from '../util/rng';
-import { isOpen, isRough, moveRange, pathTo, roughStopsIn, stopsIn } from './movement';
+import { isOpen, moveRange, pathTo, STEP_COST, stopsIn } from './movement';
 import { board } from './testBoard';
 import { makeUnit, type Side } from './units';
 
 const unit = (x: number, y: number, side: Side = 'player', id = `${side}${x},${y}`) =>
   makeUnit({ id, name: id, side, cls: 'sword', gender: 'female', x, y });
-
-describe('rough ground', () => {
-  it('is any tile costing more than 1 MOV, and the reach lists the stops on it', () => {
-    const map = board(Array(5).fill('.....'));
-    const rough = map.tiles.find((t) => t.x === 3 && t.y === 2)!;
-    rough.terrain = 'hills';
-    expect(isRough(rough)).toBe(true);
-    expect(isRough(map.tiles[0])).toBe(false);
-    const me = unit(2, 2);
-    const range = moveRange(map, [me], me, 3);
-    expect(roughStopsIn(map, range)).toEqual([2 * 5 + 3]);
-  });
-});
 
 describe('moveRange', () => {
   it('reaches a diamond on open plains, the start included', () => {
@@ -31,14 +17,21 @@ describe('moveRange', () => {
     for (const [i, step] of range) expect(step.cost).toBe(Math.abs((i % 7) - 3) + Math.abs(Math.floor(i / 7) - 3));
   });
 
-  it('charges each tile its move cost, and a path costs what its tiles add up to', () => {
-    const map = board(['.ffm.']);
+  it('charges 1 MOV a tile whatever the ground: woods, mountain and swamp cost what plains do', () => {
+    const map = board(['.ffms.']);
     const me = unit(0, 0);
-    const range = moveRange(map, [me], me, 7);
-    expect(range.get(1)!.cost).toBe(2);
-    expect(range.get(3)!.cost).toBe(7);
-    expect(range.has(4)).toBe(false);
-    expect(pathTo(range, 3)).toEqual([0, 1, 2, 3]);
+    const range = moveRange(map, [me], me, 4);
+    expect([1, 2, 3, 4].map((i) => range.get(i)!.cost)).toEqual([1, 2, 3, 4]);
+    expect(range.has(5)).toBe(false);
+    expect(pathTo(range, 4)).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('walks a card of MOV 11 eleven tiles through rough ground', () => {
+    const map = board(['fffssssmmmmm.']);
+    const me = unit(0, 0);
+    const range = moveRange(map, [me], me, 11);
+    expect(Math.max(...stopsIn(range))).toBe(11);
+    expect(pathTo(range, 11)).toHaveLength(12);
   });
 
   it('never enters impassable ground or a blocking prop', () => {
@@ -91,7 +84,7 @@ describe('moveRange', () => {
         for (const i of path.slice(1)) {
           expect(isOpen(map.tiles[i])).toBe(true);
           expect(units.some((u) => u.side !== mover.side && u.y * map.width + u.x === i)).toBe(false);
-          cost += tileStats(map.tiles[i]).moveCost;
+          cost += STEP_COST;
         }
         expect(cost).toBe(range.get(end)!.cost);
         expect(cost).toBeLessThanOrEqual(12);

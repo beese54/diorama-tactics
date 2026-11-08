@@ -10,7 +10,7 @@ const SEGMENTS = 4;
  * it would take, the foes it can attack, and its Union: violet under the allies on its shape, and a
  * faint violet edge on the shape's empty places, where an ally would join.
  */
-export type MarkKind = 'reach' | 'foe' | 'path' | 'target' | 'union' | 'shape' | 'rough';
+export type MarkKind = 'reach' | 'foe' | 'path' | 'target' | 'union' | 'shape';
 const STYLE: Record<MarkKind, { fill: string; edge: string; opacity: number }> = {
   reach: { fill: 'rgba(90, 160, 255, 0.42)', edge: '#cfe6ff', opacity: 0.85 },
   foe: { fill: 'rgba(255, 96, 80, 0.4)', edge: '#ffd0c8', opacity: 0.85 },
@@ -19,8 +19,6 @@ const STYLE: Record<MarkKind, { fill: string; edge: string; opacity: number }> =
   // Violet, a hue no other mark uses: the path is yellow, the reach blue and the foes red.
   union: { fill: 'rgba(176, 108, 255, 0.6)', edge: '#f0e2ff', opacity: 1 },
   shape: { fill: 'rgba(176, 108, 255, 0.12)', edge: '#d6b4ff', opacity: 0.85 },
-  // Over the reach: stripes where a step costs more than 1 MOV (woods, hills, sand, water...).
-  rough: { fill: 'rgba(16, 36, 110, 0.5)', edge: 'rgba(0, 0, 0, 0)', opacity: 1 },
 };
 
 function markTexture(kind: MarkKind): THREE.CanvasTexture {
@@ -28,10 +26,7 @@ function markTexture(kind: MarkKind): THREE.CanvasTexture {
   canvas.width = canvas.height = TILE_PX;
   const ctx = canvas.getContext('2d')!;
   ctx.fillStyle = STYLE[kind].fill;
-  if (kind === 'rough') {
-    // Diagonal stripes, a pixel wide, every fourth pixel: dense enough to read at the map's scale.
-    for (let y = 1; y < TILE_PX - 1; y++) for (let x = 1; x < TILE_PX - 1; x++) if ((x + y) % 4 === 0) ctx.fillRect(x, y, 1, 1);
-  } else ctx.fillRect(1, 1, TILE_PX - 2, TILE_PX - 2);
+  ctx.fillRect(1, 1, TILE_PX - 2, TILE_PX - 2);
   ctx.strokeStyle = STYLE[kind].edge;
   ctx.lineWidth = 1;
   ctx.strokeRect(1.5, 1.5, TILE_PX - 3, TILE_PX - 3);
@@ -65,7 +60,7 @@ export class RangeLayer {
       return mesh;
     };
     this.meshes = {
-      reach: make('reach', 0), foe: make('foe', 0), rough: make('rough', 0.5), path: make('path', 1), target: make('target', 1), union: make('union', 1), shape: make('shape', 0),
+      reach: make('reach', 0), foe: make('foe', 0), path: make('path', 1), target: make('target', 1), union: make('union', 1), shape: make('shape', 0),
     };
   }
 

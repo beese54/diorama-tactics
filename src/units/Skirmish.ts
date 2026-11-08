@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import type { ClashSetup, ClashSide } from '../game/clash';
 import { deploy } from '../game/deploy';
-import { moveRange, pathTo, roughStopsIn, stopsIn, type Step } from '../game/movement';
+import { moveRange, pathTo, stopsIn, type Step } from '../game/movement';
 import { deal, refill, unused, type Card, type Hand } from '../game/cards';
-import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from '../game/turn';
+import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, undoMove, type TurnState } from '../game/turn';
 import { planTurn, type Difficulty } from '../game/ai';
 import { outcome, stats, type Outcome, type Stats } from '../game/end';
 import { onPlay, skillMark, type SkillMark } from '../game/skills';
@@ -14,6 +14,7 @@ import { tileStats } from '../map/terrain';
 import { tileAt, type MapFile, type Tile } from '../map/types';
 import { AllInFx } from '../ui/AllInFx';
 import { CardHand } from '../ui/CardHand';
+import { MoveConfirm } from '../ui/MoveConfirm';
 import { PathCost } from '../ui/PathCost';
 import { SkillMarks } from '../ui/SkillMarks';
 import { fx } from '../ui/transitions';
@@ -54,7 +55,8 @@ export interface SkirmishHost {
  * A skirmish on one board: both sides deployed, each with a hand of cards. A turn opens on the
  * hand: the card played sets the MOV pool the side's units share and the POW of its battle (C
  * shows the hand again; X takes the card back until a unit moves). Then click (or Z) a unit to
- * select it and see where it can go; click a blue tile to walk there.
+ * select it and see where it can go; click a blue tile to walk there, then CONFIRM (Z) the move
+ * or UNDO (X) it, which walks the unit back and refunds its MOV.
  * A foe on the next tile is marked in bold red: click it to attack, which opens the battle
  * over the board, and the loser's Morale drops when the player comes back (at 0 it leaves the
  * field). The battle ends the turn, as Enter does at any time. An enemy shows its reach in red;
@@ -79,6 +81,10 @@ export class Skirmish {
   private readonly allIn: AllInFx;
   private readonly skillMarks: SkillMarks;
   private readonly pathCost: PathCost;
+  /** CONFIRM / UNDO beside a unit that has just walked (B8). */
+  private readonly confirmBox: MoveConfirm;
+  /** The player's move waiting on CONFIRM or UNDO: who, the tiles walked (start first), and the MOV it spent. */
+  private pending: { unit: Unit; path: number[]; cost: number } | null = null;
   /** The tile the previewed path ends on, for its cost label. */
   private pathEnd: Tile | null = null;
   private hovered: Tile | null = null;
@@ -110,6 +116,7 @@ export class Skirmish {
     this.allIn = new AllInFx(ui);
     this.skillMarks = new SkillMarks(ui);
     this.pathCost = new PathCost(ui);
+    this.confirmBox = new MoveConfirm(ui, () => this.confirm(), () => this.undo());
     this.begin(this.turn);
     this.cards.prefetchFoes(this.hands.enemy.cards);
   }
@@ -234,7 +241,6 @@ export class Skirmish {
     this.selected = unit;
     this.range = null;
     this.marks.mark('reach', []);
-    this.marks.mark('rough', []);
     this.marks.mark('foe', []);
     this.marks.mark('path', []);
     this.pathEnd = null;
@@ -248,8 +254,6 @@ export class Skirmish {
     if (canMove(this.turn, unit)) {
       this.range = moveRange(this.map, this.units, unit, this.turn.pool);
       this.marks.mark('reach', tiles(this.range));
-      // Stripes where a step costs more than 1 MOV: the reach is a budget the ground spends.
-      this.marks.mark('rough', roughStopsIn(this.map, this.range).map((i) => this.map.tiles[i]));
     } else if (unit.side !== this.turn.side) {
       // How far a foe could come on its longest card.
       this.marks.mark('foe', tiles(moveRange(this.map, this.units, unit, this.reach(unit.side))));
@@ -270,19 +274,31 @@ export class Skirmish {
   click(tile: Tile | null): void {
     if (this.busy || this.cards.open) return;
     const unit = this.unitAt(tile);
+    // While the move waits on CONFIRM or UNDO, the board waits too; a click on a foe marked red
+    // beside the mover keeps the move and attacks.
+    if (this.pending) {
+      const mover = this.pending.unit;
+      if (unit && canAttack(this.turn, mover, unit) && this.confirm()) void this.attack(mover, unit);
+      return;
+    }
     const mover = this.selected;
     if (mover && unit && canAttack(this.turn, mover, unit)) {
       void this.attack(mover, unit);
       return;
     }
     if (mover && this.range && tile && this.range.get(this.index(tile))?.stop && !(tile.x === mover.x && tile.y === mover.y)) {
+      const pool = this.turn.pool;
       const path = moveUnit(this.turn, this.map, this.units, mover, this.index(tile));
       if (path) {
         this.select(null);
-        // Arrived next to a foe, it stays selected, ready to attack.
+        // Arrived, the move waits on CONFIRM or UNDO, with any foe it could attack from there marked.
+        const cost = pool - this.turn.pool;
         this.layer.walk(mover, path, () => {
-          this.layer.setRested(mover, true);
-          if (this.targets(mover).length) this.select(mover);
+          // The camera eases over to it, so the box opens clear of the screen's edges and windows.
+          this.host.focus(this.host.surfacePoint(this.tileOf(mover), 0.5, 0.5));
+          this.pending = { unit: mover, path, cost };
+          this.marks.mark('target', this.targets(mover).map((foe) => this.tileOf(foe)));
+          this.confirmBox.show(true);
         });
         return;
       }
@@ -290,6 +306,41 @@ export class Skirmish {
     const next = unit && unit !== mover ? unit : null;
     if (next && next.side === 'player' && !this.turn.card) this.host.say('Play a card first: C opens the hand.');
     this.select(next);
+  }
+
+  /**
+   * CONFIRM (or Z): keeps the move waiting on the box. The unit rests; next to a foe it stays
+   * selected, ready to attack. Returns whether there was a move to keep.
+   */
+  confirm(): boolean {
+    const m = this.pending;
+    if (!m || this.busy) return false;
+    this.pending = null;
+    this.confirmBox.show(false);
+    this.layer.setRested(m.unit, true);
+    this.select(this.targets(m.unit).length ? m.unit : null);
+    return true;
+  }
+
+  /**
+   * UNDO (or X): takes back the move waiting on the box. The unit walks back to where it stood,
+   * the pool gets its MOV back, and the unit is selected again with its reach. Returns whether
+   * there was a move to take back.
+   */
+  undo(): boolean {
+    const m = this.pending;
+    if (!m || this.busy || !undoMove(this.turn, this.map, m.unit, m.path[0], m.cost)) return false;
+    this.pending = null;
+    this.confirmBox.show(false);
+    this.marks.mark('target', []);
+    this.layer.walk(m.unit, [...m.path].reverse(), () => this.select(m.unit));
+    this.host.say(`${m.unit.name} goes back: ${this.turn.pool} MOV left.`);
+    return true;
+  }
+
+  /** The unit whose move waits on CONFIRM or UNDO, and the box's buttons on the page (for checks). */
+  get pendingMove(): { id: string; cost: number; aims: ReturnType<MoveConfirm['aims']> } | null {
+    return this.pending && { id: this.pending.unit.id, cost: this.pending.cost, aims: this.confirmBox.aims() };
   }
 
   /**
@@ -359,22 +410,24 @@ export class Skirmish {
     };
   }
 
-  /** X: puts the hand away, or lets go of the selected unit, or takes the card back into the hand before anyone has moved. */
+  /** X: puts the hand away, or takes back the move waiting on UNDO, or lets go of the selected unit, or takes the card back into the hand before anyone has moved. */
   cancel(): void {
     if (this.busy) return;
     if (this.cards.open) {
       if (this.turn.card && takeBack(this.turn, this.hands.player)) this.cards.show(this.hands.player, null, false);
       else this.cards.hide();
-    } else if (this.selected) this.select(null);
+    } else if (this.undo()) return;
+    else if (this.selected) this.select(null);
     else if (takeBack(this.turn, this.hands.player)) {
       this.cards.show(this.hands.player, null, false);
       this.host.say('The card goes back into the hand.');
     }
   }
 
-  /** Enter: ends the player's turn. */
+  /** Enter: ends the player's turn, keeping any move still waiting on CONFIRM. */
   endTurn(): void {
     if (this.busy) return;
+    this.confirm();
     this.passTurn();
   }
 
@@ -450,7 +503,8 @@ export class Skirmish {
     const shown = pointed ?? this.selected;
     this.panel.show(shown ?? null, !!shown && shown.side === this.turn.side && this.turn.moved.has(shown.id), shown ? unionOf(shown, this.units).length : 1, shown ? this.markOf(shown) : null);
     // Pointed at, the box floats beside the unit's head, clear of the tucked hand; else it keeps its corner.
-    const head = pointed && this.layer.headAt(pointed, camera);
+    // While CONFIRM / UNDO shows beside the mover, the window keeps to its corner, clear of it.
+    const head = pointed && !this.pending && this.layer.headAt(pointed, camera);
     const [w, h] = [this.ui.clientWidth, this.ui.clientHeight];
     this.panel.place(head ? { x: ((head.x + 1) / 2) * w, y: ((1 - head.y) / 2) * h } : null, { w: Math.min(w, innerWidth), h: Math.min(h, innerHeight) }, this.cards.open ? innerHeight * 0.13 : 0, innerHeight / 270 * 12);
     // All In's bursts stay on their units as the camera moves.
@@ -460,6 +514,8 @@ export class Skirmish {
       return top && feet ? { head: css(top), feet: css(feet) } : null;
     });
     this.pathCost.place(this.pathEnd ? css(this.host.surfacePoint(this.pathEnd, 0.5, 0.5).project(camera)) : null);
+    const moverHead = this.pending && this.layer.headAt(this.pending.unit, camera);
+    this.confirmBox.place(moverHead ? css(moverHead) : null);
     // SKILL READY: a sparkle by each full gauge's head; held back while All In's burst plays.
     this.skillMarks.show(this.units, (u) => this.markOf(u), (u) => {
       const top = this.layer.headAt(u, camera);
@@ -490,13 +546,12 @@ export class Skirmish {
   }
 
   /** Counts for checks: tiles marked, and the rules' own count for the selected unit. */
-  marked(): { reach: number; rough: number; foe: number; path: number; target: number; union: number; shape: number; rules: number; roughRules: number } {
+  marked(): { reach: number; foe: number; path: number; target: number; union: number; shape: number; rules: number } {
     const s = this.selected;
     return {
-      reach: this.marks.count('reach'), rough: this.marks.count('rough'), foe: this.marks.count('foe'), path: this.marks.count('path'), target: this.marks.count('target'),
+      reach: this.marks.count('reach'), foe: this.marks.count('foe'), path: this.marks.count('path'), target: this.marks.count('target'),
       union: this.marks.count('union'), shape: this.marks.count('shape'),
       rules: s && canMove(this.turn, s) ? stopsIn(moveRange(this.map, this.units, s, this.turn.pool)).length : 0,
-      roughRules: s && canMove(this.turn, s) ? roughStopsIn(this.map, moveRange(this.map, this.units, s, this.turn.pool)).length : 0,
     };
   }
 
@@ -505,6 +560,7 @@ export class Skirmish {
     this.panel.show(null);
     document.getElementById('unit-info')?.remove();
     document.getElementById('turn-info')?.remove();
+    this.confirmBox.remove();
     this.cards.dispose();
     this.ui.classList.remove('choosing');
   }

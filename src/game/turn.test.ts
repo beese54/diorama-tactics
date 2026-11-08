@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CARDS, type Card, type Hand } from './cards';
 import { moveRange } from './movement';
 import { board } from './testBoard';
-import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, type TurnState } from './turn';
+import { attackWith, canAttack, canMove, moveUnit, nextTurn, playCard, startTurn, takeBack, undoMove, type TurnState } from './turn';
 import { makeUnit } from './units';
 
 const setup = () => {
@@ -71,9 +71,10 @@ describe('turns', () => {
   it('spends the path cost from the shared pool and moves the unit', () => {
     const { map, a, units } = setup();
     const turn = played('player', 12);
-    const path = moveUnit(turn, map, units, a, 1 * 6 + 2);
-    expect(path).toEqual([0, 1, 2, 8]);
-    expect(turn.pool).toBe(12 - 4);
+    const path = moveUnit(turn, map, units, a, 1 * 6 + 2)!;
+    // Three tiles, the last of them forest: 1 MOV each.
+    expect([path[0], path.at(-1), path.length]).toEqual([0, 8, 4]);
+    expect(turn.pool).toBe(12 - 3);
     expect([a.x, a.y]).toEqual([2, 1]);
   });
 
@@ -87,6 +88,33 @@ describe('turns', () => {
     expect(moveRange(map, units, b, turn.pool).has(2 * 6 + 2)).toBe(false);
     expect(moveUnit(turn, map, units, b, 2 * 6 + 1)).not.toBeNull();
     expect(turn.pool).toBe(0);
+  });
+
+  it('takes a move back: the unit returns, the pool is refunded, and it may move again', () => {
+    const { map, a, b, units } = setup();
+    const turn = played('player', 6);
+    const path = moveUnit(turn, map, units, a, 5)!;
+    expect(turn.pool).toBe(1);
+    expect(undoMove(turn, map, a, path[0], path.length - 1)).toBe(true);
+    expect([a.x, a.y, turn.pool, canMove(turn, a)]).toEqual([0, 0, 6, true]);
+    // Nothing moved now: the card may be swapped again.
+    expect(turn.moved.size).toBe(0);
+    expect(takeBack(turn, handOf(6))).toBe(true);
+    // A unit that hasn't moved has nothing to take back.
+    const again = played('player', 6);
+    expect(undoMove(again, map, b, 0, 3)).toBe(false);
+    expect(again.pool).toBe(6);
+  });
+
+  it("keeps a move once the side has fought, and on the other side's turn", () => {
+    const { map, a, foe, units } = setup();
+    const turn = played('player', 12);
+    moveUnit(turn, map, units, a, 2 * 6 + 4);
+    expect(attackWith(turn, a, foe)).toBe(true);
+    expect(undoMove(turn, map, a, 0, 6)).toBe(false);
+    expect([a.x, a.y]).toEqual([4, 2]);
+    const theirs = played('enemy', 12);
+    expect(undoMove(theirs, map, a, 0, 6)).toBe(false);
   });
 
   it('refuses moves out of range, onto units, on the other side\'s turn, or standing still', () => {

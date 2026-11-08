@@ -15,15 +15,19 @@ export interface Step {
 
 const EDGES = [[0, -1], [1, 0], [0, 1], [-1, 0]] as const;
 
+/** What entering any open tile spends from the MOV pool. */
+export const STEP_COST = 1;
+
 /** Whether anyone can stand on the tile at all: not impassable ground, nor a blocking prop such as a fountain or a statue. */
 export function isOpen(tile: Tile): boolean {
   return tileStats(tile).moveCost < IMPASSABLE && !(tile.prop && PROPS[tile.prop].blocks);
 }
 
 /**
- * Every tile `mover` can reach with `pool` MOV to spend, keyed by tile index. Entering a tile
- * costs its move cost; height never matters (the maps are built so every open tile can be
- * walked to). Enemies bar the way; allies can be passed through but not stopped on, so their
+ * Every tile `mover` can reach with `pool` MOV to spend, keyed by tile index. Every open tile
+ * costs 1 MOV to enter, whatever the ground (B8, the user's rule: a card's MOV is how many tiles
+ * its side walks; rough ground keeps only its defence); height never matters (the maps are built
+ * so every open tile can be walked to). Enemies bar the way; allies can be passed through but not stopped on, so their
  * tiles come back with `stop: false`. The start tile is included at cost 0.
  */
 export function moveRange(map: MapFile, units: readonly Unit[], mover: Unit, pool: number): Map<number, Step> {
@@ -45,7 +49,7 @@ export function moveRange(map: MapFile, units: readonly Unit[], mover: Unit, poo
       const tile = map.tiles[next];
       const other = at.get(next);
       if (!isOpen(tile) || (other && other.side !== mover.side)) continue;
-      const total = cost + tileStats(tile).moveCost;
+      const total = cost + STEP_COST;
       if (total > pool || total >= (best.get(next)?.cost ?? Infinity)) continue;
       if (!best.has(next)) open.push(next);
       best.set(next, { cost: total, from: here, stop: !at.has(next) });
@@ -56,12 +60,6 @@ export function moveRange(map: MapFile, units: readonly Unit[], mover: Unit, poo
 
 /** The tiles the mover may end its move on. */
 export const stopsIn = (range: Map<number, Step>): number[] => [...range].filter(([, s]) => s.stop).map(([i]) => i);
-
-/** Rough ground: what costs more than 1 MOV a tile (woods, hills, sand, snow, scree, water...). */
-export const isRough = (tile: Tile): boolean => tileStats(tile).moveCost > 1;
-
-/** The stops in `range` on rough ground, so the reach can show where a step costs more. */
-export const roughStopsIn = (map: MapFile, range: Map<number, Step>): number[] => stopsIn(range).filter((i) => isRough(map.tiles[i]));
 
 /** The tiles walked from the start to `index` (both included), or [] if the mover can't end there. */
 export function pathTo(range: Map<number, Step>, index: number): number[] {

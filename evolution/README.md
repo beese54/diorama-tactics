@@ -802,7 +802,24 @@ MP4s: [Dela's charge and defeat](battles/b2-roster/dela/dela.mp4) · [Ilse's cha
 
 ## Characters
 
-### B8 What a move costs (for review)
+### B8 1 MOV = 1 tile, and CONFIRM / UNDO after a move (for review)
+![Aria has walked 11 tiles on an 11-MOV card; CONFIRM and UNDO wait beside her](characters/b8-undo-move/confirm.jpg)
+
+| 11 MOV, 11 tiles | The box | After UNDO |
+|---|---|---|
+| ![](characters/b8-undo-move/reach-11.jpg) | ![](characters/b8-undo-move/confirm-close.jpg) | ![](characters/b8-undo-move/undone.jpg) |
+
+- **What changed:**
+  - **Every open tile costs 1 MOV**, whatever the ground: woods, hills, swamp and mountain cost what plains do, so a card's MOV is how many tiles its side walks (`moveRange` and `STEP_COST` in `src/game/movement.ts`; the foes' AI plans the same way). Ground keeps its defence. The stripes on rough ground are gone, and the tile box shows DEF, or BLOCKED where no one can stand. The pool is still shared by the side, so the path's label "-11 MOV / 0 LEFT" stays.
+  - **CONFIRM / UNDO after a walk:** a small box beside the unit that has just walked (`src/ui/MoveConfirm.ts`), the camera easing over to it. CONFIRM (or Z) keeps the move; next to a foe, the unit stays selected to attack, and a click on a foe marked red keeps the move and attacks at once. UNDO (or X) walks the unit back, gives the MOV back and shows its reach again (`undoMove` in `src/game/turn.ts`). Enter keeps the move and ends the turn. With every move undone, the card can be swapped again.
+- **Feedback:** "after i moved the character, i wanted to move it back, is there a way to undo it and have a confirmed move button? so that i can confirm or undo. I still am lost, the moves should 11 but i dont see my character being able to move 11 grids, why?" Measured: on the meadow the five start in a corner, the map's edge to the east and south, swamp (3 a tile) to the west and woods (2) to the north; on MOV 11 the best any could do was 7 tiles. The user chose "1 MOV = 1 tile" and the confirm box.
+- **Decisions:**
+  - Terrain moves no one more slowly now; it still matters in battle through its defence.
+  - The box waits: nothing else on the board takes a click until CONFIRM or UNDO, except a foe the mover could attack from there.
+  - Only the player's moves ask; the foes' don't.
+- **Learned:** when a rule keeps surprising the player after it has been explained on screen, the rule is the problem, not the screen. Measure what the player actually saw (here, the start corner) before answering.
+
+### B8 What a move costs (superseded 2026-11-08 by 1 MOV = 1 tile)
 ![Aria's reach on the meadow: rough ground striped, and the path across the hills reading -10 MOV, 0 LEFT](characters/b8-move-cost/move-cost.jpg)
 
 | The path's cost | The tile box |

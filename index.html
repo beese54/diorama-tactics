@@ -110,6 +110,40 @@
         white-space: nowrap;
       }
       #path-cost[hidden] { display: none; }
+      /* After a walk (B8): CONFIRM keeps the move, UNDO walks it back; beside the mover's head. */
+      #move-confirm {
+        position: absolute;
+        transform: translate(calc(var(--px) * 12), -50%);
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--px) * 2);
+        padding: calc(var(--px) * 2);
+        background: linear-gradient(#34488a, #18224d);
+        border: var(--px) solid #c9d4f0;
+        border-radius: calc(var(--px) * 2);
+        box-shadow: 0 0 0 var(--px) #0a0f24;
+        pointer-events: auto;
+        white-space: nowrap;
+      }
+      #move-confirm[hidden] { display: none; }
+      #move-confirm button {
+        cursor: pointer;
+        font: inherit;
+        color: #eef2ff;
+        text-shadow: inherit;
+        text-align: left;
+        padding: 0 calc(var(--px) * 4) 0 calc(var(--px) * 2);
+        background: #22306a;
+        border: var(--px) solid #8fa0d8;
+        border-radius: var(--px);
+      }
+      #move-confirm button b {
+        font-weight: normal;
+        color: #ffd660;
+        margin-right: calc(var(--px) * 3);
+      }
+      #move-confirm .undo b { color: #ffb0a0; }
+      #move-confirm button:hover { background: #3a4f9a; border-color: #fff4c4; }
       #path-cost b { font-weight: normal; color: #ffd660; }
       #path-cost span { color: #cfe6ff; }
       /* SKILL READY (B8): a gold sparkle by the head of each unit whose gauge is full; dim when the card in play can't fire it. */

@@ -69,6 +69,21 @@ export function moveUnit(turn: TurnState, map: MapFile, units: readonly Unit[], 
 }
 
 /**
+ * Takes back `unit`'s move this turn (B8, the map's UNDO): it goes back to the tile at `from`,
+ * the pool gets back the `cost` the move spent, and the unit may move again. Not once the side
+ * has fought its battle, nor for a unit that hasn't moved. With every move taken back, the card
+ * can be swapped again. Returns whether it may.
+ */
+export function undoMove(turn: TurnState, map: MapFile, unit: Unit, from: number, cost: number): boolean {
+  if (unit.side !== turn.side || turn.attacked || !turn.moved.has(unit.id)) return false;
+  turn.pool += cost;
+  turn.moved.delete(unit.id);
+  unit.x = from % map.width;
+  unit.y = Math.floor(from / map.width);
+  return true;
+}
+
+/**
  * Whether `unit` may attack `foe` now: its side's turn, a card played, both standing, on tiles
  * side by side, and the side hasn't fought yet this turn. A unit may move and then attack.
  */

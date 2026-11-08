@@ -2,7 +2,7 @@ import { tileStats } from '../map/terrain';
 import type { MapFile } from '../map/types';
 import { unused, type Card, type Hand } from './cards';
 import { resolveClash, type ClashSetup } from './clash';
-import { isOpen, moveRange, pathTo, stopsIn } from './movement';
+import { isOpen, moveRange, pathTo, STEP_COST, stopsIn } from './movement';
 import { battleSkill, canFire } from './skills';
 import { unionOf, unionShape } from './union';
 import { applyDamage, markFought, type Side, type Unit } from './units';
@@ -105,7 +105,7 @@ export function travelField(map: MapFile, targets: readonly Unit[]): Float64Arra
       if (x < 0 || y < 0 || x >= map.width || y >= map.height) continue;
       const next = y * map.width + x;
       if (!isOpen(map.tiles[next])) continue;
-      const cost = field[here] + tileStats(map.tiles[next]).moveCost;
+      const cost = field[here] + STEP_COST;
       if (cost < field[next]) {
         if (field[next] === Infinity) open.push(next);
         field[next] = cost;

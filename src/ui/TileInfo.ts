@@ -35,9 +35,9 @@ export class TileInfo {
     // Cover standing on the tile; its defence is already in DEF.
     this.cover.textContent = stats.cover ?? '';
     this.cover.hidden = !stats.cover;
-    const move = stats.moveCost === IMPASSABLE ? '--' : String(stats.moveCost);
     const sign = stats.defense > 0 ? '+' : '';
-    // What a step onto the tile spends from the card's MOV (rough ground costs more than 1).
-    this.stats.textContent = `COST ${move}  DEF ${sign}${stats.defense}%`;
+    // Every open tile costs 1 MOV (B8), so the box gives only what the ground does for a fight,
+    // or that no one can stand there.
+    this.stats.textContent = stats.moveCost === IMPASSABLE ? 'BLOCKED' : `DEF ${sign}${stats.defense}%`;
   }
 }
