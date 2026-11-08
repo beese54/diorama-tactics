@@ -377,7 +377,7 @@
     {
       "id": "B8-weapon-symbols",
       "title": "Weapon symbols: each battle banner carries its weapon's medallion in the type's colour (weaponIcon.ts), tagged STRONG or WEAK by the triangle; the map's unit window shows it before the class; check.mjs checks the badges",
-      "status": "review",
+      "status": "done",
       "commit": "38ca246"
     },
     {

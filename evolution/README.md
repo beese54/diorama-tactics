@@ -22,7 +22,7 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ## Battles
 
-### B8 skill animations r1: every skill (approved 2026-11-07), and the weapon symbols (for review)
+### B8 skill animations r1: every skill (approved 2026-11-07), and the weapon symbols (approved 2026-11-08)
 ![All eleven battle skills at their fullest, and the banners with their weapon symbols](battles/b8-skills/r1/all-skills.jpg)
 
 | Pike Wall | Parry | Executioner |
