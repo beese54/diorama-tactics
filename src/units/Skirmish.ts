@@ -40,12 +40,13 @@ export interface SkirmishHost {
   /**
    * Plays a battle over the board; resolves with how it came out once the player goes on from it.
    * `chain`: which battle of a Union attack this is, counting from 0, and how many the Union has.
-   * `card`: the attacking side's card in play, whose skill its unit may fire (B6). The outcome
-   * carries each side's skill gauge as the battle ended.
+   * `cards`: each side's card, whose skill its unit may fire (B6; defenders too since 2026-11-08):
+   * the attacker's in play, the defender's the last its side played. The outcome carries each
+   * side's skill gauge as the battle ended.
    */
   battle: (
     setup: ClashSetup,
-    options?: { chain?: { index: number; count: number }; card?: Card | null },
+    options?: { chain?: { index: number; count: number }; cards?: Record<ClashSide, Card | null> },
   ) => Promise<{ winner: ClashSide; damage: number; gauges?: Record<ClashSide, number> }>;
   /** The skirmish is over (B7): every foe fallen, or every ally. */
   end: (result: Outcome, stats: Stats) => void;
@@ -68,6 +69,8 @@ export class Skirmish {
   readonly group = new THREE.Group();
   readonly units: Unit[];
   turn: TurnState = startTurn('player', 1);
+  /** The card each side played on its last turn: a unit defending fires its skill (2026-11-08). */
+  private readonly lastCard: Record<Side, Card | null> = { player: null, enemy: null };
   /** Each side's cards for the skirmish. */
   readonly hands: Record<Side, Hand>;
   selected: Unit | null = null;
@@ -125,6 +128,12 @@ export class Skirmish {
    * Opens `turn`: the side's hand comes back once it is all played. The player's opens on the
    * hand; the foes' plays itself out (`foesTurn`).
    */
+  /** The next turn, the card of the one ending kept as its side's last. */
+  private nextTurn(): TurnState {
+    if (this.turn.card) this.lastCard[this.turn.side] = this.turn.card;
+    return nextTurn(this.turn);
+  }
+
   private begin(turn: TurnState): TurnState {
     // The turn banner (B8): whose turn it is, sweeping across the board.
     if (fx.banners) TurnBanner.show(turn.side, turn.number);
@@ -159,9 +168,17 @@ export class Skirmish {
     audio.play('cutin');
   }
 
-  /** A unit's SKILL READY mark: judged by the card its side has in play this turn (none on the other side's turn). */
+  /**
+   * A unit's SKILL READY mark: judged by the card its side has in play this turn, or, on the other
+   * side's turn, the card its side played last, whose skill it would fire defending.
+   */
   private markOf(unit: Unit): SkillMark | null {
-    return skillMark(unit, unit.side === this.turn.side ? this.turn.card : null);
+    return skillMark(unit, unit.side === this.turn.side ? this.turn.card : this.lastCard[unit.side]);
+  }
+
+  /** The card behind each side of a battle: the attacker's in play, the defender's the last its side played. */
+  private battleCards(attacker: Unit, foe: Unit): Record<ClashSide, Card | null> {
+    return { attacker: attacker.side === this.turn.side ? this.turn.card : this.lastCard[attacker.side], defender: this.lastCard[foe.side] };
   }
 
   /** The path's cost label, as shown, or null (for checks). */
@@ -370,7 +387,7 @@ export class Skirmish {
     if (members.length > 1) this.host.say(`${unit.name}'s Union attacks: ${members.length} battles.`);
     const before = foe.morale;
     const battles = await fightUnion(members, foe, async (attacker, index) => {
-      const out = await this.host.battle(this.setupFor(attacker, foe), { chain: { index, count: members.length }, card: this.turn.card });
+      const out = await this.host.battle(this.setupFor(attacker, foe), { chain: { index, count: members.length }, cards: this.battleCards(attacker, foe) });
       // Each fighter carries its skill gauge on from the battle (spent, if its skill fired).
       if (out.gauges) [attacker.gauge, foe.gauge] = [out.gauges.attacker, out.gauges.defender];
       return out;
@@ -437,7 +454,7 @@ export class Skirmish {
   private passTurn(): void {
     this.select(null);
     this.cards.hide();
-    this.turn = this.begin(nextTurn(this.turn));
+    this.turn = this.begin(this.nextTurn());
     void this.foesTurn();
   }
 
@@ -481,7 +498,7 @@ export class Skirmish {
 
   /** The foes' turn is over: the next turn opens on the player's hand. */
   private handBack(): void {
-    this.turn = this.begin(nextTurn(this.turn));
+    this.turn = this.begin(this.nextTurn());
     for (const u of this.units) this.layer.setRested(u, false);
     this.host.say(`Turn ${this.turn.number}: play a card.`);
   }

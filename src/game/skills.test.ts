@@ -62,7 +62,7 @@ describe('skillMark: the marker over a unit on the map', () => {
 });
 
 describe('the gauge', () => {
-  it('carries in from the unit, fills from what lands, and empties when a skill fires', () => {
+  it('carries in from the unit, charges by the stance, and empties when a skill fires', () => {
     const s = setup(7);
     s.attacker.gauge = 50;
     const sim = new ClashSim(s);
@@ -73,12 +73,34 @@ describe('the gauge', () => {
     expect(fired.gauge('attacker')).toBe(0);
   });
 
-  it('fires only before the first beat, and once a side', () => {
+  it('fires between any two beats until the battle is over, once a side, either side', () => {
     const sim = new ClashSim(setup(3));
-    expect(sim.fire('attacker', 'rend')).toBe(true);
-    expect(sim.fire('attacker', 'parry')).toBe(false);
     sim.step();
-    expect(sim.fire('defender', 'rend')).toBe(false);
+    sim.step();
+    expect(sim.fire('attacker', 'rend')).toBe(true);
+    expect(sim.gauge('attacker')).toBe(0);
+    expect(sim.fire('attacker', 'parry')).toBe(false);
+    expect(sim.fire('defender', 'hold-fast')).toBe(true);
+    // The next beat opens with both firings, for the scene's cut-ins.
+    expect(sim.step().filter((e) => e.kind === 'skill')).toEqual([
+      { kind: 'skill', side: 'attacker', skill: 'rend' },
+      { kind: 'skill', side: 'defender', skill: 'hold-fast' },
+    ]);
+    sim.run();
+    expect(sim.fire('attacker', 'rend')).toBe(false);
+  });
+
+  it('replays a skill fired mid-battle exactly, from the setup', () => {
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const live = new ClashSim(setup(seed));
+      const events = [...live.step(), ...live.step()];
+      if (live.phase === 'done') continue;
+      live.fire('attacker', 'rend');
+      events.push(...live.run());
+      const replay = resolveClash({ ...setup(seed), fire: { attacker: { skill: 'rend', beat: 2 } } });
+      expect(replay.events).toEqual(events);
+      expect(replay.damage).toBe(live.damage);
+    }
   });
 
   it('opens the battle with the skill, for the scene\'s cut-in', () => {
@@ -176,6 +198,77 @@ describe('each skill changes the battle as its card says', () => {
   it('replays exactly with the same seed and skill', () => {
     const once = () => resolveClash(setup(9, 'sword', 'axe', 'blade-dance'));
     expect(once()).toEqual(once());
+  });
+});
+
+describe('a skill fired after its moment acts at once (2026-11-08)', () => {
+  /** A battle played past its charge and counter, with `skill` fired by `side` then; the next beat's events. */
+  const late = (seed: number, a: ClassId, d: ClassId, side: 'attacker' | 'defender', skill: SkillId) => {
+    const sim = new ClashSim(setup(seed, a, d));
+    while (sim.phase !== 'melee' && sim.phase !== 'done') sim.step();
+    if (sim.phase === 'done' || !sim.fire(side, skill)) return null;
+    return { sim, events: sim.step() };
+  };
+
+  it('Lance Charge in the melee: a fresh charge, striking twice, opens the next beat', () => {
+    let seen = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const r = late(seed, 'knight', 'sword', 'attacker', 'lance-charge');
+      if (!r) continue;
+      const [fired, ...rest] = r.events;
+      expect(fired).toEqual({ kind: 'skill', side: 'attacker', skill: 'lance-charge' });
+      expect(rest.some((e) => e.kind === 'panic')).toBe(false);
+      // Its first pass can end the battle before the second.
+      if (r.sim.phase === 'done' && !rest.some((e) => e.kind === 'strike' && e.skill === 'lance-charge')) continue;
+      // Its strikes come before the melee's duels; the second pass carries the skill.
+      const firstDuel = rest.findIndex((e) => e.kind === 'duel');
+      const volley = strikes(firstDuel < 0 ? rest : rest.slice(0, firstDuel), 'attacker');
+      expect(volley.length).toBeGreaterThan(0);
+      expect(volley.some((e) => e.skill === 'lance-charge')).toBe(true);
+      seen++;
+    }
+    expect(seen).toBeGreaterThan(5);
+  });
+
+  it('Firestorm and Trample in the melee act on the next beat', () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const fire = late(seed, 'mage', 'sword', 'attacker', 'firestorm');
+      if (fire) expect(strikes(fire.events, 'attacker').some((e) => e.skill === 'firestorm')).toBe(true);
+      const trample = late(seed, 'knight', 'sword', 'attacker', 'trample');
+      if (trample) expect(strikes(trample.events, 'attacker').some((e) => e.skill === 'trample' && e.felled)).toBe(true);
+    }
+  });
+
+  it('a volley skill acts once: fired before the charge, the melee brings no second volley', () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const events = new ClashSim(setup(seed, 'knight', 'sword', 'lance-charge')).run();
+      const melee = events.findIndex((e) => e.kind === 'phase' && e.phase === 'melee');
+      if (melee < 0) continue;
+      expect(events.slice(melee).filter((e) => e.kind === 'strike' && e.skill === 'lance-charge')).toEqual([]);
+    }
+  });
+
+  it("Pike Wall in the melee: the foe's blows are turned for one round", () => {
+    let turned = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const r = late(seed, 'spear', 'sword', 'attacker', 'pike-wall');
+      if (!r) continue;
+      // That round, no duel is lost by the walled side; each would-be loss is a blow turned aside.
+      expect(r.events.some((e) => e.kind === 'duel' && e.winner === 'defender')).toBe(false);
+      turned += r.events.filter((e) => e.kind === 'strike' && e.skill === 'pike-wall' && !e.hit).length;
+      // The round after, the wall is down.
+      const next = r.sim.step();
+      expect(next.some((e) => e.kind === 'strike' && e.skill === 'pike-wall')).toBe(false);
+    }
+    expect(turned).toBeGreaterThan(0);
+  });
+
+  it('a defender fires too: its Firestorm blasts at its counter', () => {
+    const s = { ...setup(6, 'sword', 'mage'), fire: { defender: 'firestorm' as const } };
+    const sim = new ClashSim(s);
+    const events = sim.run();
+    expect(events[0]).toEqual({ kind: 'skill', side: 'defender', skill: 'firestorm' });
+    expect(strikes(events, 'defender').some((e) => e.skill === 'firestorm')).toBe(true);
   });
 });
 

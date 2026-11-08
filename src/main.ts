@@ -329,7 +329,7 @@ async function main(): Promise<void> {
         return new Promise((resolve) => {
           void BattleScene.open(setup, {
             chain: opts?.chain,
-            card: opts?.card,
+            cards: opts?.cards,
             onLeave: (outcome) => {
               // The battle left under the blade; between a Union's battles it stays down, so the
               // next opens behind it without a flicker of the board.

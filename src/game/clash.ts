@@ -1,5 +1,5 @@
 import { mulberry32 } from '../util/rng';
-import { fill } from './gauge';
+import { charge } from './gauge';
 import { applyDamage, CLASSES, markFought, triangleEdge, type Unit } from './units';
 
 /** The stance a side fights in, toggled during the battle: aggressive presses harder, passive holds back. */
@@ -27,7 +27,7 @@ export interface Squad {
   bonus: number;
   /** The skill it has fired this battle, if any. */
   skill: SkillId | null;
-  /** Its skill gauge: the unit's carried gauge at the start, filled by what it lands, emptied by firing. */
+  /** Its skill gauge: the unit's carried gauge at the start, charged or drained each beat by its stance, emptied by firing. */
   gauge: number;
   /** Blows at its leader a Parry has turned aside so far. */
   parried: number;
@@ -64,11 +64,16 @@ export interface ClashSetup {
   defenderStance?: Stance;
   attackerBonus?: number;
   defenderBonus?: number;
-  /** Skills fired before the battle, by side: as if `fire` were called before the first beat. */
-  fire?: Partial<Record<ClashSide, SkillId>>;
+  /**
+   * Skills fired, by side: a skill alone fires before the first beat; with `beat`, it fires once
+   * that many beats have been played (a skill fired mid-battle, for replaying a battle exactly).
+   */
+  fire?: Partial<Record<ClashSide, SkillId | { skill: SkillId; beat: number }>>;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+/** The skills that act in a side's volley (its charge, or its counter): fired too late for it, they make one of their own. */
+const VOLLEY_SKILLS: ReadonlySet<SkillId> = new Set(['lance-charge', 'volley', 'firestorm', 'trample']);
 const other = (side: ClashSide): ClashSide => (side === 'attacker' ? 'defender' : 'attacker');
 
 /**
@@ -132,9 +137,15 @@ export class ClashSim {
   damage = 0;
   private panic = false;
   private meleeBegun = false;
-  private begun = false;
-  /** Skills fired before the first beat, waiting to open its events. */
+  /** Beats played so far. */
+  private beats = 0;
+  /** Skills fired and waiting to open the next beat's events. */
   private readonly fired: ClashEvent[] = [];
+  /** Skills the setup fires once a number of beats have been played. */
+  private readonly scheduled: { side: ClashSide; skill: SkillId; beat: number }[] = [];
+  /** Whether each side's volley skill has had its volley, and whether its Pike Wall has turned the foe's blows. */
+  private readonly volleyUsed: Record<ClashSide, boolean> = { attacker: false, defender: false };
+  private readonly wallUsed: Record<ClashSide, boolean> = { attacker: false, defender: false };
   private readonly rand: () => number;
 
   constructor(s: ClashSetup) {
@@ -143,8 +154,9 @@ export class ClashSim {
     this.pow = s.pow;
     this.rand = mulberry32(s.seed);
     for (const side of ['attacker', 'defender'] as const) {
-      const skill = s.fire?.[side];
-      if (skill) this.fire(side, skill);
+      const f = s.fire?.[side];
+      if (typeof f === 'string') this.fire(side, f);
+      else if (f) this.scheduled.push({ side, ...f });
     }
   }
 
@@ -153,14 +165,18 @@ export class ClashSim {
   }
 
   /**
-   * Fires `skill` for `side`: only before the first beat, once a side. Its gauge empties (and
-   * fills again from what it lands), Forced March adds its edge at once, and the rest act as the
-   * battle reaches them. Returns whether it fired. Whether the side may fire it (a full gauge, the
-   * card's ACE) is the caller's to check: see `canFire` in skills.ts.
+   * Fires `skill` for `side`, between any two beats until the battle is over (the user's rule,
+   * 2026-11-08: a gauge that fills mid-battle can be fired), once a side a battle. Its gauge
+   * empties (and charges again by its stance), Forced March adds its edge at once, and the rest
+   * act from the next beat, as the battle reaches them. A skill fired after its moment has
+   * passed acts at once instead: a volley skill (Lance Charge, Volley, Firestorm, Trample) makes
+   * a volley of its own to open the next beat, and a Pike Wall with no foe's volley left to turn
+   * turns the foe's blows for one round of the melee. Returns whether it fired. Whether the side
+   * may fire it (a full gauge, the card's ACE) is the caller's to check: see `canFire` in skills.ts.
    */
   fire(side: ClashSide, skill: SkillId): boolean {
     const me = this.squad(side);
-    if (this.begun || me.skill) return false;
+    if (this.phase === 'done' || me.skill) return false;
     me.skill = skill;
     me.gauge = 0;
     if (skill === 'forced-march') me.bonus += 3;
@@ -173,47 +189,82 @@ export class ClashSim {
     return this.squad(side).gauge;
   }
 
+  /** Beats played so far: a skill fired now acts from the next one. */
+  get played(): number {
+    return this.beats;
+  }
+
+  /** Whether `skill`, fired by `side` now, comes after its moment and so acts at once instead (see `fire`). */
+  late(side: ClashSide, skill: SkillId): boolean {
+    if (VOLLEY_SKILLS.has(skill)) return !this.volleyAhead(side);
+    if (skill === 'pike-wall') return !this.volleyAhead(other(side));
+    return false;
+  }
+
   /** The side's effectiveness: the weapon triangle, its stance and any card bonus. */
   edge(side: ClashSide): number {
     const [me, them] = [this.squad(side), this.squad(other(side))];
     return triangleEdge(CLASSES[me.unit.cls].weapon, CLASSES[them.unit.cls].weapon) + STANCE_EDGE[me.stance] + me.bonus;
   }
 
+  /** Whether the defenders get their counter: not against a bow or from one (an archer shoots from afar), nor in a panic. */
+  private counters(): boolean {
+    const bow = CLASSES[this.attacker.unit.cls].weapon === 'bow' || CLASSES[this.defender.unit.cls].weapon === 'bow';
+    return !bow && !this.panic;
+  }
+
+  /** Whether `side`'s own volley is still to come this battle: the attacker's charge, the defender's counter. */
+  private volleyAhead(side: ClashSide): boolean {
+    if (side === 'attacker') return this.phase === 'charge';
+    return this.phase === 'charge' || (this.phase === 'counter' && this.counters());
+  }
+
   /** Plays the next beat and returns what happened in it; [] once the battle is over. */
   step(): ClashEvent[] {
-    const events: ClashEvent[] = this.phase === 'done' ? [] : this.fired.splice(0);
-    this.begun = true;
-    const before = events.length;
-    switch (this.phase) {
-      case 'charge':
-        events.push({ kind: 'phase', phase: 'charge' });
-        this.volley('attacker', events);
-        this.phase = 'counter';
-        break;
-      case 'counter': {
-        this.phase = 'melee';
-        // Bows shoot from afar: an archer can't counter, nor can anyone an archer attacks. Panic stops it too.
-        const bow = CLASSES[this.attacker.unit.cls].weapon === 'bow' || CLASSES[this.defender.unit.cls].weapon === 'bow';
-        if (bow || this.panic) return this.step();
-        events.push({ kind: 'phase', phase: 'counter' });
-        this.volley('defender', events);
-        break;
-      }
-      case 'melee':
-        if (!this.meleeBegun) events.push({ kind: 'phase', phase: 'melee' });
-        this.meleeBegun = true;
-        this.round(events);
-        break;
-      case 'done':
-        return [];
+    if (this.phase === 'done') return [];
+    for (const f of this.scheduled.filter((f) => f.beat === this.beats)) this.fire(f.side, f.skill);
+    const events: ClashEvent[] = this.fired.splice(0);
+    // A volley skill fired with its side's own volley gone by (or never to come) makes one now.
+    for (const side of ['attacker', 'defender'] as const) {
+      const skill = this.squad(side).skill;
+      if (skill && VOLLEY_SKILLS.has(skill) && !this.volleyUsed[side] && !this.volleyAhead(side)) this.volley(side, events);
     }
-    this.finishIfOver(events);
-    // Each side's gauge fills from what it landed this beat, at the stance it fought in.
+    if (!this.finishIfOver(events)) {
+      switch (this.phase) {
+        case 'charge':
+          events.push({ kind: 'phase', phase: 'charge' });
+          this.volley('attacker', events);
+          this.phase = 'counter';
+          break;
+        case 'counter':
+          this.phase = 'melee';
+          if (this.counters()) {
+            events.push({ kind: 'phase', phase: 'counter' });
+            this.volley('defender', events);
+          } else {
+            this.melee(events);
+          }
+          break;
+        case 'melee':
+          this.melee(events);
+          break;
+      }
+      this.finishIfOver(events);
+    }
+    // Each side's gauge charges or drains by the stance it fought the beat in.
     for (const side of ['attacker', 'defender'] as const) {
       const me = this.squad(side);
-      me.gauge = fill(me.gauge, events.slice(before), side, me.stance);
+      me.gauge = charge(me.gauge, me.stance);
     }
+    this.beats++;
     return events;
+  }
+
+  /** A beat of the melee: its call the first time, then a round. */
+  private melee(events: ClashEvent[]): void {
+    if (!this.meleeBegun) events.push({ kind: 'phase', phase: 'melee' });
+    this.meleeBegun = true;
+    this.round(events);
   }
 
   /** Plays the battle to its end with the current stances. */
@@ -231,6 +282,8 @@ export class ClashSim {
    */
   private volley(by: ClashSide, events: ClashEvent[]): void {
     const [me, them] = [this.squad(by), this.squad(other(by))];
+    if (me.skill && VOLLEY_SKILLS.has(me.skill)) this.volleyUsed[by] = true;
+    if (them.skill === 'pike-wall') this.wallUsed[other(by)] = true;
     const p = clamp(0.3 + 0.015 * (me.unit.stats.tec - them.unit.stats.gen) + 0.02 * (this.edge(by) - this.edge(other(by))), 0.05, 0.9);
     // Firestorm: a blast strikes every foe once, surer than a blow (the volley's chance + 0.2).
     if (me.skill === 'firestorm') {
@@ -263,7 +316,8 @@ export class ClashSim {
         if (hit) body.hp = crit ? 0 : body.hp - 1;
         events.push({ kind: 'strike', by, fighter, target: foe, hit, crit: hit && crit, felled: body.hp <= 0, ...(skill ? { skill } : {}) });
         // A crit in the charge throws the defenders into panic: they won't counter.
-        if (hit && crit && by === 'attacker' && !this.panic) {
+        // (Only in the charge itself: a skill's own volley later has no counter left to stop.)
+        if (hit && crit && by === 'attacker' && !this.panic && this.phase === 'charge') {
           this.panic = true;
           events.push({ kind: 'panic', side: 'defender' });
         }
@@ -295,6 +349,9 @@ export class ClashSim {
       const a = target(d, this.attacker);
       if (a !== undefined) pairs.set(`${a}:${d}`, [a, d]);
     }
+    // A Pike Wall that had no foe's volley to turn turns the foe's blows for this one round.
+    const walled = (side: ClashSide) => this.squad(side).skill === 'pike-wall' && !this.wallUsed[side];
+    const walls = { attacker: walled('attacker'), defender: walled('defender') };
     for (const [a, d] of pairs.values()) {
       if (this.attacker.fighters[a].hp <= 0 || this.defender.fighters[d].hp <= 0) continue;
       let winner: ClashSide = this.rand() < p ? 'attacker' : 'defender';
@@ -303,6 +360,10 @@ export class ClashSim {
       if (executed) winner = executed;
       const loser = this.squad(other(winner));
       const [won, lost] = winner === 'attacker' ? [a, d] : [d, a];
+      if (walls[other(winner)]) {
+        events.push({ kind: 'strike', by: winner, fighter: won, target: lost, hit: false, crit: false, felled: false, skill: 'pike-wall' });
+        continue;
+      }
       // Parry: a duel lost by its leader is a blow turned aside instead (three in all).
       if (lost === 0 && this.parries(loser)) {
         events.push({ kind: 'strike', by: winner, fighter: won, target: 0, hit: false, crit: false, felled: false, skill: 'parry' });
@@ -325,13 +386,16 @@ export class ClashSim {
           events.push({ kind: 'flash', by: winner, fighter: won, target: foe });
         }
       }
-      if (!standing(loser).length) return;
+      if (!standing(loser).length) break;
     }
+    for (const side of ['attacker', 'defender'] as const) if (walls[side]) this.wallUsed[side] = true;
   }
 
-  private finishIfOver(events: ClashEvent[]): void {
+  /** Ends the battle if a side has nobody left standing; returns whether it is over. */
+  private finishIfOver(events: ClashEvent[]): boolean {
+    if (this.phase === 'done') return true;
     const out = (['attacker', 'defender'] as const).find((side) => !standing(this.squad(side)).length);
-    if (!out) return;
+    if (!out) return false;
     this.winner = other(out);
     let damage = moraleDamage(this.pow, this.squad(this.winner), this.squad(out));
     // Rend: +20 Morale damage on a win. Hold Fast: a lost battle costs only half.
@@ -340,6 +404,7 @@ export class ClashSim {
     this.damage = damage;
     this.phase = 'done';
     events.push({ kind: 'end', winner: this.winner, damage: this.damage });
+    return true;
   }
 }
 

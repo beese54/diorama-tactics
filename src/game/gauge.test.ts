@@ -1,53 +1,68 @@
 import { describe, expect, it } from 'vitest';
-import { ClashSim, type ClashEvent, type ClashSetup, type Stance } from './clash';
-import { fill, gain, GAIN, GAUGE_MAX } from './gauge';
+import { ClashSim, type ClashSetup, type Stance } from './clash';
+import { charge, GAUGE_MAX, STANCE_CHARGE } from './gauge';
 import { makeUnit, type ClassId } from './units';
 
-const unit = (cls: ClassId, side: 'player' | 'enemy') => makeUnit({ id: `${side}-${cls}`, name: cls, side, cls, gender: 'female', x: 0, y: 0 });
-const setup = (a: ClassId, d: ClassId, seed: number, more: Partial<ClashSetup> = {}): ClashSetup => ({
-  attacker: unit(a, 'player'), defender: unit(d, 'enemy'), pow: 60, seed, ...more,
+const unit = (cls: ClassId, side: 'player' | 'enemy', gauge = 0) => {
+  const u = makeUnit({ id: `${side}-${cls}`, name: cls, side, cls, gender: 'female', x: 0, y: 0 });
+  u.gauge = gauge;
+  return u;
+};
+const setup = (seed: number, more: Partial<ClashSetup> = {}, gauge = 0): ClashSetup => ({
+  attacker: unit('sword', 'player', gauge), defender: unit('axe', 'enemy', gauge), pow: 60, seed, ...more,
 });
-const SEEDS = Array.from({ length: 200 }, (_, i) => i + 1);
 
-const strike = (by: 'attacker' | 'defender', hit: boolean): ClashEvent => ({ kind: 'strike', by, fighter: 1, target: 1, hit, crit: false, felled: hit });
-const duel = (winner: 'attacker' | 'defender'): ClashEvent => ({ kind: 'duel', winner, attacker: 1, defender: 1, felled: true });
-
-/** The attacker's gauge after a whole battle in `stance`, beat by beat as the scene plays it. */
-function battle(seed: number, stance: Stance): number {
-  const sim = new ClashSim(setup('sword', 'sword', seed, { attackerStance: stance }));
-  let gauge = 0;
-  while (sim.phase !== 'done') gauge = fill(gauge, sim.step(), 'attacker', sim.attacker.stance);
-  return gauge;
-}
-const mean = (stance: Stance) => SEEDS.reduce((s, seed) => s + battle(seed, stance), 0) / SEEDS.length;
-
-describe('skill gauge', () => {
-  it('fills for the side that lands a blow or wins a duel, and for nothing else', () => {
-    expect(gain(strike('attacker', true), 'attacker', 'neutral')).toBe(GAIN.hit);
-    expect(gain(strike('attacker', false), 'attacker', 'neutral')).toBe(0);
-    expect(gain(strike('attacker', true), 'defender', 'neutral')).toBe(0);
-    expect(gain(duel('defender'), 'defender', 'neutral')).toBe(GAIN.duel);
-    expect(gain(duel('defender'), 'attacker', 'neutral')).toBe(0);
-    expect(gain({ kind: 'flash', by: 'attacker', fighter: 1, target: 2 }, 'attacker', 'neutral')).toBe(0);
-    expect(gain({ kind: 'phase', phase: 'charge' }, 'attacker', 'aggressive')).toBe(0);
+describe('skill gauge (the stance drives it, 2026-11-08)', () => {
+  it('charges fast when passive, at half that when neutral, and drains when aggressive', () => {
+    expect(STANCE_CHARGE.passive).toBeGreaterThan(0);
+    expect(STANCE_CHARGE.neutral).toBe(STANCE_CHARGE.passive / 2);
+    expect(STANCE_CHARGE.aggressive).toBeLessThan(0);
+    expect(charge(30, 'passive')).toBe(70);
+    expect(charge(30, 'neutral')).toBe(50);
+    expect(charge(30, 'aggressive')).toBe(10);
   });
 
-  it('fills half again as fast when aggressive, and not at all when passive', () => {
-    const beat = [strike('attacker', true), duel('attacker'), strike('defender', true)];
-    expect(fill(0, beat, 'attacker', 'neutral')).toBe(GAIN.hit + GAIN.duel);
-    expect(fill(0, beat, 'attacker', 'aggressive')).toBe(1.5 * (GAIN.hit + GAIN.duel));
-    expect(fill(10, beat, 'attacker', 'passive')).toBe(10);
+  it('stops at full and at empty', () => {
+    expect(charge(GAUGE_MAX - 5, 'passive')).toBe(GAUGE_MAX);
+    expect(charge(5, 'aggressive')).toBe(0);
+    expect(charge(0, 'aggressive')).toBe(0);
   });
 
-  it('stops at full', () => {
-    expect(fill(GAUGE_MAX - 3, [duel('attacker')], 'attacker', 'aggressive')).toBe(GAUGE_MAX);
+  it('moves once a beat in a battle, by the stance each side fights that beat in, whatever lands', () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const sim = new ClashSim(setup(seed, { attackerStance: 'passive', defenderStance: 'aggressive' }, 50));
+      const seen: [number, number][] = [];
+      while (sim.phase !== 'done') {
+        sim.step();
+        seen.push([sim.gauge('attacker'), sim.gauge('defender')]);
+      }
+      seen.forEach(([a, d], i) => {
+        expect(a).toBe(Math.min(GAUGE_MAX, 50 + 40 * (i + 1)));
+        expect(d).toBe(Math.max(0, 50 - 20 * (i + 1)));
+      });
+    }
   });
 
-  it('over whole battles: aggressive fills more than neutral, passive none, and one battle on average leaves it short of full', () => {
-    const [aggressive, neutral] = [mean('aggressive'), mean('neutral')];
-    expect(aggressive).toBeGreaterThan(neutral * 1.4);
-    expect(neutral).toBeGreaterThan(20);
-    expect(aggressive).toBeLessThan(GAUGE_MAX);
-    expect(SEEDS.every((seed) => battle(seed, 'passive') === 0)).toBe(true);
+  it('follows a stance changed between beats from the next beat', () => {
+    const sim = new ClashSim(setup(9, {}, 50));
+    sim.step();
+    expect(sim.gauge('attacker')).toBe(70);
+    sim.attacker.stance = 'aggressive';
+    sim.step();
+    expect(sim.gauge('attacker')).toBe(50);
+  });
+
+  it('over a whole battle from empty: passive usually fills it, neutral gets about half way, aggressive leaves it empty', () => {
+    const after = (stance: Stance, seed: number) => {
+      const sim = new ClashSim(setup(seed, { attackerStance: stance }));
+      sim.run();
+      return sim.gauge('attacker');
+    };
+    const seeds = Array.from({ length: 100 }, (_, i) => i + 1);
+    const mean = (stance: Stance) => seeds.reduce((s, seed) => s + after(stance, seed), 0) / seeds.length;
+    expect(mean('passive')).toBeGreaterThan(90);
+    expect(mean('neutral')).toBeGreaterThan(40);
+    expect(mean('neutral')).toBeLessThan(90);
+    expect(seeds.every((seed) => after('aggressive', seed) === 0)).toBe(true);
   });
 });

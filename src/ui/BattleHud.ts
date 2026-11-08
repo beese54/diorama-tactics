@@ -34,10 +34,18 @@ export interface GuideInfo {
   card: string;
   skill: string;
   text: string;
-  /** ready: K fires it now, Space saves it; charging: not full yet; ace: the unit can't wield it; on-play: All In acted when played; fired / saved: chosen. */
+  /**
+   * ready: full, K fires it (any time in the battle); charging: not full yet (the stance charges
+   * or drains it); ace: the unit can't wield it; on-play: All In acted when played; fired: fired
+   * this battle; saved: the battle ended with the gauge full, kept for a later one.
+   */
   state: 'ready' | 'charging' | 'ace' | 'on-play' | 'fired' | 'saved';
   gauge: number;
   ace: string;
+  /** Held at the opening for the choice: Space keeps the gauge and fights on. */
+  choosing?: boolean;
+  /** What firing now does instead, when the skill's moment has passed (a volley skill in the melee). */
+  late?: string | null;
 }
 
 /** The stances in the order the chips show them, with the key that picks each on the player's side. */
@@ -95,8 +103,8 @@ export class BattleHud {
       this.guideEl.hidden = !g;
       if (g) {
         const status = {
-          ready: `<b class="ready">READY</b> <button data-act="fire"><kbd>K</kbd> Fire now</button><button data-act="save"><kbd>Space</kbd> Save it</button>`,
-          charging: `Charging <b>${g.gauge} / 100</b> · fight to fill it: Aggressive fills it faster, Passive not at all`,
+          ready: `<b class="ready">READY</b> <button data-act="fire"><kbd>K</kbd> Fire now</button>${g.choosing ? '<button data-act="save"><kbd>Space</kbd> Save it</button>' : ''}`,
+          charging: `<span>Charging</span><b>${g.gauge} / 100</b><span class="hint">Passive charges it fast · Neutral slowly · Aggressive drains it</span>`,
           ace: `Needs <b>ACE ${g.ace.toUpperCase()}</b>: this unit can't fire it`,
           'on-play': 'Acted when the card was played',
           fired: '<b class="ready">FIRED</b>',
@@ -106,7 +114,7 @@ export class BattleHud {
         this.guideEl.innerHTML = `<div class="head"><span class="card"></span><span class="skill"></span></div><div class="text"></div><div class="status">${status}</div>`;
         this.guideEl.querySelector('.card')!.textContent = g.card;
         this.guideEl.querySelector('.skill')!.textContent = g.skill;
-        this.guideEl.querySelector('.text')!.textContent = g.text;
+        this.guideEl.querySelector('.text')!.textContent = g.late ?? g.text;
       }
     }
     if (!this.guideEl.isConnected) this.el.append(this.guideEl);

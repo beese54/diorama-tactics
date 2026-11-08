@@ -399,6 +399,12 @@
       "status": "done",
       "commit": "8a44c47",
       "note": "Approved 2026-11-08: \"the undo and confirm work well, approved\"."
+    },
+    {
+      "id": "B8-skill-mid-battle",
+      "title": "Skills fire mid-battle: the stance drives the gauge (Passive +40, Neutral +20, Aggressive -20 a beat; STANCE_CHARGE in gauge.ts), READY lights with K FIRE whenever it is full (ClashSim.fire between beats, once a side), a late volley skill makes its own volley and a late Pike Wall turns a melee round, defenders fire with their side's last card (Skirmish.lastCard), the foes fire as soon as full; check.mjs checks mid-battle firing and defending",
+      "status": "review",
+      "commit": "this one"
     }
   ],
   "backlog": [

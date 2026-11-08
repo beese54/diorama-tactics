@@ -232,6 +232,14 @@
       "image": "b8-skills/r1/all-skills.jpg",
       "title": "B8 · Every skill animated, and the weapon symbols",
       "note": "All eleven battle skills play their own animation where they act (Forced March's gold chevrons, Blade Dance's blue flurry, Pike Wall's glowing pikes, Parry's gold X, Executioner's falling blade and crimson X, Rend's claws, Hold Fast's golden shield, Trample's burst of earth), drawn over the fighters now, not behind them; All In bursts in gold pillars on the map. Each banner carries its weapon's symbol in the type's colour, tagged STRONG or WEAK by the triangle."
+    },
+    {
+      "id": "b8-skill-mid-battle",
+      "date": "2026-11-08",
+      "commit": "next",
+      "image": "b8-skill-mid-battle/ready-mid-battle.jpg",
+      "title": "B8 · Fire a skill mid-battle; the stance charges the gauge",
+      "note": "The stance now drives the SKILL bar, beat by beat: Passive +40, Neutral +20, Aggressive -20. When it fills mid-battle, READY lights with a K FIRE button and the skill acts from the next beat; a volley skill fired after the charge makes a volley of its own. Defenders fire too, with the card their side played last."
     }
   ]
 }

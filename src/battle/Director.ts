@@ -1,7 +1,7 @@
 import type { ClashSide, ClashSim, Phase } from '../game/clash';
 import { audio } from '../audio/Audio';
 import type { SfxName } from '../audio/sfx';
-import { gain, GAUGE_MAX } from '../game/gauge';
+import { GAUGE_MAX } from '../game/gauge';
 import { CLASSES, triangleEdge } from '../game/units';
 import type { BannerInfo, BattleHud } from '../ui/BattleHud';
 import type { BattleView } from './BattleView';
@@ -89,14 +89,16 @@ export class Director {
   private readonly body = new Map<string, BodyAct[]>();
   private readonly advances: Record<ClashSide, Extract<Timed, { kind: 'advance' }>[]> = { attacker: [], defender: [] };
   private readonly fell = new Map<string, number>();
-  /** What each side's skill gauge earns, and when: as each blow lands, at the stance its beat was fought in. */
-  private readonly gains: Record<ClashSide, { start: number; amount: number }[]> = { attacker: [], defender: [] };
+  /**
+   * Each side's skill gauge over the battle, a stretch at a time: across each beat it runs evenly
+   * from what it was to what the beat's stance made it (charging or draining), and a skill fired
+   * empties it from that moment. The latest stretch begun by a moment is the one shown.
+   */
+  private readonly charge: Record<ClashSide, { start: number; end: number; from: number; to: number }[]> = { attacker: [], defender: [] };
   /** When the beats so far run out. */
   private end = LEAD;
   /** When each blow a fired skill caused lands: the battle holds still there a moment, and shakes. */
   private readonly stops: number[] = [];
-  /** Each side's gauge as the battle opened: what its unit carried in. */
-  private readonly carried: Record<ClashSide, number>;
   /** The battle time the sounds have been played up to (B8). */
   private heard = 0;
   /** Each fired skill's own animation, where its blows land. */
@@ -112,7 +114,8 @@ export class Director {
     /** The bottom line until the result: the matchup's edge. */
     private readonly matchup: string,
   ) {
-    this.carried = { attacker: sim.gauge('attacker'), defender: sim.gauge('defender') };
+    // The opening: what each unit carried in.
+    for (const side of ['attacker', 'defender'] as const) this.charge[side].push({ start: 0, end: LEAD, from: sim.gauge(side), to: sim.gauge(side) });
     this.skillFx = new SkillFx(() => view.width, DESIGN_H);
     view.add(this.skillFx.group);
   }
@@ -137,13 +140,11 @@ export class Director {
   }
 
   private next(): void {
+    const from = { attacker: this.sim.gauge('attacker'), defender: this.sim.gauge('defender') };
     const events = this.sim.step();
     const take = this.script.beat(events);
     for (const side of ['attacker', 'defender'] as const) {
-      for (const [i, e] of events.entries()) {
-        const amount = gain(e, side, this.sim.squad(side).stance);
-        if (amount) this.gains[side].push({ start: this.end + take.times[i], amount });
-      }
+      this.charge[side].push({ start: this.end, end: this.end + take.seconds, from: from[side], to: this.sim.gauge(side) });
     }
     // A blow a skill shaped holds the battle still a moment (not the firing itself: its cut-in has played).
     for (const [i, e] of events.entries()) if (e.kind !== 'skill' && 'skill' in e && e.skill) this.stops.push(this.end + take.times[i]);
@@ -228,6 +229,26 @@ export class Director {
       }
     }
     return off;
+  }
+
+  /** `side`'s skill gauge as shown at `clock` (the beats up to it played). */
+  gauge(side: ClashSide, clock: number): number {
+    while (this.sim.phase !== 'done' && clock >= this.end) this.next();
+    return this.gaugeAt(side, this.warp(clock));
+  }
+
+  private gaugeAt(side: ClashSide, seconds: number): number {
+    const list = this.charge[side];
+    let at = list[0];
+    for (const c of list) if (c.start <= seconds && c.start >= at.start) at = c;
+    const t = at.end > at.start ? Math.min(1, Math.max(0, (seconds - at.start) / (at.end - at.start))) : 1;
+    return Math.min(GAUGE_MAX, at.from + (at.to - at.from) * t);
+  }
+
+  /** `side` fired its skill at `clock`: its gauge shows empty from then until the next beat charges it. */
+  spent(side: ClashSide, clock: number): void {
+    const start = this.warp(clock);
+    this.charge[side].push({ start, end: Math.max(start, this.end), from: 0, to: 0 });
   }
 
   /** Draws the battle as it stands `seconds` after it opens. */
@@ -385,9 +406,7 @@ export class Director {
       const total = this.squads[side].fighters.length;
       const down = [...this.fell].filter(([k, t]) => k.startsWith(side) && t <= seconds).length;
       const lost = result && result.winner !== side ? result.damage : 0;
-      // What its unit carried in (none once its skill has fired), and what it has earned since.
-      const from = this.sim.squad(side).skill ? 0 : this.carried[side];
-      const gauge = Math.min(GAUGE_MAX, this.gains[side].reduce((sum, g) => sum + (g.start <= seconds ? g.amount : 0), from));
+      const gauge = this.gaugeAt(side, seconds);
       // The stance and the edge are as they stand now: a change shows at once, and counts from the next beat.
       const { stance } = this.sim.squad(side);
       const weapon = CLASSES[unit.cls].weapon;

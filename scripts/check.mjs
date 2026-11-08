@@ -667,7 +667,8 @@ await frames(3);
 const skipped = await battleHud();
 check('battle: Space skips to the result', skipped[ld].standing === 0 && skipped[ld].morale === lostMorale, JSON.stringify(skipped));
 // Stance: A, S and D set the player's from the next beat. The edge shown moves with it at once, and
-// the skill gauge fills faster when aggressive and not at all when passive.
+// the skill gauge charges by the stance (2026-11-08): fast when passive, half that when neutral, and
+// it drains when aggressive.
 const player = () => page.evaluate(() => {
   const b = document.querySelector('#battle-hud .banner.ally');
   return { edge: b.querySelector('.edge').textContent, stance: b.querySelector('.stance b.on').dataset.stance, gauge: Number(b.querySelector('.skill .value').textContent) };
@@ -689,8 +690,8 @@ check('battle: A, S and D set the stance, and the edge shown moves by its 2',
   edgeOf(runs.A.pressed.edge) === edgeOf(runs.A.before.edge) + 2 && edgeOf(runs.S.pressed.edge) === edgeOf(runs.S.before.edge) &&
   edgeOf(runs.D.pressed.edge) === edgeOf(runs.D.before.edge) - 2,
   JSON.stringify(runs));
-check('battle: the skill gauge fills faster when aggressive, and not at all when passive',
-  runs.A.before.gauge === 0 && runs.A.after.gauge > runs.S.after.gauge && runs.S.after.gauge > 0 && runs.D.after.gauge === 0,
+check('battle: the skill gauge charges fast when passive, half as fast when neutral, and not at all (it drains) when aggressive',
+  runs.A.before.gauge === 0 && runs.D.after.gauge > 0 && runs.S.after.gauge === Math.min(100, runs.D.after.gauge / 2) && runs.A.after.gauge === 0,
   JSON.stringify(Object.fromEntries(Object.entries(runs).map(([k, r]) => [k, r.after.gauge]))));
 check('battle: no console errors', errors.length === 0, errors.join(' | '));
 
@@ -760,11 +761,23 @@ const clickInPlace = async (x, y) => {
   const pos = await page.evaluate((x, y) => window.__map.aimAt(x, y), x, y);
   await page.mouse.click(pos.x, pos.y);
 };
+/**
+ * Plays the open battle out and leaves it: Space skips a cut-in, then to the result, then goes on.
+ * Pressed until the battle has left (or, in a Union, the next one opens), as a foe's skill may
+ * fire at any moment now and its cut-in takes a press.
+ */
+const leaveBattle = async () => {
+  const chain = await page.evaluate(() => window.__battle?.chain?.index ?? null);
+  for (let n = 0; n < 12; n++) {
+    const gone = await page.evaluate((c) => !window.__map.battling() || (window.__battle?.ready && (window.__battle.chain?.index ?? null) !== c), chain);
+    if (gone) return;
+    await page.keyboard.press('Space');
+    await frames(4);
+  }
+};
 /** Skips a battle that is open to its result, and goes back to the board. */
 const finishBattle = async () => {
-  await page.keyboard.press('Space');
-  await frames(3);
-  await page.keyboard.press('Space');
+  await leaveBattle();
   await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
   await frames(3);
 };
@@ -898,11 +911,13 @@ const playChain = async () => {
     const i = seen.length;
     const next = await page.waitForFunction((i) => (window.__map.battling() && window.__battle?.chain !== undefined && (window.__battle.chain?.index ?? 0) === i ? 'battle' : !window.__map.battling() && i > 0 ? 'done' : null), { timeout: 30000 }, i);
     if ((await next.jsonValue()) === 'done') return seen;
-    seen.push(await page.evaluate(() => ({ chain: window.__battle.chain, attacker: window.__battle.attacker, defenderMorale: window.__battle.defenderMorale, rules: window.__battle.rules() })));
-    await page.keyboard.press('Space');
-    await frames(3);
-    await page.keyboard.press('Space');
-    await frames(3);
+    const one = await page.evaluate(() => ({ chain: window.__battle.chain, attacker: window.__battle.attacker, defenderMorale: window.__battle.defenderMorale }));
+    for (let n = 0; n < 6 && !(await page.evaluate(() => !!window.__battle?.result?.())); n++) {
+      await page.keyboard.press('Space');
+      await frames(4);
+    }
+    seen.push({ ...one, rules: await page.evaluate(() => window.__battle.rules()) });
+    await leaveBattle();
   }
 };
 await clickCard(0);
@@ -948,20 +963,20 @@ const kFoes = kStart.filter((u) => u.side === 'enemy');
 const kHand = (await handNow()).cards.map((c) => c.id);
 const skillNow = () => page.evaluate(() => window.__battle.skill());
 const unitNow = async (id) => (await mapUnits()).find((u) => u.id === id);
-/** On the player's turn: plays card `id`, stands Aria alone beside `foe` with `gauge`, and attacks; resolves with the battle up. */
-const skillBattle = async (id, gauge, foe) => {
+/** On the player's turn: plays card `id`, stands `hero` (Aria by default) alone beside `foe` with `gauge`, and attacks; resolves with the battle up. */
+const skillBattle = async (id, gauge, foe, hero = kAriaId) => {
   await untilPlayerTurn();
   await clickCard(kHand.indexOf(id));
   // A clear spot near her (the Union section's finder), the foe below her, no ally on her shape.
   const [x, y] = await unionSpot();
-  // Anyone else on the two tiles trades places with Aria (the finder sees past the Union section's units).
-  const was = await unitNow(kAriaId);
-  for (const u of (await mapUnits()).filter((u) => u.id !== kAriaId && u.id !== foe.id && u.morale > 0 && u.x === x && (u.y === y || u.y === y + 1))) {
+  // Anyone else on the two tiles trades places with the hero (the finder sees past the Union section's units).
+  const was = await unitNow(hero);
+  for (const u of (await mapUnits()).filter((u) => u.id !== hero && u.id !== foe.id && u.morale > 0 && u.x === x && (u.y === y || u.y === y + 1))) {
     await page.evaluate((id, c) => window.__map.setUnit(id, c), u.id, { x: was.x, y: was.y });
   }
-  await page.evaluate((id, c) => window.__map.setUnit(id, c), kAriaId, { x, y, gauge });
-  await page.evaluate((id, c) => window.__map.setUnit(id, c), foe.id, { x, y: y + 1 });
-  await isolate({ id: kAriaId });
+  await page.evaluate((id, c) => window.__map.setUnit(id, c), hero, { x, y, gauge });
+  await page.evaluate((id, c) => window.__map.setUnit(id, c), foe.id, { x, y: y + 1, gauge: 0 });
+  await isolate({ id: hero });
   await clickTile(x, y);
   await clickInPlace(x, y + 1);
   const f = { ...foe, x, y: y + 1 };
@@ -985,8 +1000,8 @@ const k1After = { aria: await unitNow(kAriaId), foe: await unitNow(kFoe1.id) };
 check("skills: with a full gauge and the card's ACE, the battle holds for the choice, and K fires the skill with its cut-in",
   k1Ready.state === 'ready' && k1Ready.held && k1Cut.fired === 'forced-march' && k1Cut.cutIn.on && k1Cut.state === 'fired', JSON.stringify({ k1Ready, k1Cut }));
 const k1Loser = k1Rules.winner === 'attacker' ? 'foe' : 'aria';
-check('skills: the result is the rules\' with the skill fired, and the gauge was spent (refilling from empty)',
-  k1After[k1Loser].morale === k1Before[k1Loser].morale - k1Rules.damage && k1After.aria.gauge < 100, JSON.stringify({ k1Rules, k1Before, k1After }));
+check('skills: the result is the rules\' with the skill fired, and the gauge was spent (shown empty as it fires, then charging again)',
+  k1After[k1Loser].morale === k1Before[k1Loser].morale - k1Rules.damage && k1Cut.gauge.player === 0, JSON.stringify({ k1Rules, k1Before, k1After, k1Cut }));
 // Turn 2, Swift Banner (a lance's): Aria can't wield it, so no hold, K does nothing, the gauge stays.
 await skillBattle('swift-banner', 100, kFoes[1]);
 const k2 = await skillNow();
@@ -1000,7 +1015,8 @@ check("skills: a card whose ACE the unit can't wield neither holds nor fires, th
 await untilPlayerTurn();
 await clickCard(kHand.indexOf('steady-line'));
 const [kx, ky] = await standUnion(9000);
-for (const [id, g] of [[kAriaId, 100], [allyTop.id, 40], [allyRight.id, 40]]) await page.evaluate((id, g) => window.__map.setUnit(id, { gauge: g }), id, g);
+// (The foe comes in empty: a defender's skill would fire now, and this checks the player's.)
+for (const [id, g] of [[kAriaId, 100], [allyTop.id, 40], [allyRight.id, 40], [uFoe.id, 0]]) await page.evaluate((id, g) => window.__map.setUnit(id, { gauge: g }), id, g);
 await clickTile(kx, ky);
 await clickInPlace(kx, ky + 1);
 const k3 = [];
@@ -1009,21 +1025,19 @@ for (let i = 0; i < 3; i++) {
   await frames(6);
   const s = await skillNow();
   k3.push({ ...s, attacker: await page.evaluate(() => window.__battle.attacker) });
-  // The leader's battle holds for the choice: Space saves the gauge.
+  // The leader's battle holds for the choice: Space fights on, the skill kept (still ready to fire).
   if (s.state === 'ready') {
     await page.keyboard.press('Space');
     await frames(3);
-    k3[i].after = (await skillNow()).state;
+    const a = await skillNow();
+    k3[i].after = { state: a.state, choosing: a.choosing, held: a.held };
   }
-  await page.keyboard.press('Space');
-  await frames(3);
-  await page.keyboard.press('Space');
-  await frames(3);
+  await leaveBattle();
 }
 await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
-check('skills: Space saves a ready skill (the gauge stays full), and a unit whose gauge isn\'t full fights on, charging',
-  k3[0].state === 'ready' && k3[0].after === 'saved' && k3[0].fired === null && (await unitNow(kAriaId)).gauge === 100 &&
-  k3.slice(1).every((b) => b.state === 'charging' && !b.held), JSON.stringify(k3));
+check('skills: Space at the opening fights on with the skill kept (still READY, the gauge full), and a unit whose gauge isn\'t full fights on, charging',
+  k3[0].state === 'ready' && k3[0].choosing && k3[0].after?.state === 'ready' && !k3[0].after.choosing && !k3[0].after.held && k3[0].fired === null && (await unitNow(kAriaId)).gauge === 100 &&
+  k3.slice(1).every((b) => b.state === 'charging' && !b.choosing && (!b.held || (b.foeFired && b.cutIn.on))), JSON.stringify(k3));
 // Turn 4, King's Wager: All In fills every ally's gauge as it is played.
 await untilPlayerTurn();
 for (const u of (await mapUnits()).filter((u) => u.side === 'player')) await page.evaluate((id) => window.__map.setUnit(id, { gauge: 0 }), u.id);
@@ -1043,9 +1057,44 @@ const k5 = await page.evaluate(() => window.__map.skillMarks());
 await page.evaluate((id) => window.__map.setUnit(id, { gauge: 100 }), kFoes2[0].id);
 await frames(3);
 const k6 = await page.evaluate(() => window.__map.skillMarks());
-check("skills: SKILL READY marks every full gauge on the map: held by the card in play (King's Wager), ready for a foe",
-  k5.held === k4.length && k5.ready === 0 && k6.ready === 1 && k6.held === k4.length, JSON.stringify({ k5, k6 }));
+check("skills: SKILL READY marks every full gauge on the map: held by the card in play (King's Wager), and a foe's (by the card its side played last)",
+  k5.held === k4.length && k5.ready === 0 && k6.ready + k6.held === k4.length + 1, JSON.stringify({ k5, k6 }));
 check('skills: no console errors', errors.length === 0, errors.join(' | '));
+
+// ---- Skills mid-battle (2026-11-08) ----------------------------------------------------------------
+// The stance drives the gauge: Passive charges it fast, Neutral slowly, Aggressive drains it. A
+// gauge that fills mid-battle lights READY with no hold, and K fires it there; a skill whose
+// moment has passed (Firestorm after the charge) acts at once, and the guide says so.
+errors.length = 0;
+await page.goto(`${url}?map=meadow`, { waitUntil: 'networkidle0' });
+await page.waitForFunction(() => window.__map?.units());
+await page.evaluate(() => window.__map.holdFoes(true));
+const mStart = await mapUnits();
+const mIlse = mStart.find((u) => u.side === 'player' && u.cls === 'mage');
+const mFoe = mStart.find((u) => u.side === 'enemy');
+await skillBattle('ember-rite', 80, mFoe, mIlse.id);
+const m0 = await skillNow();
+await page.keyboard.press('KeyD');
+await frames(3);
+const mStance = await page.evaluate(() => window.__battle.stances());
+await page.waitForFunction(() => { const s = window.__battle.skill(); return s.state === 'ready' || s.phase === 'done'; }, { timeout: 30000 }).catch(() => {});
+const m1 = await skillNow();
+await shot('22b-skill-mid-battle');
+await page.keyboard.press('KeyK');
+await page.waitForFunction(() => window.__battle.skill().cutIn.on, { timeout: 5000 }).catch(() => {});
+const m2 = await skillNow();
+await page.waitForFunction(() => !window.__battle.skill().held, { timeout: 15000 }).catch(() => {});
+// The battle's next beat: the blast, whatever the phase.
+await page.waitForFunction((b) => window.__battle.skill().played > b, { timeout: 20000 }, m2.played).catch(() => {});
+const mFx = await page.evaluate(() => window.__battle.fx());
+check('skills mid-battle: a gauge below full opens charging with no hold; Passive charges it from 80 to READY mid-battle',
+  m0.state === 'charging' && !m0.held && mStance.attacker === 'passive' && m1.state === 'ready' && !m1.held && !m1.choosing && m1.played >= 1,
+  JSON.stringify({ m0, mStance, m1 }));
+check("skills mid-battle: K fires it there, with its cut-in; the gauge shows empty, and the late Firestorm says it acts at once and blasts",
+  m2.fired === 'firestorm' && m2.firedBeat >= 1 && m2.cutIn.on && m2.gauge.player === 0 && /at once/.test(m1.late ?? '') && mFx.skillShows > 0,
+  JSON.stringify({ m1, m2, mFx }));
+await finishBattle();
+check('skills mid-battle: no console errors', errors.length === 0, errors.join(' | '));
 
 // ---- The foes' AI and the end (B7) ---------------------------------------------------------------
 // A foe beside an ally attacks it on the foes' turn; the player defends (D sets the defender's
@@ -1093,6 +1142,29 @@ const b7Lost = b7Before.find((u) => u.id === b7Loser).morale - b7After.find((u) 
 check("foes: on their turn a foe beside an ally attacks it; the foe on the left, the player defending on the right, D sets the defender's stance",
   b7Side(b7Result.attacker) === 'enemy' && b7Side(b7Result.defender) === 'player' && b7Stances.defender === 'passive', JSON.stringify({ b7Result, b7Stances }));
 check("foes: the board shows the foe battle's own result", b7Lost === b7Result.damage, JSON.stringify({ b7Result, b7Lost }));
+// Defending fires too (2026-11-08): the card the side played last. Steady Line (for All) this turn,
+// Aria full beside Varek; in his attack the battle holds for her choice and K fires Hold Fast.
+({ aria: b7Aria, varek: b7Varek } = await b7());
+await clickCard((await handNow()).cards.findIndex((c) => c.id === 'steady-line'));
+await standPair(b7Aria.id, b7Varek.id, { gauge: 100 });
+await page.keyboard.press('Enter');
+await page.waitForFunction(() => window.__map.battling() && window.__battle?.ready, { timeout: 60000 });
+await page.waitForFunction(() => !document.getElementById('wipe') && !document.querySelector('#battle-hud.intro'), { timeout: 15000 }).catch(() => {});
+await frames(6);
+const d0 = { ...(await skillNow()), attacker: await page.evaluate(() => window.__battle.attacker) };
+await shot('24b-defend-skill');
+await page.keyboard.press('KeyK');
+await page.waitForFunction(() => window.__battle.skill().cutIn.on, { timeout: 5000 }).catch(() => {});
+const d1 = await skillNow();
+await page.waitForFunction(() => !window.__battle.skill().held, { timeout: 15000 }).catch(() => {});
+const dRules = await page.evaluate(() => window.__battle.rules());
+await page.keyboard.press('Space');
+await page.waitForFunction(() => !!window.__battle.result(), { timeout: 30000 });
+const dResult = await page.evaluate(() => window.__battle.result());
+await untilPlayerTurn();
+check("skills defending: a foe attacks Aria (full, Steady Line played last): the battle holds for her choice, and K fires Hold Fast with its cut-in",
+  d0.attacker === b7Varek.id && d0.state === 'ready' && d0.choosing && d1.fired === 'hold-fast' && d1.cutIn.on, JSON.stringify({ d0, d1 }));
+check('skills defending: the result is the rules\' with her skill fired', dResult.winner === dRules.winner && dResult.damage === dRules.damage, JSON.stringify({ dRules, dResult }));
 // Hard turns down a fight it forecasts to lose: Varek on 5 Morale beside Corin, whose axe beats his
 // lance. (A battle starts at full strength whatever the Morale, so the low Morale alone isn't a loss:
 // it is what a loss would cost him, the whole unit.)
@@ -1127,9 +1199,7 @@ const [wx, wy] = await standPair(b7Aria.id, b7Varek.id, {}, { morale: 1 });
 await clickTile(wx, wy);
 await clickInPlace(wx, wy + 1);
 await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
-await page.keyboard.press('Space');
-await frames(3);
-await page.keyboard.press('Space');
+await leaveBattle();
 await page.waitForFunction(() => !!window.__map.result(), { timeout: 30000 });
 const b7Win = await page.evaluate(() => window.__map.result());
 await new Promise((r) => setTimeout(r, 800)); // the result screen fades in
@@ -1259,9 +1329,7 @@ const [n8x, n8y] = await standPair(p8.aria.id, p8.varek.id);
 await clickTile(n8x, n8y);
 await clickInPlace(n8x, n8y + 1);
 await page.waitForFunction(() => window.__battle?.ready, { timeout: 30000 });
-await page.keyboard.press('Space');
-await frames(3);
-await page.keyboard.press('Space');
+await leaveBattle();
 await page.waitForFunction(() => !window.__map.battling(), { timeout: 30000 });
 await untilPlayerTurn();
 const bareSeen = await seenNow();

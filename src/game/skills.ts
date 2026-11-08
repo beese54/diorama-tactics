@@ -44,6 +44,19 @@ export function battleSkill(card: Card): SkillId | null {
 /** Whether `unit` may wield `card`'s skill: the card is for All, or its ACE is the unit's weapon. */
 export const aceMatches = (unit: Unit, card: Card): boolean => card.ace === 'all' || CLASSES[unit.cls].weapon === card.ace;
 
+/**
+ * What a skill does when fired after its moment in the battle has passed (2026-11-08: a gauge
+ * that fills mid-battle can be fired): the skills that act in a volley make one of their own,
+ * and Pike Wall turns the foe's next round of blows. The rest act the same whenever fired.
+ */
+export const LATE_TEXT: Partial<Record<SkillId, string>> = {
+  'lance-charge': 'Fired now: a fresh charge, striking twice.',
+  volley: 'Fired now: a fresh volley, every archer loosing twice.',
+  firestorm: 'Fired now: the blast strikes every foe at once.',
+  trample: 'Fired now: the front rank falls at once.',
+  'pike-wall': "Fired now: the foe's next round of blows misses.",
+};
+
 /** Why `unit` can't fire `card`'s skill in a battle now, or null if it can. */
 export type NotReady = { why: 'on-play' } | { why: 'ace'; ace: Card['ace'] } | { why: 'charging'; gauge: number };
 

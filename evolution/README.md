@@ -22,6 +22,27 @@ Each version records three things: what changed, the feedback that caused the ch
 
 ## Battles
 
+### B8 fire a skill mid-battle; the stance charges the gauge (for review)
+![Mid-battle, Aria's SKILL bar full on Passive: READY and K Fire now in the guide](battles/b8-skill-mid-battle/ready-mid-battle.jpg)
+
+| Charging | The cut-in, mid-battle | Fired late: Firestorm in the melee | Defending |
+|---|---|---|---|
+| ![](battles/b8-skill-mid-battle/charging.jpg) | ![](battles/b8-skill-mid-battle/cut-in.jpg) | ![](battles/b8-skill-mid-battle/late-firestorm-blast.jpg) | ![](battles/b8-skill-mid-battle/defending.jpg) |
+
+- **What changed:**
+  - **The stance drives the gauge** (`STANCE_CHARGE` and `charge` in `src/game/gauge.ts`): each beat, Passive +40, Neutral +20, Aggressive -20, never below 0 nor above 100. The blows no longer fill it. On screen the bar runs evenly across each beat, and a stance changed counts from the next beat, like its edge.
+  - **Fire whenever the bar is full** (`ClashSim.fire` between any two beats, once a side a battle): READY lights in the guide with **K Fire now**, with no pause; the skill's cut-in plays with the battle held, and it acts from the next beat. A bar already full as the battle opens still holds there for the choice (Space fights on, the skill kept for later in the battle). The foes fire as soon as their bar fills.
+  - **A skill fired after its moment acts at once:** Lance Charge, Volley, Firestorm and Trample make a volley of their own to open the next beat; Pike Wall turns the foe's next round of blows. The guide says so ("Fired now: the blast strikes every foe at once"). The others act the same whenever fired.
+  - **Defenders fire too**, with the card their side played last (`lastCard` in `src/units/Skirmish.ts`); the map's SKILL READY marks use the same card off-turn.
+  - A battle replays exactly with a skill fired mid-battle: `fire: { attacker: { skill, beat } }` in `ClashSetup`.
+- **Feedback:** "when the skill bar was full, i realised there wasn't any function to play that skill. incorporate this into the battle. Allow the skill to recharge faster if the user chooses a passive stance, and the skill bar will deplete if the user chooses an aggressive stance. For neutral stance, the skill bar will incerase but at a slower rate than passive stance." Before, a skill could only fire at the opening; a bar that filled mid-battle had no use until the next battle. The user chose +40 / +20 / -20 a beat, the stance alone, no pause when it fills, and defenders firing too.
+- **Decisions:**
+  - A battle runs about 4 beats (about 19 s; measured over 1440 battles), so Passive fills an empty bar in about 2.5 beats and Neutral in about 5.
+  - The last beat of a battle is decided as it starts, so a bar that fills only then is carried to the next battle rather than fired.
+  - Aggressive keeps its +2 edge; holding back (-2) is now what buys a skill.
+  - The Hard AI's forecast still counts only the attacker's skill.
+- **Learned:** a resource the player can see filling needs a way to spend it at the moment it fills; a skill tied to one moment of the battle needs an answer for being fired after it.
+
 ### B8 skill animations r1: every skill (approved 2026-11-07), and the weapon symbols (approved 2026-11-08)
 ![All eleven battle skills at their fullest, and the banners with their weapon symbols](battles/b8-skills/r1/all-skills.jpg)
 
