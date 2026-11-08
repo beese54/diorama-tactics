@@ -415,7 +415,7 @@
       "id": "B8-union-gauge",
       "title": "A Union reaches two tiles (PLUS / CROSS in union.ts, up to 9 battles, the near ring first); its skill gauge is handed down the chain (handOn in fightUnion, also in the AI forecast); the bar shows each beat's charge over its first half (CHARGE_SHOWN in Director.ts) so READY lights while the next beat can still be changed; check.mjs checks the 2-tile Union, the handed-on gauge and READY in the first beat",
       "status": "review",
-      "commit": "this one"
+      "commit": "9e03d18"
     }
   ],
   "backlog": [
