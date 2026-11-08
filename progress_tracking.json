@@ -397,7 +397,7 @@
       "id": "B8-undo-move",
       "title": "1 MOV = 1 tile (STEP_COST in movement.ts, the AI's travel field too; stripes and the tile box's COST gone, DEF or BLOCKED instead), and CONFIRM / UNDO after the player's walk (MoveConfirm.ts, undoMove in turn.ts; Z/X, Enter keeps; a click on a red foe keeps and attacks); check.mjs checks the box, UNDO's refund and CONFIRM",
       "status": "review",
-      "commit": "this one"
+      "commit": "8a44c47"
     }
   ],
   "backlog": [
