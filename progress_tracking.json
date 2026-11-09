@@ -421,8 +421,9 @@
     {
       "id": "B8-demo-video",
       "title": "A 84 s demo video for LinkedIn (scripts/trailer.mjs: the real game on a virtual clock, scripts/trailer/vtime.js; captions, cursor and the AI panel, scripts/trailer/overlay.js; the game's effects as sound): Thunder Hoof's card, six terrains, a turn, a 2-tile Union with the gauge handed down, and the Hard AI's turn with what it weighed (PlanTrace from planTurn, __map.foeThinking) ending in Varek firing Trample. Dev hooks __map.setHand and foeThinking; check.mjs checks the trace against the turn",
-      "status": "review",
-      "commit": "1063507"
+      "status": "done",
+      "commit": "1063507",
+      "note": "Approved 2026-11-09: \"the video generation looks goood\""
     }
   ],
   "backlog": [
